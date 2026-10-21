@@ -33,7 +33,7 @@ Source/
 - 组件：共享外观、状态和行为契约；内容、尺寸、半径与业务操作由调用方提供，不能为了“统一”改变原稿几何。
 - 外壳：`layouts/app-shell.js` 组合组件。当前菜单以首页确认稿为准；后续按真实需求扩展配置，不提前制造不存在的路由。
 - 首页：`scene.js` 只适配当前 Figma 绝对坐标提取，不是全站布局引擎。新页面使用语义 DOM 和适合内容的布局，不复制 scene JSON。
-- 交互：`pages/home/index.js` 装配本页搜索、日期、图表与预览反馈，不承担全站组件实现。
+- 交互：`pages/home/index.js` 只做装配；`layout.js` 负责响应式重排，`period.js` 周期与刷新，`search.js` 内联/全屏搜索，`workspace.js` 标签与标签内路由历史，`recent-visits.js` 本地最近访问，`routes.js` 是路由与搜索索引的唯一清单。新增页面照此拆模块，不把业务逻辑堆回 `index.js`。
 
 ## 增加页面
 

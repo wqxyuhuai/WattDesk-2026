@@ -7,6 +7,7 @@
 ## 当前实现
 
 - 唯一业务页面是首页。运行目录 `design-preview`，`npm run dev`，默认 4173；入口 `home.html?glass=figma`。
+- `2026-10-21` 首页模块拆分：`pages/home/index.js` 从 842 行降到 203 行，只做装配；新增 `routes.js`（路由与搜索索引唯一清单）、`layout.js`（响应式重排）、`period.js`（周期胶囊与刷新）、`search.js`（内联/全屏搜索）、`workspace.js`（标签、标签内路由与历史）、`recent-visits.js`（本地最近访问）。行为未变，9 个回归套件通过。
 - 线上预览 <https://wattdesk-preview.carlwang.cn/>：Cloudflare Workers 从 GitHub `master` 构建，根目录 `/design-preview`，构建命令 `npm run build:site:public`，部署命令 `npx wrangler deploy --assets=./dist`；构建产物不入库。发布由维护者手动 push 触发，完整流程见 [发布与部署](./DEPLOYMENT.md)。
 - `2026-10-21` 仓库收敛：354 个本地一次性文件（根 `tests/`、根 `output/`、补丁、177 个调试探针、部署日志）取消跟踪并写入 `.gitignore`；移除从未被部署且已过期的 `dist-public/`；`/home` 与 `/home.html` 的自指重定向死循环已删除；`/*.html`、`/src/*`、`/home-assets/*` 统一改为 `max-age=0, must-revalidate`，避免无 hash 资源在部署后与 HTML 版本错配。
 - Figma 文件 `7hGGOqflIMGWTYQMm9tce0`；深色 **Home-主画板** `14434:3261`，浅色 **Home-主画板 - 浅色模式** `14704:3871`，所在 page `14405:17661`。
