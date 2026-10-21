@@ -46,3 +46,13 @@
 - `/*.html`、`/src/*`、`/home-assets/*` 缓存统一为 `max-age=0, must-revalidate`，避免无 hash 资源在部署后与 HTML 版本错配。
 - 保留：`tests/verify-*.cjs`、`tests/runtime.cjs`、`tests/run.cjs`、`tests/fixtures/`、`verify-deploy.cjs`（发布自检）、`design/figma/` 全部源数据。
 - Git 历史中的旧文件未改写；仓库体积不会立刻下降，如需瘦身须单独评估历史改写风险。
+
+### 本地工作区清理（同日）
+
+取消跟踪之后，本地仍留着约 950 个不再需要的文件；本次一并清掉，工作区从 **1182 个文件 / 约 94 MB** 降到 **235 个文件 / 3.67 MB**（不含 `.git`），`git status` 保持干净。
+
+- 删除可再生产物：`design-preview/tests/output/`（398 张截图，41.7 MB）、根 `tests/`（124 个文件）、根 `output/`（46 个）、`design-preview/dist/`、`design-preview/output/`、`previews/`、空目录 `dist-public/`。
+- 删除一次性文件：4 个 `.patch`、`patch.txt` / `patch.tmp` / `apply.cjs` / `.codex-patch.txt` / `_inspect-search.cjs`、`deploy-result.json`、`deploy-lines.txt`、`dist-server.cjs`。
+- 177 个调试探针（`design-preview/tests/_*.cjs` / `_*.py`）移到 Source 外的 `Backups\local-debug-probes-20261021`，需要时可单独恢复；Git 历史中也仍可追溯。
+- 保留：10 个 `verify-*.cjs`、`run.cjs`、`runtime.cjs`、`fixtures/`、`design/figma/`、`home-assets/`、`templates/`、`dev/`（批注模式）与本地 `annotations.json`。
+- 清理后 `npm run check` 通过（52 个 JavaScript 文件）。
