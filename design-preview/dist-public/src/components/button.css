@@ -1,5 +1,0 @@
-/* Generic buttons opt in to geometry; shell variants keep original dimensions. */
-.wd-button{position:relative;display:inline-flex;align-items:center;justify-content:center;gap:var(--wd-space-2);min-height:36px;padding:0 14px;border:0;border-radius:var(--wd-radius-medium);background:transparent;color:var(--wd-label-secondary)}
-.wd-button:not(.wd-glass):not(:disabled):not([aria-disabled="true"]):is(:hover,:focus-visible){background:var(--wd-control-hover)}
-.wd-button .target-icon-art{color:var(--wd-label-secondary)}
-.wd-button:is(:hover,:focus-visible,:has(:focus-visible)) .target-icon-art{color:var(--wd-label-primary)}

@@ -1,2 +1,0 @@
-.search-input{position:absolute;inset:0;display:block;border:0;outline:0;background:none;color:var(--wd-label-primary);font-size:15px;font-variation-settings:"wdth" 100,"opsz" 17;font-optical-sizing:none;line-height:20px;letter-spacing:-.23px;padding:0;caret-color:var(--wd-blue);width:100%;height:100%}
-.search-input::placeholder{color:var(--wd-label-secondary);text-overflow:ellipsis}.search-input:focus-visible{outline:0}

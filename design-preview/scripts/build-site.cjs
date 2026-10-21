@@ -46,8 +46,11 @@ const deployHtml = robots ? html.replace('<head>', `<head>${robots}`) : html;
 fs.writeFileSync(path.join(out, 'index.html'), deployHtml);
 fs.writeFileSync(path.join(out, 'home.html'), deployHtml);
 
+// No redirect rules: the static-asset layer already serves /home from
+// home.html and 307s /home.html to /home. A rule mapping /home back to
+// /home.html would create an infinite redirect loop.
 fs.writeFileSync(path.join(out, '_redirects'), [
-  '/home /home.html 301',
+  '# /home is served from home.html by the asset layer; do not add a rule here.',
   ''
 ].join('\n'));
 
