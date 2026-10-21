@@ -38,7 +38,9 @@
 - 首页全部状态/图表卡片（30px）及右侧整体底板（10px）同样使用共享连续曲线，禁止为修正视觉大小退回 `round` 或添加 `.wd-corners-original` 例外。验收同时检查真实轮廓与半径数值，不能只检查 `border-radius`。禁止靠加大半径补偿；默认、hover、描边、投影共用曲线。
 - Figma 颜色的原始双主题绑定保存在 `design-preview/design/figma/figma-color-source.json`，生成文件为 `src/foundations/colors.css`。颜色按变量 ID 与语义引用，不能根据深色十六进制值猜浅色。更新源数据后运行 `npm run sync:themes`；首页提取场景由 `scene-theme.js` 适配，新增语义组件直接用 token。
 - 玻璃参数与分层：`design-preview/src/components/glass-material.css`；挂载和微光：`design-preview/src/components/glass-material.js`。
+- 操作按钮统一使用共享标准按钮：`design-preview/src/components/button.css` 的 `.wd-button--pill` 配 `.wd-button--neutral`（中性玻璃）或 `.wd-button--primary`（实心 Accents/Blue）；固定 36px 高、左右 16px 内距、13px / 510。面板、菜单、表单与页面不得另写按钮颜色、圆角、材质或光晕，每个视图只保留一个主按钮。
 - 浮层开合与图表载入：`design-preview/src/foundations/motion.js`；首页装配：`design-preview/src/pages/home/home.css` / `src/pages/home/index.js`。
+- 全屏搜索的入场与退场互为反向：结果面先走、搜索框随后、背景遮罩最后；退场一律向下位移并淡出。遮罩的模糊必须比内容更晚收完，使用 `--wd-motion-search-veil-out` / `--wd-motion-search-veil-delay`，不能与内容共用短时长；遮罩只淡出颜色和模糊，不对元素自身做 `opacity` 退场。
 - 控件文字与图标联动使用 `design-preview/src/components/control-states.css` / `control-states.js` 的共享状态；周期选择等控件 hover / focus 时图标和文字同时变主文字色，不能只改其中一个。
 - 统计周期胶囊使用共享日期选择组件：文字与日历图标默认 Labels/Secondary，hover / 键盘 focus 同步变为 Labels/Primary；宽度随实际文字和预设/自定义范围自动调整，不能固定宽度或裁切。刷新按钮右缘与下方图表卡片右缘固定对齐，胶囊只向左增长，间距 10px。日期选择器的预设为 Today、Yesterday、Last 24 hours、Last 7 days、Last 30 days、This month、Custom range，输入 Start date / End date 并以 Apply 提交；不得恢复旧 `Custom date range…` 入口。
 - 图标、Logo 和字体使用 Figma 原始导出素材，保留来源信息；禁止近似替换、Unicode 图标和重画字形。临时远程素材链接不得作为正式运行依赖。
@@ -58,7 +60,8 @@
 
 ## 动效边界
 
-- hover 进入与离开统一使用共享时长和缓动；一般只改变颜色、背景、下划线和光晕，不移动、缩放、旋转或改变控件及文字尺寸。禁止 `transition: all`。
+- hover 进入使用 `240ms`（快起缓收），离开使用 `360ms`（柔和退场），两者共用共享变量与缓动；一般只改变颜色、背景、下划线和光晕，不移动、缩放、旋转或改变控件及文字尺寸。禁止 `transition: all`。
+- 图标状态遮罩的 `::before` / `::after` 和宿主文字、图标必须共用同一节奏，渐入渐出，不能瞬间切换、闪一下或出现黑灰中间态；伪元素选择器不能写进 `:is()` / `:where()` 的参数列表，否则整条规则会被丢弃。`Add tab` 等图标按钮不得再叠加 `filter: brightness()` 之类的局部提亮 hover。
 - 明确例外：前两张可点击状态卡的内部箭头可在 hover 时向右上移动 2px 并平滑复位；卡片本体保持原位。不得扩展为全站 hover 位移。
 - 玻璃 hover / focus 增强表面与底缘亮度，只让指针附近的一段边缘和内部跟随光斑变化，不能整圈发白；浅色与深色分别使用材质 token，圆钮由共享材质自动识别。黑色/白色 hover 边缘参数、贴边和圆钮细节以 `DESIGN-SYSTEM.md` 为准。
 - 玻璃深层反馈只属于可交互宿主，由共享材质自动继承：普通玻璃宿主 hover `1.025` / 按下 `1.065`，正圆宿主 hover `1.07` / 按下 `1.18`，按下起点快速、松开缓慢回落；缩放锚定宿主物理中心。纯展示、无跳转的玻璃表面通过 `createGlassMaterial({surfaces:[{interactive:false}]})` 标记为 `.wd-glass--static`，保留材质与指针光晕但 hover / 按下都不缩放；不得在页面局部写 `transform:none`。按钮、tab、日期控件和可点击卡片默认继续缩放，不逐个声明。复合容器（`.wd-glass-chrome` 整组、`.wd-glass--surface` 弹窗/浮层）不整体缩放，只有内部独立玻璃控件响应，避免点击面板任意位置带动整块卡片。新组件不手写缩放值或延迟。

@@ -198,7 +198,9 @@ function openFullscreenSearch(){
  overlays.append(created.root);
  if(!reducedMotion()){
   created.root.dataset.entering="";
-  setTimeout(()=>created.root?.removeAttribute("data-entering"),motionDuration("--wd-motion-panel")+40);
+  // The result panel starts one stagger step after the field; keep the entry
+  // classes until the last surface has finished so no frame snaps to idle.
+  setTimeout(()=>created.root?.removeAttribute("data-entering"),motionDuration("--wd-motion-search-in")+motionDuration("--wd-motion-search-stagger")+40);
  }
  created.input.value=input.value;
  created.update(input.value);
@@ -223,9 +225,28 @@ function closeFullscreenSearch(immediate=false){
   searchRestoreFocus=null;
  };
  if(immediate||reducedMotion()){finish();return;}
+ // Opening and closing can overlap (open, then Esc within one frame). Drop the
+ // entry state first so the closing stylesheet cannot inherit a running
+ // entrance animation and snap to a mid-entrance frame.
+ entry.root.removeAttribute("data-entering");
  entry.root.dataset.closing="true";
- const animation=entry.root.animate([{opacity:1},{opacity:1}],{duration:motionDuration("--wd-motion-panel-exit"),fill:"forwards"});
- animation.finished.catch(()=>{}).finally(finish);
+  // The veil intentionally outlives the content; keep the dialog mounted for
+  // the longest tail, otherwise removing it cuts the frost mid-fade.
+  const exit=Math.max(
+   motionDuration("--wd-motion-search-out")+motionDuration("--wd-motion-search-stagger")*2,
+   motionDuration("--wd-motion-search-veil-delay")+motionDuration("--wd-motion-search-veil-out")
+  )+16;
+  // Never animate the dialog root here. Any opacity animation on the root
+  // forces the whole dialog into its own composited layer, and a
+  // backdrop-filter inside that layer samples an empty backdrop: the veil
+  // vanishes on the first exit frame. Wait on the veil's own animation so the
+  // frosted page stays visible for the full tail.
+  const veil=entry.root.querySelector(".wd-search-backdrop");
+  let removed=false;
+  const remove=()=>{if(removed)return;removed=true;finish();};
+  const veilExit=veil?.getAnimations().find(animation=>animation.animationName==="wd-search-veil-frost-out");
+  if(veilExit)veilExit.finished.then(remove).catch(remove);
+  else setTimeout(remove,exit);
 }
 targetChrome.search.addEventListener("click",()=>openFullscreenSearch());
 document.addEventListener("keydown",event=>{

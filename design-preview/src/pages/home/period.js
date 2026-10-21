@@ -50,7 +50,7 @@ export function createPeriodControl({get,action,glass,registerPanel,close,toast}
   const icon=refreshControl.querySelector(".asset>img");
   try{
    if(icon&&!reducedMotion()){
-    const keyframes=[{transform:"rotate(0deg)"},{transform:"rotate(360deg)"}],options={duration:motionDuration("--wd-motion-refresh"),easing:motionEasing("--wd-ease-hover")};
+    const keyframes=[{transform:"rotate(0deg)"},{transform:"rotate(360deg)"}],options={duration:motionDuration("--wd-motion-refresh"),easing:motionEasing("--wd-ease-hover-out")};
     icon.parentElement.querySelector(".shared-icon-highlight")?.animate(keyframes,options);
     await icon.animate(keyframes,options).finished;
    }

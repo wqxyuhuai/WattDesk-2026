@@ -135,7 +135,10 @@ const assert=require('node:assert/strict');
     await page.keyboard.press('Escape');
     await page.waitForTimeout(500);
     await page.keyboard.press('Control+k');
-    await page.waitForTimeout(600);
+    // Measure the resting capsule, not a mid-entrance frame: the shared
+    // entrance overshoots slightly before settling at 816x46.
+    await page.waitForFunction(()=>!document.querySelector('.wd-search-fullscreen')?.hasAttribute('data-entering'));
+    await page.waitForTimeout(60);
     const full=await page.evaluate(()=>{
       const field=document.querySelector('.wd-search-field');
       const box=field.getBoundingClientRect();
@@ -210,16 +213,94 @@ const assert=require('node:assert/strict');
       'Fullscreen Navigate must advance the active result',
     );
     await page.locator('.wd-search-fullscreen .wd-search-hint-item[data-action="close"]').click();
-    await page.waitForTimeout(600);
+    await page.waitForTimeout(900);
     assert.equal(await page.locator('.wd-search-fullscreen').count(),0,'Close must dismiss fullscreen search');
 
+    // The exit is one staggered timeline: results leave first, the field next,
+    // and the veil last on a longer tail. Compare the running animations
+    // instead of one wall-clock sample; the curve drops quickly, so a single
+    // frame is ambiguous.
+    await page.locator('input[aria-label="Search sites, devices and people"]').click();
+    await page.waitForTimeout(500);
+    await page.keyboard.press('Control+k');
+    await page.waitForTimeout(900);
+    await page.keyboard.press('Escape');
+    await page.waitForTimeout(30);
+    const exitOrder=await page.evaluate(()=>{
+      const delay=selector=>{
+        const node=document.querySelector(selector);
+        if(!node)return null;
+        const animation=node.getAnimations().find(item=>item.animationName?.includes('-out'));
+        return animation?animation.effect.getTiming().delay:null;
+      };
+      const timing=selector=>{
+        const node=document.querySelector(selector);
+        if(!node)return null;
+        const animation=node.getAnimations().find(item=>item.animationName?.includes('-out'));
+        if(!animation)return null;
+        const value=animation.effect.getTiming();
+        return {delay:value.delay,duration:value.duration};
+      };
+      return {
+        panel:timing('.wd-search-panel--fullscreen'),
+        field:timing('.wd-search-field'),
+        backdrop:timing('.wd-search-backdrop'),
+      };
+    });
+    assert.equal(exitOrder.panel.delay,0,'Results must start the exit');
+    assert.equal(exitOrder.field.delay,90,'The field follows one stagger step later');
+    assert.equal(exitOrder.backdrop.delay,110,'The veil waits until both glass surfaces are leaving');
+    assert.ok(exitOrder.backdrop.duration>=640,'The veil must clear on a slow tail, not with the content');
+    assert.ok(exitOrder.backdrop.duration>exitOrder.panel.duration,'The veil must outlive the result sheet');
+    assert.ok(exitOrder.backdrop.duration>exitOrder.field.duration,'The veil must outlive the field');
+
+    // Sample the actual exit, not just the declared timing. The veil must
+    // never animate the host's opacity: a backdrop-filter stops sampling as
+    // soon as its layer drops below full opacity, which is what used to make
+    // the blur vanish on the first frame. Blur and tint share one layer and
+    // recede together after the glass surfaces have left.
+    await page.waitForTimeout(300);
+    const veilMid=await page.evaluate(()=>{
+      const veil=document.querySelector('.wd-search-backdrop');
+      const root=document.querySelector('.wd-search-fullscreen');
+      if(!veil)return {filter:null,blur:null};
+      const filter=getComputedStyle(veil).backdropFilter;
+      const tint=getComputedStyle(veil).backgroundColor;
+      return {
+        filter,
+        blur:(filter.match(/blur\(([\d.]+)px\)/)||[])[1]||null,
+        opacity:getComputedStyle(veil).opacity,
+        tint,
+        tintAlpha:Number((tint.match(/rgba?\([^)]*?,\s*([\d.]+)\)/)||[])[1]),
+        rootAnimations:root?root.getAnimations().length:null,
+      };
+    });
+    assert.ok(Number(veilMid.blur)>0,'The veil must still be frosted once the glass surfaces have left');
+    assert.equal(veilMid.opacity,'1','The veil element must stay opaque so its backdrop-filter keeps compositing');
+    assert.equal(veilMid.rootAnimations,0,'The dialog root must never animate: that breaks backdrop sampling');
+    assert.match(veilMid.tint,/rgba?\(/,'The veil must keep a tint while its blur is still resolving');
+
+    await page.waitForTimeout(280);
+    const veilTail=await page.evaluate(()=>{
+      const veil=document.querySelector('.wd-search-backdrop');
+      if(!veil)return null;
+      const style=getComputedStyle(veil);
+      return {
+        blur:Number((style.backdropFilter.match(/blur\(([\d.]+)px\)/)||[])[1]),
+        tintAlpha:Number((style.backgroundColor.match(/rgba?\([^)]*?,\s*([\d.]+)\)/)||[])[1]),
+      };
+    });
+    assert.ok(veilTail,'The veil must outlive the glass surfaces long enough to refocus the page');
+    assert.ok(veilTail.blur<Number(veilMid.blur),'The frost must be easing down, not snapping at unmount');
+    assert.ok(veilTail.tintAlpha<veilMid.tintAlpha,'The tint must thin with the blur so the page never snaps sharp');
+
     await page.mouse.click(40,800);
-    await page.waitForTimeout(600);
+    await page.waitForTimeout(900);
     assert.equal(await page.locator('.wd-search-fullscreen').count(),0,'The page remains interactive after Close');
     await page.keyboard.press('Control+k');
     await page.waitForTimeout(500);
     await page.keyboard.press('Escape');
-    await page.waitForTimeout(600);
+    await page.waitForTimeout(900);
     assert.equal(await page.locator('.wd-search-fullscreen').count(),0,'Escape must close fullscreen search');
     assert.deepEqual(errors,[]);
     console.log(JSON.stringify({keycaps:'shared',inline:'fixed 46px capsule',fullscreen:'shared 816x46 field',sharedGlass:true,stableOnPress:true,errors},null,2));

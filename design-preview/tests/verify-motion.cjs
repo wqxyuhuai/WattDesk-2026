@@ -24,7 +24,9 @@ function motionTokens(){
 
 (async()=>{
   const tokens=motionTokens();
-  assert.equal(tokens['--wd-motion-hover'],'260ms');
+  assert.equal(tokens['--wd-motion-hover'],'240ms');
+  assert.equal(tokens['--wd-motion-hover-out'],'360ms');
+  assert.equal(tokens['--wd-motion-tab-close'],'260ms');
   assert.equal(tokens['--wd-motion-disclosure'],'380ms');
   assert.equal(tokens['--wd-motion-panel'],'320ms');
   assert.equal(tokens['--wd-motion-panel-exit'],'200ms');
@@ -90,9 +92,42 @@ function motionTokens(){
     });
     for(const [name,value] of Object.entries(inherited)){
       assert.match(value.property,/color/,`${name} must inherit the shared colour transition`);
-      assert.equal(value.duration,'0.26s',`${name} must inherit --wd-motion-hover`);
-      assert.equal(value.easing,'cubic-bezier(0.2, 0, 0.2, 1)',`${name} must inherit --wd-ease-hover`);
+      assert.equal(value.duration,'0.36s',`${name} must use --wd-motion-hover-out at rest`);
+      assert.equal(value.easing,'cubic-bezier(0.3, 0, 0.2, 1)',`${name} must use --wd-ease-hover-out at rest`);
     }
+
+    // State masks are separate pseudo-element layers. They must share the
+    // artwork's rhythm instead of falling back to the browser's 0s default.
+    const masks=await page.evaluate(()=>{
+      const icon=document.querySelector('.target-nav .target-icon-neutral');
+      const style=getComputedStyle(icon,'::after');
+      return {duration:style.transitionDuration,easing:style.transitionTimingFunction};
+    });
+    assert.equal(masks.duration,'0.36s','Icon mask must use the shared leave rhythm');
+    assert.equal(masks.easing,'cubic-bezier(0.3, 0, 0.2, 1)');
+
+    // Entering a control is faster than leaving it, and the leaf text/icon
+    // inherit the host's rhythm instead of keeping a stale duration.
+    const nav=page.locator('.target-nav').first();
+    await nav.hover();
+    const hovered=await page.evaluate(()=>{
+      const read=element=>{
+        const style=getComputedStyle(element);
+        return {duration:style.transitionDuration,easing:style.transitionTimingFunction};
+      };
+      const control=document.querySelector('.target-nav');
+      return {
+        control:read(control),
+        label:read(control.querySelector('.wd-control-label')),
+        icon:read(control.querySelector('.target-nav-icon'))
+      };
+    });
+    for(const [name,value] of Object.entries(hovered)){
+      assert.equal(value.duration,'0.24s',`${name} must use --wd-motion-hover while hovered`);
+      assert.equal(value.easing,'cubic-bezier(0.16, 1, 0.3, 1)',`${name} must use --wd-ease-hover while hovered`);
+    }
+    await page.mouse.move(0,0);
+    await page.waitForTimeout(320);
 
     // Future semantic controls need no class or page-level patch: the shared
     // defaults cover native elements and common ARIA roles from first paint.
@@ -114,8 +149,8 @@ function motionTokens(){
     });
     for(const name of ['button','tab','link','input']){
       assert.match(generic[name].property,/color/,`generic ${name} must inherit the shared colour transition`);
-      assert.equal(generic[name].duration,'0.26s',`generic ${name} must inherit --wd-motion-hover`);
-      assert.equal(generic[name].easing,'cubic-bezier(0.2, 0, 0.2, 1)',`generic ${name} must inherit --wd-ease-hover`);
+      assert.equal(generic[name].duration,'0.36s',`generic ${name} must use --wd-motion-hover-out at rest`);
+      assert.equal(generic[name].easing,'cubic-bezier(0.3, 0, 0.2, 1)',`generic ${name} must use --wd-ease-hover-out at rest`);
     }
     const disclosure=await page.evaluate(()=>{
       const heading=document.querySelector('[aria-controls]');
@@ -139,7 +174,8 @@ function motionTokens(){
       return {property:style.transitionProperty,duration:style.transitionDuration,easing:style.transitionTimingFunction};
     });
     assert.equal(tab.property,'color, background-color, flex-basis, width, padding-left, padding-right, transform');
-    assert.equal(tab.duration,'0.26s, 0.26s, 0.22s, 0.22s, 0.22s, 0.22s, 0.42s');
+    assert.equal(tab.duration,'0.36s, 0.36s, 0.22s, 0.22s, 0.22s, 0.22s, 0.42s');
+    assert.ok(tab.easing.startsWith('cubic-bezier(0.3, 0, 0.2, 1)'),'Tab colour uses the leave ease at rest');
     assert.match(tab.easing,/cubic-bezier\(0\.4, 0, 0\.2, 1\)/);
 
     const arrow=await page.evaluate(()=>{
@@ -147,14 +183,18 @@ function motionTokens(){
       return {property:style.transitionProperty,duration:style.transitionDuration};
     });
     assert.equal(arrow.property,'translate');
-    assert.equal(arrow.duration,'0.26s');
+    assert.equal(arrow.duration,'0.36s');
 
     const card=page.locator('.status-card').first();
     const box=await card.boundingBox();
     await card.hover();
     await page.waitForTimeout(320);
-    const cardHover=await card.evaluate(el=>{const style=getComputedStyle(el),matrix=new DOMMatrix(style.transform==='none'?'':style.transform),rect=el.getBoundingClientRect();return {scale:matrix.a,offset:[el.offsetWidth,el.offsetHeight],centre:[rect.x+rect.width/2,rect.y+rect.height/2]}});
+    const cardHover=await card.evaluate(el=>{const style=getComputedStyle(el),matrix=new DOMMatrix(style.transform==='none'?'':style.transform),rect=el.getBoundingClientRect();return {scale:matrix.a,offset:[el.offsetWidth,el.offsetHeight],centre:[rect.x+rect.width/2,rect.y+rect.height/2],duration:style.transitionDuration,property:style.transitionProperty}});
     assert.ok(cardHover.scale>1,'Clickable glass card must grow on hover');
+    // Glass depth keeps its own reviewed rhythm; the colour retune must not
+    // shorten the hover scale or the press/release pair.
+    assert.equal(cardHover.property,'transform','Glass depth keeps its own transition');
+    assert.equal(cardHover.duration,'0.3s','Glass hover duration stays 300ms');
     assert.deepEqual(cardHover.offset,[Math.round(box.width),Math.round(box.height)],'Hover must keep the layout box');
     assert.ok(Math.abs(cardHover.centre[0]-(box.x+box.width/2))<.6&&Math.abs(cardHover.centre[1]-(box.y+box.height/2))<.6,'Hover must grow from the card centre');
     await page.mouse.move(0,0);
@@ -196,8 +236,8 @@ function motionTokens(){
       const style=getComputedStyle(control);
       return {duration:style.transitionDuration,easing:style.transitionTimingFunction};
     });
-    assert.equal(light.duration,'0.26s','Light theme keeps the same shared rhythm');
-    assert.equal(light.easing,'cubic-bezier(0.2, 0, 0.2, 1)');
+    assert.equal(light.duration,'0.36s','Light theme keeps the same shared rhythm');
+    assert.equal(light.easing,'cubic-bezier(0.3, 0, 0.2, 1)');
     assert.deepEqual(errors,[]);
     console.log(JSON.stringify({tokens,inherited,generic,disclosure,tab,arrow,reducedMotion:true,lightTheme:true,errors},null,2));
   }finally{

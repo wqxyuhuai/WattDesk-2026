@@ -32,7 +32,7 @@ export function createHomeMotion({duration,easing,reducedMotion}){
   if(panel.dataset.closing)return;
   panels.get(panel)?.cancel();panel.inert=true;panel.dataset.closing='true';
   if(immediate||reducedMotion()){finishPanel(panel);return;}
-  const surface=panel.classList.contains('wd-glass--surface'),exit=duration('--wd-motion-panel-exit'),ease=easing('--wd-ease-hover');
+  const surface=panel.classList.contains('wd-glass--surface'),exit=duration('--wd-motion-panel-exit'),ease=easing('--wd-ease-hover-out');
   if(!surface){
    const animation=panel.animate([{opacity:1,transform:'scale(1)'},{opacity:0,transform:'scale(.985)'}],{duration:exit,easing:ease,fill:'forwards'});
    panels.set(panel,animation);animation.finished.then(()=>finishPanel(panel)).catch(()=>finishPanel(panel));

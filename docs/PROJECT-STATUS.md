@@ -24,9 +24,11 @@
 - 账户入口与通知按钮的旧上下文/通知浮层已按用户要求删除，等待重做；按钮、玻璃和 hover 状态保留。重做前点击不展开旧浮层，也不得从旧组件、历史文档或备份恢复。
 - 连续曲线保留原半径：卡片 30px、右侧大底 10px，正圆/胶囊保持原形。共享入口自动分类现有及未来节点，包括新增 DOM 和尺寸变化。
 - 统计周期胶囊的宽度由文字决定，预设与自定义范围切换后自动调整，不裁切；刷新按钮右缘与图表卡片右缘对齐，胶囊向左增长并保持 10px 间距。浅色状态卡箭头使用 `.55` 黑色透明度，首页大标题为 semibold 590；`Newly commissioned sites` 与 `New devices added` 的七根柱使用原稿 `15.24px` 宽，深浅主题及目标视口均不越出图区。滚动到底的底部留白以最后一张图表卡片为基准，具体数值由单独的布局文档负责，本项目状态与规范不再另设固定值。
-- 组件级共享动效契约已落在 `src/foundations/motion.css`，由 `shared.css` 自动加载。原生控件、常见 ARIA role、共享控件/玻璃/tab/快捷入口/折叠箭头以及后续挂载的 DOM 自动继承 260ms 与统一缓动；组件只声明视觉状态。WAAPI 统一读取 `motionDuration()` / `motionEasing()`。
+- 组件级共享动效契约已落在 `src/foundations/motion.css`，由 `shared.css` 自动加载。原生控件、常见 ARIA role、共享控件/玻璃/tab/快捷入口/折叠箭头以及后续挂载的 DOM 自动继承 hover 进入 `240ms` / 离开 `360ms` 与共享缓动；组件只声明视觉状态。WAAPI 统一读取 `motionDuration()` / `motionEasing()`。
+- `2026-10-21` hover 颜色节奏调整为“弹性灵动”并整体拉长：进入 `240ms`（`cubic-bezier(.16,1,.3,1)`，快起缓收），离开 `360ms`（`cubic-bezier(.3,0,.2,1)`，柔和退场）。宿主在 hover / 键盘 focus 时切换共享变量，背景、文字与图标叶节点继承同一节奏；玻璃缩放仍为 hover `300ms`、按下 `110ms`、回落 `420ms`。Workspace 标签关闭沿用 `260ms`（`--wd-motion-tab-close`），浮层与搜索退出改用离开缓动，避免复用进入曲线导致退出前段过快。
 - `2026-10-21` 浮层圆角规则：新增 `--wd-radius-compact`（12px），tooltip 与图表数据浮签由 10px / 8px 统一为 12px，标准菜单保持 18px、大面板保持 30px；`addSurface()` 半径同步，浮层材质层继承宿主轮廓。相关测试更新并通过。
 - `2026-10-21` 规则归档审计：日期输入固定格式与整框错误态、错误行位置与生长动画、月份标题对齐与切月固定、Apply 实心蓝、浮层退出同步淡出、Glass Surface 默认材质与三档圆角均已写入 `USER-REQUIREMENTS.md`、`DESIGN-SYSTEM.md` 和 `COMPONENTS.md`。另行补记“侧栏导航 / 标签切换离开当前页面必须关闭活动浮层”的共享生命周期要求；该项目前是规范约束，尚不等同于已完成真实路由联动验收。
+- `2026-10-21` 标准按钮收编：`Cancel` / `Apply` 的胶囊样式从日期选择器移入共享 `button.css`，新增 `.wd-button--pill` + `.wd-button--neutral` / `.wd-button--primary`。中性按钮复用普通玻璃与 `Labels/Secondary → Primary` 状态；主按钮保留实心 `Accents/Blue`，关闭模糊和白色反射场，hover 仅轻微提亮。日期选择器保留 `.wd-date-action` 作为兼容别名，不再承载材质。深浅主题实拍验证 36px 胶囊、13px / 510 文字、中性玻璃 6px 模糊与主按钮实心蓝，`Cancel` / `Apply` 指针光弧均可见；`npm run check` 与 `verify-glass` 通过。`verify-home` 的侧栏导航 hover 时长断言仍为既存 160ms / 240ms 基线差异，与本次按钮改动无关。
 
 - `2026-10-21` 浮窗材质默认化收尾：共享 `popover.js` 现在接收页面同一份 `glass`，自动为普通 `.popover` 加 `.wd-glass--surface wd-glass-popup` 并在关闭时卸载；工具站标签 tooltip、toast、图表 `Chart options`、顶栏 `Language` / `WattDesk` / `Appearance` 及图表数据浮签已统一覆盖。日期、历史、搜索自带材质，控制器检测到后跳过，保持单层。tooltip / toast / 数据浮签为 `interactive:false`；动态文案改写入内部 `span`，修复 `textContent` 把材质子层删除的问题。新增 `tests/verify-floating-surfaces.cjs` 并纳入回归，`npm run check` 与完整 `npm test`（含新增 `verify-floating-surfaces`）全部通过，基础几何基线同步为 38 个表面。本站仍仅为本地设计预览，浮层未接真实业务菜单或后端。
 - 玻璃 hover/press 反馈由共享材质自动继承：普通可交互玻璃 `1.025 / 1.065`，正圆 `1.07 / 1.18`，按下 `110ms` 起步、`420ms` 回落，锚点为物理中心；`.wd-glass-chrome` 与 `.wd-glass--surface` 复合容器保持静止，内部独立控件正常响应。纯展示表面通过 `interactive:false` 获得 `.wd-glass--static`，保留材质和指针光晕但不缩放；首页 `Connected devices` / `Self-consumption` 已按此标记，`Sites online` / `Needs attention` 仍可点击缩放。
@@ -34,6 +36,7 @@
 
 - 2026-10-21：全屏搜索字段改为复用首页字段结构与材质，只隐藏 `Ctrl K`；消除两处玻璃参数和图标素材分叉。放大镜改用 `asset-35.svg` 的不透明状态遮罩，清除按钮补发 `input` 事件以刷新结果。`verify-search` 已覆盖 `816×46 / 23px`、共享填充与模糊、无快捷键、清除后回到 Quick links；深浅主题实拍一致。
 - 2026-10-21：修复共享玻璃定位覆盖页面布局。`.wd-glass{position:relative}` 曾压过 `.node{position:absolute}` 与顶栏绝对定位，导致状态卡逐行下坠、历史按钮跑到搜索左侧。现改为 `:where(.wd-glass)` 零优先级默认值；`verify-glass` 增加首页节点与侧栏按钮定位、状态卡同行检查，1452×1252 实拍已恢复。
+- 2026-10-21：共享 hover 节奏整体拉长到进入 `240ms` / 离开 `360ms`，侧栏 `Cell balance`、`Module balance`、`Device track`、`Add tab` 与各类 tab、按钮统一变慢。修复 `motion.css` 中把伪元素写进 `:where()` 导致整条规则被丢弃的问题，图标 `::before` / `::after` 遮罩现在与文字、`<img>` 同步渐入渐出，不再瞬间跳变或出现黑灰中间态；移除 `Add tab` 遗留的 `filter: brightness(1.3)` 局部提亮。减少动态效果的伪元素规则同样修正。`verify-motion` 覆盖图标遮罩节奏并通过；`verify-components` 通过；`verify-home` 的浅色 `rgba(64,64,71,.6)` 断言仍为既存历史值差异，未改业务或断言。
 - 2026-10-21：搜索提示按钮与结果行完成真实交互。`optionRows()` 从空的结果容器改为查询实际承载行的 `body`，恢复方向键、hover、Navigate 和 Open 的选中链路；提示按钮改用真实 `<button>`，点击后仍保持输入框焦点。结果标题与分类改为单行 `Plants - Pages`，保留 40px 行高、主/次级文字色和 4px 间隔；Quick links 仍不重复分类。`verify-search` 覆盖按钮可操作性、首位选中、Navigate 推进、Open 收面板、全屏 Close、行高与单行布局；`npm run check` 通过，深浅主题实拍一致。
 - 2026-10-20：侧栏前进/后退/历史按钮按设计稿固定 `36px` 圆钮与 `8px` 间距，改用右缘反算定位，前进按钮右缘与 Quick search 对齐；此前固定 `left` 在 `248px` 侧栏下超出 `12px`。`verify-responsive` 在 `>760px` 同时检查右缘、`36px` 尺寸和两段 `8px` 间距。
 - 2026-10-20：首页右侧内容改为真实响应式重排，不再对区域整体 `scale()`。内容画布最大 `1000px`、最小 `240px`，在右侧工作区内依据实际面板宽度居中；状态卡和业务图表卡按 `4 → 2 → 1` 列重排，两张能源卡 `2 → 1`，快捷入口 `3 → 2 → 1`，换列后由页面纵向增高承接，不产生横向滚动。侧栏默认收至 `248px`，`≤1100px` 为 `216px`，`≤760px` 变为 `76px` 图标轨；内容区与图表内部控件随可用宽度重新锚定。第二张状态卡旧 `250.7px` 玻璃底板会同步到卡片 `100% × 100%`，修复右上箭头和底板越界。新增 `tests/verify-responsive.cjs` 覆盖 1920–420px 共 12 个宽度、居中、列数、无横向滚动、箭头/菜单边界、刷新与周期右缘对齐、图标轨及悬停态箭头，已接入 `npm test`。
@@ -47,6 +50,29 @@
 没有其他页面的真实内容、登录/权限后端、账户服务、设备命令、实时统计或生产数据导出。Plant、Service ticket、Statistics 与 Device tool 等标签是 Coming soon 占位，不包含业务页面；状态卡虽跳转 Plants，但 Plants 筛选尚未实现；日期选择不会向服务端查询数据。不得把演示行为写成已完成的业务能力。
 
 绝对坐标 scene 是首页过渡适配，不能作为后续页面的通用布局。未来页面采用语义布局，复用相同基础与组件。
+
+## 验证记录口径
+
+- 本文所有带日期的检查结果均为当时快照，不代表当前状态；最新一次真实运行单独记录，不能用旧通过或旧失败互相覆盖。
+- 未实际运行时明确标注“未运行”，不得把静态代码或文档核对写成测试、截图验证通过。
+
+## 最近一次实际运行（2026-10-21）
+
+- `npm run check` 通过：58 个 JavaScript 文件语法有效。
+- `npm test` 通过；`verify-home` 的 Add 连续位移断言前两次间歇失败，重跑及整套通过，未改该断言，后续继续观察帧时序敏感性。
+- `npm run test:visual` 未通过：`refactor-before` 是整理前旧界面（含旧 Plants 标签等），当前差异 380912 px / max 245，说明基线已过期；未更新基线，避免用旧图掩盖当前变化。
+- `type.css` 已由 `npm run sync:type` 重新生成，强调斜体权重归一化为 590，旧 `590.7999877929688` 不再出现。
+
+## 已知待校准
+
+- 已解决：浅色玻璃外圈黑线随新基准收敛为普通 `.12/.16`、hover `.14/.18`、浮层 `.16/.20`；hover 不再弱于默认，深色保持不变。早期 `hover-ring-*.png` 对比图基于 `.23/.29`，仅作历史参考。
+- 页面框待确认：现行首页为响应式最大 `1000px`、左右 `48px` 阴影 gutter、底部 `32px`；这是现状，不是已否决项。被否决的是旧“固定 1000px 画布 + 区域整体缩放”，不是响应式最大宽度本身。新页面是否沿用、滚动容器归属、内容宽度与 section 间距仍需确认，`docs/PAGE-LAYOUT.md` 尚未创建。
+
+## 待确认 / 待实现
+
+- 页面大标题：规则已定为页面级 590，通用 `Large Title/Emphasized` 保持 700；共享 `.wd-page-title` 尚未实现，待新页面接入时落地。
+- 菜单字体：`Chart options` / `Language` / `Appearance` / `WattDesk` 是手写预览 DOM，没有对应 Figma 菜单节点；当前保留 13px，待节点或产品规则。
+- `Subheadline/Emphaized Italic` 是 Figma 源数据拼写问题；当前无代码绑定该拼写，待改源后同步或明确记为命名债务。
 
 ## 维护入口
 
@@ -70,6 +96,8 @@
 - 2026-10-20 日期选择器第四轮修正：报错行移到输入区与第二条分割线之间，面板以 433→460→433 的高度动画生长/收回，报错文字同步渐入渐出，连续同文案报错不再打断动画；错误文字的纵向位置由两条分割线夹住。月份标题改为 14px/510 并与星期 “M” 字形左对齐，切月保持按钮与星期行固定、日期网格同向滑动。关闭浮层时内容、玻璃 fill 与光学层同步淡出，玻璃宿主保持不透明以避免无模糊中间态。`verify-home` 增加了报错位置、面板/报错行高度、标题对齐与字号、退出同步淡出断言。
 - 2026-10-21 浮层玻璃浅色增强：嵌套在弹窗里的输入框、Cancel/Apply、月份圆钮此前光斑全部为 0，原因是内层 `pointerenter/pointermove` 冒泡到外层浮层后，外层把 `data-glass-pointer` 抢走。共享 `glass-material.js` 现在按 `event.target.closest('.wd-glass')` 只让最内层响应，四个控件均恢复可见光斑且外层不被标记。浅色 surface 从 `18px/30%` 调整为 `9px/44% + saturate 1.45`，边线 `.27/.33`，指针弧改为黑色 `.46`、内部白光 `.80`；浅色普通玻璃同步 `tint .70`、白内沿 `1`、内亮边 `.86/.54`、指针弧黑 `.42`。深色参数保持不变。`verify-glass` 新增嵌套归属和浅色参数断言，`npm run check` 与玻璃测试通过。
 - 2026-10-21 浮层玻璃收尾：共享 **Glass Surface**（`.wd-glass--surface` + `.wd-glass-popup`）此前 22/24px 模糊叠加 44%/70% 底色，深浅主题都读成实心卡片；现统一 `18px`、`30%` 底色（深色中性、浅色浅灰），并移除浅色弹窗单独覆盖的 `52%/30px`，背后页面重新可辨。surface 的指针白光原为 `.045/.15`、半径 `210/170px`，实测等同不可见；调为深色 `.085/.62`、浅色 `.42/.88`，边缘半径收到 `120px`，只亮指针附近一段。`verify-glass` 新增浮层指针光斑、边缘亮度、局部半径与跟随断言；深浅主题实拍确认不会整圈发白，正文保持可读。
+- 2026-10-21 浅色玻璃整圈黑线收敛：用户在搜索框 `Ctrl K` 与日期浮层上指出浅色玻璃周围有一圈显眼黑细线。来源是 `.wd-glass-fill` 的两侧 `±1.25px 0 0 -.75px` 与整圈 `0 0 0 .5px/.6px` 外轮廓，不是 border 或 focus ring。普通玻璃由 `.23/.29` 降为 `.12/.16`、hover `.14/.18`；**Glass Surface** 由 `.27/.33` 降为 `.16/.20`。深色普通 `.95`、浮层 `.72` 与全部材质、投影、光斑未改。浏览器断言覆盖普通、hover、日期浮层与深色双分支。
+- 2026-10-21 全屏搜索退场：搜索框与结果卡片按入场反向向下位移，结果面板 `0ms`、搜索框 `90ms` 错落离开；背景遮罩延后 `110ms`、以 `--wd-motion-search-veil-out: 640ms` 在前 `42%` 保持满模糊，等两块玻璃完全离开后再收。遮罩用 `@property` 注册的 blur 长度与 `background-color` 在同一 keyframe 同步降到 0，尾帧已透明才卸载，不再出现“模糊保持到最后、然后整层瞬间消失”的硬切；弹窗根节点不做任何 `opacity` 动画，否则 `backdrop-filter` 会在第一帧失效。全屏搜索节点改为监听遮罩退场动画结束后卸载。`verify-search` 更新为核验 `0 / 90 / 110ms` 起始顺序、`640ms` 长尾、根节点无动画、内容退完后模糊仍大于 0 且随后 blur 与底色单调下降；深浅主题与减少动态效果实拍确认。`verify-search`、`verify-motion`、`verify-components`、`npm run check` 通过。
 - 2026-10-20 日期选择器输入与 `Apply` 修正：输入框改为固定格式分段编辑，`/`、空格、`:` 由控件绘制且不可输入；新增整框错误态（红描边 + 红图标 + 输入区下方说明），并修掉“错误态被分段 `focus` 立刻清除”的旧缺陷，使 Apply 提交非法日期时红框能真正留在界面上。`Apply` 从被玻璃反射洗白的浅蓝改为设计稿的实心 `Accents/Blue`。`verify-home` 新增分隔符位置、整框红环、错误保持/改正清除与 Apply 饱和度断言，与本轮 `check`、`verify-glass`、`verify-theme`、`verify-foundations`、`verify-components`、`verify-responsive` 一并通过；`verify-motion` 仍因并行的顶栏标签工作区在 `workspace-tabs.css` 写本地 `transition-duration` 而失败，不属本轮范围。
 - 2026-10-20 搜索控件收尾：侧栏、首页内联和结果区共用 `createShortcutKeycaps()`；实测三处键帽均为 SF Pro `13px / 400`、主题次要色及 `--wd-control-muted` 背景，两枚键帽间距 `4px`，内联组右缘固定距搜索框右缘 `20px`。底部操作提示为英文 `Navigate / Open / Close`，方向导航使用一枚合并的 `↑ ↓` 键帽；空结果与提示保持 `Footnote/Regular`。全屏搜索框为固定 `680×56`、`28px` 圆角胶囊，不显示快捷键；内联与全屏搜索框按下时矩阵恒为 `1`，不放大。全屏结果面板独立位于框下，Esc 与空白点击均关闭。新增 `tests/verify-search.cjs` 并纳入 `npm test`，其中内联与全屏搜索框都有按下不缩放断言；`npm run check`、`verify-search`、`verify-components`、`verify-theme` 通过。`verify-home`、`verify-glass`、`verify-motion` 仍会因既存的指针命中/遮挡断言失败，与搜索样式无关，未修改这些断言。
 - 来源更新后运行 `npm run sync`，不会自动访问或改写 Figma。

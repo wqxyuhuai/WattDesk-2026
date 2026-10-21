@@ -12,7 +12,7 @@
 | 共享动效 | `src/foundations/motion.css` | `shared.css` 自动加载；组件不写局部 transition |
 | 字体 | `foundations/typography.js`、`type.css` | `applyTypeStyle(el,name)` 或 `data-type-style` |
 | 图标 | `components/icons.js` | `createIcon(name,tone?)`，注册表 `ICONS` 保留原文件与 tone |
-| 按钮 | `components/controls.js`、`button.css` | `button(label,className="wd-button",trustedHTML="")` |
+| 按钮 | `components/controls.js`、`button.css` | `button(label,className="wd-button",trustedHTML="")`；标准胶囊按钮组合 `.wd-button--pill` + `.wd-button--neutral` / `.wd-button--primary` |
 | 现有节点控件化 | `components/controls.js` | `enhanceControl(el,{label,onActivate})`，返回事件清理函数 |
 | 搜索 | `components/search.js` | `createSearchTrigger(label,className)` / `createSearchInput({label,placeholder,className})` |
 | 导航 | `components/navigation.js` | `makeNavRow(label,key,file,extraClass,tone)`，不自行导航 |
@@ -45,7 +45,7 @@ applyTypeStyle(label,"14/14 medium"); // 14px / 510，原稿行高、字距
 .surface { background:var(--wd-bg-secondary); }
 ```
 
-62 个双主题 Figma 变量与 36 个文字 styles 由来源生成，不手改生成文件。Medium 为 510；强调按具体 style 为 590 / 700。不要根据字号猜测 style。未绑定 style 的原稿写死值保留；旧 `--wd-type-*` 只供现有布局兼容，不据其名称新增字体样式。
+62 个双主题 Figma 变量与 36 个文字 styles 由来源生成，不手改生成文件。Medium 为 510；强调按具体 style 为 590 / 700。不要根据字号猜测 style。未绑定 style 的原稿写死值保留；旧 `--wd-type-*` / `--wd-leading-*` 已移除，字体只使用 `type.css` 的命名 style；组件 fallback 使用明确像素值，不据旧名称新增字体样式。
 
 颜色优先走语义入口；未暴露的 Figma 语义用 `--wd-figma-*`。已确认的玻璃、头像、浮层透明度是共享光学参数，保留显式值，不强行替换成近似色。旧提取用的 RGB/opacity 和 Fills/Quaternary 兼容值不扩展到新组件。
 
@@ -72,9 +72,31 @@ await prepareControlStates(container);
 
 按钮第 3 参数只允许项目可信静态 HTML，动态文本使用 `textContent` / DOM 节点。`iconAsset(file,tone)` 留给已有原始文件适配，业务代码优先 `createIcon`；禁止 Unicode / 近似字形替代。
 
+### 标准按钮
+
+面板、菜单、表单和后续新增界面的动作按钮统一使用共享胶囊按钮，不按页面复制材质或字号：
+
+```js
+import {button} from "/src/components/controls.js";
+
+const cancel=button("Cancel","wd-button wd-button--pill wd-button--neutral");
+const apply=button("Apply","wd-button wd-button--pill wd-button--primary");
+material.addSurface({host:cancel,radius:18});
+material.addSurface({host:apply,radius:18});
+```
+
+- 两者固定 `36px` 高、左右内距 `16px`、胶囊圆角、`13px / 510 / 18px`；不按文案长度改尺寸。
+- `.wd-button--neutral` 使用共享普通玻璃，默认 `Labels/Secondary`，hover / 键盘 focus 为 `Labels/Primary`，用于 `Cancel`、关闭和次要操作。
+- `.wd-button--primary` 是实心 `Accents/Blue`：关闭模糊、白色反射场和上下内阴影，只保留细深色外轮廓、极细亮边与指针高光；hover 仅轻微提亮，不能洗成浅蓝。一个视图只保留一个主按钮，用于 `Apply`、保存、确认。
+- 缩放、边缘光弧、指针跟随和禁用态由共享材质与 `.wd-control-state` 提供；调用方不写局部 `transform`、`box-shadow`、transition，也不新增第三套玻璃。日期选择器的 `.wd-date-action` 只是兼容别名，新组件直接用标准类名。
+
 `.wd-control-state` 为容器，`.wd-control-label` 为文字。hover / 键盘 `:focus-visible` 时中性文字和图标一起变主文字色，深色纯白、浅色主墨色；鼠标点击留下的普通 DOM 焦点不应持续呈现 hover，离开指针后恢复默认色。原始彩色图标保留原色。材质微光只影响光学层，控件和文字不位移。
 
 交互组件不要写组件内 `transition` 或 `transition-duration`：只要页面加载 `shared.css`，原生 `button` / `a` / `input`、常见 ARIA role、`.wd-control-state`、共享玻璃层、tab、快捷入口和折叠箭头就自动继承 `foundations/motion.css` 的属性和节奏。组件只声明默认、hover、focus、选中、禁用等视觉值。需要 JS 几何动画时读取 `motionDuration()` / `motionEasing()`；`prefers-reduced-motion` 由共享层统一处理。
+
+### Hover 节奏
+
+hover 进入 `240ms`、离开 `360ms`，由 `motion.css` 的宿主变量统一切换：交互宿主在 `:hover` / `:focus-visible` / `:has(:focus-visible)` 时把 `--wd-hover-duration` / `--wd-hover-ease` 切到进入值，文字与图标叶节点继承同一对值，背景、文字和图标不会各自计时。新增组件不要自带时长；玻璃缩放固定走 `300ms` / `110ms` / `420ms`，不受该变量影响。Workspace 标签关闭使用 `--wd-motion-tab-close`（`260ms`）加离开缓动；浮层、搜索和日期错误行退出使用 `--wd-ease-hover-out`。
 
 真实 button 使用 `disabled`；等效角色节点使用 `aria-disabled="true"`，经 `enhanceControl` 阻止点击和 Enter/Space。未选中 tab 仍可操作。挂载后对所属容器调用一次 `prepareControlStates`，避免重复增强同一棵 DOM。
 
@@ -145,6 +167,8 @@ const avatar=createAvatar("CW",{size:36});
 卡片 variant 为 `panel` / `chart` / `status`，表示表面/状态契约，不强制大小卡片共用尺寸。`chart` 用 Vibrant 描边，`panel` 复用浅色面板投影，`status` 可配共享玻璃；背景、布局、内边距与业务内容按各自设计提供。`prepareCard` 增强已有节点，不改原尺寸半径。
 
 搜索输入放入已定位、有明确宽高的容器；工厂提供输入和命名字体，查询/结果由页面提供。侧栏搜索入口复用 `createSearchTrigger`。
+
+全屏搜索由 `components/search-surface.js` / `.css` 提供，入场和退场使用同一组共享 token，页面不另写时长。退场与入场方向相反：结果面板先向下离开，搜索框晚一个 `--wd-motion-search-stagger` 向下离开，背景遮罩最后才退。遮罩必须保留完整模糊直到内容走完，再用 `--wd-motion-search-veil-delay` + `--wd-motion-search-veil-out` 的长尾化开；不要让它和内容共用 `--wd-motion-search-out`。遮罩退场只能动画底色与 `backdrop-filter`，不能降低元素自身 `opacity`，否则 `backdrop-filter` 会提前丢失。调用方要等遮罩退场结束再卸载全屏搜索节点，避免背景突然变清晰。
 
 折叠 heading 先设置 `aria-expanded="true"`、`aria-controls` 指向 content.id，再调用 `bindDisclosure`；原始实心图标挂 `.wd-disclosure-icon`。共享逻辑维护 hidden/inert、高度/透明度动画及中途反向，不换图模拟旋转。
 

@@ -3,3 +3,41 @@
 .wd-button:not(.wd-glass):not(:disabled):not([aria-disabled="true"]):is(:hover,:focus-visible){background:var(--wd-control-hover)}
 .wd-button .target-icon-art{color:var(--wd-label-secondary)}
 .wd-button:is(:hover,:focus-visible,:has(:focus-visible)) .target-icon-art{color:var(--wd-label-primary)}
+
+/* Standard button pair. Both are 36px pills with 13px / 510 text; the material
+ * lives here so every panel uses the same wording, edge light and press feel.
+ * Neutral keeps the shared glass face; Primary is the one solid accent and
+ * suppresses the white reflection field that would otherwise wash the blue. */
+.wd-button--pill{position:relative;display:inline-flex;align-items:center;justify-content:center;min-height:36px;height:36px;padding:0 16px;border:0;border-radius:999px;font-size:13px;font-weight:510;line-height:18px;letter-spacing:-.08px;white-space:nowrap}
+.wd-button--neutral{color:var(--wd-label-secondary)}
+.wd-button--neutral:is(:hover,:focus-visible){color:var(--wd-label-primary)}
+.wd-button--primary{color:var(--wd-figma-grays-white)}
+.wd-button--primary>.wd-glass-material{
+  --wd-glass-tint:var(--wd-blue);
+  --wd-glass-blur:0px;--wd-glass-saturation:1;
+  --wd-glass-outline:color-mix(in srgb,var(--wd-blue) 58%,rgba(0,0,0,1));
+  --wd-glass-outline-side:color-mix(in srgb,var(--wd-blue) 62%,rgba(0,0,0,.92));
+  --wd-glass-outline-width:.6px;
+  --wd-glass-drop:rgba(0,0,0,.34);
+  --wd-glass-drop-y:2px;--wd-glass-drop-blur:6px;
+  --wd-glass-rim-width:.6px;
+  --wd-glass-rim-top:rgba(255,255,255,.20);
+  --wd-glass-rim-side:transparent;
+  --wd-glass-rim-bottom:rgba(255,255,255,.15);
+  --wd-glass-inner-top:transparent;
+  --wd-glass-inner-bottom:transparent;
+  --wd-glass-optical-burn:transparent;
+  --wd-glass-optical-light-top:transparent;
+  --wd-glass-optical-light-bottom:transparent;
+  --wd-glass-reflection-field:none;
+  --wd-glass-hover-field:linear-gradient(180deg,rgba(255,255,255,.045),rgba(255,255,255,.012));
+  --wd-glass-glow:rgba(255,255,255,.08);
+  --wd-glass-glow-edge:rgba(255,255,255,.34);
+}
+.wd-button--primary:is(:hover,:focus-visible)>.wd-glass-material{--wd-glass-tint:color-mix(in srgb,var(--wd-blue) 93%,var(--wd-figma-grays-white) 7%)}
+:root[data-theme="light"] .wd-button--primary>.wd-glass-material{
+  --wd-glass-outline:color-mix(in srgb,var(--wd-blue) 66%,rgba(0,0,0,1));
+  --wd-glass-outline-side:color-mix(in srgb,var(--wd-blue) 70%,rgba(0,0,0,.94));
+  --wd-glass-drop:rgba(0,0,0,.20);
+}
+.wd-button--pill:is(:disabled,[aria-disabled="true"]){opacity:.55;cursor:default}

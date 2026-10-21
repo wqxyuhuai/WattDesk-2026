@@ -25,6 +25,7 @@
 | 浮层开合、图表首次可见载入 | `design-preview/src/foundations/motion.js` | 调用共享控制器，不复制动画 |
 | 控件文字与图标的共享 hover / focus 状态 | `design-preview/src/components/control-states.css` / `control-states.js` | 保留原始字形，复用不透明状态遮罩 |
 | 语义日期选择与周期范围 | `design-preview/src/components/date-picker.js` / `.css` | 预设、日历、起止日期与 Apply；面板 462px 宽、最低 433px 高，≤520px 视口切换纵向布局 |
+| 标准按钮 | `design-preview/src/components/button.css`、`controls.js` | `.wd-button--pill` 胶囊基础；`.wd-button--neutral` 中性玻璃、`.wd-button--primary` 实心蓝；材质由共享层提供 |
 | 首页布局与本地交互装配 | `design-preview/src/pages/home/home.css` / `src/pages/home/index.js` | 页面语义、局部布局与状态 |
 | Figma 测量、图标、Logo、字体 | `design-preview/home-assets/` | 使用原始资源并保留来源 |
 | 原始玻璃参数存档 | `design-preview/design/figma/glass-source.json` | 用于溯源，不是第二套运行时参数 |
@@ -41,8 +42,8 @@
 - 使用 Labels/Primary、Secondary、Tertiary、Fills、Separators 等语义 token。普通 Labels 与 Labels/Vibrant 不混用，SVG 已有透明度时避免再次乘上相同透明度。
 - 图表数据卡片轮廓使用 `--wd-separator-vibrant`，对应 Figma Separators/Vibrant：深色 `#1A1A1A`，浅色 `#E6E6E6`。
 - 字体使用已提供的 SF Pro 本地 WOFF2 与系统回退。字号、字重、行高沿用 Figma 样式，数字、单位和更新时间保持稳定对齐。
-- 首页大标题 `14445:3352` 使用 **semibold 590**，保留原 style 的 34px 字号、41px 行高与 0.4px 字距；不得通过换字体或改字号制造字重差异。
-- 2026-10-16 文字核对：归档 36 个命名 style（含外部库 ID）及当前画板 101 个可见文字节点的绑定。使用 `data-type-style="14/14 medium"` 等完整样式，不按字号推测样式。Medium 为 SF Pro 原始可变字重 **510**，Emphasized 按 style 使用 **590 / 700**，不能一律替换成 500 / 600。`14/14 medium` 为 14px、AUTO 行高、-1% 字距；用于侧栏菜单、侧栏搜索、tab、日期周期及头像缩写。分类标题用 Caption1/Emphasized（12/590），账户姓名 Footnote/Emphasized（13/590），角色 Caption2/Regular（11/400）。提取场景保留真实混合文字分段，统一样式的旧分段不得覆盖新绑定的字重。更新源数据后运行 `npm run sync:type`；生成文件不手工修改。旧 `--wd-type-*` 为历史兼容别名，新组件不要据其名称猜 Figma 样式。
+- 页面级大标题（含首页 `14445:3352`）使用 **semibold 590**，保留 34px 字号、41px 行高与 0.4px 字距；Figma 通用 `Large Title/Emphasized` 仍为 700，不得为统一页面标题反向修改通用 style。首页当前由 `home.css` 覆盖，新页面在页面级采用同一规则；共享 `.wd-page-title` 入口尚未落地，未实现前不声称已提供。
+- 2026-10-16 文字核对：归档 36 个命名 style（含外部库 ID）及当前画板 101 个可见文字节点的绑定。使用 `data-type-style="14/14 medium"` 等完整样式，不按字号推测样式。Medium 为 SF Pro 原始可变字重 **510**，Emphasized 按 style 使用 **590 / 700**，不能一律替换成 500 / 600。`14/14 medium` 为 14px、AUTO 行高、-1% 字距；用于侧栏菜单、侧栏搜索、tab、日期周期及头像缩写。分类标题用 Caption1/Emphasized（12/590），账户姓名 Footnote/Emphasized（13/590），角色 Caption2/Regular（11/400）。提取场景保留真实混合文字分段，统一样式的旧分段不得覆盖新绑定的字重。更新源数据后运行 `npm run sync:type`；生成文件不手工修改。旧 `--wd-type-*` / `--wd-leading-*` 已移除，字体只使用 `type.css` 的命名 style；组件 fallback 使用明确像素值，不再保留旧字号别名。
 - 侧栏文字在深浅主题使用同一套 `14px / 510`、字体、字号、字距和行高，仅颜色不同；深色下浅色文字因对比与抗锯齿显得更亮、更粗，不代表字重不同。不得为消除这种观感差异而修改主题级字重。
 - Logo 与图标使用原始导出 SVG，不能用近似图标、Unicode 字符或重画路径代替；中性与彩色状态基于同一个原始字形。
 - 正式运行使用已保存的本地资源，不依赖会过期的 Figma MCP 临时 URL。新增资源记录来源节点，参考 `design/figma/source-icons.json`。
@@ -75,8 +76,8 @@
 - 正式方向使用 `figma`；弃用 `liquid` 对比只在外部备份，运行代码不保留组件级材质分叉。光学参数统一位于 `glass-material.css` 的 `--wd-glass-*`。
 - 深色设计稿底色为 17% 中性灰、背景模糊 6px、投影 4%；已确认的上缘暗带 `.215` 不变。
 - 浅色以黑 25%、白 25%、`#444` 60% Linear Dodge、`#F8F8F8` 20% Luminosity 为来源，运行时中性底为 `rgba(246,248,252,.70)`；独立高光层暗带 `.05`。浅色调整不能回写深色。
-- 2026-10-16 浅色收敛：居中柔和反射和低对比上下渐变，移除对角冷蓝/灰紫色块与有色侧亮边；2026-10-21 进一步提升可见度：白内沿 `1 / .65px`、内高光 `.86/.54`、外圈黑 `.23`、侧缘 `.29`、描边 `.5px`，投影 `.075`、y=10px、blur=18px，叠加 `.045`、y=2px、blur=4px、spread=-1px 的短阴影。
-- 2026-10-19 hover 光学最终值：
+- 2026-10-16 浅色收敛：居中柔和反射和低对比上下渐变，移除对角冷蓝/灰紫色块与有色侧亮边；2026-10-21 进一步提升可见度：白内沿 `1 / .65px`、内高光 `.86/.54`，投影 `.075`、y=10px、blur=18px，叠加 `.045`、y=2px、blur=4px、spread=-1px 的短阴影。
+- 2026-10-21 浅色整圈边界收敛：原先外圈黑 `.23`、侧缘 `.29` 在浅底上读成一圈显眼的黑细线；现普通玻璃降到外圈 `.12` / 侧缘 `.16`，hover 仅略增至 `.14/.18`。深色外轮廓 `.95` 与面板 `.72` 均不变。该边界来自 `.wd-glass-fill` 的 `±1.25px 0 0 -.75px` 侧缘加 `0 0 0 .5px` 外圈，不是边框或焦点环。
 
 | 项目 | 深色 | 浅色 |
 |---|---|---|
@@ -85,7 +86,7 @@
 | 轮廓定位 | `inset:0` | `inset:-0.5px`，贴齐真实外轮廓、覆盖亮缝 |
 | 内部跟随光斑 | `.07` | `.58` |
 | 局部半径 | `44px` | `44px` |
-| 投影 / 外轮廓 | 保持确认值 | 投影 `.075→.085`、外轮廓 `.14→.15` |
+| 投影 / 外轮廓 | 保持确认值 | 投影 `.075→.085`；普通玻璃外轮廓基准 `.12/.16`，hover `.14/.18`，始终略强于基准但不重新形成黑圈 |
 | 圆钮上下沿高光 | `.30/.38` | 同层级独立值，避免小尺寸白块 |
 
 - hover 只提亮指针附近的一段边缘；内部不整片变白，整圈轮廓不一起增亮。浅色轮廓外扩半像素是为了贴边，不向内占用表面。选中 tab 使用同一反光场由 `.08` 淡变到 `1`，不瞬间换渐变。
@@ -100,6 +101,7 @@
 - 已自带 `.wd-glass` 的弹窗（日期、历史、搜索）由控制器自动跳过，不能重复挂载第二层材质或第二个 `ResizeObserver`。tooltip、toast 与图表数据浮签属于只读表面，必须传 `interactive:false`，保留材质和指针光晕但不响应 hover / 按下缩放；它们的文案要放在独立 span 中，不能用 `textContent` 覆盖宿主，否则会删掉材质子层。
 - 结构仍是 **Fill + Shadow 底层 + Glass Effect 高光层**：`.wd-glass-fill` 负责底色、背景模糊、暗外轮廓与投影；`.wd-glass-optics` 负责内亮边、hover 状态层和指针微光。内容不穿过 filter。
 - 深色：`blur 18px`、`saturate 1.20`、底色 `rgba(28,28,30,.30)`；浅色：`blur 9px`、`saturate 1.45`、底色 `rgba(232,237,244,.44)`。浮层必须能透出背后页面，不能读成实心卡片；浅色尤其不能靠加高不透明度换取“干净”。浅色模糊压到 `9px` 是为了保留背后卡片的边缘与色块，模糊越大越读成均匀白膜。
+- 浅色浮层整圈外轮廓从 `.27/.33` 收到 `.16/.20`（外圈 / 侧缘），仍略强于普通玻璃 `.12/.16`，以保留面板高度感；指针深色弧与水洗参数不变。深色浮层 `.72` 外轮廓保持不变。
 - 浮层指针白光：深色内部光斑 `.085`、指针边缘 `.62`、半径 `180px / 120px`；浅色内部 `.80`、指针边缘为**深色弧** `black .46`、半径 `140px / 120px`。只亮指针附近一段，不整圈发白。浅色面板本身接近白色，白色边缘在白底上不可见，因此浅色用深色弧 + 内部白光形成“光斑”，不是整圈白描边。
 - 浅色弹窗不再另设 `tint/blur` 覆盖；所有浮层共用上面这一组 token，避免只有弹窗再次变实。浅色普通玻璃同步为 `tint rgba(246,248,252,.70)`、白内沿 `1 / 1`、内亮边 `.86/.54`、指针边缘黑色 `.42`，与浮层形成“浅底 + 深弧 + 白内沿”的同一套语言。
 - 嵌套玻璃只由最内层响应指针：弹窗内的输入框、Cancel/Apply、月份圆钮各自拥有 `data-glass-pointer` 与光斑，外层浮层不抢状态。该规则在共享 `glass-material.js` 中按 `event.target.closest('.wd-glass')` 判定，新组件自动继承，不写局部例外。
@@ -108,6 +110,15 @@
 - 浮层退出统一由共享生命周期处理：点击外部、Apply / Cancel、按 Esc、切换侧栏路由、切换工作区标签或离开当前页面时，宿主内容、`.wd-glass-fill` 与 `.wd-glass-optics` 必须沿同一时间轴淡出后再整体移除，不能先隐藏内容、后收底板，也不能让浮层跨页残留。新浮层接入共享控制器即可继承，不逐组件补退出逻辑。
 
 - 禁用控件不响应；未选中 tab 保留默认材质，不能看起来像 disabled。新页面直接挂载共享组件，不复制材质 CSS 或恢复旧提取光学层。
+
+### 标准按钮（Standard Button）
+
+- 所有面板、菜单、表单与后续新增界面的操作按钮统一使用共享 `components/button.css` 的胶囊按钮，**不按页面另写颜色、圆角、内距或材质**。日期选择器的 `Cancel` / `Apply` 是当前基准实例。
+- 结构固定为 `wd-button wd-button--pill` 加一个变体：中性按钮 `.wd-button--neutral`，主按钮 `.wd-button--primary`。两者高度 `36px`、左右内距 `16px`、胶囊圆角 `999px`、文字 `13px / 510 / 18px`、字距 `-.08px`，不按文案长度改字号或高度。
+- 中性按钮：挂共享普通玻璃（默认 `18px` 半径），默认 `Labels/Secondary`，hover / 键盘 focus 变为 `Labels/Primary`；用于 `Cancel`、关闭、次要操作。
+- 主按钮：实心 `Accents/Blue`，关闭模糊、白色反射场和上下内阴影，只保留细深色外轮廓、极细亮边和指针高光；hover 只轻微提亮，不能洗成浅蓝。每个视图只保留一个主按钮，用于 `Apply`、保存、确认等唯一主动作。
+- 两个变体都属于可交互玻璃：hover / 按下缩放、指针边缘光弧、禁用 `opacity .55` 与 `cursor:default` 全部由共享材质和状态层提供，调用方不写局部 `transform`、`box-shadow` 或 transition。真实 `disabled` / `aria-disabled` 必须阻止点击和 Enter / Space。
+- 旧 `.wd-date-action` 仅作为日期选择器的兼容别名，不再承载任何材质；新增组件直接使用标准类名，不复制日期选择器样式。
 
 ## 5. 控件状态约定
 
@@ -128,7 +139,7 @@
 
 账户与通知入口当前只保留按钮、玻璃和 hover；Popover controller 仍可服务搜索、周期、语言、设置等预览菜单，但不得据此重新挂接账户或通知的旧浮层。
 
-基础控件统一使用 `control-states.css` / `control-states.js`：容器挂 `.wd-control-state`，文字挂 `.wd-control-label`，中性图标使用原始 SVG 的不透明状态遮罩。hover / 键盘 `:focus-visible` 时文字与图标一起变为 Labels/Primary，深色下为纯白；鼠标点击留下的普通 DOM 焦点不持续呈现 hover，离开指针后恢复默认色。日期选择器（Last 7 days）、搜索、导航、图标按钮和主题切换按钮都遵循该规则；主题按钮点击后不得残留主色，普通焦点为 Labels/Secondary，键盘 `:focus-visible` 才保持 Labels/Primary。不要给统计数值或整张图表套用控件文字规则。沿用共享 260ms 渐入渐出，不改变位置。
+基础控件统一使用 `control-states.css` / `control-states.js`：容器挂 `.wd-control-state`，文字挂 `.wd-control-label`，中性图标使用原始 SVG 的不透明状态遮罩。hover / 键盘 `:focus-visible` 时文字与图标一起变为 Labels/Primary，深色下为纯白；鼠标点击留下的普通 DOM 焦点不持续呈现 hover，离开指针后恢复默认色。日期选择器（Last 7 days）、搜索、导航、图标按钮和主题切换按钮都遵循该规则；主题按钮点击后不得残留主色，普通焦点为 Labels/Secondary，键盘 `:focus-visible` 才保持 Labels/Primary。不要给统计数值或整张图表套用控件文字规则。沿用共享 hover 进入 `240ms` / 离开 `360ms` 的渐入渐出，不改变位置。
 
 统计周期控件默认文字与日历图标同为 Labels/Secondary；hover / 键盘 focus 时二者一起变为 Labels/Primary。胶囊宽度由当前文字实测宽度决定，切换预设或自定义范围后自动调整，不能固定宽度或裁切。刷新按钮右缘固定并与下方图表卡片右缘对齐，周期胶囊向左增长，二者保留 10px 间距。
 
@@ -143,6 +154,8 @@
 全屏搜索（`Ctrl/Cmd+K` 与顶栏搜索按钮）复用首页内联搜索框的字段实现：同一 `46px / 23px` 胶囊、`20px` 左内边距、18px 放大镜和共享玻璃填充/模糊；只隐藏右侧快捷键，不另建字段材质或图标。放大镜统一使用 `asset-35.svg` 的不透明状态遮罩，避免全屏沿用 `asset-4.svg` 的 30% 导出透明度而显得发灰。首页内联结果浮窗复用日期选择器的玻璃材质，不另建材质；全屏搜索使用同一玻璃分层，并增加整页高斯模糊底层，不把模糊从玻璃中拆掉。结果浮窗不得用投影或连续背景与搜索框视觉连成一体。
 
 首页内联搜索框与全屏搜索框始终是高度固定的胶囊：边框半径等于高度一半，结果面板以独立间距出现在下方。两处搜索框都挂 `.wd-glass--no-scale`，hover、点击和键盘 focus 只改变材质高光，不放大、不拉伸、不向下延伸；不能因为结果区域高度或 stage 高度改变搜索框轮廓。Esc 或点击全屏空白区域关闭全屏搜索。内联结果中的空态和操作提示使用 `Footnote/Regular`，不能放大为主标题或正文尺寸。
+
+全屏搜索的入场与退场是同一组动作的正反方向，不各自另编时序。入场时结果面晚搜索框一步进入，退场时结果面先向下离开、搜索框随后向下离开，二者使用 `--wd-motion-search-out` 与 `--wd-motion-search-stagger`，对称错落。背景遮罩最后退场，并单独使用 `--wd-motion-search-veil-delay` + `--wd-motion-search-veil-out`：在前 `42%` 完整保留模糊，等两块玻璃都离开后才开始化开，不能和内容同一个短时长收完。遮罩只动画模糊半径与底色，且两者同步收拢；不对遮罩或弹窗根节点做 `opacity` 动画——任何祖先的不透明度动画都会把 `backdrop-filter` 放进独立合成层，模糊在第一帧就失效。因此模糊与底色必须落在同一层（`background-color`，不用伪层或 `background` 简写），尾帧两者同时归零，卸载时不会出现清晰帧跳变。组件必须保持挂载到遮罩退场结束，不能提前卸载。减少动态效果时所有搜索入场/退场直接结束。
 
 报错出现和清除都使用生长动画：卡片从 433px 增长到 460px，报错行从 0 到 30px 展开并让文字淡入；改正后按同一节奏收回 433px，不能一帧跳高或先清空文字再收高。测量顺序必须先在显示前记录起始高度，显示后再量目标高度；同一文案、同一字段的重复报错不重播入场，避免连续输入与 Apply 相互取消动画。面板位于触发按钮上方时，向上生长并以底缘保持 8px 间距，位移并入同一条高度动画，不能在结束时二次改 `top`。
 
@@ -165,18 +178,22 @@
 ### 组件级共享动效契约
 
 - 所有页面通过 `src/shared.css` 自动加载 `foundations/motion.css`。新页面、新组件和后续动态挂载的 DOM 无需逐个补 transition；原生控件、常见 ARIA role（button / tab / menuitem / switch / checkbox / radio / option / treeitem 等）、`.wd-control-state` / `.wd-control-label`、共享玻璃层、Workspace tab、快捷入口和折叠箭头都继承统一节奏。
-- 共享默认只过渡 `color`、`background-color`、`border-color`、`box-shadow`、`opacity`、`text-decoration-color`、`filter`，使用 `--wd-motion-hover:260ms` 与 `--wd-ease-hover:cubic-bezier(.2,0,.2,1)`。组件与页面 CSS 只声明视觉状态，不再写 `transition`、`transition-property`、`transition-duration` 或缓动；禁止 `transition: all`。
+- 共享默认只过渡 `color`、`background-color`、`border-color`、`box-shadow`、`opacity`、`text-decoration-color`、`filter`。hover 进入使用 `--wd-motion-hover:240ms` / `--wd-ease-hover:cubic-bezier(.16,1,.3,1)`，离开使用 `--wd-motion-hover-out:360ms` / `--wd-ease-hover-out:cubic-bezier(.3,0,.2,1)`；宿主在 hover / 键盘 focus 时切换共享变量，文字与图标叶节点继承同一节奏。这是 2026-10-21 用户确认的“弹性灵动”方向，进入快、离开柔。组件与页面 CSS 只声明视觉状态，不再写 `transition`、`transition-property`、`transition-duration` 或缓动；禁止 `transition: all`。
 - JS 动画必须调用 `motionDuration(token)` / `motionEasing(token)`，不得硬编码毫秒或 `cubic-bezier`。CSS 与 WAAPI 共用同一组 token；减少动态效果时由共享层压到 `1ms`，并关闭位移、旋转、缩放和鼠标跟随。
 - 文字与图标联动时，最深层可见文字叶节点承担一次淡变；嵌套 `.wd-control-label` 不重复计时。中性图标走共享状态遮罩，原始彩色图标不改色。
+- 图标状态遮罩（`::before` / `::after`）是独立图层，不能继承宿主的 `transition`，必须在共享层单独声明同一 hover 节奏；它们与文字、`<img>` 必须同步渐入渐出，不能瞬间切换或出现黑灰中间态。伪元素选择器不能写进 `:is()` / `:where()` 的参数列表，否则整条规则会被解析器丢弃、退回浏览器默认 `0s`。
 - 折叠只让 `.wd-disclosure-icon` 内的原始实心箭头和精确路径遮罩旋转，宿主不旋转；展开朝下、收起转向 `-90°`，变换原点 `50% 54%`，时长 `--wd-motion-disclosure:380ms`。支持中途反向，不通过替换 SVG 瞬间切换。
-- Workspace tab 的颜色反馈使用 hover 节奏；宽度、`flex-basis` 与内边距进入 `280ms`、退出 `220ms`，文字/图标切换 `110ms`。调用方不复制时长。
+- 图标按钮不得用 `filter: brightness()` 等局部提亮伪造 hover；颜色状态通过共享遮罩与 token 表达，避免与遮罩交叉淡化叠加出闪烁。`Add tab` 是当前已修正的实例。
+- Workspace tab 的颜色反馈使用 hover 节奏；宽度、`flex-basis` 与内边距进入 `280ms`、退出 `220ms`，文字/图标切换 `110ms`，关闭标签自身的收起动画 `260ms`（离开缓动）。调用方不复制时长。
 
 | 场景 | 当前时长 | 共享 Token / 缓动 |
 |---|---:|---|
-| hover 进入/离开，颜色/下划线/微光淡变 | 260ms | `--wd-motion-hover` / `--wd-ease-hover` |
+| hover 进入，颜色/下划线/微光淡变 | 240ms | `--wd-motion-hover` / `--wd-ease-hover` |
+| hover 离开，回到默认色 | 360ms | `--wd-motion-hover-out` / `--wd-ease-hover-out` |
 | 分类收起/展开 | 380ms | `--wd-motion-disclosure` / `--wd-ease-disclosure` |
 | 浮层展开 | 320ms | `--wd-motion-panel` / `--wd-ease-panel` |
-| 浮层收起 | 200ms | `--wd-motion-panel-exit` / `--wd-ease-hover` |
+| 浮层收起 | 200ms | `--wd-motion-panel-exit` / `--wd-ease-hover-out` |
+| Workspace 标签关闭 | 260ms | `--wd-motion-tab-close` / `--wd-ease-hover-out` |
 | 图表首次进入可视区 | 740ms | `--wd-motion-chart` / `--wd-ease-chart` |
 | 柱形逐项延迟 | 每项 35ms | `--wd-motion-stagger` |
 | 点击刷新图标转一圈 | 640ms | `--wd-motion-refresh` |
@@ -189,7 +206,7 @@
 | 普通玻璃 | `1.025` | `1.065` | 至少 `4%` |
 | 正圆玻璃（`.wd-glass--disc`） | `1.07` | `1.18` | 至少 `10%` |
 
-- 按下 `--wd-motion-glass-press`（当前 `110ms`）快速起步，松开 `--wd-motion-glass-release`（当前 `420ms`）缓慢回落；hover 进入使用 `--wd-motion-glass-hover`（当前 `300ms`）。离开 hover 回到原尺寸。带极小的非等比液态拉伸，但不能夸张变形。
+- 按下 `--wd-motion-glass-press`（当前 `110ms`）快速起步，松开 `--wd-motion-glass-release`（当前 `420ms`）缓慢回落；hover 进入使用 `--wd-motion-glass-hover`（当前 `300ms`）。离开 hover 回到原尺寸。带极小的非等比液态拉伸，但不能夸张变形。玻璃缩放沿用自身节奏，不随 hover 颜色的 240/360ms 变量改变。
 - 36px 圆钮按下外径约 `42.5px`；快速点击（约 20ms）也必须明显可见，不能只看慢速长按或代码断言。验收同时覆盖真实指针快速点击。
 - 缩放锚点是宿主自身物理中心，由 `.wd-glass.wd-glass { transform-origin:center }` 统一保证；页面级 `.node` 等规则不能覆盖。缩放只改变视觉矩阵，`offsetWidth` / `offsetHeight`、布局槽位和命中区不变。
 - 缩放只属于可交互玻璃。纯展示、点击没有跳转的玻璃表面在注册时传 `interactive:false`，共享材质加上 `.wd-glass--static`，保留材质、hover 光晕与指针跟随，但 hover / 按下均保持 `scale(1)`、布局盒不动；页面和组件不得用局部 `transform:none` 规避。首页 `Connected devices` / `Self-consumption` 是当前实例；`Sites online` / `Needs attention` 等可点击卡仍按普通玻璃缩放。默认 `interactive:true`，既有控件不需要声明。

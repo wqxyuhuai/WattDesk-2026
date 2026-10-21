@@ -5,10 +5,23 @@
  * Type and spacing values below are the values used by Home-主画板.
  */
 :root{
-  /* Shared interaction rhythm: stationary hover fades, deliberate click motion. */
-  --wd-motion-hover:260ms;--wd-motion-tab-in:280ms;--wd-motion-tab-out:220ms;--wd-motion-tab-swap:110ms;
+  /* Shared interaction rhythm: hover enters quickly and leaves on a softer tail,
+   * so moving across controls reads as one flow instead of a delayed fade. */
+  --wd-motion-hover:240ms;--wd-motion-hover-out:360ms;
+  --wd-motion-tab-in:280ms;--wd-motion-tab-out:220ms;--wd-motion-tab-close:260ms;--wd-motion-tab-swap:110ms;
   --wd-motion-disclosure:380ms;--wd-motion-refresh:640ms;
   --wd-motion-panel:320ms;--wd-motion-panel-exit:200ms;--wd-motion-chart:740ms;--wd-motion-stagger:35ms;
+  /* Fullscreen search: field and results arrive/leave on one offset timeline.
+   * The entrance is deliberately slower than a popover and uses a gentle
+   * overshoot so the glass settles instead of snapping into place. */
+  --wd-motion-search-in:980ms;--wd-motion-search-out:260ms;--wd-motion-search-stagger:90ms;
+  /* The veil outlives the content so the frosted page clears on a slow tail
+   * instead of snapping back into focus behind the leaving cards. Tint and blur
+   * sit on separate layers: the tint thins first, the frost keeps the page
+   * soft for the rest of the tail, then releases. */
+  --wd-motion-search-veil-out:640ms;--wd-motion-search-veil-delay:110ms;
+  --wd-ease-search-veil-out:cubic-bezier(.45,0,.25,1);
+  --wd-ease-search-in:cubic-bezier(.18,1.12,.3,1);
   --wd-motion-theme:620ms;--wd-ease-theme:cubic-bezier(.4,0,.2,1);
   /* Loading is real waiting only: delayed entrance, single sheen, one short exit. */
   --wd-motion-skeleton-in:180ms;--wd-motion-skeleton-sheen:1400ms;--wd-motion-skeleton-out:220ms;
@@ -21,7 +34,7 @@
   --wd-glass-hover-stretch:.006;--wd-glass-press-stretch:.014;
   --wd-glass-disc-hover-scale:1.07;--wd-glass-disc-press-scale:1.18;
   --wd-glass-disc-hover-stretch:.018;--wd-glass-disc-press-stretch:.03;
-  --wd-ease-hover:cubic-bezier(.2,0,.2,1);--wd-ease-disclosure:cubic-bezier(.4,0,.2,1);
+  --wd-ease-hover:cubic-bezier(.16,1,.3,1);--wd-ease-hover-out:cubic-bezier(.3,0,.2,1);--wd-ease-disclosure:cubic-bezier(.4,0,.2,1);
   --wd-ease-panel:cubic-bezier(.22,.8,.25,1);--wd-ease-chart:cubic-bezier(.16,1,.3,1);
   --wd-ease-tab-in:cubic-bezier(.22,.8,.25,1);--wd-ease-tab-out:cubic-bezier(.4,0,.2,1);--wd-ease-tab-swap-out:cubic-bezier(.4,0,1,1);
   --wd-shortcut-inset:20px;--wd-shortcut-gap:20px;--wd-control-circle:rgba(255,255,255,.12);
@@ -41,6 +54,7 @@
   --wd-canvas:var(--wd-bg-secondary);--wd-surface-primary:var(--wd-bg-secondary);--wd-surface-secondary:var(--wd-bg-tertiary);--wd-surface-elevated:var(--wd-bg-tertiary-elevated);
   --wd-control-fill:rgba(120,120,128,.2);--wd-control-fill-hover:rgba(120,120,128,.36);--wd-control-outline:rgba(255,255,255,.2);
   --wd-control-hover:rgba(255,255,255,.08);--wd-control-selected:#3a3a3c;--wd-control-muted:rgba(255,255,255,.08);
+  /* Dev annotation overlay only; production popovers/toasts use Glass Surface. */
   --wd-popover-surface:rgba(44,44,46,.96);--wd-popover-outline:rgba(255,255,255,.11);--wd-popover-shadow:rgba(0,0,0,.42);
   --wd-toast-surface:rgba(44,44,46,.93);--wd-toast-outline:rgba(255,255,255,.12);
   --wd-label-primary-rgb:255,255,255;--wd-label-secondary-rgb:235,235,245;--wd-label-tertiary-rgb:235,235,245;--wd-label-quaternary-rgb:235,235,245;
@@ -52,9 +66,6 @@
   --wd-blue:var(--wd-accent-blue);--wd-green:var(--wd-accent-green);--wd-red:var(--wd-accent-red);--wd-orange:var(--wd-accent-orange);--wd-indigo:var(--wd-accent-indigo);
   --wd-font-family:"SF Pro",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
   --wd-weight-regular:400;--wd-weight-medium:510;--wd-weight-semibold:590;--wd-weight-bold:700;
-  --wd-type-large-title:34px;--wd-type-title1:22px;--wd-type-title2:17px;--wd-type-title3:15px;
-  --wd-type-headline:15px;--wd-type-body:15px;--wd-type-callout:13px;--wd-type-subheadline:13px;--wd-type-footnote:12px;--wd-type-caption1:11px;--wd-type-caption2:11px;
-  --wd-leading-large-title:41px;--wd-leading-title1:28px;--wd-leading-title2:22px;--wd-leading-title3:20px;--wd-leading-body:20px;--wd-leading-callout:18px;--wd-leading-footnote:16px;--wd-leading-caption:13px;
   --wd-radius-small:6px;--wd-radius-compact:12px;--wd-radius-medium:18px;--wd-radius-large:30px;--wd-space-1:4px;--wd-space-2:8px;--wd-space-3:12px;--wd-space-4:16px;--wd-space-5:20px;
 }
 :root[data-theme="light"]{  --wd-control-circle:rgba(0,0,0,.08);

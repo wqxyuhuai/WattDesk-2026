@@ -26,6 +26,8 @@
 .workspace-tab-action{position:absolute;right:10px;top:50%;translate:0 -50%;display:grid;place-items:center;width:18px;height:18px;opacity:0;pointer-events:none}
 .workspace-tab:is(:hover,:focus-visible,:has(:focus-visible)) .workspace-tab-action{opacity:1;pointer-events:auto}
 .workspace-tab:is(:hover,:focus-visible,:has(:focus-visible)) .workspace-tab-label{padding-right:21px}
+.workspace-tab.is-last-tab .workspace-tab-action{display:none}
+.workspace-tab.is-last-tab:is(:hover,:focus-visible,:has(:focus-visible)) .workspace-tab-label{padding-right:0}
 /* The close chip fades its surface and glyph together; no instant colour swap. */
 .workspace-tab-close{display:grid;place-items:center;width:18px;height:18px;padding:0;border:0;border-radius:50%;background:var(--wd-control-fill);color:var(--wd-label-secondary);overflow:hidden}
 .workspace-tab-close:is(:hover,:focus-visible){background:var(--wd-label-primary);color:var(--wd-label-secondary)}

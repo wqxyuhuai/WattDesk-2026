@@ -349,15 +349,18 @@ export function createWorkspaceTabs({
   }
 
   function syncSelected(tab) {
+    const closable = tabs.length > 1;
     for (const item of tabs) {
       const selected = item === tab;
       item.classList.toggle("selected", selected);
       item.classList.toggle("muted", !selected);
+      item.classList.toggle("is-last-tab", !closable);
       item.setAttribute("aria-selected", String(selected));
       item.tabIndex = selected ? 0 : -1;
       const close = item.querySelector(".workspace-tab-close");
-      close.tabIndex = selected ? 0 : -1;
-      close.setAttribute("aria-hidden", selected ? "false" : "true");
+      close.tabIndex = selected && closable ? 0 : -1;
+      close.setAttribute("aria-hidden", selected && closable ? "false" : "true");
+      close.disabled = !closable;
     }
   }
 
@@ -443,6 +446,7 @@ export function createWorkspaceTabs({
 
   function closeTab(tab, {notify = true} = {}) {
     if (!tab || closing.has(tab)) return;
+    if (tabs.length <= 1) return;
     closing.add(tab);
     const index = tabs.indexOf(tab);
     if (index < 0) return;
@@ -477,6 +481,7 @@ export function createWorkspaceTabs({
       }
       unmountHandler?.(tab, tab._state);
       if (notify) closeHandler?.(tab._state, tab);
+      syncSelected(tabs.find(item => item._state.id === activeId) || null);
       if (widthsFrozen) applyFrozenLayout();
       scheduleLayout();
     };
@@ -506,7 +511,7 @@ export function createWorkspaceTabs({
         {flexBasis: from, width: from, paddingLeft: "14px", paddingRight: "14px", marginRight: "0px", opacity: 1, translate: "0 0"},
         {flexBasis: "0px", width: "0px", paddingLeft: "0px", paddingRight: "0px", marginRight: -gap + "px", opacity: 0, translate: "-5px 0"}
       ],
-      {duration: motionDuration("--wd-motion-hover"), easing: motionEasing("--wd-ease-hover"), fill: "forwards"}
+      {duration: motionDuration("--wd-motion-tab-close"), easing: motionEasing("--wd-ease-hover-out"), fill: "forwards"}
     ).finished.then(finish).catch(finish);
   }
 

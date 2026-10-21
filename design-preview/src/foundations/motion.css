@@ -8,11 +8,74 @@
  * documented component exception to override one property without forking the
  * whole timing system.
  *
+ * Hover is deliberately asymmetric: a hovered/focused host switches the shared
+ * --wd-hover-duration / --wd-hover-ease variables to the fast entry tokens, and
+ * every leaf beneath it inherits the same pair. Leaving the host restores the
+ * slower exit tokens from :root, so the surface arrives at once and withdraws
+ * on a softer tail without host and leaf trailing each other.
+ *
  * Hover/focus scales the glass surface itself in place; it never moves the
  * layout box or reflows neighbours. Press adds one further, reversible step.
- * Other geometry changes remain explicit WAAPI animations that read the same
- * tokens (see foundations/motion.js).
+ * Glass depth keeps its own press/release rhythm below and is not part of the
+ * hover variable switch. Other geometry changes remain explicit WAAPI
+ * animations that read the same tokens (see foundations/motion.js).
  */
+:root {
+  --wd-hover-duration: var(--wd-motion-hover-out);
+  --wd-hover-ease: var(--wd-ease-hover-out);
+}
+
+:where(
+  button,
+  a,
+  input,
+  summary,
+  select,
+  textarea,
+  [role='button'],
+  [role='link'],
+  [role='tab'],
+  [role='menuitem'],
+  [role='switch'],
+  [role='checkbox'],
+  [role='radio'],
+  [role='option'],
+  [role='treeitem'],
+  [aria-expanded],
+  [aria-pressed],
+  [aria-invalid="true"],
+  .clickable,
+  .wd-control-state
+) {
+  transition-property: color, background-color, border-color, box-shadow, opacity, text-decoration-color, filter;
+  transition-duration: var(--wd-hover-duration);
+  transition-timing-function: var(--wd-hover-ease);
+}
+
+/* Text and icon leaves do not own a duration of their own; they inherit the
+ * host's current rhythm so a background, label and icon never trail apart. */
+:where(
+  .wd-control-label,
+  .wd-control-label > span,
+  .target-avatar,
+  .target-account-copy strong,
+  .target-account-arrow,
+  .target-nav-icon,
+  .target-nav-icon *,
+  .wd-disclosure-glyph,
+  .target-icon-art:not(.wd-disclosure-icon),
+  .target-icon-neutral img,
+  .target-icon-art img,
+  .shared-icon-state > img,
+  .shared-icon-highlight
+) {
+  transition-property: color, background-color, border-color, box-shadow, opacity, text-decoration-color, filter;
+  transition-duration: var(--wd-hover-duration);
+  transition-timing-function: var(--wd-hover-ease);
+}
+
+/* One state switch per host, covering native controls, ARIA roles, the shared
+ * control wrapper, glass surfaces (pointer glow) and workspace lanes. */
 :where(
   button,
   a,
@@ -34,27 +97,11 @@
   [aria-invalid="true"],
   .clickable,
   .wd-control-state,
-  .wd-control-label,
-  .wd-control-label > span,
-  .target-avatar,
-  .target-account-copy strong,
-  .target-account-arrow,
-  .target-account-arrow::after,
-  .target-nav-icon,
-  .target-nav-icon *,
-  .wd-disclosure-glyph,
-  .target-icon-art:not(.wd-disclosure-icon),
-  .target-icon-neutral::before,
-  .target-icon-neutral::after,
-  .target-icon-neutral img,
-  .target-icon-art img,
-  .shared-icon-state > img,
-  .shared-icon-highlight,
-  .popover button
-) {
-  transition-property: color, background-color, border-color, box-shadow, opacity, text-decoration-color, filter;
-  transition-duration: var(--wd-motion-hover);
-  transition-timing-function: var(--wd-ease-hover);
+  .wd-glass,
+  .workspace-tab
+):is(:hover, :focus-visible, :has(:focus-visible)) {
+  --wd-hover-duration: var(--wd-motion-hover);
+  --wd-hover-ease: var(--wd-ease-hover);
 }
 
 /* Decorative hover fields belong to their control; animate their appearance
@@ -62,19 +109,33 @@
 :where(button, [role=button], [role=tab], [role=menuitem], .wd-control-state)::before,
 :where(button, [role=button], [role=tab], [role=menuitem], .wd-control-state)::after {
   transition-property: opacity, color, background-color;
-  transition-duration: var(--wd-motion-hover);
-  transition-timing-function: var(--wd-ease-hover);
+  transition-duration: var(--wd-hover-duration);
+  transition-timing-function: var(--wd-hover-ease);
 }
 
 /* Nested text leaves inherit the container state; the deepest visible leaf
  * owns the single fade so parent/child timings do not trail each other. */
 :where(.wd-control-label:has(> span)) { transition: none; }
 
+/* Pseudo-element masks are separate layers and cannot inherit the host's
+ * transition declaration. Keep them on the same rhythm as the artwork they
+ * replace; otherwise the idle and active glyphs cross-fade at different
+ * speeds and briefly expose a darker blended colour. */
+:where(.target-icon-neutral)::before,
+:where(.target-icon-neutral)::after,
+:where(.target-account-arrow)::after {
+  transition-property: opacity, background-color, color;
+  transition-duration: var(--wd-hover-duration);
+  transition-timing-function: var(--wd-hover-ease);
+}
+
 /* Disclosure: the same solid glyph rotates; the positioning box does not.
  * Transition only the visible glyph and its exact-path masks. Putting
  * transform on the host would also animate its layout box and could move
  * the heading's flex alignment while the menu opens or closes. */
-:where(.wd-disclosure-icon > img, .wd-disclosure-icon::before, .wd-disclosure-icon::after) {
+:where(.wd-disclosure-icon > img),
+:where(.wd-disclosure-icon)::before,
+:where(.wd-disclosure-icon)::after {
   transition-property: transform;
   transition-duration: var(--wd-motion-disclosure);
   transition-timing-function: var(--wd-ease-disclosure);
@@ -83,55 +144,55 @@
 /* Glass surface feedback is shared by every material host. */
 :where(.wd-glass-state, .wd-glass-glow) {
   transition-property: opacity, background-color;
-  transition-duration: var(--wd-motion-hover);
-  transition-timing-function: var(--wd-ease-hover);
+  transition-duration: var(--wd-hover-duration);
+  transition-timing-function: var(--wd-hover-ease);
 }
 :root[data-theme=light] :where(.wd-glass-fill) {
   transition-property: box-shadow;
-  transition-duration: var(--wd-motion-hover);
-  transition-timing-function: var(--wd-ease-hover);
+  transition-duration: var(--wd-hover-duration);
+  transition-timing-function: var(--wd-hover-ease);
 }
 
 /* Workspace lanes change an authored width as tabs are added or closed. The
- * colour feedback stays on the hover rhythm; the layout slot uses its own
- * shared duration. */
+ * colour feedback follows the shared hover rhythm; the layout slot uses its
+ * own shared duration. */
 :where(.workspace-tab) {
   transition-property: color, background-color, flex-basis, width, padding-left, padding-right, transform;
-  transition-duration: var(--wd-motion-hover), var(--wd-motion-hover), var(--wd-motion-tab-out), var(--wd-motion-tab-out), var(--wd-motion-tab-out), var(--wd-motion-tab-out), var(--wd-motion-glass-release);
-  transition-timing-function: var(--wd-ease-hover), var(--wd-ease-hover), var(--wd-ease-tab-out), var(--wd-ease-tab-out), var(--wd-ease-tab-out), var(--wd-ease-tab-out), var(--wd-ease-glass-release);
+  transition-duration: var(--wd-hover-duration), var(--wd-hover-duration), var(--wd-motion-tab-out), var(--wd-motion-tab-out), var(--wd-motion-tab-out), var(--wd-motion-tab-out), var(--wd-motion-glass-release);
+  transition-timing-function: var(--wd-hover-ease), var(--wd-hover-ease), var(--wd-ease-tab-out), var(--wd-ease-tab-out), var(--wd-ease-tab-out), var(--wd-ease-tab-out), var(--wd-ease-glass-release);
 }
 :where(.workspace-tab-action, .workspace-tab-icon-color, .workspace-tab-icon-color + .workspace-tab-icon-mono) {
   transition-property: opacity;
-  transition-duration: var(--wd-motion-hover);
-  transition-timing-function: var(--wd-ease-hover);
+  transition-duration: var(--wd-hover-duration);
+  transition-timing-function: var(--wd-hover-ease);
 }
 
 /* Siblings keep their colour feedback but must not animate a width while the
  * entering tab owns the slot animation. */
 .workspace-tab.is-resizing {
   transition-property: color, background-color, transform;
-  transition-duration: var(--wd-motion-hover), var(--wd-motion-hover), var(--wd-motion-glass-release);
-  transition-timing-function: var(--wd-ease-hover), var(--wd-ease-hover), var(--wd-ease-glass-release);
+  transition-duration: var(--wd-hover-duration), var(--wd-hover-duration), var(--wd-motion-glass-release);
+  transition-timing-function: var(--wd-hover-ease), var(--wd-hover-ease), var(--wd-ease-glass-release);
 }
 
 /* Shortcut links reveal their underline on hover/focus. */
 :where(.shortcut-link.text, .shortcut-link .text) {
   transition-property: text-decoration-color;
-  transition-duration: var(--wd-motion-hover);
-  transition-timing-function: var(--wd-ease-hover);
+  transition-duration: var(--wd-hover-duration);
+  transition-timing-function: var(--wd-hover-ease);
 }
 
 /* The two clickable status cards are the only hover displacement exception. */
 :where(.status-card-arrow) {
   transition-property: translate;
-  transition-duration: var(--wd-motion-hover);
-  transition-timing-function: var(--wd-ease-hover);
+  transition-duration: var(--wd-hover-duration);
+  transition-timing-function: var(--wd-hover-ease);
 }
 
 :where(.status-card-arrow-disc) {
   transition-property: background-color;
-  transition-duration: var(--wd-motion-hover);
-  transition-timing-function: var(--wd-ease-hover);
+  transition-duration: var(--wd-hover-duration);
+  transition-timing-function: var(--wd-hover-ease);
 }
 
 /* Glass depth feedback. The transform lives on the host, so the pointer hit
@@ -157,8 +218,8 @@
  * shared tab list intact instead of letting the later glass rule replace it. */
 :where(.workspace-tab.wd-glass) {
   transition-property: color, background-color, flex-basis, width, padding-left, padding-right, transform;
-  transition-duration: var(--wd-motion-hover), var(--wd-motion-hover), var(--wd-motion-tab-out), var(--wd-motion-tab-out), var(--wd-motion-tab-out), var(--wd-motion-tab-out), var(--wd-motion-glass-release);
-  transition-timing-function: var(--wd-ease-hover), var(--wd-ease-hover), var(--wd-ease-tab-out), var(--wd-ease-tab-out), var(--wd-ease-tab-out), var(--wd-ease-tab-out), var(--wd-ease-glass-release);
+  transition-duration: var(--wd-hover-duration), var(--wd-hover-duration), var(--wd-motion-tab-out), var(--wd-motion-tab-out), var(--wd-motion-tab-out), var(--wd-motion-tab-out), var(--wd-motion-glass-release);
+  transition-timing-function: var(--wd-hover-ease), var(--wd-hover-ease), var(--wd-ease-tab-out), var(--wd-ease-tab-out), var(--wd-ease-tab-out), var(--wd-ease-tab-out), var(--wd-ease-glass-release);
 }
 @media (hover: hover) and (pointer: fine) {
   :where(.wd-glass:not(.wd-glass-chrome):not(.wd-glass--static):not(:disabled):not([aria-disabled="true"]):is(:hover,:focus-visible)) {
@@ -203,7 +264,9 @@
     transition: none;
     transition-delay: 0s;
   }
-  :where(*, *::before, *::after) {
+  :where(*),
+  :where(*)::before,
+  :where(*)::after {
     transition-duration: 1ms !important;
     animation-duration: 1ms !important;
     animation-delay: 0ms !important;

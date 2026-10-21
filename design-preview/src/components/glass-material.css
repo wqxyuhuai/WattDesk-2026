@@ -36,8 +36,8 @@
 }
 :root[data-theme="light"]{
   /* Reviewed light optics; raw stacked fills remain in design/figma. */
-  --wd-glass-outline:rgba(0,0,0,.23);
-  --wd-glass-outline-side:rgba(0,0,0,.29);
+  --wd-glass-outline:rgba(0,0,0,.12);
+  --wd-glass-outline-side:rgba(0,0,0,.16);
   --wd-glass-optical-burn:rgba(0,0,0,.035);
   --wd-glass-optical-light-top:rgba(255,255,255,.60);
   --wd-glass-optical-light-bottom:rgba(255,255,255,.72);
@@ -70,8 +70,8 @@
 }
 
 /* Glass Surface branch: stronger frost for full-size floating surfaces.
- * up for a full-size floating surface. It is named "glass-surface" so future
- * dialogs and menus reuse one material instead of inventing a local blur. */
+ * It is named "glass-surface" so future dialogs and menus reuse one material
+ * instead of inventing a local blur. */
 .wd-glass--surface>.wd-glass-material{
   /* Panels must still show the page beneath. 22px blur over a 44% tint read
    * as a solid sheet; 30% over 18px keeps text legible while the backdrop
@@ -103,8 +103,8 @@
   --wd-glass-blur:var(--wd-glass-surface-blur,9px);
   --wd-glass-saturation:var(--wd-glass-surface-saturation,1.45);
   --wd-glass-tint:var(--wd-glass-surface-tint,rgba(232,237,244,.44));
-  --wd-glass-outline:rgba(0,0,0,.27);
-  --wd-glass-outline-side:rgba(0,0,0,.33);
+  --wd-glass-outline:rgba(0,0,0,.16);
+  --wd-glass-outline-side:rgba(0,0,0,.20);
   --wd-glass-drop:rgba(0,0,0,.16);
   --wd-glass-contact:rgba(0,0,0,.06);
   --wd-glass-hover-field:linear-gradient(180deg,rgba(255,255,255,.34),rgba(255,255,255,.10) 52%,rgba(255,255,255,.24));
@@ -147,8 +147,8 @@
 
 :root[data-theme="light"] .wd-glass:not(:disabled):not([aria-disabled="true"]):is(:hover,:focus-visible,:has(:focus-visible)){
   --wd-glass-drop:rgba(0,0,0,.085);
-  --wd-glass-outline:rgba(0,0,0,.15);
-  --wd-glass-outline-side:rgba(0,0,0,.23);
+  --wd-glass-outline:rgba(0,0,0,.14);
+  --wd-glass-outline-side:rgba(0,0,0,.18);
 }
 
 /* Liquid depth is a shared material contract, not a per-card value. Hover

@@ -48,14 +48,6 @@
   --wd-glass-drop-y: 24px;
   --wd-glass-drop-blur: 26px;
 }
-.wd-search-panel[data-closing] > .wd-glass-material > .wd-glass-fill {
-  backdrop-filter: none;
-  -webkit-backdrop-filter: none;
-  background: var(--wd-search-exit-face, #242426);
-}
-:root[data-theme="light"] .wd-search-panel[data-closing] > .wd-glass-material > .wd-glass-fill {
-  background: var(--wd-search-exit-face, #f3f4f6);
-}
 
 .wd-search-section-label {
   display: flex;
@@ -312,15 +304,22 @@
   font-family: var(--wd-font-family);
   isolation: isolate;
 }
+@property --wd-search-veil-blur {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 28px;
+}
 .wd-search-backdrop {
   position: absolute;
   inset: 0;
-  background: var(--wd-overlay-activity);
-  backdrop-filter: blur(28px) saturate(1.05);
-  -webkit-backdrop-filter: blur(28px) saturate(1.05);
+  --wd-search-veil-blur: 28px;
+  background-color: var(--wd-overlay-activity);
+  backdrop-filter: blur(var(--wd-search-veil-blur)) saturate(1.05);
+  -webkit-backdrop-filter: blur(var(--wd-search-veil-blur)) saturate(1.05);
 }
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
   .wd-search-backdrop { background: color-mix(in srgb, var(--wd-canvas) 84%, transparent); }
+  .wd-search-backdrop { backdrop-filter: none; -webkit-backdrop-filter: none; }
 }
 .wd-search-stage {
   position: relative;
@@ -335,57 +334,86 @@
   margin-top: 16px;
 }
 .wd-search-fullscreen[data-entering] .wd-search-backdrop {
-  animation: wd-search-backdrop-in var(--wd-motion-panel) var(--wd-ease-panel) both;
+  animation: wd-search-backdrop-in var(--wd-motion-search-in) var(--wd-ease-panel) both;
 }
 .wd-search-fullscreen[data-entering] .wd-search-field {
-  animation: wd-search-field-in var(--wd-motion-panel) var(--wd-ease-panel) both;
+  animation: wd-search-field-in var(--wd-motion-search-in) var(--wd-ease-search-in) calc(var(--wd-motion-search-stagger) * .5) both;
 }
 .wd-search-fullscreen[data-entering] .wd-search-panel {
-  animation: wd-search-panel-in var(--wd-motion-panel) var(--wd-ease-panel) both;
+  animation: wd-search-panel-in var(--wd-motion-search-in) var(--wd-ease-search-in) var(--wd-motion-search-stagger) both;
 }
 .wd-search-fullscreen[data-entering] .wd-search-panel--fullscreen .wd-search-panel-frame {
-  animation: wd-search-content-in var(--wd-motion-panel) var(--wd-ease-panel) both;
+  animation: wd-search-content-in var(--wd-motion-search-in) var(--wd-ease-panel) var(--wd-motion-search-stagger) both;
 }
+.wd-search-fullscreen[data-entering] .wd-search-field,
+.wd-search-fullscreen[data-entering] .wd-search-panel,
+.wd-search-fullscreen[data-entering] .wd-search-panel-frame { will-change: opacity, transform, filter; }
 .wd-search-fullscreen[data-closing] .wd-search-backdrop {
-  animation: wd-search-backdrop-out var(--wd-motion-panel-exit) var(--wd-ease-hover) both;
+  /* The veil is the last thing the eye should lose. Hold the frost completely
+   * opaque until both glass surfaces are gone, then defocus out on a long tail.
+   * The tint and the blur radius ease down together on the element itself.
+   * Never animate the host's opacity: a backdrop-filter drops out as soon as
+   * its layer leaves full opacity, which made the page snap sharp mid-exit. */
+  animation: wd-search-veil-frost-out var(--wd-motion-search-veil-out) var(--wd-ease-search-veil-out) var(--wd-motion-search-veil-delay) both;
 }
-.wd-search-fullscreen[data-closing] .wd-search-stage {
-  animation: wd-search-stage-out var(--wd-motion-panel-exit) var(--wd-ease-hover) both;
+/* Exit runs bottom-up in stacking order: the result sheet clears first, the
+ * field follows, then the veil. The veil keeps its backdrop-filter for its
+ * whole life; only its tint fades, so the page never turns crisp under a
+ * still-visible glass pane. */
+.wd-search-fullscreen[data-closing] .wd-search-field {
+  animation: wd-search-field-out var(--wd-motion-search-out) var(--wd-ease-hover-out) var(--wd-motion-search-stagger) both;
+}
+.wd-search-fullscreen[data-closing] .wd-search-panel {
+  animation: wd-search-panel-out var(--wd-motion-search-out) var(--wd-ease-hover-out) both;
 }
 .wd-search-fullscreen[data-closing] .wd-search-panel--fullscreen .wd-search-panel-frame {
-  animation: wd-search-content-out var(--wd-motion-panel-exit) var(--wd-ease-hover) both;
+  animation: wd-search-content-out var(--wd-motion-search-out) var(--wd-ease-hover-out) both;
 }
 @keyframes wd-search-backdrop-in {
-  /* Blur is constant while the veil appears; animating the radius composites
-   * crisp intermediate frames over the page. */
+  /* The veil appears as one film: tint and frost rise together. Radius stays
+   * fixed here so the page never shows a crisp frame through a half-built
+   * filter. */
   from { opacity: 0; }
   to { opacity: 1; }
 }
-@keyframes wd-search-backdrop-out {
-  from { opacity: 1; }
-  to { opacity: 0; }
+@keyframes wd-search-veil-frost-out {
+  /* Animate the blur radius and the tint, never the layer opacity: a
+   * backdrop-filter stops sampling as soon as its layer falls below full
+   * opacity, which used to drop the frost on the first exit frame.
+   * Hold both at full strength until the field and results are gone, then
+   * let the page refocus underneath a tint that thins at the same rate, so
+   * the last frame is already clear instead of a hard cut. */
+  from { --wd-search-veil-blur: 28px; background-color: var(--wd-overlay-activity); }
+  /* 42% of 640ms lands just after the field (90ms delay + 260ms) has left. */
+  42% { --wd-search-veil-blur: 28px; background-color: var(--wd-overlay-activity); animation-timing-function: var(--wd-ease-search-veil-out); }
+  to { --wd-search-veil-blur: 0px; background-color: transparent; }
 }
 @keyframes wd-search-field-in {
-  from { transform: translateY(-6px) scale(.99); }
-  to { transform: translateY(0) scale(1); }
+  from { opacity: 0; transform: translateY(34px) scale(.98); filter: blur(8px); }
+  to { opacity: 1; transform: translateY(0) scale(1); filter: none; }
 }
 @keyframes wd-search-panel-in {
-  from { transform: translateY(-4px) scale(.992); }
+  /* The glass shell stays opaque so its frost never reveals the page in
+   * mid-animation; only the content inside carries the blur-to-clear read. */
+  from { transform: translateY(64px) scale(.965); }
   to { transform: translateY(0) scale(1); }
 }
 @keyframes wd-search-content-in {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from { opacity: 0; filter: blur(12px); }
+  to { opacity: 1; filter: none; }
 }
 @keyframes wd-search-content-out {
-  from { opacity: 1; }
-  to { opacity: 0; }
+  /* Mirror the entrance: content sharpens into place, then softens on exit. */
+  from { filter: blur(0); }
+  to { filter: blur(8px); }
 }
-@keyframes wd-search-stage-out {
-  /* The stage owns the glass field; fade only the backdrop and panel content,
-   * never the glass material itself. */
-  from { transform: translateY(0) scale(1); }
-  to { transform: translateY(-4px) scale(.992); }
+@keyframes wd-search-field-out {
+  from { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+  to { opacity: 0; transform: translateY(34px) scale(.98); filter: blur(8px); }
+}
+@keyframes wd-search-panel-out {
+  from { opacity: 1; transform: translateY(0) scale(1); }
+  to { opacity: 0; transform: translateY(64px) scale(.965); }
 }
 /* Reuse the Home inline field geometry: a 46px capsule with a 20px left inset,
  * 18px search glyph, 15px Subheadline text and the same 23px radius. The
@@ -449,6 +477,7 @@
   .wd-search-fullscreen[data-entering] .wd-search-panel,
   .wd-search-fullscreen[data-entering] .wd-search-panel-frame { animation: none !important; }
   .wd-search-fullscreen[data-closing] .wd-search-backdrop,
-  .wd-search-fullscreen[data-closing] .wd-search-stage,
-  .wd-search-fullscreen[data-closing] .wd-search-panel-frame { animation-duration: 1ms !important; }
+  .wd-search-fullscreen[data-closing] .wd-search-field,
+  .wd-search-fullscreen[data-closing] .wd-search-panel,
+  .wd-search-fullscreen[data-closing] .wd-search-panel-frame { animation: none !important; }
 }

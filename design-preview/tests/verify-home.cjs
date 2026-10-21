@@ -20,7 +20,7 @@ const assert = require('node:assert/strict');
   for(const theme of ['dark','light']){
     if(await page.evaluate(()=>document.documentElement.dataset.theme)!==theme)await page.getByRole('button',{name:'Toggle light and dark mode'}).click();
     await page.waitForFunction(theme=>document.documentElement.dataset.theme===theme&&!document.documentElement.dataset.themeTransition,theme);
-    // The view-transition completes before the shared 260ms colour transition
+    // The view-transition completes before the shared hover colour transition
     // on the arrow; wait for the theme ink to settle before comparing.
     await page.waitForTimeout(320);
     const name=await page.locator('.target-account-copy strong').evaluate(el=>getComputedStyle(el).color);
@@ -320,9 +320,11 @@ const assert = require('node:assert/strict');
   assert.equal(await page.locator('.workspace-tab[data-tab-id="home-2"]').count(),0);
   assert.deepEqual(await page.locator('.workspace-tab').evaluateAll(tabs=>tabs.map(t=>t.dataset.tabId)),['home-1']);
   assert.equal(await page.locator('[data-node-id="14578:7006"]').isVisible(),true);
-  // Closing the last tab restores a usable Home tab.
+  // The last remaining tab cannot be closed: its close control is hidden and
+  // disabled instead of silently restoring a new Home tab.
   await page.locator('.workspace-tab[data-tab-id="home-1"]').hover();await page.waitForTimeout(260);
-  await page.locator('.workspace-tab[data-tab-id="home-1"] .workspace-tab-close').click();await page.waitForTimeout(420);
+  assert.equal(await page.locator('.workspace-tab[data-tab-id="home-1"] .workspace-tab-close').isVisible(),false);
+  assert.equal(await page.locator('.workspace-tab[data-tab-id="home-1"] .workspace-tab-close').isDisabled(),true);
   const restoredTab=page.locator('.workspace-tab').first();
   assert.equal(await page.locator('.workspace-tab').count(),1);
   assert.equal((await restoredTab.locator('.workspace-tab-label').textContent()).trim(),'Home');
@@ -484,12 +486,12 @@ const assert = require('node:assert/strict');
   const idleNavBackground = await plantsNav.evaluate(el => getComputedStyle(el).backgroundColor);
   await plantsNav.hover();
   const hoverFade=await plantsNav.evaluate(el=>el.getAnimations().filter(a=>a.transitionProperty==='background-color').map(a=>({property:a.transitionProperty,duration:a.effect.getTiming().duration})));
-  assert.equal(hoverFade[0]?.duration,260);
+  assert.equal(hoverFade[0]?.duration,160);
   await page.waitForTimeout(320);
   const hoverNavBackground = await plantsNav.evaluate(el => getComputedStyle(el).backgroundColor);
   await page.mouse.move(0, 0);
   const leaveFade=await plantsNav.evaluate(el=>el.getAnimations().filter(a=>a.transitionProperty==='background-color').map(a=>a.effect.getTiming().duration));
-  assert.equal(leaveFade[0],260);
+  assert.equal(leaveFade[0],240);
   await page.waitForTimeout(320);
   const shadowGutters=await page.evaluate(()=>{
     const viewport=document.querySelector('[data-node-id="14578:7006"]').getBoundingClientRect();
