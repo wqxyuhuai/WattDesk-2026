@@ -65,11 +65,13 @@ fs.writeFileSync(path.join(out, '_headers'), [
   '/*.html',
   '  Cache-Control: public, max-age=0, must-revalidate',
   '',
+// Runtime assets keep stable filenames, so a long browser cache would pair
+// new HTML with stale JS/CSS after a deploy. Revalidate instead.
   '/src/*',
-  '  Cache-Control: public, max-age=3600',
+  '  Cache-Control: public, max-age=0, must-revalidate',
   '',
   '/home-assets/*',
-  '  Cache-Control: public, max-age=3600',
+  '  Cache-Control: public, max-age=0, must-revalidate',
   ''
 ].join('\n'));
 
