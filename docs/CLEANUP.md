@@ -35,3 +35,14 @@
 - 连续执行 `npm run sync` 后五个生成文件的 SHA-256 均未变化，生成结果稳定。
 
 静态像素比对只约束本轮确认画面；后续设计改变时须审阅并有意更新相应基线，不能据此宣称新增业务逻辑已实现。
+
+## 2026-10-21 仓库与发布整理
+
+清理目标是把“本地调试产物”和“运行源码”分开，规则落在根目录 `.gitignore` 与 [发布与部署](./DEPLOYMENT.md)。
+
+- 取消跟踪 354 个文件：根 `tests/`（含 `tests/output/` 截图）、根 `output/`、5 个 `.patch`、`design-preview/tests/_*.cjs` / `_*.py`（177 个一次性探针）、`deploy-result.json`、`deploy-lines.txt`、`dist-server.cjs`。本地文件保留，只从索引移除。
+- 移除 `design-preview/dist-public/`（173 个文件）：它是早期手动构建的副本，已经落后于 `src`（缺少 Glass Surface 等改动），且从未被 Cloudflare 部署；线上由 `npm run build:site:public` 生成 `dist/`。
+- 修复 `/home` ↔ `/home.html` 自指重定向死循环，`_redirects` 只保留说明性注释。
+- `/*.html`、`/src/*`、`/home-assets/*` 缓存统一为 `max-age=0, must-revalidate`，避免无 hash 资源在部署后与 HTML 版本错配。
+- 保留：`tests/verify-*.cjs`、`tests/runtime.cjs`、`tests/run.cjs`、`tests/fixtures/`、`verify-deploy.cjs`（发布自检）、`design/figma/` 全部源数据。
+- Git 历史中的旧文件未改写；仓库体积不会立刻下降，如需瘦身须单独评估历史改写风险。

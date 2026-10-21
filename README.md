@@ -2,6 +2,8 @@
 
 当前交付是首页设计预览，使用原生 HTML、CSS 和 JavaScript。深浅主题、玻璃、字体、圆角及控件反馈共用一套基础；尚未接入其他页面路由或业务后端。
 
+线上预览：<https://wattdesk-preview.carlwang.cn/>（Cloudflare 从 `master` 构建，发布流程见 [发布与部署](./docs/DEPLOYMENT.md)）。
+
 ```powershell
 cd design-preview
 npm run dev
@@ -21,5 +23,6 @@ npm run dev
 | [顶栏标签规范](./docs/TOP-BAR-TABS.md) | 功能、API、交互、可访问性与真实接入清单 |
 | [经验与防回归](./docs/LESSONS-LEARNED.md) | 已发生问题、根因、修复与开工检查 |
 | [整理记录](./docs/CLEANUP.md) | 清理范围、备份与验证结果 |
+| [发布与部署](./docs/DEPLOYMENT.md) | 线上地址、Cloudflare 配置、手动发布与验证 |
 
 历史业务规划在 `docs/history/`，不作为当前视觉值或已实现功能的依据。

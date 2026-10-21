@@ -7,6 +7,8 @@
 ## 当前实现
 
 - 唯一业务页面是首页。运行目录 `design-preview`，`npm run dev`，默认 4173；入口 `home.html?glass=figma`。
+- 线上预览 <https://wattdesk-preview.carlwang.cn/>：Cloudflare Workers 从 GitHub `master` 构建，根目录 `/design-preview`，构建命令 `npm run build:site:public`，部署命令 `npx wrangler deploy --assets=./dist`；构建产物不入库。发布由维护者手动 push 触发，完整流程见 [发布与部署](./DEPLOYMENT.md)。
+- `2026-10-21` 仓库收敛：354 个本地一次性文件（根 `tests/`、根 `output/`、补丁、177 个调试探针、部署日志）取消跟踪并写入 `.gitignore`；移除从未被部署且已过期的 `dist-public/`；`/home` 与 `/home.html` 的自指重定向死循环已删除；`/*.html`、`/src/*`、`/home-assets/*` 统一改为 `max-age=0, must-revalidate`，避免无 hash 资源在部署后与 HTML 版本错配。
 - Figma 文件 `7hGGOqflIMGWTYQMm9tce0`；深色 **Home-主画板** `14434:3261`，浅色 **Home-主画板 - 浅色模式** `14704:3871`，所在 page `14405:17661`。
 - 原生 HTML/CSS/ESM。双主题颜色变量、命名字体 style、原始图标和本地 SF Pro 已保存；语义 token 引用生成色表，已确认固定几何保持原稿。
 - 侧栏与顶栏使用语义组件；内容仍使用首页专有场景适配。原始 509 节点用于溯源，生成场景保留 328 个，运行场景再排除已删除的 Period metadata 整枝后渲染 326 个。
@@ -50,6 +52,7 @@
 - 基础 `design-preview/src/foundations/`；组件 `src/components/`；外壳 `src/layouts/`；首页 `src/pages/home/`。
 - 原始来源 `design-preview/design/figma/`；实际本地资产 `home-assets/`。
 - 检查 `npm run check`、`npm test`、`npm run test:visual`、`npm run audit:assets`。
+- 发布 `npm run build:site:public`（产物 `dist/`，仅自检，不入库）；线上由 Cloudflare 从 `master` 构建，配置与验证见 [发布与部署](./DEPLOYMENT.md)。`dist/`、`dist-public/` 都不入库。
 - 2026-10-19 归档时的验证记录（属于当时状态，不替代后续验收）：`npm run check` 通过；`npm test` 及 `verify-glass` / `verify-home` / `verify-components` / `verify-motion` / `verify-theme` / `verify-foundations` 专项通过。具体文件数与断言细节只作为历史快照，不作为永久规则。
 - 2026-10-19 复验：`verify-theme` 的深色往返截图差异为 `maxChannelDelta 1 / 86 pixels`，主题、持久化、快速切换与减少动态效果检查通过；`verify-foundations` 的真实轮廓、36 个固定几何、动态挂载及回退检查通过。
 - 2026-10-19 样式复验（历史）：`verify-glass` 按当前 tab 数量核对玻璃表面，材质分层、贴合、统一填充/阴影和双主题 hover 通过；`verify-home` 覆盖周期文字不裁切、刷新右缘与下方图表卡片对齐及 10px 间距，预设与自定义周期均通过。底部留白数值不在本轮规则归档中重述。

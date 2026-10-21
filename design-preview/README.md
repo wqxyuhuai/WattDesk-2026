@@ -33,6 +33,16 @@ npm run test:visual   # 与整理前双主题 × 双尺寸截图比较
 
 像素比对还需 Python + Pillow，WATTDESK_PYTHON 可指定 Python。环境缺失应如实报告，不能将跳过检查记为通过。运行产物在 tests/output/，固定基线在 tests/fixtures/；不要为消除失败直接覆盖基线。
 
+## 发布
+
+线上 <https://wattdesk-preview.carlwang.cn/> 由 Cloudflare 从仓库 `master` 构建：构建命令 `npm run build:site:public`，部署命令 `npx wrangler deploy --assets=./dist`，根目录 `/design-preview`。
+
+```powershell
+npm run build:site:public   # 本地构建到 dist/，仅用于自检，不入库
+```
+
+提交并 Push 后 Cloudflare 自动重建；完整流程、产物边界与发布后验证见 [发布与部署](../docs/DEPLOYMENT.md)。不要手改 `dist/`，也不要把 `dist/` 或 `dist-public/` 提交进仓库。
+
 ## 来源和入口
 
 - design/figma/：原始变量、文字 style、玻璃分层与完整场景，不是第二套运行配置。
