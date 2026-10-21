@@ -1,2 +1,0 @@
-const {chromium,launchOptions}=require('./runtime.cjs');
-(async()=>{const b=await chromium.launch({...launchOptions,headless:true});const p=await b.newPage({viewport:{width:1545,height:1252}});await p.goto('http://127.0.0.1:4173/home.html?glass=figma');await p.waitForFunction(()=>document.documentElement.dataset.ready==='true');console.log(await p.locator('[data-node-id="I14445:3354;14420:2221;14420:2196"]').evaluate(el=>el.outerHTML));await b.close()})();

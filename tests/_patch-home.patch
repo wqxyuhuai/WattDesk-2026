@@ -1,7 +1,0 @@
-*** Begin Patch
-*** Update File: design-preview/src/pages/home/index.js
-@@
--homeCanvas.append(...homeColumn.children);homeColumn.append(homeCanvas);
-+homeCanvas.append(...homeColumn.children);homeColumn.append(homeCanvas);
-+homeCanvas.style.width="1000px";homeCanvas.style.margin="0 auto";
-*** End Patch

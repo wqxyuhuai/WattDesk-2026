@@ -1,16 +1,39 @@
-# Local dependencies and generated output
+# ── 依赖与日志 ──
 node_modules/
-design-preview/dist/
-design-preview/tests/output/
-design-preview/output/
-design-preview/previews/
-
-# Logs and editor/OS noise
+**/node_modules/
 *.log
+
+# ── 系统 / 编辑器噪声 ──
 .DS_Store
 Thumbs.db
 
-# Local scratch files kept outside the deployable source
+# ── 构建产物：手动发布，不入库 ──
+design-preview/dist/
+design-preview/dist-public/
+design-preview/previews/
+
+# ── 测试与调试截图 ──
+design-preview/tests/output/
+design-preview/output/
+/output/
+
+# ── 一次性调试探针（design-preview/tests 下的 verify-*、run、runtime、fixtures 必须保留）──
+/tests/
+design-preview/tests/_*.cjs
+design-preview/tests/_*.py
+
+# ── 补丁文件与部署临时产物 ──
+*.patch
+design-preview/deploy-result.json
+design-preview/deploy-lines.txt
+design-preview/dist-server.cjs
+
+# ── 本地批注、环境变量、个人配置 ──
+design-preview/annotations.json
+.env
+.env.*
+
+# ── 根目录临时脚本（AI / 调试过程产生）──
 /.codex-patch.txt
 /patch.txt
 /patch.tmp
@@ -18,4 +41,3 @@ Thumbs.db
 /_inspect-search.cjs
 /design-preview/_inspect-search.cjs
 /design-preview/_search-open.cjs
-
