@@ -12,10 +12,13 @@ import {createEmptyState} from "../../components/empty-state.js";
 import {createSearchInput} from "../../components/search.js";
 import {createInputClear,syncInputClear} from "../../components/input-clear.js";
 import {createPopoverController} from "../../components/popover.js";
-import {createDatePicker,describeRange,presetRange} from "../../components/date-picker.js";
 import {createHistoryPopover} from "../../components/history-popover.js";
 import {createSearchModel,createInlineSearchPanel,createFullscreenSearch,createShortcutKeycaps} from "../../components/search-surface.js";
 import {renderHomeScene} from "./scene.js";
+import {ROUTE_CATALOG as routeCatalog,buildSearchIndex,displayTitle} from "./routes.js";
+import {createHomeLayout} from "./layout.js";
+import {createPeriodControl} from "./period.js";
+import {createRecentVisits} from "./recent-visits.js";
 import {mountSkeletons} from "../../components/skeleton.js";
 const load=url=>fetch(url).then(r=>{if(!r.ok)throw Error("Page resource unavailable: "+url);return r.json()});
 const [sourceScene,assets,typeSource,themeSource]=await Promise.all([
@@ -86,177 +89,8 @@ const statusCards=["14537:4416","14537:3925","14537:3891","14537:3908"].map(get)
 const energyCards=["14570:1074","14570:1111"].map(get);
 const businessCards=["14570:1140","14570:1174","14570:1208","14570:1237"].map(get);
 const periodHeader=get("14561:836"),periodArea=get("14612:7602");
-const statusGridHeight=150,gridGap=20;
-function layoutGrid(cards,host,columns,height,gap=gridGap){
- if(!host)return;
- host.style.width="100%";
- const rows=Math.ceil(cards.length/columns);
- host.style.height=(rows*height+(rows-1)*gap)+"px";
- for(const [index,card] of cards.entries()){
-  const column=index%columns,row=Math.floor(index/columns);
-  card.style.width=columns===1?"100%":`calc((100% - ${gap*(columns-1)}px)/${columns})`;
-  card.style.left=columns===1?"0":`calc(${column*100/columns}% + ${column*gap/columns}px)`;
-  card.style.top=row*(height+gap)+"px";
- }
-}
-// Card content is part of the reflow, not scaled with the surface. The original
-// 16/20/21px insets remain; only the available inner width changes.
-function fitStatusCard(card){
- const inner=get(`I${card.dataset.nodeId};14536:3846`);
- const top=get(`I${card.dataset.nodeId};14536:3845`);
- const arrow=get(`I${card.dataset.nodeId};14536:3833`);
- const copy=get(`I${card.dataset.nodeId};14536:3844`);
- if(!inner||!top)return;
- // The two cards were exported at 218px and 250.7px. Reflow gives them the
- // same width, so the glass plate must follow the card instead of keeping the
- // old 250.7px surface that pushed its bottom-right rim past the arrow.
- const surface=[...card.children].find(el=>el!==inner&&/Glass|Liquid/.test(el.dataset.name||""));
- if(surface){surface.style.left="0";surface.style.top="0";surface.style.width="100%";surface.style.height="100%";}
- inner.style.width="calc(100% - 32px)";top.style.width="100%";
- if(arrow){arrow.style.left="auto";arrow.style.right="0";arrow.style.top="0";}
- if(copy){copy.style.left="0";copy.style.width="100%";}
-}
-function fitChartCard(card,small=false){
- const pad=small?21:20;
- const body=[...card.children].find(el=>el.dataset.name==="Frame 42");
- const chart=[...card.children].find(el=>el.dataset.name==="Bucket chart");
- if(body){body.style.left=pad+"px";body.style.width=`calc(100% - ${pad*2}px)`;body.style.top=pad+"px";}
- for(const child of body?.children||[]){
-  child.style.width="100%";
-  if(child.dataset.name==="Heading"){
-   const menu=[...child.children].find(el=>/Menu Dots/.test(el.dataset.name||"")||el.classList.contains("chart-menu"));
-   if(menu){menu.style.left="auto";menu.style.right="-6px";menu.style.top="-6px";}
-   const title=[...child.children].find(el=>el.dataset.name==="Title");
-   if(title){title.style.width="calc(100% - 24px)";title.classList.add("chart-card-title");}
-  }
- }
- if(!chart)return;
- const chartTop=small?87:82,chartHeight=small?132:138,axisGutter=small?32:36;
- chart.style.left=pad+"px";chart.style.top=chartTop+"px";
- chart.style.width=`calc(100% - ${pad*2}px)`;chart.style.height=chartHeight+"px";
- const plotWidth=`calc(100% - ${axisGutter}px)`;
- for(const child of chart.children){
-  const name=child.dataset.name||"";
-  if(/^Grid /.test(name)){child.style.left="0";child.style.width=plotWidth;}
-  else if(/^Axis /.test(name)){child.style.left="auto";child.style.right="0";}
-  else if(/ \/ (Area|Line)$/.test(name)){
-   const baseX=parseFloat(child.dataset.baseX??child.style.left)||0;
-   const baseW=parseFloat(child.dataset.baseW??child.style.width)||1;
-   child.dataset.baseX=baseX;child.dataset.baseW=baseW;
-   const basePlot=small?168.5:419;
-   child.style.left=`calc((100% - ${axisGutter}px) * ${baseX/basePlot})`;
-   child.style.width=`calc((100% - ${axisGutter}px) * ${baseW/basePlot})`;
-  }
-  else if(/^Daily count/.test(name)){
-   const index=Number(name.split(" ").pop())||0;
-   const count=7,bar=small?15.24:5.2;
-   child.style.left=`calc((100% - ${axisGutter}px) * ${(index+.5)/count} - ${bar/2}px)`;
-   child.style.width=bar+"px";
-  }
- }
-}
-function fitShortcutColumns(width){
- const columns=width>=680?3:width>=440?2:1;
- get("14612:7837").style.setProperty("--wd-shortcut-columns",columns);
- const kids=[...get("14612:7837").children];
- for(const [index,column] of kids.entries()){
-  column.style.position="relative";
-  column.style.left="auto";column.style.top="0";
-  column.style.height=(index===0?170:206)+"px";
- }
- return columns;
-}
-function resize(){
- const h=innerHeight;
- const rootStyle=getComputedStyle(document.documentElement);
- const mainOffset=parseFloat(rootStyle.getPropertyValue("--wd-shell-main-offset"))||278;
- get("14445:3629").style.height=(h-40)+"px";
- get("14612:8480").style.left=mainOffset+"px";
- get("14612:8480").style.width=(innerWidth-mainOffset-20)+"px";get("14612:8480").style.height=(h-40)+"px";
- get("14612:8479").style.width="100%";
- get("14578:6145").style.width="100%";get("14578:6145").style.height=(h-86)+"px";
- const column=get("14578:7006");
- const gutter=parseFloat(rootStyle.getPropertyValue("--wd-content-shadow-gutter"))||48;
- const available=Math.max(240,workspacePanel.clientWidth-gutter*2);
- const width=Math.min(1000,available);
- // Four only at the full canvas; otherwise a strict 2/1 rhythm, never 3+1.
- const columns=width>=860?4:width>=520?2:1;
- layoutNode.statusRow.style.width=width+"px";
- homeCanvas.style.width=width+"px";
- homeCanvas.style.left="0px";
- for(const key of ["search","shortcuts","welcome","statusRow"])layoutNode[key].style.width=width+"px";
- layoutNode.search.style.left="0px";layoutNode.welcome.style.left="0px";
- // Source welcome frame is 381px at x=309.5; keep its centered text but let
- // narrow layouts reclaim height when the title wraps to a second line.
- const welcomeTitle=get("14445:3352");welcomeTitle.style.width=width+"px";welcomeTitle.classList.add("home-welcome-title");
- // Two-line headlines need their own height; a fixed 41px frame would overlap
- // the search field. Measure, then re-measure after that new height applies.
- welcomeTitle.style.height="auto";
- let welcomeHeight=Math.max(41,welcomeTitle.scrollHeight||welcomeTitle.offsetHeight);
- layoutNode.welcome.style.width=width+"px";layoutNode.welcome.style.height=welcomeHeight+"px";
- welcomeTitle.style.height=welcomeHeight+"px";
- // Search and shortcuts live inside Frame 50, whose own y already includes the
- // 201px intro offset. Position them in canvas coordinates and subtract the
- // parent's origin, so nested offsetTop values are never counted twice.
- const searchTop=layoutNode.welcome.offsetTop+welcomeHeight+40;
- const shortcutsTop=searchTop+46+18+14;
- const canvasOrigin=el=>{let top=0,node=el;while(node&&node!==homeCanvas&&node!==homeColumn&&node!==document.body){top+=node.offsetTop;node=node.offsetParent}return top};
- const placeTop=(node,y)=>{if(node)node.style.top=(y-canvasOrigin(node.offsetParent))+"px"};
- placeTop(layoutNode.search,searchTop);
- placeTop(layoutNode.shortcuts,shortcutsTop);
- const introFrame=get("14612:8452");
- if(introFrame)introFrame.style.width="100%";
- get("14537:4510").style.width=width+"px";
- layoutNode.statusRow.style.left="0px";
- layoutNode.period.style.left="0px";layoutNode.period.style.width=width+"px";
- // The exported card area keeps a 1000px frame; let the reflow own its width
- // so every chart card and the refresh control stay inside the content column.
- periodArea.style.width="100%";
- layoutNode.energyRow.style.width="100%";layoutNode.businessRow.style.width="100%";
- const statusColumns=columns;
- // Re-anchor the search field's inner row; the Figma export fixed it at 915px.
- const searchInner=get("I14445:3354;14420:2221"),searchLeft=get("I14445:3354;14420:2221;14420:2193"),searchRight=get("I14445:3354;14420:2221;14420:2196");
- if(searchInner)searchInner.style.width="100%";
- if(searchLeft)searchLeft.style.width="calc(100% - 98px)";
- const searchText=get("I14445:3354;14420:2221;14420:2195");
- if(searchText){searchText.style.width="calc(100% - 26px)";searchText.style.height="100%";searchText.style.overflow="hidden";searchText.style.whiteSpace="nowrap";}
- if(searchRight)searchRight.style.left="auto",searchRight.style.right="20px";
- layoutGrid(statusCards,layoutNode.statusRow,statusColumns,statusGridHeight);
- const statusRows=Math.ceil(statusCards.length/statusColumns);
- for(const card of statusCards)fitStatusCard(card);
- const statusHeight=statusRows*statusGridHeight+(statusRows-1)*gridGap;
- fitShortcutColumns(width);
- const shortcutHeight=layoutNode.shortcuts.offsetHeight;
- const statusTop=shortcutsTop+shortcutHeight+40;
- placeTop(layoutNode.statusRow,statusTop);
- placeTop(layoutNode.period,statusTop+statusHeight+40);
- if(introFrame)introFrame.style.height=(shortcutsTop-201+shortcutHeight)+"px";
- const energyColumns=Math.min(2,columns),businessColumns=columns;
- layoutGrid(energyCards,layoutNode.energyRow,energyColumns,240);
- const energyRows=Math.ceil(energyCards.length/energyColumns);
- const energyHeight=energyRows*240+(energyRows-1)*gridGap;
- layoutNode.businessRow.style.top=(energyHeight+10)+"px";
- layoutNode.businessRow.style.left="0px";layoutNode.energyRow.style.left="0px";
- layoutGrid(businessCards,layoutNode.businessRow,businessColumns,240);
- const businessRows=Math.ceil(businessCards.length/businessColumns);
- const businessHeight=businessRows*240+(businessRows-1)*gridGap;
- for(const card of [...energyCards,...businessCards])fitChartCard(card,card===businessCards[0]||card===businessCards[1]||card===businessCards[2]||card===businessCards[3]);
- const cardsHeight=energyHeight+10+businessHeight;
- periodArea.style.height=(cardsHeight+16)+"px";
- const periodHeight=46+cardsHeight+32;
- layoutNode.period.style.height=periodHeight+"px";
- get("14537:4510").style.height=(layoutNode.period.offsetTop+periodHeight)+"px";
- homeCanvas.style.height=(layoutNode.period.offsetTop+periodHeight+32)+"px";
- const panelWidth=workspacePanel.clientWidth;
- column.style.width=panelWidth+"px";column.style.left="0px";column.style.transform="none";column.style.transformOrigin="top left";column.style.height=(h-88)+"px";
- homeCanvas.style.left=Math.max(0,(panelWidth-width)/2)+"px";
- homeCanvas.style.right="auto";
- periodHeader.style.width=width+"px";
- // The header row is right-anchored to the reflowed content, not the source canvas.
- periodRowRight=width;
- fitPeriodControl();
-}
-addEventListener("resize",resize);
+const layoutCtx={get,layoutNode,homeColumn,homeCanvas,workspacePanel,statusCards,energyCards,businessCards,periodHeader,periodArea};
+const layout=createHomeLayout(layoutCtx);
 const motion=createHomeMotion({duration:motionDuration,easing:motionEasing,reducedMotion});
 const {toast,close,popover,registerPanel}=createPopoverController({overlays:document.querySelector("#overlays"),toastElement:document.querySelector("#toast"),motion,glass});
 // Menus, tooltips and toasts inherit the same reviewed surface as dialogs;
@@ -267,7 +101,7 @@ targetChrome.workspaceTabs.setGlass(glass);
 const historyPopover=createHistoryPopover({glass,registerPanel,close,onSelect:route=>openRoute(route)});
 function openHistory(){
  if(overlays.firstElementChild)close(true);
- return historyPopover.open(targetChrome.history,recentVisits.map(entry=>({...entry,title:displayTitle(entry.route),iconFile:routeCatalog[entry.route]?.icon??null})));
+ return historyPopover.open(targetChrome.history,recentVisits.list.map(entry=>({...entry,title:displayTitle(entry.route),iconFile:routeCatalog[entry.route]?.icon??null})));
 }
 function action(id,label,handler){const el=get(id);if(el)enhanceControl(el,{label,onActivate:handler})}
 // Both summary cards navigate to Plants. Filtering will be connected with the
@@ -352,23 +186,6 @@ function syncInlineClear(value){
  if(inlineShortcutRow)inlineShortcutRow.style.visibility=visible?"hidden":"";
  return visible;
 }
-const searchQuickLinks=["home","plants","service","track"];
-const buildSearchIndex=()=>[
- ...Object.entries(routeCatalog).filter(([route])=>route!=="statistics").map(([route,definition],index)=>({
-  id:`page-${route}`,title:definition.title,group:"Pages",route,iconFile:definition.icon,order:index,
-  quickLink:searchQuickLinks.includes(route)
- })),
- ...["Summit Energy Hub","Eastshore Power Plant","Green Valley Wind Farm","Sunrise Solar Station"].map((title,index)=>({
-  id:`site-${index}`,title,group:"Sites",order:index,iconFile:"statistics.svg",comingSoon:true
- })),
- {id:"device-cell",title:"Cell balance",group:"Devices",route:"cell",iconFile:"cell-balance.svg",order:0,quickLink:true},
- {id:"device-module",title:"Module balance",group:"Devices",route:"module",iconFile:"module-balance.svg",order:1},
- {id:"device-track",title:"Device track",group:"Devices",route:"track",iconFile:"device-track.svg",order:2},
- {id:"tool-service",title:"Service ticket",group:"Tools",route:"service",iconFile:"asset-7.svg",order:0},
- {id:"tool-statistics",title:"Statistics",group:"Tools",route:"statistics",iconFile:"statistics.svg",order:1},
- {id:"person-carl",title:"Carl Wang",group:"People",order:0,iconFile:"user.svg",comingSoon:true},
- {id:"org-wattsonic",title:"Wattsonic Technology",group:"People",route:"org",iconFile:"organisation.svg",order:1}
-];
 let searchModel=null;
 let inlineSearch=null;
 let fullscreenSearch=null;
@@ -385,8 +202,7 @@ function openSearchResult(item,query){
  toast(`${item.title} · Coming soon`);
 }
 function ensureSearchModel(){
- // routeCatalog is declared later in this module; build the shared index only
- // when the user opens search, after the page has finished assembling.
+ // Build the shared index only when the user opens search, after assembly.
  searchModel??=createSearchModel({items:buildSearchIndex()});
  return searchModel;
 }
@@ -548,52 +364,8 @@ document.addEventListener("pointerdown",event=>{
  if(inlineSearch.panel.contains(event.target)||searchAnchor.contains(event.target))return;
  closeInlineSearch();
 });
-const periodLabel=get("I14578:6106;14420:2221;14420:2195");
-// The capsule grows with its content instead of clipping a changed period.
-// The refresh button stays on the card's right edge; the capsule grows left.
-const periodControl=get("14578:6106"),periodInner=get("I14578:6106;14420:2221"),periodContent=get("I14578:6106;14420:2221;14420:2193");
-const periodRow=periodControl.parentElement,refreshControl=get("14612:8453");
-const periodMinWidth=parseFloat(periodControl.style.width)||123;
-const periodRefreshGap=(parseFloat(refreshControl.style.left)||133)-periodMinWidth;
-let periodRowRight=(parseFloat(periodRow.style.left)||0)+(parseFloat(periodRow.style.width)||169);
-let periodWidth=periodMinWidth;
-function fitPeriodControl(){
- periodLabel.style.width="max-content";
- const textWidth=Math.ceil(periodLabel.offsetWidth);
- const width=Math.max(periodMinWidth,54+textWidth);
- periodWidth=width;
- periodLabel.style.width=textWidth+"px";
- periodControl.style.width=periodInner.style.width=width+"px";
- periodContent.style.width=(width-28)+"px";
- refreshControl.style.left=(width+periodRefreshGap)+"px";
- periodRow.style.left=(periodRowRight-width-periodRefreshGap-36)+"px";periodRow.style.width=(width+periodRefreshGap+36)+"px";
-}
-function setPeriod(text){periodLabel.textContent=text;fitPeriodControl();}
-// The Home preview uses the reviewed 10 Oct snapshot so presets stay stable.
-let activeRange=presetRange("Last 7 days",new Date(2026,9,10,14,32));
-setPeriod(describeRange(activeRange));
-action("14578:6106","Select statistics period",()=>{
- createDatePicker({
-  trigger:periodControl,glass,registerPanel,close,range:activeRange,
-  onApply(range){
-   activeRange=range;setPeriod(describeRange(range));
-   toast("Period selected · Preview data");
-  }
- });
-});
-action("14612:8453","Refresh statistics",async()=>{
- if(refreshControl.getAttribute("aria-busy")==="true")return;
- refreshControl.setAttribute("aria-busy","true");refreshControl.setAttribute("aria-disabled","true");
- const icon=refreshControl.querySelector(".asset>img");
- try{
-  if(icon&&!reducedMotion()){
-   const keyframes=[{transform:"rotate(0deg)"},{transform:"rotate(360deg)"}],options={duration:motionDuration("--wd-motion-refresh"),easing:motionEasing("--wd-ease-hover")};
-   icon.parentElement.querySelector(".shared-icon-highlight")?.animate(keyframes,options);
-   await icon.animate(keyframes,options).finished;
-  }
-  toast("Statistics refreshed · Preview data");
- }finally{refreshControl.setAttribute("aria-busy","false");refreshControl.setAttribute("aria-disabled","false");}
-});
+const period=createPeriodControl({get,action,glass,registerPanel,close,toast});
+layoutCtx.period=period;
 for(const n of scene.filter(n=>/Menu Dots/.test(n.name))){
  action(n.id,"Chart options",()=>{
   const panel=popover(get(n.id),'<h2>Chart options</h2><button data-export>Download preview CSV</button>',220);
@@ -619,68 +391,10 @@ function updateThemeButton(mode){
 updateThemeButton(initialTheme);
 targetChrome.theme.addEventListener("click",()=>themeController?.toggle());
 targetChrome.history.addEventListener("click",()=>openHistory());
-const homeSnapshot=()=>({scrollTop:homeColumn.scrollTop,query:input.value,period:periodLabel.textContent,range:{
- preset:activeRange.preset,start:activeRange.start.toISOString(),end:activeRange.end.toISOString()
-}});
-const routeCatalog={home:{title:"Home",icon:null},plants:{title:"Plants",icon:"asset-6.svg"},service:{title:"Service ticket",icon:"asset-7.svg"},statistics:{title:"Statistics",icon:"statistics.svg"},cell:{title:"Cell balance",icon:"cell-balance.svg"},module:{title:"Module balance",icon:"module-balance.svg"},track:{title:"Device track",icon:"device-track.svg"},org:{title:"Wattsonic Technology",icon:"organisation.svg"},"your-teams":{title:"Your teams",icon:"teams.svg"},"end-users":{title:"End users",icon:"user.svg"}};
+const homeSnapshot=()=>({scrollTop:homeColumn.scrollTop,query:input.value,period:period.label(),range:period.rangeSnapshot()});
 const routeRows=[...targetChrome.sidebar.querySelectorAll(".target-nav[data-route]")];
 let activeRoute="home";
-const MAX_RECENT_VISITS=8;
-const RECENT_VISITS_STORAGE_KEY="wattdesk.recent-visits.v1";
-// The product keeps recent visits in the cloud. Until that service is
-// connected, the preview preserves a durable local archive across reloads and
-// always keeps the current Home entry that the design shows.
-function loadRecentVisits(){
- try{
-  const stored=JSON.parse(localStorage.getItem(RECENT_VISITS_STORAGE_KEY)||"[]");
-  if(Array.isArray(stored)){
-   const routes=stored.map(entry=>typeof entry==="string"?entry:entry?.route)
-    .filter(route=>routeCatalog[route])
-    .filter((route,index,list)=>index===0||list[index-1]!==route);
-   if(routes.length)return routes.slice(0,MAX_RECENT_VISITS).map(route=>({route}));
-  }
- }catch{}
- return [{route:"home"}];
-}
-const recentVisits=loadRecentVisits();
-function displayTitle(route){return route==="statistics"?"Statistics (coming soon)":routeCatalog[route]?.title||"Home"}
-function recordVisit(route){
- if(!routeCatalog[route]||recentVisits[0]?.route===route)return;
- recentVisits.unshift({route});
- recentVisits.splice(MAX_RECENT_VISITS);
- try{localStorage.setItem(RECENT_VISITS_STORAGE_KEY,JSON.stringify(recentVisits.map(entry=>entry.route)))}catch{}
- renderRecentVisits();
-}
-// Recent visits are real route entries in this preview session. There is no
-// backend feed and no seeded sample history; repeated routes are preserved,
-// matching the source design's non-deduplicated list.
-const recentVisitRows=["14613:1350","14613:1371","14613:1392","14613:1413","14613:1434"];
-renderRecentVisits();
-function renderRecentVisits(){
- for(const [index,id] of recentVisitRows.entries()){
-  const row=get(id),entry=recentVisits[index],label=get(`I${id};14612:7804`);
-  row.hidden=!entry;
-  if(!entry)continue;
-  const title=displayTitle(entry.route);
-  if(label){
-   label.textContent=title;
-   label.setAttribute("aria-label",title);
-   label.title=title;
-  }
-  row.dataset.route=entry.route;
-  row.dataset.recentVisit="true";
-  row.setAttribute("aria-label",title);
-  // The clock icon belongs to the Home summary, so it stays neutral for every
-  // row. Page-specific icons appear only inside the history popover.
-  row.classList.add("shortcut-link");
-  if(!row.dataset.enhanced){
-   row.dataset.enhanced="true";
-   enhanceControl(row,{label:title,onActivate:()=>openRoute(row.dataset.route)});
-  }
-  if(index===Math.min(recentVisitRows.length,recentVisits.length)-1)row.classList.add("shortcut-link-last");
-  else row.classList.remove("shortcut-link-last");
- }
-}
+const recentVisits=createRecentVisits({get,onOpen:route=>openRoute(route)});
 const homeWorkspace=get("14578:6145");
 const emptyWorkspace=document.createElement("div");emptyWorkspace.className="workspace-empty";emptyWorkspace.hidden=true;emptyWorkspace.setAttribute("role","status");emptyWorkspace.setAttribute("aria-live","polite");
 const emptyState=createEmptyState();
@@ -718,10 +432,8 @@ workspaceTabs.restoreState=snapshot=>{
  if(!home)return;
  homeColumn.scrollTop=home.scrollTop??0;
  input.value=home.query??"";
- if(home.range?.start&&home.range?.end){
-  activeRange={preset:home.range.preset||"Custom range",start:new Date(home.range.start),end:new Date(home.range.end)};
-  setPeriod(describeRange(activeRange));
- }else setPeriod(home.period??"Last 7 days");
+ if(home.range?.start&&home.range?.end)period.setRange(home.range);
+ else period.setPeriod(home.period??"Last 7 days");
  syncHistoryControls();
 };
 function showRoute(route){
@@ -740,7 +452,7 @@ function showRoute(route){
 function openRoute(route,{record=true}={}){
  const definition=routeCatalog[route],tab=workspaceTabs.active();
  if(!definition||!tab)return null;
- recordVisit(route);
+ recentVisits.record(route);
  workspaceTabs.captureCurrent();
  // A tab always keeps its Home surface alive; route only selects what is shown.
  const home=tab._state.snapshot?.home||defaultSnapshot;
@@ -788,7 +500,7 @@ workspaceTabs.onSelect=(state,tab)=>{
  // change feeds recent visits, so the initial Home is not recorded twice.
  const changed=activeRoute!==route;
  showRoute(route);
- if(changed)recordVisit(route);
+ if(changed)recentVisits.record(route);
  workspacePanel.setAttribute("aria-label",`${state.title} workspace`);
  workspacePanel.setAttribute("aria-labelledby",tab.id);
  tab.setAttribute("aria-controls",workspacePanel.id);
@@ -820,7 +532,7 @@ for(const row of routeRows){
 // The shell and Home surface are assembled. Measure once, arm only the marked
 // content regions, then reveal the shell; the static sidebar and header never
 // wait for fonts or derived card state.
-resize();
+layout.resize();
 let skeletons=null;
 function armSkeletons(){
  if(skeletons)return;
