@@ -1,0 +1,258 @@
+/* WattDesk 本地批注层样式：只在 ?annotate=1 时由 server.js 注入，不参与正式视觉。 */
+.wd-annotate-root {
+  --wd-annotate-accent: #0a84ff;
+  position: fixed;
+  inset: 0;
+  z-index: 2147483000;
+  pointer-events: none;
+  font-family: var(--wd-font-family, "SF Pro", -apple-system, "Segoe UI", sans-serif);
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--wd-label-primary, #fff);
+  -webkit-font-smoothing: antialiased;
+}
+
+html[data-annotate="on"] body { cursor: crosshair; }
+
+.wd-annotate-root button {
+  font: inherit;
+  color: inherit;
+  border: 0;
+  background: none;
+  cursor: pointer;
+}
+
+/* 选区高亮 */
+.wd-annotate-frame {
+  position: fixed;
+  pointer-events: none;
+  border: 1.5px solid var(--wd-annotate-accent);
+  background: rgba(10, 132, 255, 0.08);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.28), 0 0 18px rgba(10, 132, 255, 0.25);
+  transition: none;
+}
+
+/* 编号图钉 */
+.wd-annotate-pins { position: absolute; inset: 0; }
+
+.wd-annotate-pin {
+  position: fixed;
+  pointer-events: auto;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border-radius: 999px;
+  background: var(--wd-annotate-accent);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 590;
+  line-height: 22px;
+  text-align: center;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.85), 0 2px 8px rgba(0, 0, 0, 0.35);
+  transition: transform 160ms cubic-bezier(0.22, 0.8, 0.25, 1);
+}
+
+.wd-annotate-pin:hover { transform: scale(1.12); }
+
+/* 工具条 */
+.wd-annotate-bar {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 4px;
+  border-radius: 999px;
+  background: var(--wd-popover-surface, rgba(44, 44, 46, 0.96));
+  border: 1px solid var(--wd-popover-outline, rgba(255, 255, 255, 0.11));
+  box-shadow: 0 10px 30px var(--wd-popover-shadow, rgba(0, 0, 0, 0.42));
+  backdrop-filter: blur(22px) saturate(1.4);
+  -webkit-backdrop-filter: blur(22px) saturate(1.4);
+  pointer-events: auto;
+}
+
+.wd-annotate-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 30px;
+  padding: 0 12px;
+  border-radius: 999px;
+  font-weight: 510;
+  transition: background 180ms cubic-bezier(0.2, 0, 0.2, 1);
+}
+
+.wd-annotate-toggle:hover { background: var(--wd-control-hover, rgba(255, 255, 255, 0.08)); }
+.wd-annotate-toggle[aria-pressed="true"] { background: var(--wd-annotate-accent); color: #fff; }
+
+.wd-annotate-mark {
+  width: 11px;
+  height: 11px;
+  border-radius: 3px;
+  border: 1.5px dashed currentColor;
+  opacity: 0.85;
+}
+
+.wd-annotate-count {
+  min-width: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: var(--wd-fill-quaternary, rgba(116, 116, 128, 0.18));
+  font-size: 11px;
+  line-height: 18px;
+  text-align: center;
+}
+
+.wd-annotate-toggle[aria-pressed="true"] .wd-annotate-count { background: rgba(255, 255, 255, 0.26); }
+
+.wd-annotate-sep {
+  width: 1px;
+  height: 18px;
+  background: var(--wd-popover-outline, rgba(255, 255, 255, 0.14));
+}
+
+.wd-annotate-tool {
+  height: 30px;
+  padding: 0 10px;
+  border-radius: 999px;
+  color: var(--wd-label-secondary, rgba(235, 235, 245, 0.7));
+  transition: background 180ms cubic-bezier(0.2, 0, 0.2, 1), color 180ms cubic-bezier(0.2, 0, 0.2, 1);
+}
+
+.wd-annotate-tool:hover {
+  background: var(--wd-control-hover, rgba(255, 255, 255, 0.08));
+  color: var(--wd-label-primary, #fff);
+}
+
+/* 模式提示 */
+.wd-annotate-tip {
+  position: fixed;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 7px 14px;
+  border-radius: 999px;
+  background: var(--wd-popover-surface, rgba(44, 44, 46, 0.96));
+  border: 1px solid var(--wd-popover-outline, rgba(255, 255, 255, 0.11));
+  box-shadow: 0 8px 24px var(--wd-popover-shadow, rgba(0, 0, 0, 0.36));
+  color: var(--wd-label-secondary, rgba(235, 235, 245, 0.7));
+  font-size: 12px;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+/* 写批注面板 */
+.wd-annotate-composer {
+  position: fixed;
+  width: 328px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  border-radius: 14px;
+  background: var(--wd-popover-surface, rgba(44, 44, 46, 0.96));
+  border: 1px solid var(--wd-popover-outline, rgba(255, 255, 255, 0.11));
+  box-shadow: 0 18px 48px var(--wd-popover-shadow, rgba(0, 0, 0, 0.46));
+  backdrop-filter: blur(26px) saturate(1.5);
+  -webkit-backdrop-filter: blur(26px) saturate(1.5);
+  pointer-events: auto;
+}
+
+.wd-annotate-crumb {
+  color: var(--wd-label-tertiary, rgba(235, 235, 245, 0.5));
+  font-size: 11px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.wd-annotate-target code {
+  display: block;
+  font: 11px/1.4 ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  color: var(--wd-annotate-accent);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.wd-annotate-composer textarea {
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 62px;
+  max-height: 180px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--wd-popover-outline, rgba(255, 255, 255, 0.14));
+  background: var(--wd-fill-quaternary, rgba(116, 116, 128, 0.18));
+  color: var(--wd-label-primary, #fff);
+  font: inherit;
+  resize: vertical;
+  outline: none;
+}
+
+.wd-annotate-composer textarea:focus {
+  border-color: var(--wd-annotate-accent);
+  box-shadow: 0 0 0 3px rgba(10, 132, 255, 0.22);
+}
+
+.wd-annotate-actions { display: flex; align-items: center; gap: 4px; }
+.wd-annotate-actions .grow { flex: 1; }
+
+.wd-annotate-actions button {
+  height: 28px;
+  padding: 0 10px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 510;
+  transition: background 160ms cubic-bezier(0.2, 0, 0.2, 1), color 160ms cubic-bezier(0.2, 0, 0.2, 1);
+}
+
+.wd-annotate-actions .quiet { color: var(--wd-label-secondary, rgba(235, 235, 245, 0.7)); }
+.wd-annotate-actions .quiet:hover { background: var(--wd-control-hover, rgba(255, 255, 255, 0.08)); color: var(--wd-label-primary, #fff); }
+.wd-annotate-actions .danger { color: #ff453a; }
+.wd-annotate-actions .danger:hover { background: rgba(255, 69, 58, 0.16); color: #ff453a; }
+
+.wd-annotate-actions .primary {
+  background: var(--wd-annotate-accent);
+  color: #fff;
+  padding: 0 14px;
+}
+
+.wd-annotate-actions .primary:hover { filter: brightness(1.08); }
+
+.wd-annotate-hint {
+  color: var(--wd-label-tertiary, rgba(235, 235, 245, 0.5));
+  font-size: 11px;
+}
+
+.wd-annotate-toast {
+  position: fixed;
+  right: 20px;
+  bottom: 66px;
+  padding: 8px 14px;
+  border-radius: 10px;
+  background: var(--wd-toast-surface, rgba(44, 44, 46, 0.93));
+  border: 1px solid var(--wd-toast-outline, rgba(255, 255, 255, 0.12));
+  box-shadow: 0 8px 26px rgba(0, 0, 0, 0.35);
+  color: var(--wd-label-primary, #fff);
+  font-size: 12px;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wd-annotate-pin { transition: none; }
+}
+
+/* 浅色主题下白色浮层需要更明确的边界和投影 */
+:root[data-theme="light"] .wd-annotate-bar,
+:root[data-theme="light"] .wd-annotate-composer,
+:root[data-theme="light"] .wd-annotate-tip,
+:root[data-theme="light"] .wd-annotate-toast {
+  border-color: rgba(0, 0, 0, 0.12);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.16), 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+:root[data-theme="light"] .wd-annotate-pin {
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.95), 0 2px 8px rgba(0, 0, 0, 0.28);
+}

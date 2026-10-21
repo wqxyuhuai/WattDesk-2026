@@ -37,6 +37,8 @@
 - 2026-10-20：首页右侧内容接入共享局部骨架。前两张状态卡与六张图表卡在真实等待超过 `140ms` 后显示结构占位，区域单次扫光并淡出到内容；侧栏、顶栏和工作区标签不等待字体，快速加载不闪骨架。骨架不改变宿主尺寸/圆角/玻璃，结束或销毁时释放 `aria-busy`/`inert`；减少动态效果保留静态骨架但不扫光。1920×1080、1545×1252、快速与慢速延迟及减少动效路径已用真实浏览器验证，卡片边界一致。本次 `npm run check`、`verify-components`、`verify-home`、`verify-theme` 通过；`verify-foundations` 与 `verify-motion` 仍受既存基线/局部 tab transition 影响，未作为本次通过项。
 - 2026-10-20：玻璃缩放补充“可交互 / 纯展示”语义。`createGlassMaterial()` 的表面新增 `interactive`（默认 `true`），传 `false` 时共享层加 `.wd-glass--static`，动效只对非静态宿主应用 hover / 按下矩阵。`Connected devices`、`Self-consumption` 保留材质与指针光晕，但 hover / 按下 `scale` 恒为 `1`、布局盒不变；`Sites online`、`Needs attention` 仍为 `1.031 / 1.079`（深浅主题）。`verify-motion` 新增展示卡不缩放断言并通过；`check`、`verify-glass`、`verify-components`、`verify-theme` 通过。`verify-home` 的历史列表断言仍按旧的 3 条记录，当前测试流程会先产生 5 条，属既存测试不一致，未改业务或断言。
 
+- 2026-10-21：本地预览新增**页面批注模式**，只对 `?annotate=1` 生效（`design-preview/dev/annotate.js` / `.css`，由 `server.js` 按参数注入，普通页面、`test:visual` 基线截图与 `build:site` 产物都不含它）。点击元素可写意见，`Alt+↑/↓` 切换层级，保存后留编号图钉；批注写入 `design-preview/annotations.json`（按页面分组，已 gitignore）并同步 `localStorage`，也可复制成纯文本。它是给设计反馈用的本地工具，不接后端、不属于业务页面能力；深浅主题均已实拍检查。
+
 ## 尚未实现
 
 没有其他页面的真实内容、登录/权限后端、账户服务、设备命令、实时统计或生产数据导出。Plant、Service ticket、Statistics 与 Device tool 等标签是 Coming soon 占位，不包含业务页面；状态卡虽跳转 Plants，但 Plants 筛选尚未实现；日期选择不会向服务端查询数据。不得把演示行为写成已完成的业务能力。

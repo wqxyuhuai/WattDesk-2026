@@ -8,6 +8,17 @@ npm run dev
 
 打开 [Home](http://127.0.0.1:4173/home.html?glass=figma)，根路径 / 也打开首页。监听 127.0.0.1:4173，可用 WATTDESK_PREVIEW_PORT 改端口。正式材质只保留 figma，原首页 URL 不变。
 
+## 页面批注
+
+需要指出具体哪个元素要改时，用本地批注模式：
+
+1. 打开 <http://127.0.0.1:4173/home.html?glass=figma&annotate=1>（`npm run dev` 保持运行）。
+2. 点右下角「批注」，鼠标移到元素上出现高亮框，单击即可写意见；`Alt+↑/↓` 或面板里的「上一级 / 下一级」切换要批注的层级。
+3. `Ctrl/⌘+Enter` 保存，页面上留下编号图钉；再点图钉可以修改或删除。
+4. 批注按页面写入本目录 `annotations.json`，同时存在浏览器 `localStorage`；「复制」可导出纯文本清单。
+
+批注层只在 URL 带 `?annotate=1` 时由 `server.js` 注入：普通页面、`npm run test:visual` 截图和 `npm run build:site` 产物都不包含它。`annotations.json` 是本地反馈记录，已加入 `.gitignore`，不代表业务数据。
+
 ## 常用命令
 
 ```powershell
