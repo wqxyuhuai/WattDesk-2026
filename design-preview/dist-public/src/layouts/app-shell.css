@@ -1,0 +1,125 @@
+/* App chrome consumes the shared tokens in home-assets/design-tokens.css. */
+#home{isolation:isolate}
+.target-sidebar,.target-header{z-index:20}
+.target-sidebar{background:transparent!important;box-shadow:none!important;border:0!important;overflow:visible!important;color:var(--wd-label-primary)}
+.target-sidebar-top{position:absolute;inset:0 0 auto 0;height:36px;display:flex;align-items:center;gap:8px}
+.target-brand{position:absolute;left:0;top:2px;width:32px;height:32px;display:grid;place-items:center}
+.target-brand img{display:block;width:32px;height:32px}
+.target-icon-button{position:absolute;top:0;width:36px;height:36px;display:grid;place-items:center;padding:0;border:0;border-radius:18px;background:transparent;color:var(--wd-label-secondary);font-size:23px;line-height:1;}
+.target-icon-button:hover{color:var(--wd-label-primary)}
+/* History controls end where the quick-search surface ends, so the cluster stays aligned at every sidebar width. */
+/* Keep the Figma 36px circles with an 8px gap. Anchor the cluster to the shell width
+   instead of fixed lefts, so the forward edge always meets the quick-search edge. */
+.target-forward{right:0}.target-back{right:var(--wd-history-step)}.target-history{right:calc(var(--wd-history-step) * 2)}.target-back .target-icon-art{transform:rotate(180deg)}
+.target-quick-search{position:absolute;left:0;top:56px;width:260px;height:36px;border:0;border-radius:18px;background:transparent;display:flex;align-items:center;gap:9px;padding:0 14px;color:var(--wd-label-secondary);font-size:var(--wd-type-body);text-align:left}
+
+.target-shortcut{margin-left:auto}.target-shortcut kbd{min-width:18px;height:20px;padding:0 4px;border-radius:4px;background:var(--wd-control-muted);color:var(--wd-label-secondary);font:var(--wd-type-footnote)/18px var(--wd-font-family);text-align:center}
+.target-sidebar-nav{position:absolute;top:112px;left:0;width:260px;bottom:66px;overflow:hidden}
+.target-nav{position:relative;width:260px;height:36px;border:0;background:none;color:var(--wd-label-secondary);display:flex;align-items:center;gap:8px;padding:0 14px;border-radius:18px;text-align:left;font-size:var(--wd-type-body);letter-spacing:-.12px}
+.target-nav:hover{background:var(--wd-fill-secondary);color:var(--wd-label-primary)}.target-nav.active{background:var(--wd-control-selected);color:var(--wd-label-primary);box-shadow:none}
+.target-nav-icon{display:grid;place-items:center;flex:0 0 18px;width:18px;height:18px;color:var(--wd-label-secondary);font-size:18px}.target-icon-art{display:inline-grid;place-items:center;flex:0 0 18px;width:18px;height:18px;line-height:1}.target-icon-art--mono{-webkit-mask:var(--icon-mask) center/contain no-repeat;mask:var(--icon-mask) center/contain no-repeat;background:currentColor}.target-icon-art--color img{width:18px;height:18px;object-fit:contain;display:block}.target-nav-icon .target-icon-art{width:18px;height:18px}.target-nav.active .target-icon-art--mono{color:var(--wd-label-primary)}
+/* Figma: primary 147px; category 139px; 20px between groups. */
+.target-primary-nav,.target-subnav{display:flex;flex-direction:column;gap:1px}
+.target-subnav[hidden]{display:none}
+.target-nav-section{margin-top:20px}
+.target-section-heading{display:flex;align-items:center;gap:4px;width:260px;height:28px;padding:0 14px;border:0;border-radius:14px;background:transparent;color:var(--wd-label-secondary);font-size:var(--wd-type-callout);line-height:16px;text-align:left}
+.target-section-heading:hover{color:var(--wd-label-primary)}
+.target-section-heading .target-disclosure,.target-disclosure img{width:12px;height:12px;flex-basis:12px}
+.target-subnav{margin-top:1px;overflow:hidden}
+.target-nav[data-route="statistics"] .target-icon-art{color:var(--wd-blue)}
+:root[data-theme="light"] .target-subnav img,
+:root[data-theme="light"] .target-nav[data-route="your-teams"] img,
+:root[data-theme="light"] .target-nav[data-route="end-users"] img,
+:root[data-theme="light"] .target-disclosure img,
+:root[data-theme="light"] .target-account-copy img{filter:brightness(0)}
+.target-sidebar-footer{position:absolute;left:0;right:0;bottom:0;height:36px;display:flex;align-items:center}.target-account{position:absolute;left:0;bottom:0;height:36px;width:214px;padding:0;border:0;background:none;color:var(--wd-label-secondary);display:flex;align-items:center;gap:6px;text-align:left}.target-avatar{margin-left:2px;flex-shrink:0;width:36px;height:36px}.target-account-copy{display:flex;flex-direction:column;line-height:18px}.target-account-copy strong{display:flex;align-items:center;gap:4px;font-size:var(--wd-type-callout);font-weight:590;color:var(--wd-label-primary)}.target-account-copy small{font-size:var(--wd-type-footnote);color:var(--wd-label-tertiary);margin-left:2px}.target-account-copy em{line-height:13px;font-style:normal;font-size:var(--wd-type-caption1);color:var(--wd-label-tertiary)}.target-account:hover .target-avatar{background:var(--wd-control-fill-hover);color:var(--wd-label-primary)}.target-notifications{left:auto;right:0;top:0;font-size:var(--wd-type-callout)}.target-notifications .target-icon-art{color:var(--wd-label-secondary)}
+.target-header{position:absolute!important;left:0!important;top:0!important;width:100%!important;height:36px!important;background:none!important;overflow:visible!important;box-shadow:none!important}.target-main-tabs{position:absolute;left:0;top:0;height:36px;display:flex;align-items:center;gap:5px}.target-tab{height:36px;width:120px;border:0;border-radius:var(--wd-radius-medium);padding:0 14px;display:flex;align-items:center;gap:9px;background:transparent;color:var(--wd-label-secondary);font-size:var(--wd-type-body)}.target-tab:hover{color:var(--wd-label-primary)}.target-tab.selected{color:var(--wd-label-primary)}.target-tab.muted{color:var(--wd-label-tertiary)}.target-tab .target-icon-art{color:currentColor}.target-add-tab{width:36px;height:36px;padding:0;border:0;background:transparent;color:var(--wd-label-tertiary);font-size:21px}.target-add-tab:hover{color:var(--wd-label-primary)}
+.target-header-actions{position:absolute;right:0;top:0;height:36px;width:156px;display:flex;align-items:center;border-radius:var(--wd-radius-medium);background:transparent;overflow:visible}.target-header-action{position:relative;width:39px;height:36px;border:0;border-right:1px solid var(--wd-control-outline);background:transparent;color:var(--wd-label-secondary);font-size:var(--wd-type-title2)}.target-header-action:last-child{border-right:0}.target-header-action:is(:hover,:focus-visible){color:var(--wd-label-primary)}.target-header-action .target-icon-art{color:currentColor}.target-theme .theme-sun{display:none}.target-header-action[aria-pressed="true"] .theme-moon{display:none}.target-header-action[aria-pressed="true"] .theme-sun{display:inline-grid}
+html[data-theme="light"] .target-nav.active{background:var(--wd-control-selected);color:var(--wd-label-primary)}
+.target-theme .theme-sun{display:none}.target-theme .theme-moon{display:inline-grid}.target-theme[aria-pressed="true"] .theme-moon{display:none}.target-theme[aria-pressed="true"] .theme-sun{display:inline-grid}
+/* Responsive chrome changes column width and label visibility, never glyph or text size. */
+:root{--wd-shell-sidebar-width:248px;--wd-shell-main-offset:278px;--wd-shell-rail-nav-width:64px;--wd-history-step:44px}
+.target-sidebar,.target-header{transform:none}
+.target-sidebar,.target-sidebar-nav{width:var(--wd-shell-sidebar-width)!important}
+.target-nav,.target-section-heading{width:var(--wd-shell-sidebar-width)!important}
+.target-quick-search{width:var(--wd-shell-sidebar-width)!important}
+@media(max-width:1100px){:root:root{--wd-shell-sidebar-width:216px;--wd-shell-main-offset:246px}.target-main-tabs{gap:4px}}
+@media(max-width:760px){:root:root{--wd-shell-sidebar-width:76px;--wd-shell-main-offset:106px}
+ .target-sidebar-top{gap:0}
+ .target-brand{left:22px}
+ .target-history,.target-back,.target-forward{display:none}
+ .target-quick-search{width:44px;left:16px;padding:0;justify-content:center}
+ .target-quick-search>span:not(.target-icon-art),.target-quick-search .target-shortcut{display:none}
+ .target-sidebar-nav{width:76px;overflow:visible}
+ .target-nav,.target-section-heading{width:var(--wd-shell-rail-nav-width)!important;margin-left:6px;padding:0;justify-content:center;gap:0}
+ .target-nav>span:not(.target-nav-icon){position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
+ /* A category heading without its label still needs a visible disclosure. */
+ .target-section-heading>span:first-child{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
+ .target-section-heading{border-radius:14px;height:28px;justify-content:center}
+ .target-section-heading .target-disclosure{display:inline-grid;flex:0 0 12px;width:12px;height:12px}
+ .target-nav-section{margin-top:10px}
+ .target-subnav{margin-top:1px}
+ .target-account{width:36px;left:0}
+ .target-account-copy{display:none}
+ .target-avatar{margin:0 auto}
+ .target-notifications{right:0}
+ .target-sidebar-footer{height:36px;justify-content:space-between;padding:0 2px}
+ .target-sidebar-footer .target-account{position:relative;bottom:auto}
+ .target-sidebar-footer .target-notifications{position:relative;left:auto;top:auto;right:auto}
+}
+@media(max-width:520px){
+ .target-header-actions{width:132px}
+ .target-header-action{width:33px}
+ .target-main-tabs{max-width:calc(100% - 136px)}
+}
+
+
+
+/* Center actual icon boxes instead of relying on inline text baselines. */
+.target-back .target-icon-art,.target-forward .target-icon-art,
+.target-back .target-icon-art img,.target-forward .target-icon-art img{width:16px;height:16px}
+.target-back .target-icon-art img{translate:.32px 0}
+.target-forward .target-icon-art img{translate:.32px 0}
+.target-back .target-icon-art,.target-forward .target-icon-art{mask-position:calc(50% + .32px) center;-webkit-mask-position:calc(50% + .32px) center}
+.target-disclosure{--wd-disclosure-origin:50% 54%}
+.target-add-tab,.target-header-action{display:grid;place-items:center}
+.target-add-tab{width:28px;height:28px;margin-left:0;line-height:1}
+:root[data-theme="light"] .target-add-tab img,
+:root[data-theme="light"] .target-back img,
+:root[data-theme="light"] .target-forward img{filter:brightness(0)}
+
+/* Exported add/arrow assets already contain the Labels/Tertiary alpha. */
+.target-add-tab img{opacity:1}
+.target-add-tab:hover img{filter:brightness(1.3)}
+.target-tab:not(.selected){color:var(--wd-label-tertiary)}
+.target-tab:is(:hover,:focus-visible){color:var(--wd-label-primary)}
+.target-tab-icon{position:relative}
+.target-tab-icon>.target-icon-art--color{position:absolute;inset:0;opacity:0}
+.target-tab:is(.selected,:hover,:focus-visible) .target-tab-icon>.target-icon-art--color{opacity:1}
+
+/* Entering and leaving every stationary hover state uses foundations/motion.css. */
+[aria-label="Refresh statistics"] .asset>img{transform-origin:center;will-change:auto}
+
+/* Shared icon states preserve the exported glyphs, while normalising their alpha. */
+.target-icon-art--mono{color:currentColor}
+.target-icon-neutral{position:relative;color:var(--wd-label-primary)}
+.target-icon-neutral::after{content:"";position:absolute;inset:0;background:currentColor;mask:var(--icon-mask) center/contain no-repeat;-webkit-mask:var(--icon-mask) center/contain no-repeat;opacity:0}
+.target-icon-neutral img{opacity:1}
+.target-nav:is(:hover,:focus-visible){color:var(--wd-label-primary)}
+.target-nav:is(:hover,:focus-visible) .target-nav-icon{color:var(--wd-label-primary)}
+:is(.target-nav,.target-icon-button,.target-add-tab,.target-section-heading):is(:hover,:focus-visible) .target-icon-neutral::after{opacity:1}
+:is(.target-nav,.target-icon-button,.target-add-tab,.target-section-heading):is(:hover,:focus-visible) .target-icon-neutral img{opacity:0}
+.target-nav.active{box-shadow:none}
+.target-account:is(:hover,:focus-visible) .target-account-copy strong{color:var(--wd-label-primary)}
+.target-account-arrow{position:relative;width:16px;height:16px;display:inline-block;flex:none;color:var(--wd-label-secondary)}
+.target-account:is(:hover,:focus-visible) .target-account-arrow{color:var(--wd-label-primary)}
+.target-account-arrow img{opacity:0}
+.target-account-arrow::after{content:"";position:absolute;inset:0;background:currentColor;mask:var(--icon-mask) center/contain no-repeat;-webkit-mask:var(--icon-mask) center/contain no-repeat}
+.target-notifications:is(:hover,:focus-visible) .target-icon-art{color:var(--wd-label-primary)}
+.target-quick-search,.target-quick-search .target-icon-art{color:var(--wd-label-secondary)}
+:is(.target-icon-button,.target-header-action,.target-quick-search,.target-section-heading):is(:hover,:focus-visible) .target-icon-art{color:var(--wd-label-primary)}
+/* Highlight is a circle beneath the glyph, separate from the glass group. */
+.target-header-action::before{content:"";position:absolute;width:30px;height:30px;left:50%;top:50%;translate:-50% -50%;border-radius:50%;background:var(--wd-control-circle);opacity:0;pointer-events:none}
+.target-header-action .target-icon-art{position:relative}
+.target-header-action:is(:hover,:focus-visible)::before{opacity:1}
+

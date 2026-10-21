@@ -1,0 +1,23 @@
+{
+  "name": "wattdesk",
+  "private": true,
+  "version": "0.2.0",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "node server.js",
+    "sync:themes": "node scripts/sync-theme-tokens.cjs",
+    "sync:type": "node scripts/sync-type-tokens.cjs",
+    "sync": "npm run sync:home && npm run sync:themes && npm run sync:type && npm run sync:masks",
+    "sync:masks": "node scripts/build-icon-masks.cjs",
+    "check": "node scripts/check.cjs",
+    "test": "node tests/run.cjs",
+    "audit:assets": "node scripts/audit-assets.cjs",
+    "test:visual": "node tests/verify-refactor.cjs",
+    "sync:home": "node scripts/build-home-data.cjs",
+    "build:site": "node scripts/build-site.cjs",
+    "build:site:public": "node scripts/build-site.cjs --public"
+  }
+}
+

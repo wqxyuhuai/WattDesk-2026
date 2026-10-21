@@ -1,0 +1,137 @@
+/* Date chooser / Figma 14750:5606. The host owns the 462x433 geometry and
+ * mounts "Glass Surface"; nested capsule controls mount the standard face. */
+.wd-date-picker{position:fixed;z-index:105;display:flex;flex-direction:column;width:462px;height:auto;min-height:433px;overflow:visible;pointer-events:auto;border-radius:30px;color:var(--wd-label-primary);font-family:var(--wd-font-family);isolation:isolate}
+.wd-date-picker>.wd-glass-material{z-index:-1}
+.wd-date-picker-content{display:flex;flex-direction:column;min-height:433px}
+.wd-date-picker-main{display:flex;align-items:stretch;padding:0 20px}
+.wd-date-quick{flex:0 0 168px;display:flex;flex-direction:column;gap:1px;padding:20px 0;overflow:hidden}
+.wd-date-preset{position:relative;display:block;flex:0 0 30px;width:168px;height:30px;padding:0 12px;border:0;border-radius:999px;background:transparent;color:var(--wd-label-secondary);text-align:left;font-size:13px;font-weight:400;line-height:18px;letter-spacing:-.08px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wd-date-preset:is(:hover,:focus-visible){background:var(--wd-control-hover);color:var(--wd-label-primary)}
+.wd-date-preset[aria-pressed="true"]{background:var(--wd-label-tertiary);color:var(--wd-label-primary)}
+.wd-date-preset[aria-pressed="true"]:is(:hover,:focus-visible){background:color-mix(in srgb,var(--wd-label-tertiary) 86%,var(--wd-label-primary) 14%)}
+/* A zero-width layout slot carries one painted divider, matching the source. */
+.wd-date-divider{position:relative;flex:0 0 0;align-self:stretch;width:0;margin-left:10px}
+.wd-date-divider::after{content:"";position:absolute;inset:0 auto 0 -0.5px;width:1px;background:var(--wd-separator-nonopaque)}
+/* The calendar frame must not clip the shared disc hover/press scaling. Only
+ * the dates viewport clips the month track; the header stays fully visible. */
+.wd-date-calendar-wrap{position:relative;flex:1 1 auto;min-width:0;height:100%;padding:20px 0 0 10px;overflow:visible}
+.wd-date-calendar{display:flex;flex-direction:column;gap:8px;min-height:229px;overflow:visible}
+.wd-date-calendar-head{display:flex;align-items:center;justify-content:space-between;gap:8px;height:36px;overflow:visible}
+/* The heading must sit on the weekday glyph, not on the 30px cell edge, so
+ * date-picker.js measures that inset and writes it here; the fallback only
+ * covers the first frame before the masked font is in place. */
+.wd-date-month{position:relative;display:block;min-width:0;margin-left:9.75px;overflow:hidden;color:var(--wd-label-primary);white-space:nowrap}
+.wd-date-month-text,.wd-date-month-outgoing{display:block;white-space:nowrap}
+.wd-date-month-outgoing{position:absolute;inset:0 auto auto 0}
+.wd-date-nav{display:flex;align-items:center;gap:8px;overflow:visible}
+.wd-date-nav-button{position:relative;display:grid;place-items:center;width:36px;height:36px;padding:0;border:0;border-radius:50%;background:transparent;color:var(--wd-label-secondary)}
+.wd-date-nav-button>.wd-glass-material{z-index:-1}
+.wd-date-icon{display:block;width:18px;height:18px;background:currentColor;mask:var(--date-icon) center/contain no-repeat;-webkit-mask:var(--date-icon) center/contain no-repeat}
+.wd-date-nav-button:is(:hover,:focus-visible){color:var(--wd-label-primary)}
+.wd-date-nav-button:is(:disabled,[aria-disabled="true"]){color:var(--wd-label-quaternary);cursor:default}
+.wd-date-days{display:flex;flex-direction:column;gap:1px;overflow:visible}
+.wd-date-grid{display:grid;grid-template-columns:repeat(7,30px);grid-auto-rows:30px;gap:1px 4px;align-content:start;height:30px;overflow:visible}
+.wd-date-weekday{display:grid;place-items:center;width:30px;height:30px;font-size:12px;line-height:16px;color:var(--wd-label-tertiary);font-weight:400}
+/* A fixed viewport keeps the panel height stable while the month track slides. */
+.wd-date-dates-viewport{position:relative;height:154px;overflow:hidden}
+.wd-date-picker.is-six-weeks .wd-date-dates-viewport{height:185px}
+.wd-date-dates{display:grid;grid-template-columns:repeat(7,30px);grid-auto-rows:30px;gap:1px 4px;align-content:start;overflow:visible}
+.wd-date-dates--leaving{position:absolute;inset:0 auto auto 0;z-index:0}
+.wd-date-dates:not(.wd-date-dates--leaving){position:relative;z-index:1}
+.wd-date-day{position:relative;display:grid;place-items:center;width:30px;height:30px;padding:0;border:0;border-radius:50%;background:transparent;color:var(--wd-label-secondary);font-size:12px;line-height:16px;font-weight:400;font-variant-numeric:tabular-nums}
+.wd-date-day:is(:hover,:focus-visible){background:var(--wd-control-hover);color:var(--wd-label-primary)}
+.wd-date-day[aria-pressed="true"]{background:var(--wd-label-tertiary);color:var(--wd-label-primary)}
+.wd-date-day[aria-pressed="true"]:is(:hover,:focus-visible){background:color-mix(in srgb,var(--wd-label-tertiary) 86%,var(--wd-label-primary) 14%)}
+.wd-date-day.is-outside{color:var(--wd-label-quaternary);opacity:.58}
+.wd-date-day.is-outside:is(:hover,:focus-visible){color:var(--wd-label-secondary);opacity:1}
+.wd-date-day.is-in-range{background:var(--wd-label-quaternary);color:var(--wd-label-primary)}
+.wd-date-day.is-in-range:is(:hover,:focus-visible){background:var(--wd-label-tertiary)}
+.wd-date-day:focus-visible{outline-offset:1px}
+.wd-date-rule{position:relative;flex:0 0 0;height:0;margin:0;border:0}
+.wd-date-rule::after{content:"";position:absolute;inset:-0.5px 0 auto;height:1px;background:var(--wd-separator-nonopaque)}
+.wd-date-inputs{display:grid;flex:0 0 98px;grid-template-columns:1fr 1fr;gap:16px;height:98px;padding:20px}
+/* The reason sits with the controls it belongs to: under both fields and above
+ * the closing divider. Its row animates its own height, so the panel grows
+ * while the fields stay put and the footer keeps its geometry. */
+.wd-date-message{flex:0 0 auto;height:0;overflow:hidden;opacity:0}
+.wd-date-field{display:flex;flex-direction:column;gap:6px;min-width:0}
+.wd-date-field-label{height:16px;font-size:12px;line-height:16px;color:var(--wd-label-secondary)}
+.wd-date-field-control{position:relative;display:flex;align-items:center;height:36px;min-width:0;border-radius:999px;color:var(--wd-label-secondary);overflow:hidden}
+.wd-date-field-control>.wd-glass-material{z-index:-1}
+.wd-date-field-control>.wd-date-icon{flex:0 0 18px;width:18px;height:18px;margin-left:14px;margin-right:8px}
+/* Fixed-format fields: the slashes, colon and single space are painted here and
+ * can never be typed into, so the value always keeps the authored shape. */
+.wd-date-field-input{display:flex;flex:1 1 auto;align-items:baseline;min-width:0;height:100%;padding-right:14px;color:inherit;font-family:inherit;font-size:14px;font-weight:510;line-height:36px;letter-spacing:-.14px;font-variant-numeric:tabular-nums;white-space:nowrap}
+/* Each segment owns its complete character width, so a filled field never
+ * shifts its painted separators or borrows space from the neighbouring one. */
+.wd-date-segment{appearance:none;flex:0 0 auto;width:calc(var(--wd-date-segment-chars,2) * .62em);min-width:calc(var(--wd-date-segment-chars,2) * .62em);height:100%;padding:0;border:0;background:transparent;color:inherit;caret-color:currentColor;font:inherit;line-height:inherit;letter-spacing:inherit;text-align:left;font-variant-numeric:tabular-nums;cursor:text;field-sizing:content}
+.wd-date-segment:focus-visible{outline:0}
+.wd-date-separator{display:inline-block;flex:0 0 auto;min-width:.34em;color:inherit;opacity:.72;user-select:none;pointer-events:none;text-align:center}
+.wd-date-field-control:focus-within{box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--wd-blue) 48%,transparent)}
+.wd-date-field-control:is(:hover,:focus-within){color:var(--wd-label-primary)}
+/* The shared glass host clears native box-shadows, so the invalid state is
+ * painted as an overlay ring that sits above the material and the icon. */
+.wd-date-field-control.wd-date-invalid{color:var(--wd-red)!important}
+.wd-date-field-control.wd-date-invalid::after{content:"";position:absolute;inset:0;z-index:2;border-radius:inherit;pointer-events:none;box-shadow:inset 0 0 0 1px var(--wd-red),inset 0 0 0 2px color-mix(in srgb,var(--wd-red) 24%,transparent)}
+.wd-date-invalid :is(.wd-date-segment,.wd-date-separator,.wd-date-icon){color:var(--wd-red)}
+.wd-date-footer{display:flex;flex:0 0 76px;position:relative;justify-content:flex-end;align-items:center;gap:10px;height:76px;padding:20px}
+.wd-date-actions{display:flex;justify-content:flex-end;align-items:center;gap:10px;height:36px}
+.wd-date-error{margin:0;padding:0 20px 14px;color:var(--wd-red);font-size:12px;line-height:16px;letter-spacing:-.08px}
+.wd-date-error[hidden]{display:none}
+.wd-date-action{position:relative;display:inline-flex;align-items:center;justify-content:center;height:36px;padding:0 16px;border:0;border-radius:999px;font-size:13px;font-weight:510;line-height:18px;letter-spacing:-.08px;white-space:nowrap}
+.wd-date-action--cancel{color:var(--wd-label-secondary)}
+.wd-date-action--cancel:is(:hover,:focus-visible){color:var(--wd-label-primary)}
+/* Apply is the one solid accent in the panel (Figma 14736:5234). The source is
+ * a saturated blue disc with a dark 1px silhouette and a hairline bright edge,
+ * not a frosted face: the shared white reflection field and inner depth wash
+ * it towards white, so this optimised variant mutes them and keeps only the
+ * outline, rim and pointer edge that the source actually draws. */
+.wd-date-action--apply{color:var(--wd-figma-grays-white)}
+.wd-date-action--apply>.wd-glass-material{
+  --wd-glass-tint:var(--wd-blue);
+  --wd-glass-blur:0px;--wd-glass-saturation:1;
+  --wd-glass-outline:color-mix(in srgb,var(--wd-blue) 58%,rgba(0,0,0,1));
+  --wd-glass-outline-side:color-mix(in srgb,var(--wd-blue) 62%,rgba(0,0,0,.92));
+  --wd-glass-outline-width:.6px;
+  --wd-glass-drop:rgba(0,0,0,.34);
+  --wd-glass-drop-y:2px;--wd-glass-drop-blur:6px;
+  --wd-glass-rim-width:.6px;
+  --wd-glass-rim-top:rgba(255,255,255,.20);
+  --wd-glass-rim-side:transparent;
+  --wd-glass-rim-bottom:rgba(255,255,255,.15);
+  --wd-glass-inner-top:transparent;
+  --wd-glass-inner-bottom:transparent;
+  --wd-glass-optical-burn:transparent;
+  --wd-glass-optical-light-top:transparent;
+  --wd-glass-optical-light-bottom:transparent;
+  --wd-glass-reflection-field:none;
+  --wd-glass-hover-field:linear-gradient(180deg,rgba(255,255,255,.045),rgba(255,255,255,.012));
+  --wd-glass-glow:rgba(255,255,255,.08);
+  --wd-glass-glow-edge:rgba(255,255,255,.34);
+}
+.wd-date-action--apply:is(:hover,:focus-visible)>.wd-glass-material{--wd-glass-tint:color-mix(in srgb,var(--wd-blue) 93%,var(--wd-figma-grays-white) 7%)}
+:root[data-theme="light"] .wd-date-action--apply>.wd-glass-material{
+  --wd-glass-outline:color-mix(in srgb,var(--wd-blue) 66%,rgba(0,0,0,1));
+  --wd-glass-outline-side:color-mix(in srgb,var(--wd-blue) 70%,rgba(0,0,0,.94));
+  --wd-glass-drop:rgba(0,0,0,.20);
+}
+.wd-date-action--apply:is(:disabled,[aria-disabled="true"]){opacity:.55;cursor:default}
+.wd-date-picker :is(button,input){font-family:inherit}
+.wd-date-picker :is(button,input):focus-visible{outline:2px solid var(--wd-blue);outline-offset:2px}
+.wd-date-picker :is(.wd-date-preset,.wd-date-day,.wd-date-action--cancel):focus-visible{outline-offset:0}
+.wd-date-picker .wd-date-segment:focus-visible{outline:0}
+
+@media (max-width:520px){
+ .wd-date-picker{width:min(462px,calc(100vw - 24px));height:auto;max-height:calc(100vh - 24px);overflow:auto}
+ .wd-date-picker-content{min-height:0}
+ .wd-date-picker-main{flex-direction:column;height:auto;padding:0 16px}
+ .wd-date-quick{flex-basis:auto;flex-direction:row;flex-wrap:wrap;padding:16px 0 8px}
+ .wd-date-preset{width:auto;flex:0 0 auto;min-width:max-content;padding:0 12px}
+ .wd-date-divider{display:none}
+ .wd-date-calendar-wrap{height:auto;padding:4px 0 10px}
+ .wd-date-calendar{height:auto}
+ .wd-date-inputs{flex-basis:auto;height:auto;grid-template-columns:1fr;gap:12px;padding:16px}
+ .wd-date-field-input{padding-right:12px}
+ .wd-date-error{padding:0 16px}
+ .wd-date-footer{flex:0 0 68px;height:68px;padding:16px}
+}

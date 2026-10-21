@@ -1,0 +1,64 @@
+{
+  "fileKey": "7hGGOqflIMGWTYQMm9tce0",
+  "frame": "14434:3261",
+  "assets": [
+    {
+      "file": "logo.svg",
+      "nodeId": "14445:3632"
+    },
+    {
+      "file": "statistics.svg",
+      "nodeId": "I14659:1791;14420:2194"
+    },
+    {
+      "file": "disclosure.svg",
+      "nodeId": "I14659:3248;14659:3242"
+    },
+    {
+      "file": "organisation.svg",
+      "nodeId": "I14659:3254;14420:2194"
+    },
+    {
+      "file": "teams.svg",
+      "nodeId": "I14659:3255;14420:2194"
+    },
+    {
+      "file": "user.svg",
+      "nodeId": "I14659:3256;14420:2194"
+    },
+    {
+      "file": "account-arrows.svg",
+      "nodeId": "14659:3487"
+    },
+    {
+      "file": "sun.svg",
+      "nodeId": "14410:17843"
+    },
+    {
+      "file": "disclosure-right.svg",
+      "nodeId": "14410:10756"
+    },
+    {
+      "file": "cell-balance.svg",
+      "nodeId": "I14496:2311;14420:2194"
+    },
+    {
+      "file": "module-balance.svg",
+      "nodeId": "I14496:2320;14420:2194"
+    },
+    {
+      "file": "device-track.svg",
+      "nodeId": "I14496:2329;14420:2194"
+    },
+    {
+      "file": "settings.svg",
+      "nodeId": "I14486:2245;14459:4916;14445:4306"
+    },
+    {
+      "file": "tab-close.svg",
+      "nodeId": "I14738:5317;14420:2221;14420:2235",
+      "derivedFrom": "I14738:5317;14420:2221;14420:2235",
+      "note": "Inner X path from Close Circle; host provides the circular fill."
+    }
+  ]
+}

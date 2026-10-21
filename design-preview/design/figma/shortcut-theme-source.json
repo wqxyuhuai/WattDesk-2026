@@ -1,0 +1,1230 @@
+[
+  {
+    "id": "I14612:8369;14612:7804",
+    "text": "Workspace",
+    "segments": [
+      {
+        "text": "Workspace",
+        "fills": [
+          {
+            "type": "SOLID",
+            "visible": true,
+            "opacity": 0.699999988079071,
+            "blendMode": "NORMAL",
+            "color": {
+              "r": 0.9215686321258545,
+              "g": 0.9215686321258545,
+              "b": 0.9607843160629272
+            },
+            "boundVariables": {
+              "color": {
+                "type": "VARIABLE_ALIAS",
+                "id": "VariableID:507:29162"
+              }
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "I14613:1162;14612:7804",
+    "text": "Plants",
+    "segments": [
+      {
+        "text": "Plants",
+        "fills": [
+          {
+            "type": "SOLID",
+            "visible": true,
+            "opacity": 1,
+            "blendMode": "NORMAL",
+            "color": {
+              "r": 1,
+              "g": 1,
+              "b": 1
+            },
+            "boundVariables": {
+              "color": {
+                "type": "VARIABLE_ALIAS",
+                "id": "VariableID:507:29167"
+              }
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "I14613:1190;14612:7804",
+    "text": "Service ticket",
+    "segments": [
+      {
+        "text": "Service ticket",
+        "fills": [
+          {
+            "type": "SOLID",
+            "visible": true,
+            "opacity": 1,
+            "blendMode": "NORMAL",
+            "color": {
+              "r": 1,
+              "g": 1,
+              "b": 1
+            },
+            "boundVariables": {
+              "color": {
+                "type": "VARIABLE_ALIAS",
+                "id": "VariableID:507:29167"
+              }
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "I14613:1210;14612:7804",
+    "text": "Statistics (coming soon)",
+    "segments": [
+      {
+        "text": "Statistics (coming soon)",
+        "fills": [
+          {
+            "type": "SOLID",
+            "visible": true,
+            "opacity": 1,
+            "blendMode": "NORMAL",
+            "color": {
+              "r": 1,
+              "g": 1,
+              "b": 1
+            },
+            "boundVariables": {
+              "color": {
+                "type": "VARIABLE_ALIAS",
+                "id": "VariableID:507:29167"
+              }
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "I14612:8380;14612:7804",
+    "text": "Following",
+    "segments": [
+      {
+        "text": "Following",
+        "fills": [
+          {
+            "type": "SOLID",
+            "visible": true,
+            "opacity": 0.699999988079071,
+            "blendMode": "NORMAL",
+            "color": {
+              "r": 0.9215686321258545,
+              "g": 0.9215686321258545,
+              "b": 0.9607843160629272
+            },
+            "boundVariables": {
+              "color": {
+                "type": "VARIABLE_ALIAS",
+                "id": "VariableID:507:29162"
+              }
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "I14612:8380;14612:7806;14420:2076;14420:2071",
+    "text": "View all",
+    "segments": [
+      {
+        "text": "View all",
+        "fills": [
+          {
+            "type": "SOLID",
+            "visible": true,
+            "opacity": 1,
+            "blendMode": "NORMAL",
+            "color": {
+              "r": 0.5411764979362488,
+              "g": 0.5411764979362488,
+              "b": 0.5411764979362488
+            },
+            "boundVariables": {
+              "color": {
+                "type": "VARIABLE_ALIAS",
+                "id": "VariableID:5500:4616"
+              }
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "I14613:1250;14612:7804",
+    "text": "Summit Energy Hub",
+    "segments": [
+      {
+        "text": "Summit Energy Hub",
+        "fills": [
+          {
+            "type": "SOLID",
+            "visible": true,
+            "opacity": 1,
+            "blendMode": "NORMAL",
+            "color": {
+              "r": 1,
+              "g": 1,
+              "b": 1
+            },
+            "boundVariables": {
+              "color": {
+                "type": "VARIABLE_ALIAS",
+                "id": "VariableID:507:29167"
+              }
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "I14613:1270;14612:7804",
+    "text": "Eastshore Power Plant",
+    "segments": [
+      {
+        "text": "Eastshore Power Plant",
+        "fills": [
+          {
+            "type": "SOLID",
+            "visible": true,
+            "opacity": 1,
+            "blendMode": "NORMAL",
+            "color": {
+              "r": 1,
+              "g": 1,
+              "b": 1
+            },
+            "boundVariables": {
+              "color": {
+                "type": "VARIABLE_ALIAS",
+                "id": "VariableID:507:29167"
+              }
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "I14613:1290;14612:7804",
+    "text": "Green Valley Wind Farm",
+    "segments": [
+      {
+        "text": "Green Valley Wind Farm",
+        "fills": [
+          {
+            "type": "SOLID",
+            "visible": true,
+            "opacity": 1,
+            "blendMode": "NORMAL",
+            "color": {
+              "r": 1,
+              "g": 1,
+              "b": 1
+            },
+            "boundVariables": {
+              "color": {
+                "type": "VARIABLE_ALIAS",
+                "id": "VariableID:507:29167"
+              }
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "I14613:1310;14612:7804",
+    "text": "Sunrise Solar Station",
+    "segments": [
+      {
+        "text": "Sunrise Solar Station",
+        "fills": [
+          {
+            "type": "SOLID",
+            "visible": true,
+            "opacity": 1,
+            "blendMode": "NORMAL",
+            "color": {
+              "r": 1,
+              "g": 1,
+              "b": 1
+            },
+            "boundVariables": {
+              "color": {
+                "type": "VARIABLE_ALIAS",
+                "id": "VariableID:507:29167"
+              }
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "I14613:1330;14612:7804",
+    "text": "Sunrise Solar Station",
+    "segments": [
+      {
+        "text": "Sunrise Solar Station",
+        "fills": [
+          {
+            "type": "SOLID",
+            "visible": true,
+            "opacity": 1,
+            "blendMode": "NORMAL",
+            "color": {
+              "r": 1,
+              "g": 1,
+              "b": 1
+            },
+            "boundVariables": {
+              "color": {
+                "type": "VARIABLE_ALIAS",
+                "id": "VariableID:507:29167"
+              }
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "I14612:8402;14612:7804",
+    "text": "Recently visited",
+    "segments": [
+      {
+        "text": "Recently visited",
+        "fills": [
+          {
+            "type": "SOLID",
+            "visible": true,
+            "opacity": 0.699999988079071,
+            "blendMode": "NORMAL",
+            "color": {
+              "r": 0.9215686321258545,
+              "g": 0.9215686321258545,
+              "b": 0.9607843160629272
+            },
+            "boundVariables": {
+              "color": {
+                "type": "VARIABLE_ALIAS",
+                "id": "VariableID:507:29162"
+              }
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "I14612:8402;14612:7806;14420:2076;14420:2071",
+    "text": "View all",
+    "segments": [
+      {
+        "text": "View all",
+        "fills": [
+          {
+            "type": "SOLID",
+            "visible": true,
+            "opacity": 1,
+            "blendMode": "NORMAL",
+            "color": {
+              "r": 0.5411764979362488,
+              "g": 0.5411764979362488,
+              "b": 0.5411764979362488
+            },
+            "boundVariables": {
+              "color": {
+                "type": "VARIABLE_ALIAS",
+                "id": "VariableID:5500:4616"
+              }
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "I14613:1350;14612:7804",
+    "text": "Plants / Summit Energy Hub",
+    "segments": [
+      {
+        "text": "Plants / ",
+        "fills": [
+          {
+            "type": "SOLID",
+            "visible": true,
+            "opacity": 0.30000001192092896,
+            "blendMode": "NORMAL",
+            "color": {
+              "r": 0.9215686321258545,
+              "g": 0.9215686321258545,
+              "b": 0.9607843160629272
+            },
+            "boundVariables": {
+              "color": {
+                "type": "VARIABLE_ALIAS",
+                "id": "VariableID:508:77449"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "text": "Summit Energy Hub",
+        "fills": [
+          {
+            "type": "SOLID",
+            "visible": true,
+            "opacity": 1,
+            "blendMode": "NORMAL",
+            "color": {
+              "r": 1,
+              "g": 1,
+              "b": 1
+            },
+            "boundVariables": {
+              "color": {
+                "type": "VARIABLE_ALIAS",
+                "id": "VariableID:507:29167"
+              }
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "I14613:1371;14612:7804",
+    "text": "Plants / Eastshore Power Plant",
+    "segments": [
+      {
+        "text": "Plants /",
+        "fills": [
+          {
+            "type": "SOLID",
+            "visible": true,
+            "opacity": 0.30000001192092896,
+            "blendMode": "NORMAL",
+            "color": {
+              "r": 0.9215686321258545,
+              "g": 0.9215686321258545,
+              "b": 0.9607843160629272
+            },
+            "boundVariables": {
+              "color": {
+                "type": "VARIABLE_ALIAS",
+                "id": "VariableID:508:77449"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "text": " Eastshore Power Plant",
+        "fills": [
+          {
+            "type": "SOLID",
+            "visible": true,
+            "opacity": 1,
+            "blendMode": "NORMAL",
+            "color": {
+              "r": 1,
+              "g": 1,
+              "b": 1
+            },
+            "boundVariables": {
+              "color": {
+                "type": "VARIABLE_ALIAS",
+                "id": "VariableID:507:29167"
+              }
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "I14613:1392;14612:7804",
+    "text": "Device tool / Cell balance",
+    "segments": [
+      {
+        "text": "Device tool / ",
+        "fills": [
+          {
+            "type": "SOLID",
+            "visible": true,
+            "opacity": 0.30000001192092896,
+            "blendMode": "NORMAL",
+            "color": {
+              "r": 0.9215686321258545,
+              "g": 0.9215686321258545,
+              "b": 0.9607843160629272
+            },
+            "boundVariables": {
+              "color": {
+                "type": "VARIABLE_ALIAS",
+                "id": "VariableID:508:77449"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "text": "Cell balance",
+        "fills": [
+          {
+            "type": "SOLID",
+            "visible": true,
+            "opacity": 1,
+            "blendMode": "NORMAL",
+            "color": {
+              "r": 1,
+              "g": 1,
+              "b": 1
+            },
+            "boundVariables": {
+              "color": {
+                "type": "VARIABLE_ALIAS",
+                "id": "VariableID:507:29167"
+              }
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "I14613:1413;14612:7804",
+    "text": "Organization / Comapany",
+    "segments": [
+      {
+        "text": "Organization / ",
+        "fills": [
+          {
+            "type": "SOLID",
+            "visible": true,
+            "opacity": 0.30000001192092896,
+            "blendMode": "NORMAL",
+            "color": {
+              "r": 0.9215686321258545,
+              "g": 0.9215686321258545,
+              "b": 0.9607843160629272
+            },
+            "boundVariables": {
+              "color": {
+                "type": "VARIABLE_ALIAS",
+                "id": "VariableID:508:77449"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "text": "Comapany",
+        "fills": [
+          {
+            "type": "SOLID",
+            "visible": true,
+            "opacity": 1,
+            "blendMode": "NORMAL",
+            "color": {
+              "r": 1,
+              "g": 1,
+              "b": 1
+            },
+            "boundVariables": {
+              "color": {
+                "type": "VARIABLE_ALIAS",
+                "id": "VariableID:507:29167"
+              }
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "I14613:1434;14612:7804",
+    "text": "Plants / Eastshore Power Plant",
+    "segments": [
+      {
+        "text": "Plants / ",
+        "fills": [
+          {
+            "type": "SOLID",
+            "visible": true,
+            "opacity": 0.30000001192092896,
+            "blendMode": "NORMAL",
+            "color": {
+              "r": 0.9215686321258545,
+              "g": 0.9215686321258545,
+              "b": 0.9607843160629272
+            },
+            "boundVariables": {
+              "color": {
+                "type": "VARIABLE_ALIAS",
+                "id": "VariableID:508:77449"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "text": "Eastshore Power Plant",
+        "fills": [
+          {
+            "type": "SOLID",
+            "visible": true,
+            "opacity": 1,
+            "blendMode": "NORMAL",
+            "color": {
+              "r": 1,
+              "g": 1,
+              "b": 1
+            },
+            "boundVariables": {
+              "color": {
+                "type": "VARIABLE_ALIAS",
+                "id": "VariableID:507:29167"
+              }
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "I14704:3936;14612:7804",
+    "text": "Workspace",
+    "segments": [
+      {
+        "text": "Workspace",
+        "fills": [
+          {
+            "type": "SOLID",
+            "visible": true,
+            "opacity": 0.6000000238418579,
+            "blendMode": "NORMAL",
+            "color": {
+              "r": 0.23529411852359772,
+              "g": 0.23529411852359772,
+              "b": 0.26274511218070984
+            },
+            "boundVariables": {
+              "color": {
+                "type": "VARIABLE_ALIAS",
+                "id": "VariableID:507:29162"
+              }
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "I14704:3938;14612:7804",
+    "text": "Plants",
+    "segments": [
+      {
+        "text": "Plants",
+        "fills": [
+          {
+            "type": "SOLID",
+            "visible": true,
+            "opacity": 1,
+            "blendMode": "NORMAL",
+            "color": {
+              "r": 0,
+              "g": 0,
+              "b": 0
+            },
+            "boundVariables": {
+              "color": {
+                "type": "VARIABLE_ALIAS",
+                "id": "VariableID:507:29167"
+              }
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "I14704:3940;14612:7804",
+    "text": "Service ticket",
+    "segments": [
+      {
+        "text": "Service ticket",
+        "fills": [
+          {
+            "type": "SOLID",
+            "visible": true,
+            "opacity": 1,
+            "blendMode": "NORMAL",
+            "color": {
+              "r": 0,
+              "g": 0,
+              "b": 0
+            },
+            "boundVariables": {
+              "color": {
+                "type": "VARIABLE_ALIAS",
+                "id": "VariableID:507:29167"
+              }
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "I14704:3941;14612:7804",
+    "text": "Statistics (coming soon)",
+    "segments": [
+      {
+        "text": "Statistics (coming soon)",
+        "fills": [
+          {
+            "type": "SOLID",
+            "visible": true,
+            "opacity": 1,
+            "blendMode": "NORMAL",
+            "color": {
+              "r": 0,
+              "g": 0,
+              "b": 0
+            },
+            "boundVariables": {
+              "color": {
+                "type": "VARIABLE_ALIAS",
+                "id": "VariableID:507:29167"
+              }
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "I14704:3946;14612:7804",
+    "text": "Following",
+    "segments": [
+      {
+        "text": "Following",
+        "fills": [
+          {
+            "type": "SOLID",
+            "visible": true,
+            "opacity": 0.6000000238418579,
+            "blendMode": "NORMAL",
+            "color": {
+              "r": 0.23529411852359772,
+              "g": 0.23529411852359772,
+              "b": 0.26274511218070984
+            },
+            "boundVariables": {
+              "color": {
+                "type": "VARIABLE_ALIAS",
+                "id": "VariableID:507:29162"
+              }
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "I14704:3946;14612:7806;14420:2076;14420:2071",
+    "text": "View all",
+    "segments": [
+      {
+        "text": "View all",
+        "fills": [
+          {
+            "type": "SOLID",
+            "visible": true,
+            "opacity": 1,
+            "blendMode": "NORMAL",
+            "color": {
+              "r": 0.4470588266849518,
+              "g": 0.4470588266849518,
+              "b": 0.4470588266849518
+            },
+            "boundVariables": {
+              "color": {
+                "type": "VARIABLE_ALIAS",
+                "id": "VariableID:5500:4616"
+              }
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "I14704:3948;14612:7804",
+    "text": "Summit Energy Hub",
+    "segments": [
+      {
+        "text": "Summit Energy Hub",
+        "fills": [
+          {
+            "type": "SOLID",
+            "visible": true,
+            "opacity": 1,
+            "blendMode": "NORMAL",
+            "color": {
+              "r": 0,
+              "g": 0,
+              "b": 0
+            },
+            "boundVariables": {
+              "color": {
+                "type": "VARIABLE_ALIAS",
+                "id": "VariableID:507:29167"
+              }
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "I14704:3949;14612:7804",
+    "text": "Eastshore Power Plant",
+    "segments": [
+      {
+        "text": "Eastshore Power Plant",
+        "fills": [
+          {
+            "type": "SOLID",
+            "visible": true,
+            "opacity": 1,
+            "blendMode": "NORMAL",
+            "color": {
+              "r": 0,
+              "g": 0,
+              "b": 0
+            },
+            "boundVariables": {
+              "color": {
+                "type": "VARIABLE_ALIAS",
+                "id": "VariableID:507:29167"
+              }
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "I14704:3950;14612:7804",
+    "text": "Green Valley Wind Farm",
+    "segments": [
+      {
+        "text": "Green Valley Wind Farm",
+        "fills": [
+          {
+            "type": "SOLID",
+            "visible": true,
+            "opacity": 1,
+            "blendMode": "NORMAL",
+            "color": {
+              "r": 0,
+              "g": 0,
+              "b": 0
+            },
+            "boundVariables": {
+              "color": {
+                "type": "VARIABLE_ALIAS",
+                "id": "VariableID:507:29167"
+              }
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "I14704:3951;14612:7804",
+    "text": "Sunrise Solar Station",
+    "segments": [
+      {
+        "text": "Sunrise Solar Station",
+        "fills": [
+          {
+            "type": "SOLID",
+            "visible": true,
+            "opacity": 1,
+            "blendMode": "NORMAL",
+            "color": {
+              "r": 0,
+              "g": 0,
+              "b": 0
+            },
+            "boundVariables": {
+              "color": {
+                "type": "VARIABLE_ALIAS",
+                "id": "VariableID:507:29167"
+              }
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "I14704:3952;14612:7804",
+    "text": "Sunrise Solar Station",
+    "segments": [
+      {
+        "text": "Sunrise Solar Station",
+        "fills": [
+          {
+            "type": "SOLID",
+            "visible": true,
+            "opacity": 1,
+            "blendMode": "NORMAL",
+            "color": {
+              "r": 0,
+              "g": 0,
+              "b": 0
+            },
+            "boundVariables": {
+              "color": {
+                "type": "VARIABLE_ALIAS",
+                "id": "VariableID:507:29167"
+              }
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "I14704:3954;14612:7804",
+    "text": "Recently visited",
+    "segments": [
+      {
+        "text": "Recently visited",
+        "fills": [
+          {
+            "type": "SOLID",
+            "visible": true,
+            "opacity": 0.6000000238418579,
+            "blendMode": "NORMAL",
+            "color": {
+              "r": 0.23529411852359772,
+              "g": 0.23529411852359772,
+              "b": 0.26274511218070984
+            },
+            "boundVariables": {
+              "color": {
+                "type": "VARIABLE_ALIAS",
+                "id": "VariableID:507:29162"
+              }
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "I14704:3954;14612:7806;14420:2076;14420:2071",
+    "text": "View all",
+    "segments": [
+      {
+        "text": "View all",
+        "fills": [
+          {
+            "type": "SOLID",
+            "visible": true,
+            "opacity": 1,
+            "blendMode": "NORMAL",
+            "color": {
+              "r": 0.4470588266849518,
+              "g": 0.4470588266849518,
+              "b": 0.4470588266849518
+            },
+            "boundVariables": {
+              "color": {
+                "type": "VARIABLE_ALIAS",
+                "id": "VariableID:5500:4616"
+              }
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "I14704:3956;14612:7804",
+    "text": "Plants / Summit Energy Hub",
+    "segments": [
+      {
+        "text": "Plants / ",
+        "fills": [
+          {
+            "type": "SOLID",
+            "visible": true,
+            "opacity": 0.30000001192092896,
+            "blendMode": "NORMAL",
+            "color": {
+              "r": 0.23529411852359772,
+              "g": 0.23529411852359772,
+              "b": 0.26274511218070984
+            },
+            "boundVariables": {
+              "color": {
+                "type": "VARIABLE_ALIAS",
+                "id": "VariableID:508:77449"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "text": "Summit Energy Hub",
+        "fills": [
+          {
+            "type": "SOLID",
+            "visible": true,
+            "opacity": 1,
+            "blendMode": "NORMAL",
+            "color": {
+              "r": 0,
+              "g": 0,
+              "b": 0
+            },
+            "boundVariables": {
+              "color": {
+                "type": "VARIABLE_ALIAS",
+                "id": "VariableID:507:29167"
+              }
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "I14704:3957;14612:7804",
+    "text": "Plants / Eastshore Power Plant",
+    "segments": [
+      {
+        "text": "Plants /",
+        "fills": [
+          {
+            "type": "SOLID",
+            "visible": true,
+            "opacity": 0.30000001192092896,
+            "blendMode": "NORMAL",
+            "color": {
+              "r": 0.23529411852359772,
+              "g": 0.23529411852359772,
+              "b": 0.26274511218070984
+            },
+            "boundVariables": {
+              "color": {
+                "type": "VARIABLE_ALIAS",
+                "id": "VariableID:508:77449"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "text": " Eastshore Power Plant",
+        "fills": [
+          {
+            "type": "SOLID",
+            "visible": true,
+            "opacity": 1,
+            "blendMode": "NORMAL",
+            "color": {
+              "r": 0,
+              "g": 0,
+              "b": 0
+            },
+            "boundVariables": {
+              "color": {
+                "type": "VARIABLE_ALIAS",
+                "id": "VariableID:507:29167"
+              }
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "I14704:3958;14612:7804",
+    "text": "Device tool / Cell balance",
+    "segments": [
+      {
+        "text": "Device tool / ",
+        "fills": [
+          {
+            "type": "SOLID",
+            "visible": true,
+            "opacity": 0.30000001192092896,
+            "blendMode": "NORMAL",
+            "color": {
+              "r": 0.23529411852359772,
+              "g": 0.23529411852359772,
+              "b": 0.26274511218070984
+            },
+            "boundVariables": {
+              "color": {
+                "type": "VARIABLE_ALIAS",
+                "id": "VariableID:508:77449"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "text": "Cell balance",
+        "fills": [
+          {
+            "type": "SOLID",
+            "visible": true,
+            "opacity": 1,
+            "blendMode": "NORMAL",
+            "color": {
+              "r": 0,
+              "g": 0,
+              "b": 0
+            },
+            "boundVariables": {
+              "color": {
+                "type": "VARIABLE_ALIAS",
+                "id": "VariableID:507:29167"
+              }
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "I14704:3959;14612:7804",
+    "text": "Organization / Comapany",
+    "segments": [
+      {
+        "text": "Organization / ",
+        "fills": [
+          {
+            "type": "SOLID",
+            "visible": true,
+            "opacity": 0.30000001192092896,
+            "blendMode": "NORMAL",
+            "color": {
+              "r": 0.23529411852359772,
+              "g": 0.23529411852359772,
+              "b": 0.26274511218070984
+            },
+            "boundVariables": {
+              "color": {
+                "type": "VARIABLE_ALIAS",
+                "id": "VariableID:508:77449"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "text": "Comapany",
+        "fills": [
+          {
+            "type": "SOLID",
+            "visible": true,
+            "opacity": 1,
+            "blendMode": "NORMAL",
+            "color": {
+              "r": 0,
+              "g": 0,
+              "b": 0
+            },
+            "boundVariables": {
+              "color": {
+                "type": "VARIABLE_ALIAS",
+                "id": "VariableID:507:29167"
+              }
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "I14704:3960;14612:7804",
+    "text": "Plants / Eastshore Power Plant",
+    "segments": [
+      {
+        "text": "Plants / ",
+        "fills": [
+          {
+            "type": "SOLID",
+            "visible": true,
+            "opacity": 0.30000001192092896,
+            "blendMode": "NORMAL",
+            "color": {
+              "r": 0.23529411852359772,
+              "g": 0.23529411852359772,
+              "b": 0.26274511218070984
+            },
+            "boundVariables": {
+              "color": {
+                "type": "VARIABLE_ALIAS",
+                "id": "VariableID:508:77449"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "text": "Eastshore Power Plant",
+        "fills": [
+          {
+            "type": "SOLID",
+            "visible": true,
+            "opacity": 1,
+            "blendMode": "NORMAL",
+            "color": {
+              "r": 0,
+              "g": 0,
+              "b": 0
+            },
+            "boundVariables": {
+              "color": {
+                "type": "VARIABLE_ALIAS",
+                "id": "VariableID:507:29167"
+              }
+            }
+          }
+        ]
+      }
+    ]
+  }
+]

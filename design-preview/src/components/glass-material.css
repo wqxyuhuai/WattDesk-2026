@@ -1,0 +1,283 @@
+/*
+ * Shared two-layer glass material. Every surface consumes these values.
+ * The reviewed Figma material is the single runtime direction.
+ * Figma: neutral 153/255 tint at .17; GLASS blur 6, depth 30, refraction .7.
+ * Geometry (radius/size) belongs to the host; optics never move host/content.
+ */
+:root{
+  --wd-glass-tint:rgba(153,153,153,.17);
+  --wd-glass-blur:6px;--wd-glass-saturation:1.08;
+  --wd-glass-reflection-top:transparent;
+  --wd-glass-reflection-bottom:transparent;
+  --wd-glass-reflection-mid:transparent;
+  --wd-glass-rim-top:rgba(255,255,255,.17);
+  --wd-glass-rim-side:transparent;
+  --wd-glass-rim-bottom:rgba(255,255,255,.14);
+  --wd-glass-rim-width:.6px;
+  --wd-glass-outline:rgba(0,0,0,.95);--wd-glass-outline-width:.5px;
+  --wd-glass-optical-burn:rgba(0,0,0,.215);
+  --wd-glass-optical-light-top:rgba(255,255,255,.10);
+  --wd-glass-optical-light-bottom:rgba(255,255,255,.14);
+  --wd-glass-inner-top:transparent;
+  --wd-glass-inner-bottom:transparent;
+  --wd-glass-inner-depth:5px;
+  --wd-glass-drop:rgba(0,0,0,.04);
+  --wd-glass-drop-y:8px;--wd-glass-drop-blur:15px;
+  --wd-glass-hover-tint:rgba(255,255,255,.045);
+  --wd-glass-hover-bottom:rgba(255,255,255,.30);
+  --wd-glass-hover-field:linear-gradient(180deg,rgba(255,255,255,.065),rgba(255,255,255,.022) 55%,rgba(255,255,255,.05));
+  --wd-glass-state-edge:inset 0 1px 1px rgba(255,255,255,.12),inset 0 -1px 7px -3px rgba(255,255,255,.24);
+  --wd-glass-selected-tint:rgba(255,255,255,.035);
+  --wd-glass-glow:rgba(255,255,255,.055);
+  --wd-glass-glow-radius:110px;--wd-glass-glow-edge:rgba(255,255,255,.72);
+  --wd-glass-glow-edge-radius:44px;
+  --wd-glass-optical-offset:40px;--wd-glass-optical-spread:-40px;
+  --wd-glass-optical-burn-blur:30px;--wd-glass-optical-light-blur:10px;
+}
+:root[data-theme="light"]{
+  /* Reviewed light optics; raw stacked fills remain in design/figma. */
+  --wd-glass-outline:rgba(0,0,0,.23);
+  --wd-glass-outline-side:rgba(0,0,0,.29);
+  --wd-glass-optical-burn:rgba(0,0,0,.035);
+  --wd-glass-optical-light-top:rgba(255,255,255,.60);
+  --wd-glass-optical-light-bottom:rgba(255,255,255,.72);
+  --wd-glass-tint:rgba(246,248,252,.70);
+  --wd-glass-reflection-top:transparent;
+  --wd-glass-reflection-bottom:transparent;
+  --wd-glass-reflection-mid:transparent;
+  --wd-glass-rim-top:rgba(255,255,255,1);
+  --wd-glass-rim-side:transparent;
+  --wd-glass-rim-bottom:rgba(255,255,255,1);
+  --wd-glass-inner-top:rgba(255,255,255,.86);
+  --wd-glass-inner-bottom:rgba(255,255,255,.54);
+  --wd-glass-drop:rgba(0,0,0,.075);
+  --wd-glass-drop-y:10px;
+  --wd-glass-drop-blur:18px;
+  --wd-glass-contact:rgba(0,0,0,.045);
+  --wd-glass-hover-tint:rgba(255,255,255,.16);
+  --wd-glass-hover-bottom:rgba(255,255,255,.70);
+  --wd-glass-selected-tint:rgba(255,255,255,.025);
+  --wd-glass-glow:rgba(255,255,255,.58);
+  --wd-glass-glow-edge:rgba(0,0,0,.42);
+  --wd-glass-glow-edge-inset:-.5px;
+  --wd-glass-glow-edge-width:.5px;
+  --wd-glass-reflection-field:radial-gradient(ellipse at 50% 0%,rgba(255,255,255,.30),transparent 72%),
+    linear-gradient(180deg,rgba(255,255,255,.20),transparent 42%,rgba(210,220,232,.04) 70%,rgba(255,255,255,.16));
+  --wd-glass-rim-width:.65px;
+  --wd-glass-inner-depth:4px;
+  --wd-glass-hover-field:linear-gradient(180deg,rgba(255,255,255,.22),rgba(255,255,255,.06) 55%,rgba(255,255,255,.18));
+  --wd-glass-state-edge:inset 0 1px 2px rgba(255,255,255,.60),inset 0 -2px 9px -3px rgba(255,255,255,.65);
+}
+
+/* Glass Surface branch: stronger frost for full-size floating surfaces.
+ * up for a full-size floating surface. It is named "glass-surface" so future
+ * dialogs and menus reuse one material instead of inventing a local blur. */
+.wd-glass--surface>.wd-glass-material{
+  /* Panels must still show the page beneath. 22px blur over a 44% tint read
+   * as a solid sheet; 30% over 18px keeps text legible while the backdrop
+   * still shapes the glass. */
+  --wd-glass-blur:var(--wd-glass-surface-blur,18px);
+  --wd-glass-saturation:var(--wd-glass-surface-saturation,1.20);
+  --wd-glass-tint:var(--wd-glass-surface-tint,rgba(28,28,30,.30));
+  --wd-glass-outline:var(--wd-glass-surface-outline,rgba(0,0,0,.72));
+  --wd-glass-outline-width:.6px;
+  --wd-glass-drop:var(--wd-glass-surface-drop,rgba(0,0,0,.34));
+  --wd-glass-drop-y:16px;
+  --wd-glass-drop-blur:42px;
+  --wd-glass-hover-field:linear-gradient(180deg,rgba(255,255,255,.055),rgba(255,255,255,.012) 48%,rgba(255,255,255,.032));
+  --wd-glass-hover-bottom:rgba(255,255,255,.22);
+  --wd-glass-state-edge:inset 0 1px 1px rgba(255,255,255,.13),inset 0 -1px 10px -4px rgba(255,255,255,.18);
+  /* A full-size surface used to carry a 210px halo at .045/.15, which was
+   * mathematically present but invisible next to the .055/.72 card response.
+   * Keep the light local to the pointer: a wider inner wash and a brighter
+   * short rim arc, never a full bright outline. */
+  --wd-glass-glow:rgba(255,255,255,.085);
+  --wd-glass-glow-edge:rgba(255,255,255,.62);
+  --wd-glass-glow-radius:180px;
+  --wd-glass-glow-edge-radius:120px;
+  --wd-glass-reflection-field:linear-gradient(180deg,rgba(255,255,255,.055),transparent 24%,transparent 76%,rgba(255,255,255,.03));
+}
+:root[data-theme="light"] .wd-glass--surface>.wd-glass-material{
+  /* Light glass stays translucent. Blur above ~12px averages the cards behind
+   * into a flat white film; 9px keeps their edges and colour blocks legible. */
+  --wd-glass-blur:var(--wd-glass-surface-blur,9px);
+  --wd-glass-saturation:var(--wd-glass-surface-saturation,1.45);
+  --wd-glass-tint:var(--wd-glass-surface-tint,rgba(232,237,244,.44));
+  --wd-glass-outline:rgba(0,0,0,.27);
+  --wd-glass-outline-side:rgba(0,0,0,.33);
+  --wd-glass-drop:rgba(0,0,0,.16);
+  --wd-glass-contact:rgba(0,0,0,.06);
+  --wd-glass-hover-field:linear-gradient(180deg,rgba(255,255,255,.34),rgba(255,255,255,.10) 52%,rgba(255,255,255,.24));
+  --wd-glass-hover-bottom:rgba(255,255,255,.82);
+  --wd-glass-state-edge:inset 0 1px 2px rgba(255,255,255,.78),inset 0 -2px 12px -4px rgba(255,255,255,.75);
+  /* Light glass already sits near white, so a white rim cannot read. Pair a
+   * white inner wash with a dark pointer arc, never a full bright outline. */
+  --wd-glass-glow:rgba(255,255,255,.80);
+  --wd-glass-glow-edge:rgba(0,0,0,.46);
+  --wd-glass-glow-edge-width:.5px;
+  --wd-glass-glow-edge-inset:-.5px;
+  --wd-glass-glow-radius:140px;
+  --wd-glass-glow-edge-radius:120px;
+  --wd-glass-reflection-field:linear-gradient(160deg,rgba(255,255,255,.62),transparent 34%,transparent 64%,rgba(176,190,211,.18));
+}
+
+/* Small round controls need a tighter optical response than a card. The
+ * material detects square hosts whose radius reaches half their short side,
+ * so new icon buttons inherit this automatically without page CSS. */
+.wd-glass--disc{
+  --wd-glass-hover-field:linear-gradient(180deg,rgba(255,255,255,.075),rgba(255,255,255,.028) 55%,rgba(255,255,255,.058));
+  --wd-glass-state-edge:inset 0 1px 1px rgba(255,255,255,.30),inset 0 -1.5px 6px -2px rgba(255,255,255,.38);
+  --wd-glass-glow:rgba(255,255,255,.07);
+  --wd-glass-glow-radius:closest-side;
+  --wd-glass-glow-edge:rgba(255,255,255,.62);
+  --wd-glass-glow-edge-radius:closest-side;
+}
+:root[data-theme="light"] .wd-glass--disc{
+  --wd-glass-hover-field:linear-gradient(180deg,rgba(255,255,255,.26),rgba(255,255,255,.08) 55%,rgba(255,255,255,.22));
+  --wd-glass-state-edge:inset 0 1px 2px rgba(255,255,255,.70),inset 0 -2px 9px -3px rgba(255,255,255,.72);
+  --wd-glass-glow:rgba(255,255,255,.40);
+  --wd-glass-glow-edge:rgba(0,0,0,.72);
+}
+
+/* A broad neutral reflection avoids diagonal dark/cool corner patches.
+ * Keep the reviewed floating shadow, with softer internal contrast. */
+
+/* A visible, stationary light response: directional sheen + sharper reflected
+ * edge, with slightly stronger elevation. Keep disabled surfaces inert. */
+
+:root[data-theme="light"] .wd-glass:not(:disabled):not([aria-disabled="true"]):is(:hover,:focus-visible,:has(:focus-visible)){
+  --wd-glass-drop:rgba(0,0,0,.085);
+  --wd-glass-outline:rgba(0,0,0,.15);
+  --wd-glass-outline-side:rgba(0,0,0,.23);
+}
+
+/* Liquid depth is a shared material contract, not a per-card value. Hover
+ * lifts both axes by the same amount, press adds a little more while a
+ * slightly wider horizontal stretch makes the glass read as a soft drop.
+ * The disc values live on the material modifier so new round controls inherit
+ * them automatically. Variables are consumed by foundations/motion.css. */
+.wd-glass:not(.wd-glass-chrome){
+  --wd-glass-scale-x:calc(var(--wd-glass-hover-scale) + var(--wd-glass-hover-stretch));
+  --wd-glass-scale-y:calc(var(--wd-glass-hover-scale) - var(--wd-glass-hover-stretch));
+  --wd-glass-press-scale-x:calc(var(--wd-glass-press-scale) + var(--wd-glass-press-stretch));
+  --wd-glass-press-scale-y:calc(var(--wd-glass-press-scale) - var(--wd-glass-press-stretch));
+}
+.wd-glass--disc:not(.wd-glass-chrome){
+  --wd-glass-disc-scale-x:calc(var(--wd-glass-disc-hover-scale) + var(--wd-glass-disc-hover-stretch));
+  --wd-glass-disc-scale-y:calc(var(--wd-glass-disc-hover-scale) - var(--wd-glass-disc-hover-stretch));
+  --wd-glass-disc-press-scale-x:calc(var(--wd-glass-disc-press-scale) + var(--wd-glass-disc-press-stretch));
+  --wd-glass-disc-press-scale-y:calc(var(--wd-glass-disc-press-scale) - var(--wd-glass-disc-press-stretch));
+}
+/* Composite containers never scale as a whole. Chrome groups own one
+ * continuous rim, and full-size surfaces (dialogs, popovers) contain their
+ * own interactive controls. Scaling either would make every inner click
+ * enlarge the entire card; only the focused/pressed child should react.
+ * This is semantic, so future menus and dialogs inherit it without local
+ * motion rules. */
+.wd-glass.wd-glass-chrome,
+.wd-glass.wd-glass--surface{
+  --wd-glass-scale-x:1;--wd-glass-scale-y:1;
+  --wd-glass-press-scale-x:1;--wd-glass-press-scale-y:1;
+}
+.wd-glass.wd-glass--surface.wd-glass--disc{
+  --wd-glass-disc-scale-x:1;--wd-glass-disc-scale-y:1;
+  --wd-glass-disc-press-scale-x:1;--wd-glass-disc-press-scale-y:1;
+}
+/* Search fields are persistent editable surfaces, not push buttons. They keep
+ * the shared hover optics but must not grow into the result panel when clicked
+ * or hovered. The semantic opt-out lives with the material so the inline and
+ * fullscreen fields share one rule instead of two local overrides. */
+.wd-glass.wd-glass--no-scale{
+  --wd-glass-scale-x:1;--wd-glass-scale-y:1;
+  --wd-glass-press-scale-x:1;--wd-glass-press-scale-y:1;
+}
+.wd-glass.wd-glass--no-scale.wd-glass--disc{
+  --wd-glass-disc-scale-x:1;--wd-glass-disc-scale-y:1;
+  --wd-glass-disc-press-scale-x:1;--wd-glass-disc-press-scale-y:1;
+}
+
+/* Two physical layers, matching the source: Fill + Shadow, then Glass Effect.
+ * The wrapper isolates optics from content. Text never passes through filters.
+ * Figma's LINEAR_BURN outline is black over a dark backdrop (166 + bg - 255).
+ * A separate, narrower white rim must sit INSIDE that dark silhouette.
+ */
+.wd-glass{isolation:isolate;background:transparent!important;box-shadow:none!important;overflow:visible!important}
+/* Anchor the material to its host, not to the nearest positioned ancestor.
+ * Search fields sit inside a positioned stage; without an explicit containing
+ * block, `inset:0` resolves to the stage and turns a 56px capsule into a
+ * 353px sheet behind the results. */
+/* Zero specificity: a positional default only. Home nodes and absolute
+ * chrome already own their positioning and must win without !important. */
+:where(.wd-glass){position:relative}
+.wd-glass>.wd-glass-material{
+  position:absolute;inset:0;z-index:-1;border-radius:inherit;pointer-events:none;
+}
+
+/* Large translucent panels share one optical tuning. Popups inherit the
+ * surface tokens above; do not add a heavier local tint here or the dialog
+ * becomes solid again while the rest of the material stays translucent. */
+.wd-glass-fill,.wd-glass-optics{position:absolute;inset:0;border-radius:inherit;pointer-events:none}
+.wd-glass-fill{
+  background:var(--wd-glass-tint);
+  backdrop-filter:blur(var(--wd-glass-blur)) saturate(var(--wd-glass-saturation));
+  -webkit-backdrop-filter:blur(var(--wd-glass-blur)) saturate(var(--wd-glass-saturation));
+  box-shadow:1.25px 0 0 -.75px var(--wd-glass-outline),-1.25px 0 0 -.75px var(--wd-glass-outline),0 0 0 var(--wd-glass-outline-width) var(--wd-glass-outline),0 var(--wd-glass-drop-y) var(--wd-glass-drop-blur) var(--wd-glass-drop);
+}
+.wd-glass-optics{
+  background:var(--wd-glass-reflection-field,linear-gradient(180deg,var(--wd-glass-reflection-top),transparent 32%,var(--wd-glass-reflection-mid) 64%,var(--wd-glass-reflection-bottom)));
+  box-shadow:inset 0 1px var(--wd-glass-inner-depth) var(--wd-glass-inner-top),inset 0 -1px var(--wd-glass-inner-depth) var(--wd-glass-inner-bottom);
+}
+/* The source uses different side and outer burn outlines in light mode. */
+:root[data-theme="light"] .wd-glass-fill{box-shadow:1.25px 0 0 -.75px var(--wd-glass-outline-side),-1.25px 0 0 -.75px var(--wd-glass-outline-side),0 0 0 var(--wd-glass-outline-width) var(--wd-glass-outline),0 2px 4px -1px var(--wd-glass-contact),0 var(--wd-glass-drop-y) var(--wd-glass-drop-blur) var(--wd-glass-drop)}
+/* Original inner-shadow geometry: y +40 / blur30 / spread -40 darkening;
+ * y +/-40 / blur10 / spread -40 light. Theme-calibrated alpha reproduces
+ * the source additive brightness over the neutral glass face. These form thickness,
+ * rather than washing the entire face with a white gradient.
+ */
+:root .wd-glass-optics::before,
+:root .wd-glass-optics::after{
+  content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;
+}
+:root .wd-glass-optics::before{box-shadow:inset 0 var(--wd-glass-optical-offset) var(--wd-glass-optical-burn-blur) var(--wd-glass-optical-spread) var(--wd-glass-optical-burn)}
+:root .wd-glass-optics::after{
+  box-shadow:inset 0 calc(-1 * var(--wd-glass-optical-offset)) var(--wd-glass-optical-light-blur) var(--wd-glass-optical-spread) var(--wd-glass-optical-light-bottom),inset 0 var(--wd-glass-optical-offset) var(--wd-glass-optical-light-blur) var(--wd-glass-optical-spread) var(--wd-glass-optical-light-top);
+}
+
+.wd-glass-rim,.wd-glass-state,.wd-glass-glow{position:absolute;inset:0;border-radius:inherit;pointer-events:none}
+.wd-glass-rim{
+  padding:var(--wd-glass-rim-width);
+  background:linear-gradient(180deg,var(--wd-glass-rim-top),var(--wd-glass-rim-side) 27%,var(--wd-glass-rim-side) 72%,var(--wd-glass-rim-bottom));
+  mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);
+  mask-composite:exclude;
+  -webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);
+  -webkit-mask-composite:xor;
+}
+.wd-glass-state::after{content:"";position:absolute;inset:0;border-radius:inherit;box-shadow:var(--wd-glass-state-edge,inset 0 -8px 10px -9px var(--wd-glass-hover-bottom))}
+.wd-glass-state{background:var(--wd-glass-hover-field,var(--wd-glass-hover-tint));opacity:0}
+.wd-glass:is(:hover,:focus-visible,:has(:focus-visible))>.wd-glass-material>.wd-glass-optics>.wd-glass-state{opacity:1}
+.wd-glass.selected>.wd-glass-material>.wd-glass-optics>.wd-glass-state{opacity:1;background:var(--wd-glass-selected-tint)}
+.wd-glass.selected:is(:hover,:focus-visible)>.wd-glass-material>.wd-glass-optics>.wd-glass-state{background:var(--wd-glass-hover-field,var(--wd-glass-hover-tint))}
+/* Selected tabs keep the same light-field image at low opacity; hover fades
+ * it in instead of abruptly switching a solid background to a gradient. */
+:root[data-theme="light"] .wd-glass.selected>.wd-glass-material>.wd-glass-optics>.wd-glass-state{background:var(--wd-glass-hover-field);opacity:.08}
+:root[data-theme="light"] .wd-glass.selected:is(:hover,:focus-visible,:has(:focus-visible))>.wd-glass-material>.wd-glass-optics>.wd-glass-state{opacity:1}
+.wd-glass-glow{
+  opacity:0;
+  background:radial-gradient(circle var(--wd-glass-glow-radius) at var(--glass-x,50%) var(--glass-y,50%),var(--wd-glass-glow),transparent 100%);
+}
+.wd-glass-glow::after{
+  content:"";position:absolute;inset:var(--wd-glass-glow-edge-inset,0px);border-radius:inherit;
+  padding:var(--wd-glass-glow-edge-width,1px);
+  background:radial-gradient(circle var(--wd-glass-glow-edge-radius) at var(--glass-x,50%) var(--glass-y,50%),var(--wd-glass-glow-edge),transparent);
+  mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);mask-composite:exclude;
+  -webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);-webkit-mask-composite:xor;
+}
+.wd-glass[data-glass-pointer]>.wd-glass-material>.wd-glass-optics>.wd-glass-glow{opacity:1}
+.wd-glass.clickable::after{display:none}
+.target-header-actions.wd-glass .target-header-action:first-child{border-radius:18px 0 0 18px}
+.target-header-actions.wd-glass .target-header-action:last-child{border-radius:0 18px 18px 0}
+@media(prefers-reduced-motion:reduce),(hover:none){.wd-glass-glow{display:none}}
+/* Reduced motion and material timing come from foundations/motion.css. */
+@supports not (backdrop-filter:blur(1px)){
+  .wd-glass-fill{background:linear-gradient(var(--wd-glass-tint),var(--wd-glass-tint)),var(--wd-surface-secondary)}
+}

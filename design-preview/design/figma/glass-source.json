@@ -1,0 +1,192 @@
+{
+  "fileKey": "7hGGOqflIMGWTYQMm9tce0",
+  "frameId": "14434:3261",
+  "frameName": "Home-主画板",
+  "cardId": "14537:4416",
+  "inspectedAt": "2026-10-16",
+  "layers": [
+    {
+      "id": "I14537:4416;14536:3811;14410:762",
+      "name": "Fill + Shadow",
+      "cornerRadius": 30,
+      "cornerSmoothing": 0.6,
+      "fills": [
+        {
+          "type": "SOLID",
+          "visible": true,
+          "opacity": 0.17000000178813934,
+          "blendMode": "LUMINOSITY",
+          "color": {
+            "r": 0.6000000238418579,
+            "g": 0.6000000238418579,
+            "b": 0.6000000238418579
+          },
+          "boundVariables": {}
+        }
+      ],
+      "effects": [
+        {
+          "type": "DROP_SHADOW",
+          "visible": true,
+          "radius": 15,
+          "boundVariables": {},
+          "color": {
+            "r": 0,
+            "g": 0,
+            "b": 0,
+            "a": 0.03999999910593033
+          },
+          "offset": {
+            "x": 0,
+            "y": 8
+          },
+          "spread": 0,
+          "blendMode": "NORMAL",
+          "showShadowBehindNode": false
+        },
+        {
+          "type": "DROP_SHADOW",
+          "visible": true,
+          "radius": 0,
+          "boundVariables": {},
+          "color": {
+            "r": 0.6509804129600525,
+            "g": 0.6509804129600525,
+            "b": 0.6509804129600525,
+            "a": 1
+          },
+          "offset": {
+            "x": 0,
+            "y": 0
+          },
+          "spread": 0.5,
+          "blendMode": "LINEAR_BURN",
+          "showShadowBehindNode": false
+        },
+        {
+          "type": "DROP_SHADOW",
+          "visible": true,
+          "radius": 0,
+          "boundVariables": {},
+          "color": {
+            "r": 0.6509804129600525,
+            "g": 0.6509804129600525,
+            "b": 0.6509804129600525,
+            "a": 1
+          },
+          "offset": {
+            "x": -1.25,
+            "y": 0
+          },
+          "spread": -0.75,
+          "blendMode": "LINEAR_BURN",
+          "showShadowBehindNode": false
+        },
+        {
+          "type": "DROP_SHADOW",
+          "visible": true,
+          "radius": 0,
+          "boundVariables": {},
+          "color": {
+            "r": 0.6509804129600525,
+            "g": 0.6509804129600525,
+            "b": 0.6509804129600525,
+            "a": 1
+          },
+          "offset": {
+            "x": 1.25,
+            "y": 0
+          },
+          "spread": -0.75,
+          "blendMode": "LINEAR_BURN",
+          "showShadowBehindNode": false
+        }
+      ]
+    },
+    {
+      "id": "I14537:4416;14536:3811;14410:763",
+      "name": "Glass Effect",
+      "cornerRadius": 30,
+      "cornerSmoothing": 0.6,
+      "fills": [],
+      "effects": [
+        {
+          "type": "GLASS",
+          "visible": true,
+          "radius": 6,
+          "boundVariables": {
+            "radius": {
+              "type": "VARIABLE_ALIAS",
+              "id": "VariableID:3bebb747c097dbdd6abe57160164bc7562a92643/12492:89"
+            }
+          },
+          "refraction": 0.699999988079071,
+          "depth": 30,
+          "lightAngle": 0,
+          "lightIntensity": 0.25,
+          "dispersion": 0.20000000298023224,
+          "splay": 0.20000000298023224
+        },
+        {
+          "type": "INNER_SHADOW",
+          "visible": true,
+          "radius": 30,
+          "boundVariables": {},
+          "color": {
+            "r": 0.9019607901573181,
+            "g": 0.9019607901573181,
+            "b": 0.9019607901573181,
+            "a": 1
+          },
+          "offset": {
+            "x": 0,
+            "y": 40
+          },
+          "spread": -40,
+          "blendMode": "LINEAR_BURN"
+        },
+        {
+          "type": "INNER_SHADOW",
+          "visible": true,
+          "radius": 10,
+          "boundVariables": {},
+          "color": {
+            "r": 0.10196078568696976,
+            "g": 0.10196078568696976,
+            "b": 0.10196078568696976,
+            "a": 1
+          },
+          "offset": {
+            "x": 0,
+            "y": -40
+          },
+          "spread": -40,
+          "blendMode": "LINEAR_DODGE"
+        },
+        {
+          "type": "INNER_SHADOW",
+          "visible": true,
+          "radius": 10,
+          "boundVariables": {},
+          "color": {
+            "r": 0.10196078568696976,
+            "g": 0.10196078568696976,
+            "b": 0.10196078568696976,
+            "a": 1
+          },
+          "offset": {
+            "x": 0,
+            "y": 40
+          },
+          "spread": -40,
+          "blendMode": "LINEAR_DODGE"
+        }
+      ]
+    }
+  ],
+  "implementationNotes": [
+    "LINEAR_BURN edge resolves to black on the dark neutral backdrop; browser edge color is theme calibrated.",
+    "LINEAR_DODGE inner lights are reproduced with neutral alpha light calibrated against Figma edge samples.",
+    "Native Figma GLASS remains a browser optical approximation; original source properties are retained here."
+  ]
+}

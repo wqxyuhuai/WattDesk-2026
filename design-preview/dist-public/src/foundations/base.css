@@ -1,0 +1,6 @@
+@font-face{font-family:"SF Pro";src:url("../../home-assets/sf-pro.woff2") format("woff2");font-weight:1 1000;font-stretch:30% 150%;font-display:block}
+:root{color-scheme:dark;font-family:var(--wd-font-family);font-synthesis:none;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+:root[data-theme="light"]{color-scheme:light}
+*{box-sizing:border-box}body{margin:0;background:var(--wd-canvas);color:var(--wd-label-primary);overflow:hidden}button,input{font:inherit}button{color:inherit;cursor:pointer}button:focus-visible,input:focus-visible,[role=button]:focus-visible{outline:2px solid var(--wd-blue);outline-offset:3px}::selection{background:color-mix(in srgb,var(--wd-blue) 34%,transparent)}
+
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{transition:none!important;animation:none!important}}

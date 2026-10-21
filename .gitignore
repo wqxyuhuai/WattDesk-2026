@@ -1,0 +1,21 @@
+# Local dependencies and generated output
+node_modules/
+design-preview/dist/
+design-preview/tests/output/
+design-preview/output/
+design-preview/previews/
+
+# Logs and editor/OS noise
+*.log
+.DS_Store
+Thumbs.db
+
+# Local scratch files kept outside the deployable source
+/.codex-patch.txt
+/patch.txt
+/patch.tmp
+/apply.cjs
+/_inspect-search.cjs
+/design-preview/_inspect-search.cjs
+/design-preview/_search-open.cjs
+

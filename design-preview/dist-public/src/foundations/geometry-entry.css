@@ -1,0 +1,4 @@
+/* Compatible with <link rel="stylesheet"> pages. The JavaScript entry is
+ * exported below as a standard CSS @import so every page loading shared.css
+ * starts the geometry adapter without page-specific wiring. */
+@import url("./geometry-entry.js");

@@ -1,0 +1,2 @@
+const fs=require('fs');const s=JSON.parse(fs.readFileSync('src/pages/home/data/scene.json','utf8'));const by=new Map(s.map(n=>[n.id,n]));
+for(const id of ['14537:4510','14612:8452','14612:7837','14570:1074','14570:1111','14570:1140','14570:1174','14570:1208','14570:1237','14612:7602']){let n=by.get(id);if(!n){console.log(id,'missing');continue}console.log(id,n.name,n.w+'x'+n.h,'@'+n.x+','+n.y,'parent',n.p)}

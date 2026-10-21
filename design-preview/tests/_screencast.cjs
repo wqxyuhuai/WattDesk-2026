@@ -1,0 +1,21 @@
+const { chromium, launchOptions } = require('./runtime.cjs');
+const fs=require('fs');
+(async()=>{
+ const browser=await chromium.launch({...launchOptions,headless:true});
+ const page=await browser.newPage({viewport:{width:1116,height:992},deviceScaleFactor:1});
+ const cdp=await page.context().newCDPSession(page);
+ const frames=[];
+ cdp.on('Page.screencastFrame',async ev=>{frames.push({t:Date.now(),data:ev.data});await cdp.send('Page.screencastFrameAck',{sessionId:ev.sessionId});});
+ await page.goto('http://127.0.0.1:4173/home.html?glass=figma');
+ await page.waitForFunction(()=>document.documentElement.dataset.ready==='true');
+ await page.getByRole('button',{name:'Select statistics period'}).click();
+ await page.waitForTimeout(600);
+ await cdp.send('Page.startScreencast',{format:'png',everyNthFrame:1,maxWidth:1116,maxHeight:992});
+ const t0=Date.now();
+ await page.getByRole('button',{name:'Apply'}).click();
+ await page.waitForTimeout(700);
+ await cdp.send('Page.stopScreencast');
+ for(let i=0;i<frames.length;i++)fs.writeFileSync(`output/frames/f${String(i).padStart(3,'0')}.png`,Buffer.from(frames[i].data,'base64'));
+ console.log('frames',frames.length,'deltas',frames.slice(1).map((f,i)=>f.t-frames[i].t).slice(0,20),'start',new Date(t0).toISOString());
+ await browser.close();
+})();

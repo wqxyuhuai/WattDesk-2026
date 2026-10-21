@@ -1,0 +1,385 @@
+{
+  "native": true,
+  "geometry": [
+    {
+      "key": "Recent activity",
+      "radius": "18px",
+      "rect": [
+        156,
+        20,
+        36,
+        36
+      ]
+    },
+    {
+      "key": "Go back",
+      "radius": "18px",
+      "rect": [
+        200,
+        20,
+        36,
+        36
+      ]
+    },
+    {
+      "key": "Go forward",
+      "radius": "18px",
+      "rect": [
+        244,
+        20,
+        36,
+        36
+      ]
+    },
+    {
+      "key": "Quick search",
+      "radius": "18px",
+      "rect": [
+        20,
+        76,
+        260,
+        36
+      ]
+    },
+    {
+      "key": "Home",
+      "radius": "18px",
+      "rect": [
+        20,
+        132,
+        260,
+        36
+      ]
+    },
+    {
+      "key": "Plants",
+      "radius": "18px",
+      "rect": [
+        20,
+        169,
+        260,
+        36
+      ]
+    },
+    {
+      "key": "Service ticket",
+      "radius": "18px",
+      "rect": [
+        20,
+        206,
+        260,
+        36
+      ]
+    },
+    {
+      "key": "Statistics (coming soon)",
+      "radius": "18px",
+      "rect": [
+        20,
+        243,
+        260,
+        36
+      ]
+    },
+    {
+      "key": "Cell balance",
+      "radius": "18px",
+      "rect": [
+        20,
+        328,
+        260,
+        36
+      ]
+    },
+    {
+      "key": "Module balance",
+      "radius": "18px",
+      "rect": [
+        20,
+        365,
+        260,
+        36
+      ]
+    },
+    {
+      "key": "Device track",
+      "radius": "18px",
+      "rect": [
+        20,
+        402,
+        260,
+        36
+      ]
+    },
+    {
+      "key": "Wattsonic Technology",
+      "radius": "18px",
+      "rect": [
+        20,
+        487,
+        260,
+        36
+      ]
+    },
+    {
+      "key": "Your teams",
+      "radius": "18px",
+      "rect": [
+        20,
+        524,
+        260,
+        36
+      ]
+    },
+    {
+      "key": "End users",
+      "radius": "18px",
+      "rect": [
+        20,
+        561,
+        260,
+        36
+      ]
+    },
+    {
+      "key": "target-avatar14",
+      "radius": "50%",
+      "rect": [
+        22,
+        1196,
+        36,
+        36
+      ]
+    },
+    {
+      "key": "Notifications",
+      "radius": "18px",
+      "rect": [
+        244,
+        1196,
+        36,
+        36
+      ]
+    },
+    {
+      "key": "Home",
+      "radius": "18px",
+      "rect": [
+        290,
+        20,
+        180,
+        36
+      ]
+    },
+    {
+      "key": "workspace-tab-tooltip",
+      "radius": "12px",
+      "rect": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "key": "target-header-actions wd-glass18",
+      "radius": "18px",
+      "rect": [
+        1369,
+        20,
+        156,
+        36
+      ]
+    },
+    {
+      "key": "Language",
+      "radius": "0px",
+      "rect": [
+        1369,
+        20,
+        39,
+        36
+      ]
+    },
+    {
+      "key": "Toggle light and dark mode",
+      "radius": "0px",
+      "rect": [
+        1408,
+        20,
+        39,
+        36
+      ]
+    },
+    {
+      "key": "Settings",
+      "radius": "0px",
+      "rect": [
+        1447,
+        20,
+        39,
+        36
+      ]
+    },
+    {
+      "key": "Support",
+      "radius": "0px 18px 18px 0px",
+      "rect": [
+        1486,
+        20,
+        39,
+        36
+      ]
+    },
+    {
+      "key": "14578:6145",
+      "radius": "10px",
+      "rect": [
+        290,
+        66,
+        1235,
+        1166
+      ]
+    },
+    {
+      "key": "14445:3354",
+      "radius": "23px",
+      "rect": [
+        407.5,
+        268,
+        1000,
+        46
+      ]
+    },
+    {
+      "key": "14537:4416",
+      "radius": "30px",
+      "rect": [
+        407.5,
+        580,
+        218,
+        150
+      ]
+    },
+    {
+      "key": "14537:3925",
+      "radius": "30px",
+      "rect": [
+        635.5,
+        580,
+        250.65625,
+        150
+      ]
+    },
+    {
+      "key": "14537:3891",
+      "radius": "30px",
+      "rect": [
+        896.15625,
+        580,
+        250.65625,
+        150
+      ]
+    },
+    {
+      "key": "14537:3908",
+      "radius": "30px",
+      "rect": [
+        1156.828125,
+        580,
+        250.65625,
+        150
+      ]
+    },
+    {
+      "key": "14578:6106",
+      "radius": "18px",
+      "rect": [
+        1232.5,
+        770,
+        129,
+        36
+      ]
+    },
+    {
+      "key": "14612:8453",
+      "radius": "18px",
+      "rect": [
+        1371.5,
+        770,
+        36,
+        36
+      ]
+    },
+    {
+      "key": "14570:1074",
+      "radius": "30px",
+      "rect": [
+        407.5,
+        816,
+        495,
+        240
+      ]
+    },
+    {
+      "key": "Hover / Energy generated",
+      "radius": "12px",
+      "rect": [
+        440.609375,
+        933.5,
+        242,
+        66
+      ]
+    },
+    {
+      "key": "14570:1111",
+      "radius": "30px",
+      "rect": [
+        912.5,
+        816,
+        495,
+        240
+      ]
+    },
+    {
+      "key": "14570:1140",
+      "radius": "30px",
+      "rect": [
+        407.5,
+        1066,
+        242.5,
+        240
+      ]
+    },
+    {
+      "key": "14570:1174",
+      "radius": "30px",
+      "rect": [
+        660,
+        1066,
+        242.5,
+        240
+      ]
+    },
+    {
+      "key": "14570:1208",
+      "radius": "30px",
+      "rect": [
+        912.5,
+        1066,
+        242.5,
+        240
+      ]
+    },
+    {
+      "key": "14570:1237",
+      "radius": "30px",
+      "rect": [
+        1165,
+        1066,
+        242.5,
+        240
+      ]
+    }
+  ]
+}

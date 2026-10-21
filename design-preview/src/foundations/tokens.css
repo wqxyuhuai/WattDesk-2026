@@ -1,0 +1,70 @@
+/*
+ * WattDesk semantic tokens
+ * Named semantic colors alias the generated Figma Colors collection (Light / Dark).
+ * Reviewed control/optical values are deliberate overrides, not guessed palette entries.
+ * Type and spacing values below are the values used by Home-主画板.
+ */
+:root{
+  /* Shared interaction rhythm: stationary hover fades, deliberate click motion. */
+  --wd-motion-hover:260ms;--wd-motion-tab-in:280ms;--wd-motion-tab-out:220ms;--wd-motion-tab-swap:110ms;
+  --wd-motion-disclosure:380ms;--wd-motion-refresh:640ms;
+  --wd-motion-panel:320ms;--wd-motion-panel-exit:200ms;--wd-motion-chart:740ms;--wd-motion-stagger:35ms;
+  --wd-motion-theme:620ms;--wd-ease-theme:cubic-bezier(.4,0,.2,1);
+  /* Loading is real waiting only: delayed entrance, single sheen, one short exit. */
+  --wd-motion-skeleton-in:180ms;--wd-motion-skeleton-sheen:1400ms;--wd-motion-skeleton-out:220ms;
+  --wd-motion-skeleton-delay:140ms;--wd-motion-skeleton-sheen-delay:200ms;
+  --wd-ease-skeleton-in:cubic-bezier(.2,0,.2,1);--wd-ease-skeleton-out:cubic-bezier(.4,0,.2,1);
+  --wd-skeleton-base:rgba(235,235,245,.14);--wd-skeleton-sheen:rgba(255,255,255,.22);--wd-skeleton-opacity:1;
+  --wd-motion-glass-hover:300ms;--wd-motion-glass-press:110ms;--wd-motion-glass-release:420ms;
+  --wd-ease-glass:cubic-bezier(.22,.8,.25,1);--wd-ease-glass-press:cubic-bezier(.16,.84,.28,1);--wd-ease-glass-release:cubic-bezier(.16,.84,.24,1);
+  --wd-glass-hover-scale:1.025;--wd-glass-press-scale:1.065;
+  --wd-glass-hover-stretch:.006;--wd-glass-press-stretch:.014;
+  --wd-glass-disc-hover-scale:1.07;--wd-glass-disc-press-scale:1.18;
+  --wd-glass-disc-hover-stretch:.018;--wd-glass-disc-press-stretch:.03;
+  --wd-ease-hover:cubic-bezier(.2,0,.2,1);--wd-ease-disclosure:cubic-bezier(.4,0,.2,1);
+  --wd-ease-panel:cubic-bezier(.22,.8,.25,1);--wd-ease-chart:cubic-bezier(.16,1,.3,1);
+  --wd-ease-tab-in:cubic-bezier(.22,.8,.25,1);--wd-ease-tab-out:cubic-bezier(.4,0,.2,1);--wd-ease-tab-swap-out:cubic-bezier(.4,0,1,1);
+  --wd-shortcut-inset:20px;--wd-shortcut-gap:20px;--wd-control-circle:rgba(255,255,255,.12);
+  --wd-separator-vibrant:var(--wd-figma-separators-vibrant);
+  --wd-content-shadow-gutter:48px;--wd-content-bottom-space:32px;
+  color-scheme:dark;
+  --wd-accent-red:var(--wd-figma-accents-red);--wd-accent-orange:var(--wd-figma-accents-orange);--wd-accent-yellow:var(--wd-figma-accents-yellow);--wd-accent-green:var(--wd-figma-accents-green);
+  --wd-accent-mint:var(--wd-figma-accents-mint);--wd-accent-teal:var(--wd-figma-accents-teal);--wd-accent-cyan:var(--wd-figma-accents-cyan);--wd-accent-blue:var(--wd-figma-accents-blue);
+  --wd-accent-indigo:var(--wd-figma-accents-indigo);--wd-accent-purple:var(--wd-figma-accents-purple);--wd-accent-pink:var(--wd-figma-accents-pink);--wd-accent-brown:var(--wd-figma-accents-brown);
+  --wd-bg-primary:var(--wd-figma-backgrounds-primary);--wd-bg-secondary:var(--wd-figma-backgrounds-secondary);--wd-bg-tertiary:var(--wd-figma-backgrounds-tertiary);--wd-bg-primary-elevated:var(--wd-figma-backgrounds-primary-elevated);
+  --wd-bg-secondary-elevated:var(--wd-figma-backgrounds-secondary-elevated);--wd-bg-tertiary-elevated:var(--wd-figma-backgrounds-tertiary-elevated);
+  --wd-bg-grouped-primary:var(--wd-figma-backgrounds-grouped-primary);--wd-bg-grouped-secondary:var(--wd-figma-backgrounds-grouped-secondary);--wd-bg-grouped-tertiary:var(--wd-figma-backgrounds-grouped-tertiary);
+  --wd-fill-primary:var(--wd-figma-fills-primary);--wd-fill-secondary:var(--wd-figma-fills-secondary);--wd-fill-tertiary:var(--wd-figma-fills-tertiary);--wd-fill-quaternary:rgba(116,116,128,.18);
+  --wd-vibrant-fill-primary:var(--wd-figma-fills-vibrant-primary);--wd-vibrant-fill-secondary:var(--wd-figma-fills-vibrant-secondary);--wd-vibrant-fill-tertiary:var(--wd-figma-fills-vibrant-tertiary);
+  --wd-gray-black:var(--wd-figma-grays-black);--wd-gray-white:var(--wd-figma-grays-white);--wd-gray:var(--wd-figma-grays-gray);--wd-gray-2:var(--wd-figma-grays-gray-2);--wd-gray-3:var(--wd-figma-grays-gray-3);
+  --wd-gray-4:var(--wd-figma-grays-gray-4);--wd-gray-5:var(--wd-figma-grays-gray-5);--wd-gray-6:var(--wd-figma-grays-gray-6);
+  --wd-canvas:var(--wd-bg-secondary);--wd-surface-primary:var(--wd-bg-secondary);--wd-surface-secondary:var(--wd-bg-tertiary);--wd-surface-elevated:var(--wd-bg-tertiary-elevated);
+  --wd-control-fill:rgba(120,120,128,.2);--wd-control-fill-hover:rgba(120,120,128,.36);--wd-control-outline:rgba(255,255,255,.2);
+  --wd-control-hover:rgba(255,255,255,.08);--wd-control-selected:#3a3a3c;--wd-control-muted:rgba(255,255,255,.08);
+  --wd-popover-surface:rgba(44,44,46,.96);--wd-popover-outline:rgba(255,255,255,.11);--wd-popover-shadow:rgba(0,0,0,.42);
+  --wd-toast-surface:rgba(44,44,46,.93);--wd-toast-outline:rgba(255,255,255,.12);
+  --wd-label-primary-rgb:255,255,255;--wd-label-secondary-rgb:235,235,245;--wd-label-tertiary-rgb:235,235,245;--wd-label-quaternary-rgb:235,235,245;
+  --wd-label-secondary-opacity:.7;--wd-label-tertiary-opacity:.3;--wd-label-quaternary-opacity:.18;
+  --wd-label-primary:var(--wd-figma-labels-primary);--wd-label-secondary:var(--wd-figma-labels-secondary);
+  --wd-label-tertiary:var(--wd-figma-labels-tertiary);--wd-label-quaternary:rgba(var(--wd-label-quaternary-rgb),var(--wd-label-quaternary-opacity));
+  --wd-vibrant-label-primary:var(--wd-figma-labels-vibrant-primary);--wd-vibrant-label-secondary:var(--wd-figma-labels-vibrant-secondary);--wd-vibrant-label-tertiary:var(--wd-figma-labels-vibrant-tertiary);--wd-vibrant-label-quaternary:var(--wd-figma-labels-vibrant-quaternary);
+  --wd-overlay-default:var(--wd-figma-overlays-default);--wd-overlay-activity:var(--wd-figma-overlays-activity-view-controller);--wd-separator:var(--wd-figma-separators-opaque);--wd-separator-nonopaque:var(--wd-figma-separators-non-opaque);
+  --wd-blue:var(--wd-accent-blue);--wd-green:var(--wd-accent-green);--wd-red:var(--wd-accent-red);--wd-orange:var(--wd-accent-orange);--wd-indigo:var(--wd-accent-indigo);
+  --wd-font-family:"SF Pro",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  --wd-weight-regular:400;--wd-weight-medium:510;--wd-weight-semibold:590;--wd-weight-bold:700;
+  --wd-type-large-title:34px;--wd-type-title1:22px;--wd-type-title2:17px;--wd-type-title3:15px;
+  --wd-type-headline:15px;--wd-type-body:15px;--wd-type-callout:13px;--wd-type-subheadline:13px;--wd-type-footnote:12px;--wd-type-caption1:11px;--wd-type-caption2:11px;
+  --wd-leading-large-title:41px;--wd-leading-title1:28px;--wd-leading-title2:22px;--wd-leading-title3:20px;--wd-leading-body:20px;--wd-leading-callout:18px;--wd-leading-footnote:16px;--wd-leading-caption:13px;
+  --wd-radius-small:6px;--wd-radius-compact:12px;--wd-radius-medium:18px;--wd-radius-large:30px;--wd-space-1:4px;--wd-space-2:8px;--wd-space-3:12px;--wd-space-4:16px;--wd-space-5:20px;
+}
+:root[data-theme="light"]{  --wd-control-circle:rgba(0,0,0,.08);
+  color-scheme:light;
+  --wd-fill-quaternary:rgba(116,116,128,.08);
+  --wd-control-fill:rgba(120,120,128,.16);--wd-control-fill-hover:rgba(120,120,128,.24);--wd-control-outline:rgba(0,0,0,.12);
+  --wd-control-hover:rgba(0,0,0,.05);--wd-control-selected:var(--wd-figma-fills-secondary);--wd-control-muted:var(--wd-figma-fills-tertiary);
+  --wd-popover-surface:rgba(255,255,255,.94);--wd-popover-outline:rgba(0,0,0,.09);--wd-popover-shadow:rgba(0,0,0,.16);
+  --wd-toast-surface:rgba(255,255,255,.95);--wd-toast-outline:rgba(0,0,0,.1);
+  --wd-label-primary-rgb:0,0,0;--wd-label-secondary-rgb:60,60,67;--wd-label-tertiary-rgb:60,60,67;--wd-label-quaternary-rgb:60,60,67;
+  --wd-label-secondary-opacity:.6;
+  --wd-skeleton-base:rgba(60,60,67,.14);--wd-skeleton-sheen:rgba(255,255,255,.84);--wd-skeleton-opacity:.92;
+}

@@ -1,0 +1,2 @@
+const {chromium,launchOptions}=require('./runtime.cjs');
+(async()=>{const b=await chromium.launch({...launchOptions,headless:true});const p=await b.newPage({viewport:{width:1545,height:1252}});p.on('pageerror',e=>console.log('PAGEERROR',e.stack));p.on('response',r=>{if(r.status()>=400)console.log('HTTP',r.status(),r.url())});await p.goto('http://127.0.0.1:4173/home.html?glass=figma');await p.waitForTimeout(4000);await b.close()})();

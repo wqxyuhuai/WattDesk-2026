@@ -1,0 +1,12 @@
+#overlays{position:fixed;inset:0;pointer-events:none;z-index:100}
+.popover{position:absolute;pointer-events:auto;width:288px;background:var(--wd-popover-surface);border:1px solid var(--wd-popover-outline);border-radius:18px;padding:8px;box-shadow:0 12px 40px var(--wd-popover-shadow);backdrop-filter:blur(24px);font-size:13px}
+html[data-theme="light"] .popover{color:var(--wd-label-primary)}
+.popover h2{margin:5px 8px 8px;font-size:13px;font-weight:590;color:var(--wd-label-secondary)}
+.popover button{display:block;width:100%;padding:9px 12px;text-align:left;background:none;border:0;border-radius:10px}
+.popover button:hover,.popover button.active{background:var(--wd-control-hover)}
+.popover hr{border:0;border-top:1px solid var(--wd-control-outline);margin:7px 4px}
+.popover label{display:block;padding:7px 8px;color:var(--wd-label-secondary)}.popover input[type=date]{width:100%;margin-top:5px;border:1px solid var(--wd-control-outline);border-radius:8px;background:var(--wd-bg-secondary);padding:7px;color:var(--wd-label-primary)}
+.popover .apply{background:var(--wd-blue);text-align:center;margin-top:6px}
+.popover .no-results{padding:12px;color:var(--wd-label-secondary)}
+#toast{position:fixed;left:calc(50% + 140px);bottom:30px;transform:translateX(-50%);font-size:13px;padding:11px 18px;border:1px solid var(--wd-toast-outline);border-radius:24px;background:var(--wd-toast-surface);box-shadow:0 6px 24px var(--wd-popover-shadow);z-index:110}
+

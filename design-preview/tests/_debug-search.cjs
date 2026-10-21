@@ -1,0 +1,15 @@
+const {chromium}=require('./runtime.cjs');
+(async()=>{const b=await chromium.launch({...require('./runtime.cjs').launchOptions,headless:true});const p=await b.newPage({viewport:{width:1545,height:1252},deviceScaleFactor:1});p.on('pageerror',e=>console.log('ERR',e.message));await p.goto('http://127.0.0.1:4173/home.html?glass=figma');await p.waitForFunction(()=>document.documentElement.dataset.ready==='true');await p.evaluate(()=>localStorage.removeItem('wattdesk.searchHistory.v1'));
+const search=p.locator('input[aria-label="Search sites, devices and people"]'); await search.click(); await p.waitForTimeout(700);
+console.log('inline',await p.evaluate(()=>{const a=document.querySelector('[data-node-id="14445:3354"]')?.getBoundingClientRect();const b=document.querySelector('.wd-search-panel')?.getBoundingClientRect();return {a:a&&{x:a.x,w:a.width,y:a.y,h:a.height},b:b&&{x:b.x,w:b.width,y:b.y,h:b.height},count:document.querySelectorAll('.wd-search-panel').length,text:document.querySelector('.wd-search-panel')?.innerText.slice(0,400),glass:!!document.querySelector('.wd-search-panel .wd-glass-material'),radius:document.querySelector('.wd-search-panel')&&getComputedStyle(document.querySelector('.wd-search-panel')).borderRadius}}));
+await p.screenshot({path:'tests/output/search-inline.png'});
+await search.fill('summit'); await p.waitForTimeout(500);
+console.log('results',await p.locator('.wd-search-result-title').allTextContents());
+await p.locator('.wd-search-result-title',{hasText:'Summit Energy Hub'}).first().click();await p.waitForTimeout(400);
+console.log('afterPick',await p.evaluate(()=>({hist:localStorage.getItem('wattdesk.searchHistory.v1'),panels:document.querySelectorAll('.wd-search-panel').length,toast:document.querySelector('#toast')?.textContent,hidden:document.querySelector('#toast')?.hidden})));
+await p.locator('.target-quick-search').click();await p.waitForTimeout(700);
+console.log('fullscreen',await p.evaluate(()=>{const d=document.querySelector('.wd-search-fullscreen');const f=document.querySelector('.wd-search-field')?.getBoundingClientRect();const q=document.querySelector('.wd-search-panel--fullscreen')?.getBoundingClientRect();return {dialog:!!d,active:document.activeElement?.getAttribute('aria-label'),field:f&&{x:f.x,y:f.y,w:f.width,h:f.height},panel:q&&{x:q.x,y:q.y,w:q.width,h:q.height},inert:document.querySelector('[data-node-id="14578:7006"]').inert,body:document.querySelector('.wd-search-panel--fullscreen')?.innerText.slice(0,450)}}));
+await p.screenshot({path:'tests/output/search-fullscreen.png'});
+await p.keyboard.press('Escape');await p.waitForTimeout(600);console.log('closed',await p.locator('.wd-search-fullscreen').count());
+await p.locator('.target-quick-search').click();await p.waitForTimeout(500); await p.mouse.click(20,300); await p.waitForTimeout(600);console.log('blankClose',await p.locator('.wd-search-fullscreen').count());
+await b.close()})().catch(e=>{console.error(e);process.exit(1)});

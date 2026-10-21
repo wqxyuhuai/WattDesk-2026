@@ -1,0 +1,454 @@
+/* Shared search surfaces. Inline results reuse the date chooser's glass
+ * surface; fullscreen adds one viewport frost layer, not a second material. */
+.wd-search-panel {
+  position: fixed;
+  pointer-events: auto;
+  z-index: 106;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  pointer-events: auto;
+  border-radius: 30px;
+  color: var(--wd-label-primary);
+  font-family: var(--wd-font-family);
+  isolation: isolate;
+}
+.wd-search-panel-frame {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.wd-search-panel-content {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+.wd-search-panel-body {
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  padding: 10px 0 4px;
+}
+.wd-search-panel--fullscreen {
+  z-index: 2;
+  position: relative;
+  width: min(816px, calc(100vw - 32px));
+  max-height: min(460px, calc(100vh - 22vh - 88px));
+  border-radius: 30px;
+}
+.wd-search-panel--fullscreen .wd-search-panel-body {
+  max-height: min(460px, calc(100vh - 22vh - 88px));
+}
+/* The result sheet sits below the field, not behind it. Keep its depth shadow
+ * below the top edge so it cannot paint across the 16px gap and make the field
+ * look like a rectangle extending down into the results. */
+.wd-search-panel.wd-search-panel--fullscreen > .wd-glass-material {
+  --wd-glass-drop-y: 24px;
+  --wd-glass-drop-blur: 26px;
+}
+.wd-search-panel[data-closing] > .wd-glass-material > .wd-glass-fill {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  background: var(--wd-search-exit-face, #242426);
+}
+:root[data-theme="light"] .wd-search-panel[data-closing] > .wd-glass-material > .wd-glass-fill {
+  background: var(--wd-search-exit-face, #f3f4f6);
+}
+
+.wd-search-section-label {
+  display: flex;
+  align-items: center;
+  min-height: 30px;
+  padding: 0 16px;
+  color: var(--wd-label-secondary);
+  white-space: nowrap;
+}
+.wd-search-group,
+.wd-search-quick-links,
+.wd-search-history-list {
+  display: flex;
+  flex-direction: column;
+}
+.wd-search-group + .wd-search-group,
+.wd-search-quick-links + .wd-search-quick-links {
+  margin-top: 4px;
+}
+.wd-search-quick-links--fallback {
+  border-top: 1px solid var(--wd-separator-nonopaque);
+  margin-top: 4px;
+  padding-top: 4px;
+}
+
+.wd-search-result,
+.wd-search-history-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-height: 40px;
+  margin: 0 8px;
+  border-radius: 12px;
+  color: var(--wd-label-primary);
+}
+.wd-search-result {
+  padding: 0 10px;
+  gap: 10px;
+  cursor: default;
+}
+.wd-search-result::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: var(--wd-control-hover);
+  opacity: 0;
+  pointer-events: none;
+}
+.wd-search-result:is(.is-active, :hover)::before {
+  opacity: 1;
+}
+.wd-search-result-icon,
+.wd-search-history-icon {
+  display: grid;
+  place-items: center;
+  flex: 0 0 18px;
+  width: 18px;
+  height: 18px;
+  color: var(--wd-label-secondary);
+}
+.wd-search-result-icon .target-icon-art,
+.wd-search-history-icon .target-icon-art {
+  width: 18px;
+  height: 18px;
+}
+.wd-search-result-copy {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: baseline;
+  min-width: 0;
+  gap: 4px;
+  line-height: 18px;
+}
+.wd-search-result-title,
+.wd-search-history-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  line-height: 18px;
+}
+.wd-search-result-title {
+  flex: 0 1 auto;
+}
+.wd-search-result-meta {
+  flex: 0 0 auto;
+  color: var(--wd-label-secondary);
+  white-space: nowrap;
+  line-height: 16px;
+}
+.wd-search-result-enter {
+  margin-left: auto;
+  color: var(--wd-label-tertiary);
+  opacity: 0;
+  font-size: 12px;
+  line-height: 1;
+}
+.wd-search-result.is-active .wd-search-result-enter {
+  opacity: 1;
+}
+.wd-search-result.is-active .wd-search-result-icon,
+.wd-search-history-row:is(.is-active, :hover, :has(:focus-visible)) .wd-search-history-icon {
+  color: var(--wd-label-primary);
+}
+
+.wd-search-history-row {
+  padding: 0 6px 0 10px;
+  gap: 4px;
+}
+.wd-search-history-row::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: var(--wd-control-hover);
+  opacity: 0;
+  pointer-events: none;
+}
+.wd-search-history-row:is(:hover, :has(:focus-visible), .is-active)::before {
+  opacity: 1;
+}
+.wd-search-history-hit {
+  position: relative;
+  display: flex;
+  align-items: center;
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 40px;
+  padding: 0;
+  gap: 10px;
+  border: 0;
+  background: none;
+  color: var(--wd-label-primary);
+  text-align: left;
+}
+.wd-search-history-hit:focus-visible {
+  outline: 0;
+}
+.wd-search-history-remove {
+  position: relative;
+  display: grid;
+  place-items: center;
+  flex: 0 0 30px;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--wd-label-secondary);
+  opacity: 0;
+}
+.wd-search-history-row:is(:hover, :focus-within, .is-active) .wd-search-history-remove,
+.wd-search-history-remove:focus-visible {
+  opacity: 1;
+}
+.wd-search-history-remove:is(:hover, :focus-visible) {
+  color: var(--wd-label-primary);
+}
+.wd-search-history-remove:focus-visible {
+  outline: 2px solid var(--wd-blue);
+  outline-offset: -2px;
+}
+.wd-search-history-remove-glyph {
+  display: block;
+  width: 14px;
+  height: 14px;
+  background: currentColor;
+  -webkit-mask: var(--icon-mask) center/contain no-repeat;
+  mask: var(--icon-mask) center/contain no-repeat;
+  --icon-mask: url("../../home-assets/tab-close.svg");
+}
+.wd-search-empty {
+  padding: 16px;
+  color: var(--wd-label-secondary);
+}
+.wd-search-empty + .wd-search-group .wd-search-section-label {
+  padding-top: 2px;
+}
+
+.wd-shortcut-keys {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex: 0 0 auto;
+}
+.wd-shortcut-keys kbd {
+  display: inline-grid;
+  place-items: center;
+  min-width: 18px;
+  height: 20px;
+  padding: 0 4px;
+  border: 0;
+  border-radius: 4px;
+  background: var(--wd-control-muted);
+  color: var(--wd-vibrant-label-secondary);
+  font-family: var(--wd-font-family);
+  white-space: nowrap;
+}
+
+.wd-search-hint {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  padding: 8px 16px 10px;
+  border-top: 1px solid var(--wd-separator-nonopaque);
+  color: var(--wd-label-tertiary);
+}
+.wd-search-hint-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+.wd-search-hint-item:focus-visible {
+  outline: 2px solid var(--wd-blue);
+  outline-offset: 2px;
+}
+.wd-search-hint-item .wd-shortcut-keys kbd {
+  min-width: 17px;
+  height: 18px;
+  padding: 0 4px;
+  font-size: inherit;
+  white-space: nowrap;
+}
+.wd-search-hint-item kbd>span {
+  display: block;
+  white-space: nowrap;
+}
+.wd-search-live {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+}
+
+.wd-search-fullscreen {
+  position: fixed;
+  inset: 0;
+  z-index: 130;
+  display: grid;
+  place-items: start center;
+  padding: 22vh 16px 24px;
+  pointer-events: auto;
+  color: var(--wd-label-primary);
+  font-family: var(--wd-font-family);
+  isolation: isolate;
+}
+.wd-search-backdrop {
+  position: absolute;
+  inset: 0;
+  background: var(--wd-overlay-activity);
+  backdrop-filter: blur(28px) saturate(1.05);
+  -webkit-backdrop-filter: blur(28px) saturate(1.05);
+}
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .wd-search-backdrop { background: color-mix(in srgb, var(--wd-canvas) 84%, transparent); }
+}
+.wd-search-stage {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  width: min(816px, calc(100vw - 32px));
+}
+/* A fixed 16px slot is gap, not overlap. The result surface begins after it;
+ * the field's own glass shadow stays within its own rounded silhouette. */
+.wd-search-stage > .wd-search-panel {
+  margin-top: 16px;
+}
+.wd-search-fullscreen[data-entering] .wd-search-backdrop {
+  animation: wd-search-backdrop-in var(--wd-motion-panel) var(--wd-ease-panel) both;
+}
+.wd-search-fullscreen[data-entering] .wd-search-field {
+  animation: wd-search-field-in var(--wd-motion-panel) var(--wd-ease-panel) both;
+}
+.wd-search-fullscreen[data-entering] .wd-search-panel {
+  animation: wd-search-panel-in var(--wd-motion-panel) var(--wd-ease-panel) both;
+}
+.wd-search-fullscreen[data-entering] .wd-search-panel--fullscreen .wd-search-panel-frame {
+  animation: wd-search-content-in var(--wd-motion-panel) var(--wd-ease-panel) both;
+}
+.wd-search-fullscreen[data-closing] .wd-search-backdrop {
+  animation: wd-search-backdrop-out var(--wd-motion-panel-exit) var(--wd-ease-hover) both;
+}
+.wd-search-fullscreen[data-closing] .wd-search-stage {
+  animation: wd-search-stage-out var(--wd-motion-panel-exit) var(--wd-ease-hover) both;
+}
+.wd-search-fullscreen[data-closing] .wd-search-panel--fullscreen .wd-search-panel-frame {
+  animation: wd-search-content-out var(--wd-motion-panel-exit) var(--wd-ease-hover) both;
+}
+@keyframes wd-search-backdrop-in {
+  /* Blur is constant while the veil appears; animating the radius composites
+   * crisp intermediate frames over the page. */
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes wd-search-backdrop-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+@keyframes wd-search-field-in {
+  from { transform: translateY(-6px) scale(.99); }
+  to { transform: translateY(0) scale(1); }
+}
+@keyframes wd-search-panel-in {
+  from { transform: translateY(-4px) scale(.992); }
+  to { transform: translateY(0) scale(1); }
+}
+@keyframes wd-search-content-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes wd-search-content-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+@keyframes wd-search-stage-out {
+  /* The stage owns the glass field; fade only the backdrop and panel content,
+   * never the glass material itself. */
+  from { transform: translateY(0) scale(1); }
+  to { transform: translateY(-4px) scale(.992); }
+}
+/* Reuse the Home inline field geometry: a 46px capsule with a 20px left inset,
+ * 18px search glyph, 15px Subheadline text and the same 23px radius. The
+ * only difference is the deliberately hidden shortcut on the right. */
+.wd-search-field {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  flex: 0 0 auto;
+  height: 46px;
+  padding: 0 20px;
+  gap: 8px;
+  border-radius: 23px;
+  color: var(--wd-label-primary);
+  isolation: isolate;
+}
+.wd-search-field-icon {
+  display: grid;
+  place-items: center;
+  flex: 0 0 18px;
+  width: 18px;
+  height: 18px;
+  color: var(--wd-label-primary);
+}
+.wd-search-field-icon .target-icon-art {
+  width: 18px;
+  height: 18px;
+}
+.wd-search-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 20px;
+  padding: 0;
+  border: 0;
+  outline: 0;
+  background: none;
+  color: var(--wd-label-primary);
+  font: inherit;
+  font-size: 15px;
+  line-height: 20px;
+  letter-spacing: -.23px;
+  font-variation-settings: "wdth" 100, "opsz" 17;
+  font-optical-sizing: none;
+  caret-color: var(--wd-blue);
+}
+.wd-search-input::placeholder {
+  color: var(--wd-label-secondary);
+}
+.wd-search-input:focus-visible {
+  outline: 0;
+}
+@media (max-width: 560px) {
+  .wd-search-fullscreen { padding-top: 16vh; }
+  .wd-search-panel--fullscreen { max-height: min(420px, calc(100vh - 16vh - 88px)); }
+  .wd-search-field { height: 46px; border-radius: 23px; }
+  .wd-search-hint { gap: 4px 10px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .wd-search-fullscreen[data-entering] .wd-search-backdrop,
+  .wd-search-fullscreen[data-entering] .wd-search-field,
+  .wd-search-fullscreen[data-entering] .wd-search-panel,
+  .wd-search-fullscreen[data-entering] .wd-search-panel-frame { animation: none !important; }
+  .wd-search-fullscreen[data-closing] .wd-search-backdrop,
+  .wd-search-fullscreen[data-closing] .wd-search-stage,
+  .wd-search-fullscreen[data-closing] .wd-search-panel-frame { animation-duration: 1ms !important; }
+}

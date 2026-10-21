@@ -1,0 +1,21 @@
+// Throwaway static server used only to verify the built site locally.
+const http = require('node:http');
+const fs = require('node:fs');
+const path = require('node:path');
+
+const root = path.resolve(process.argv[2]);
+const port = Number(process.argv[3]);
+const types = { '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.svg': 'image/svg+xml', '.woff2': 'font/woff2', '.json': 'application/json' };
+
+http.createServer((request, response) => {
+  let pathname;
+  try { pathname = decodeURIComponent(new URL(request.url, 'http://localhost').pathname); } catch { response.writeHead(400); return response.end(); }
+  if (pathname === '/') pathname = '/index.html';
+  const file = path.join(root, pathname);
+  if (!file.startsWith(root + path.sep)) { response.writeHead(403); return response.end(); }
+  fs.readFile(file, (error, content) => {
+    if (error) { response.writeHead(404); return response.end('Not found'); }
+    response.writeHead(200, { 'Content-Type': types[path.extname(file)] || 'application/octet-stream' });
+    response.end(content);
+  });
+}).listen(port, '127.0.0.1');

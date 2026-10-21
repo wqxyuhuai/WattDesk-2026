@@ -1,0 +1,113 @@
+{
+  "frameId": "14704:3871",
+  "assets": [
+    {
+      "name": "imgBoldEssentionalUiMenuDots",
+      "file": "imgBoldEssentionalUiMenuDots.svg"
+    },
+    {
+      "name": "imgBoldSearchRoundedMagnifer",
+      "file": "imgBoldSearchRoundedMagnifer.svg"
+    },
+    {
+      "name": "imgBoldEssentionalUiBoltCircle",
+      "file": "imgBoldEssentionalUiBoltCircle.svg"
+    },
+    {
+      "name": "imgDivider2",
+      "file": "imgDivider2.svg"
+    },
+    {
+      "name": "imgBoldMoneyTicket",
+      "file": "imgBoldMoneyTicket.svg"
+    },
+    {
+      "name": "imgBoldBusinessStatisticPieChart",
+      "file": "imgBoldBusinessStatisticPieChart.svg"
+    },
+    {
+      "name": "imgLinearArrowsAltArrowRight",
+      "file": "imgLinearArrowsAltArrowRight.svg"
+    },
+    {
+      "name": "imgBoldEssentionalUiBolt",
+      "file": "imgBoldEssentionalUiBolt.svg"
+    },
+    {
+      "name": "imgLinearTimeClockCircle",
+      "file": "imgLinearTimeClockCircle.svg"
+    },
+    {
+      "name": "imgBoldEssentionalUiBoltCircle1",
+      "file": "imgBoldEssentionalUiBoltCircle1.svg"
+    },
+    {
+      "name": "imgBoldAstronomyPlanet4",
+      "file": "imgBoldAstronomyPlanet4.svg"
+    },
+    {
+      "name": "imgBoldEssentionalUiDanger",
+      "file": "imgBoldEssentionalUiDanger.svg"
+    },
+    {
+      "name": "imgBoldElectronicDevicesDevices",
+      "file": "imgBoldElectronicDevicesDevices.svg"
+    },
+    {
+      "name": "imgBoldElectronicDevicesLightning",
+      "file": "imgBoldElectronicDevicesLightning.svg"
+    },
+    {
+      "name": "imgBoldTimeCalendar",
+      "file": "imgBoldTimeCalendar.svg"
+    },
+    {
+      "name": "imgLinearArrowsRefresh",
+      "file": "imgLinearArrowsRefresh.svg"
+    },
+    {
+      "name": "imgHourlyEnergyGeneratedArea",
+      "file": "imgHourlyEnergyGeneratedArea.svg"
+    },
+    {
+      "name": "imgHourlyEnergyGeneratedLine",
+      "file": "imgHourlyEnergyGeneratedLine.svg"
+    },
+    {
+      "name": "imgHoverVerticalGuide",
+      "file": "imgHoverVerticalGuide.svg"
+    },
+    {
+      "name": "imgHoverSelectedObservation",
+      "file": "imgHoverSelectedObservation.svg"
+    },
+    {
+      "name": "imgEllipse",
+      "file": "imgEllipse.svg"
+    },
+    {
+      "name": "imgHourlyEnergyConsumedArea",
+      "file": "imgHourlyEnergyConsumedArea.svg"
+    },
+    {
+      "name": "imgHourlyEnergyConsumedLine",
+      "file": "imgHourlyEnergyConsumedLine.svg"
+    },
+    {
+      "name": "imgHourlySitesAffectedByIssuesArea",
+      "file": "imgHourlySitesAffectedByIssuesArea.svg"
+    },
+    {
+      "name": "imgHourlySitesAffectedByIssuesLine",
+      "file": "imgHourlySitesAffectedByIssuesLine.svg"
+    },
+    {
+      "name": "imgHourlyNewServiceTicketsArea",
+      "file": "imgHourlyNewServiceTicketsArea.svg"
+    },
+    {
+      "name": "imgHourlyNewServiceTicketsLine",
+      "file": "imgHourlyNewServiceTicketsLine.svg"
+    }
+  ]
+}

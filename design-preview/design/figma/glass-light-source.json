@@ -1,0 +1,619 @@
+{
+  "fileKey": "7hGGOqflIMGWTYQMm9tce0",
+  "frameId": "14704:3871",
+  "frameName": "Home-主画板 - 浅色模式",
+  "inspectedAt": "2026-10-16",
+  "data": [
+    {
+      "id": "14704:3871",
+      "name": "Home-主画板 - 浅色模式",
+      "fills": [
+        {
+          "type": "SOLID",
+          "visible": true,
+          "opacity": 1,
+          "blendMode": "NORMAL",
+          "color": {
+            "r": 0.9490196108818054,
+            "g": 0.9490196108818054,
+            "b": 0.9686274528503418
+          },
+          "boundVariables": {
+            "color": {
+              "type": "VARIABLE_ALIAS",
+              "id": "VariableID:508:77460"
+            }
+          }
+        }
+      ],
+      "strokes": [],
+      "effects": [],
+      "bindings": {
+        "fills": [
+          {
+            "type": "VARIABLE_ALIAS",
+            "id": "VariableID:508:77460"
+          }
+        ]
+      },
+      "opacity": 1
+    },
+    {
+      "id": "14704:3926",
+      "name": "Frame 46",
+      "fills": [
+        {
+          "type": "SOLID",
+          "visible": false,
+          "opacity": 1,
+          "blendMode": "NORMAL",
+          "color": {
+            "r": 1,
+            "g": 1,
+            "b": 1
+          },
+          "boundVariables": {
+            "color": {
+              "type": "VARIABLE_ALIAS",
+              "id": "VariableID:508:77466"
+            }
+          }
+        },
+        {
+          "type": "GRADIENT_LINEAR",
+          "visible": true,
+          "opacity": 1,
+          "blendMode": "NORMAL",
+          "gradientStops": [
+            {
+              "color": {
+                "r": 1,
+                "g": 1,
+                "b": 1,
+                "a": 1
+              },
+              "position": 0,
+              "boundVariables": {
+                "color": {
+                  "type": "VARIABLE_ALIAS",
+                  "id": "VariableID:508:77458"
+                }
+              }
+            },
+            {
+              "color": {
+                "r": 0.9490196108818054,
+                "g": 0.9490196108818054,
+                "b": 0.9686274528503418,
+                "a": 1
+              },
+              "position": 1,
+              "boundVariables": {
+                "color": {
+                  "type": "VARIABLE_ALIAS",
+                  "id": "VariableID:508:77460"
+                }
+              }
+            }
+          ],
+          "gradientTransform": [
+            [
+              0.7168945074081421,
+              0.2803088128566742,
+              0.002796666231006384
+            ],
+            [
+              -0.2803088426589966,
+              0.27753978967666626,
+              0.5027690529823303
+            ]
+          ]
+        }
+      ],
+      "strokes": [
+        {
+          "type": "SOLID",
+          "visible": true,
+          "opacity": 1,
+          "blendMode": "NORMAL",
+          "color": {
+            "r": 0.7764706015586853,
+            "g": 0.7764706015586853,
+            "b": 0.7843137383460999
+          },
+          "boundVariables": {
+            "color": {
+              "type": "VARIABLE_ALIAS",
+              "id": "VariableID:508:77442"
+            }
+          }
+        }
+      ],
+      "effects": [
+        {
+          "type": "DROP_SHADOW",
+          "visible": true,
+          "radius": 4,
+          "boundVariables": {
+            "color": {
+              "type": "VARIABLE_ALIAS",
+              "id": "VariableID:508:77440"
+            }
+          },
+          "color": {
+            "r": 1,
+            "g": 1,
+            "b": 1,
+            "a": 1
+          },
+          "offset": {
+            "x": 0,
+            "y": 0
+          },
+          "spread": 0,
+          "blendMode": "NORMAL",
+          "showShadowBehindNode": false
+        }
+      ],
+      "bindings": {
+        "fills": [
+          {
+            "type": "VARIABLE_ALIAS",
+            "id": "VariableID:508:77458"
+          },
+          {
+            "type": "VARIABLE_ALIAS",
+            "id": "VariableID:508:77460"
+          },
+          {
+            "type": "VARIABLE_ALIAS",
+            "id": "VariableID:508:77466"
+          }
+        ],
+        "strokes": [
+          {
+            "type": "VARIABLE_ALIAS",
+            "id": "VariableID:508:77442"
+          }
+        ],
+        "effects": [
+          {
+            "type": "VARIABLE_ALIAS",
+            "id": "VariableID:508:77440"
+          }
+        ]
+      },
+      "opacity": 1
+    },
+    {
+      "id": "14704:3977",
+      "name": "Energy generated",
+      "fills": [
+        {
+          "type": "SOLID",
+          "visible": true,
+          "opacity": 1,
+          "blendMode": "NORMAL",
+          "color": {
+            "r": 0.9490196108818054,
+            "g": 0.9490196108818054,
+            "b": 0.9686274528503418
+          },
+          "boundVariables": {
+            "color": {
+              "type": "VARIABLE_ALIAS",
+              "id": "VariableID:508:77460"
+            }
+          }
+        }
+      ],
+      "strokes": [
+        {
+          "type": "SOLID",
+          "visible": true,
+          "opacity": 1,
+          "blendMode": "NORMAL",
+          "color": {
+            "r": 0.9019607901573181,
+            "g": 0.9019607901573181,
+            "b": 0.9019607901573181
+          },
+          "boundVariables": {
+            "color": {
+              "type": "VARIABLE_ALIAS",
+              "id": "VariableID:5469:7900"
+            }
+          }
+        }
+      ],
+      "effects": [],
+      "bindings": {
+        "fills": [
+          {
+            "type": "VARIABLE_ALIAS",
+            "id": "VariableID:508:77460"
+          }
+        ],
+        "strokes": [
+          {
+            "type": "VARIABLE_ALIAS",
+            "id": "VariableID:5469:7900"
+          }
+        ]
+      },
+      "opacity": 1
+    },
+    {
+      "id": "14704:3988",
+      "name": "Hover / Energy generated",
+      "fills": [
+        {
+          "type": "SOLID",
+          "visible": true,
+          "opacity": 1,
+          "blendMode": "NORMAL",
+          "color": {
+            "r": 1,
+            "g": 1,
+            "b": 1
+          },
+          "boundVariables": {
+            "color": {
+              "type": "VARIABLE_ALIAS",
+              "id": "VariableID:508:77458"
+            }
+          }
+        }
+      ],
+      "strokes": [
+        {
+          "type": "SOLID",
+          "visible": true,
+          "opacity": 1,
+          "blendMode": "NORMAL",
+          "color": {
+            "r": 0.7764706015586853,
+            "g": 0.7764706015586853,
+            "b": 0.7843137383460999
+          },
+          "boundVariables": {
+            "color": {
+              "type": "VARIABLE_ALIAS",
+              "id": "VariableID:508:77442"
+            }
+          }
+        }
+      ],
+      "effects": [
+        {
+          "type": "DROP_SHADOW",
+          "visible": true,
+          "radius": 12,
+          "boundVariables": {},
+          "color": {
+            "r": 0,
+            "g": 0,
+            "b": 0,
+            "a": 0.2199999988079071
+          },
+          "offset": {
+            "x": 0,
+            "y": 3
+          },
+          "spread": 0,
+          "blendMode": "NORMAL",
+          "showShadowBehindNode": true
+        }
+      ],
+      "bindings": {
+        "fills": [
+          {
+            "type": "VARIABLE_ALIAS",
+            "id": "VariableID:508:77458"
+          }
+        ],
+        "strokes": [
+          {
+            "type": "VARIABLE_ALIAS",
+            "id": "VariableID:508:77442"
+          }
+        ]
+      },
+      "opacity": 1
+    },
+    {
+      "id": "14704:3882",
+      "name": "sidebar inner",
+      "fills": [
+        {
+          "type": "SOLID",
+          "visible": true,
+          "opacity": 0.1599999964237213,
+          "blendMode": "NORMAL",
+          "color": {
+            "r": 0.47058823704719543,
+            "g": 0.47058823704719543,
+            "b": 0.501960813999176
+          },
+          "boundVariables": {
+            "color": {
+              "type": "VARIABLE_ALIAS",
+              "id": "VariableID:509:77491"
+            }
+          }
+        }
+      ],
+      "strokes": [],
+      "effects": [],
+      "bindings": {
+        "fills": [
+          {
+            "type": "VARIABLE_ALIAS",
+            "id": "VariableID:509:77491"
+          }
+        ]
+      },
+      "opacity": 1
+    },
+    {
+      "id": "I14704:3962;14536:3811;14410:765",
+      "name": "Fill + Shadow",
+      "fills": [
+        {
+          "type": "SOLID",
+          "visible": true,
+          "opacity": 0.25,
+          "blendMode": "NORMAL",
+          "color": {
+            "r": 0,
+            "g": 0,
+            "b": 0
+          },
+          "boundVariables": {}
+        },
+        {
+          "type": "SOLID",
+          "visible": true,
+          "opacity": 0.25,
+          "blendMode": "NORMAL",
+          "color": {
+            "r": 1,
+            "g": 1,
+            "b": 1
+          },
+          "boundVariables": {}
+        },
+        {
+          "type": "SOLID",
+          "visible": true,
+          "opacity": 0.6000000238418579,
+          "blendMode": "LINEAR_DODGE",
+          "color": {
+            "r": 0.2666666805744171,
+            "g": 0.2666666805744171,
+            "b": 0.2666666805744171
+          },
+          "boundVariables": {}
+        },
+        {
+          "type": "SOLID",
+          "visible": true,
+          "opacity": 0.20000000298023224,
+          "blendMode": "LUMINOSITY",
+          "color": {
+            "r": 0.9725490212440491,
+            "g": 0.9725490212440491,
+            "b": 0.9725490212440491
+          },
+          "boundVariables": {}
+        }
+      ],
+      "strokes": [
+        {
+          "type": "SOLID",
+          "visible": true,
+          "opacity": 1,
+          "blendMode": "NORMAL",
+          "color": {
+            "r": 0,
+            "g": 0,
+            "b": 0
+          },
+          "boundVariables": {}
+        }
+      ],
+      "effects": [
+        {
+          "type": "DROP_SHADOW",
+          "visible": true,
+          "radius": 15,
+          "boundVariables": {},
+          "color": {
+            "r": 0,
+            "g": 0,
+            "b": 0,
+            "a": 0.019999999552965164
+          },
+          "offset": {
+            "x": 0,
+            "y": 8
+          },
+          "spread": 0,
+          "blendMode": "NORMAL",
+          "showShadowBehindNode": false
+        },
+        {
+          "type": "DROP_SHADOW",
+          "visible": true,
+          "radius": 0,
+          "boundVariables": {},
+          "color": {
+            "r": 0.9098039269447327,
+            "g": 0.9098039269447327,
+            "b": 0.9098039269447327,
+            "a": 1
+          },
+          "offset": {
+            "x": 0,
+            "y": 0
+          },
+          "spread": 0.5,
+          "blendMode": "LINEAR_BURN",
+          "showShadowBehindNode": false
+        },
+        {
+          "type": "DROP_SHADOW",
+          "visible": true,
+          "radius": 0,
+          "boundVariables": {},
+          "color": {
+            "r": 0.8156862854957581,
+            "g": 0.8156862854957581,
+            "b": 0.8156862854957581,
+            "a": 1
+          },
+          "offset": {
+            "x": -1.25,
+            "y": 0
+          },
+          "spread": -0.75,
+          "blendMode": "LINEAR_BURN",
+          "showShadowBehindNode": false
+        },
+        {
+          "type": "DROP_SHADOW",
+          "visible": true,
+          "radius": 0,
+          "boundVariables": {},
+          "color": {
+            "r": 0.8156862854957581,
+            "g": 0.8156862854957581,
+            "b": 0.8156862854957581,
+            "a": 1
+          },
+          "offset": {
+            "x": 1.25,
+            "y": 0
+          },
+          "spread": -0.75,
+          "blendMode": "LINEAR_BURN",
+          "showShadowBehindNode": false
+        }
+      ],
+      "bindings": {},
+      "opacity": 1
+    },
+    {
+      "id": "I14704:3962;14536:3811;14410:766",
+      "name": "Glass Effect",
+      "fills": [],
+      "strokes": [],
+      "effects": [
+        {
+          "type": "GLASS",
+          "visible": true,
+          "radius": 6,
+          "boundVariables": {
+            "radius": {
+              "type": "VARIABLE_ALIAS",
+              "id": "VariableID:3bebb747c097dbdd6abe57160164bc7562a92643/12492:89"
+            }
+          },
+          "refraction": 0.699999988079071,
+          "depth": 30,
+          "lightAngle": 0,
+          "lightIntensity": 0.25,
+          "dispersion": 0.20000000298023224,
+          "splay": 0.20000000298023224
+        },
+        {
+          "type": "INNER_SHADOW",
+          "visible": true,
+          "radius": 30,
+          "boundVariables": {},
+          "color": {
+            "r": 0.9019607901573181,
+            "g": 0.9019607901573181,
+            "b": 0.9019607901573181,
+            "a": 0.5
+          },
+          "offset": {
+            "x": 0,
+            "y": 40
+          },
+          "spread": -40,
+          "blendMode": "LINEAR_BURN"
+        },
+        {
+          "type": "INNER_SHADOW",
+          "visible": true,
+          "radius": 10,
+          "boundVariables": {},
+          "color": {
+            "r": 0.1568627506494522,
+            "g": 0.1568627506494522,
+            "b": 0.1568627506494522,
+            "a": 1
+          },
+          "offset": {
+            "x": 0,
+            "y": -40
+          },
+          "spread": -40,
+          "blendMode": "LINEAR_DODGE"
+        },
+        {
+          "type": "INNER_SHADOW",
+          "visible": true,
+          "radius": 10,
+          "boundVariables": {},
+          "color": {
+            "r": 0.1568627506494522,
+            "g": 0.1568627506494522,
+            "b": 0.1568627506494522,
+            "a": 1
+          },
+          "offset": {
+            "x": 0,
+            "y": 40
+          },
+          "spread": -40,
+          "blendMode": "LINEAR_DODGE"
+        }
+      ],
+      "bindings": {
+        "effects": [
+          {
+            "type": "VARIABLE_ALIAS",
+            "id": "VariableID:03d6e3cc65bc7d2246060688efd990c49a04356c/12492:87"
+          },
+          {
+            "type": "VARIABLE_ALIAS",
+            "id": "VariableID:0e8115bbfa14bd912609ffc551d42ae9b8a58127/12492:91"
+          },
+          {
+            "type": "VARIABLE_ALIAS",
+            "id": "VariableID:3bebb747c097dbdd6abe57160164bc7562a92643/12492:89"
+          },
+          {
+            "type": "VARIABLE_ALIAS",
+            "id": "VariableID:3cc39d80ef34eb2860232cfc62c838a5ba249801/12492:92"
+          },
+          {
+            "type": "VARIABLE_ALIAS",
+            "id": "VariableID:4c9a43c383b459e1ca82899f4937ee94aaeb1aec/12492:88"
+          },
+          {
+            "type": "VARIABLE_ALIAS",
+            "id": "VariableID:4f6ccdf281dbd15cda5d346edab71b7eeaa822ca/12492:99"
+          },
+          {
+            "type": "VARIABLE_ALIAS",
+            "id": "VariableID:b54c37d71e984d09eeb1e194327a45004e51ba72/12492:90"
+          }
+        ]
+      },
+      "opacity": 1
+    }
+  ]
+}

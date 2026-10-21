@@ -1,0 +1,1195 @@
+{
+  "frameId": "14704:3871",
+  "styles": [
+    {
+      "id": "14578:6145",
+      "properties": {
+        "background": "linear-gradient(121.9456476611001deg,var(--wd-figma-backgrounds-tertiary) -0.2773284852353204%,var(--wd-figma-backgrounds-secondary) 100.00000135416285%)",
+        "boxShadow": "inset 0 0 0 1px var(--wd-figma-separators-opaque),0px 0px 4px 0px var(--wd-figma-backgrounds-primary)"
+      }
+    },
+    {
+      "id": "14445:3352",
+      "segmentColors": [
+        "var(--wd-figma-labels-primary)"
+      ]
+    },
+    {
+      "id": "I14445:3354;14420:2221",
+      "properties": {
+        "background": "none"
+      }
+    },
+    {
+      "id": "I14445:3354;14420:2221;14420:2195",
+      "segmentColors": [
+        "var(--wd-figma-labels-secondary)"
+      ]
+    },
+    {
+      "id": "I14445:3354;14420:2221;14420:2197;14420:2074",
+      "properties": {
+        "background": "var(--wd-figma-fills-tertiary)"
+      }
+    },
+    {
+      "id": "I14445:3354;14420:2221;14420:2197;14420:2074;14420:2071",
+      "segmentColors": [
+        "var(--wd-figma-labels-vibrant-secondary)"
+      ]
+    },
+    {
+      "id": "I14445:3354;14420:2221;14420:2197;14420:2076",
+      "properties": {
+        "background": "var(--wd-figma-fills-tertiary)"
+      }
+    },
+    {
+      "id": "I14445:3354;14420:2221;14420:2197;14420:2076;14420:2071",
+      "segmentColors": [
+        "var(--wd-figma-labels-vibrant-secondary)"
+      ]
+    },
+    {
+      "id": "14612:8369",
+      "properties": {
+        "background": "none",
+        "boxShadow": "none"
+      }
+    },
+    {
+      "id": "I14612:8369;14612:7804",
+      "segmentColors": [
+        "var(--wd-figma-labels-secondary)"
+      ]
+    },
+    {
+      "id": "14613:1210",
+      "properties": {
+        "background": "none",
+        "boxShadow": "none"
+      }
+    },
+    {
+      "id": "I14613:1210;14612:7804",
+      "segmentColors": [
+        "var(--wd-figma-labels-primary)"
+      ]
+    },
+    {
+      "id": "I14537:4416;14536:3833",
+      "properties": {
+        "background": "var(--wd-figma-fills-primary)"
+      }
+    },
+    {
+      "id": "I14537:4416;14536:3822",
+      "segmentColors": [
+        "var(--wd-figma-labels-secondary)"
+      ]
+    },
+    {
+      "id": "I14537:4416;14536:3823",
+      "segmentColors": [
+        "var(--wd-figma-labels-primary)"
+      ]
+    },
+    {
+      "id": "I14537:4416;14536:3824",
+      "segmentColors": [
+        "var(--wd-figma-labels-secondary)"
+      ]
+    },
+    {
+      "id": "I14537:3925;14536:3833",
+      "properties": {
+        "background": "var(--wd-figma-fills-primary)"
+      }
+    },
+    {
+      "id": "I14537:3925;14536:3822",
+      "segmentColors": [
+        "var(--wd-figma-labels-secondary)"
+      ]
+    },
+    {
+      "id": "I14537:3925;14536:3823",
+      "segmentColors": [
+        "var(--wd-figma-labels-primary)"
+      ]
+    },
+    {
+      "id": "I14537:3925;14536:3824",
+      "segmentColors": [
+        "var(--wd-figma-labels-secondary)"
+      ]
+    },
+    {
+      "id": "I14537:3891;14536:3822",
+      "segmentColors": [
+        "var(--wd-figma-labels-secondary)"
+      ]
+    },
+    {
+      "id": "I14537:3891;14536:3823",
+      "segmentColors": [
+        "var(--wd-figma-labels-primary)"
+      ]
+    },
+    {
+      "id": "I14537:3891;14536:3824",
+      "segmentColors": [
+        "var(--wd-figma-labels-secondary)"
+      ]
+    },
+    {
+      "id": "I14537:3908;14536:3822",
+      "segmentColors": [
+        "var(--wd-figma-labels-secondary)"
+      ]
+    },
+    {
+      "id": "I14537:3908;14536:3823",
+      "segmentColors": [
+        "var(--wd-figma-labels-primary)"
+      ]
+    },
+    {
+      "id": "I14537:3908;14536:3824",
+      "segmentColors": [
+        "var(--wd-figma-labels-secondary)"
+      ]
+    },
+    {
+      "id": "14561:838",
+      "segmentColors": [
+        "var(--wd-figma-labels-primary)"
+      ]
+    },
+    {
+      "id": "I14578:6106;14420:2221",
+      "properties": {
+        "background": "none"
+      }
+    },
+    {
+      "id": "I14578:6106;14420:2221;14420:2195",
+      "segmentColors": [
+        "var(--wd-figma-labels-secondary)"
+      ]
+    },
+    {
+      "id": "I14612:8453;14420:2221",
+      "properties": {
+        "background": "none"
+      }
+    },
+    {
+      "id": "14570:1074",
+      "properties": {
+        "background": "var(--wd-figma-backgrounds-secondary)",
+        "boxShadow": "inset 0 0 0 1px var(--wd-figma-separators-vibrant)"
+      }
+    },
+    {
+      "id": "14570:1076",
+      "segmentColors": [
+        "var(--wd-figma-labels-secondary)"
+      ]
+    },
+    {
+      "id": "14570:1079",
+      "segmentColors": [
+        "var(--wd-figma-labels-primary)"
+      ]
+    },
+    {
+      "id": "14570:1080",
+      "segmentColors": [
+        "var(--wd-figma-labels-secondary)"
+      ]
+    },
+    {
+      "id": "14570:1081",
+      "segmentColors": [
+        "var(--wd-figma-accents-green)"
+      ]
+    },
+    {
+      "id": "14570:1084",
+      "segmentColors": [
+        "var(--wd-figma-labels-secondary)"
+      ]
+    },
+    {
+      "id": "14570:1083",
+      "properties": {
+        "background": "var(--wd-figma-separators-opaque)"
+      }
+    },
+    {
+      "id": "14570:1085",
+      "properties": {
+        "background": "var(--wd-figma-separators-opaque)"
+      }
+    },
+    {
+      "id": "14570:1087",
+      "properties": {
+        "background": "var(--wd-figma-separators-opaque)"
+      }
+    },
+    {
+      "id": "14570:1092",
+      "properties": {
+        "background": "var(--wd-figma-accents-blue)",
+        "boxShadow": "inset 0 0 0 1.5px var(--wd-figma-labels-primary)"
+      }
+    },
+    {
+      "id": "14570:1093",
+      "properties": {
+        "background": "var(--wd-figma-backgrounds-tertiary)",
+        "boxShadow": "inset 0 0 0 1px var(--wd-figma-separators-opaque),0px 3px 12px 0px rgba(0,0,0,0.22)"
+      }
+    },
+    {
+      "id": "14570:1094",
+      "segmentColors": [
+        "var(--wd-figma-labels-primary)"
+      ]
+    },
+    {
+      "id": "14570:1096",
+      "properties": {
+        "background": "var(--wd-figma-accents-blue)"
+      }
+    },
+    {
+      "id": "14570:1097",
+      "segmentColors": [
+        "var(--wd-figma-labels-secondary)"
+      ]
+    },
+    {
+      "id": "14570:1098",
+      "segmentColors": [
+        "var(--wd-figma-labels-primary)"
+      ]
+    },
+    {
+      "id": "14570:1086",
+      "segmentColors": [
+        "var(--wd-figma-labels-secondary)"
+      ]
+    },
+    {
+      "id": "14570:1088",
+      "segmentColors": [
+        "var(--wd-figma-labels-secondary)"
+      ]
+    },
+    {
+      "id": "14570:1111",
+      "properties": {
+        "background": "var(--wd-figma-backgrounds-secondary)",
+        "boxShadow": "inset 0 0 0 1px var(--wd-figma-separators-vibrant)"
+      }
+    },
+    {
+      "id": "I14579:2360;14570:1076",
+      "segmentColors": [
+        "var(--wd-figma-labels-secondary)"
+      ]
+    },
+    {
+      "id": "I14579:2360;14570:1079",
+      "segmentColors": [
+        "var(--wd-figma-labels-primary)"
+      ]
+    },
+    {
+      "id": "I14579:2360;14570:1080",
+      "segmentColors": [
+        "var(--wd-figma-labels-secondary)"
+      ]
+    },
+    {
+      "id": "I14579:2360;14578:5676",
+      "segmentColors": [
+        "var(--wd-figma-accents-red)"
+      ]
+    },
+    {
+      "id": "14570:1121",
+      "segmentColors": [
+        "var(--wd-figma-labels-secondary)"
+      ]
+    },
+    {
+      "id": "14570:1120",
+      "properties": {
+        "background": "var(--wd-figma-separators-opaque)"
+      }
+    },
+    {
+      "id": "14570:1122",
+      "properties": {
+        "background": "var(--wd-figma-separators-opaque)"
+      }
+    },
+    {
+      "id": "14570:1123",
+      "segmentColors": [
+        "var(--wd-figma-labels-secondary)"
+      ]
+    },
+    {
+      "id": "14570:1125",
+      "segmentColors": [
+        "var(--wd-figma-labels-secondary)"
+      ]
+    },
+    {
+      "id": "14570:1124",
+      "properties": {
+        "background": "var(--wd-figma-separators-opaque)"
+      }
+    },
+    {
+      "id": "14570:1140",
+      "properties": {
+        "background": "var(--wd-figma-backgrounds-secondary)",
+        "boxShadow": "inset 0 0 0 1px var(--wd-figma-separators-vibrant)"
+      }
+    },
+    {
+      "id": "I14579:900;14570:1076",
+      "segmentColors": [
+        "var(--wd-figma-labels-secondary)"
+      ]
+    },
+    {
+      "id": "I14579:900;14570:1079",
+      "segmentColors": [
+        "var(--wd-figma-labels-primary)"
+      ]
+    },
+    {
+      "id": "I14579:900;14570:1080",
+      "segmentColors": [
+        "var(--wd-figma-labels-secondary)"
+      ]
+    },
+    {
+      "id": "I14579:900;14570:1081",
+      "segmentColors": [
+        "var(--wd-figma-accents-green)"
+      ]
+    },
+    {
+      "id": "14570:1149",
+      "properties": {
+        "background": "var(--wd-figma-separators-opaque)"
+      }
+    },
+    {
+      "id": "14570:1150",
+      "segmentColors": [
+        "var(--wd-figma-labels-secondary)"
+      ]
+    },
+    {
+      "id": "14570:1151",
+      "properties": {
+        "background": "var(--wd-figma-separators-opaque)"
+      }
+    },
+    {
+      "id": "14570:1152",
+      "segmentColors": [
+        "var(--wd-figma-labels-secondary)"
+      ]
+    },
+    {
+      "id": "14570:1153",
+      "properties": {
+        "background": "var(--wd-figma-separators-opaque)"
+      }
+    },
+    {
+      "id": "14570:1154",
+      "segmentColors": [
+        "var(--wd-figma-labels-secondary)"
+      ]
+    },
+    {
+      "id": "14570:1155",
+      "properties": {
+        "background": "var(--wd-figma-accents-blue)"
+      }
+    },
+    {
+      "id": "14570:1156",
+      "properties": {
+        "background": "var(--wd-figma-accents-blue)"
+      }
+    },
+    {
+      "id": "14570:1157",
+      "properties": {
+        "background": "var(--wd-figma-accents-blue)"
+      }
+    },
+    {
+      "id": "14570:1158",
+      "properties": {
+        "background": "var(--wd-figma-accents-blue)"
+      }
+    },
+    {
+      "id": "14570:1159",
+      "properties": {
+        "background": "var(--wd-figma-accents-blue)"
+      }
+    },
+    {
+      "id": "14570:1160",
+      "properties": {
+        "background": "var(--wd-figma-accents-blue)"
+      }
+    },
+    {
+      "id": "14570:1161",
+      "properties": {
+        "background": "var(--wd-figma-accents-blue)"
+      }
+    },
+    {
+      "id": "14570:1174",
+      "properties": {
+        "background": "var(--wd-figma-backgrounds-secondary)",
+        "boxShadow": "inset 0 0 0 1px var(--wd-figma-separators-vibrant)"
+      }
+    },
+    {
+      "id": "I14579:910;14570:1076",
+      "segmentColors": [
+        "var(--wd-figma-labels-secondary)"
+      ]
+    },
+    {
+      "id": "I14579:910;14570:1079",
+      "segmentColors": [
+        "var(--wd-figma-labels-primary)"
+      ]
+    },
+    {
+      "id": "I14579:910;14570:1080",
+      "segmentColors": [
+        "var(--wd-figma-labels-secondary)"
+      ]
+    },
+    {
+      "id": "I14579:910;14570:1081",
+      "segmentColors": [
+        "var(--wd-figma-accents-green)"
+      ]
+    },
+    {
+      "id": "14570:1183",
+      "properties": {
+        "background": "var(--wd-figma-separators-opaque)"
+      }
+    },
+    {
+      "id": "14570:1184",
+      "segmentColors": [
+        "var(--wd-figma-labels-secondary)"
+      ]
+    },
+    {
+      "id": "14570:1185",
+      "properties": {
+        "background": "var(--wd-figma-separators-opaque)"
+      }
+    },
+    {
+      "id": "14570:1186",
+      "segmentColors": [
+        "var(--wd-figma-labels-secondary)"
+      ]
+    },
+    {
+      "id": "14570:1187",
+      "properties": {
+        "background": "var(--wd-figma-separators-opaque)"
+      }
+    },
+    {
+      "id": "14570:1188",
+      "segmentColors": [
+        "var(--wd-figma-labels-secondary)"
+      ]
+    },
+    {
+      "id": "14570:1189",
+      "properties": {
+        "background": "var(--wd-figma-accents-blue)"
+      }
+    },
+    {
+      "id": "14570:1190",
+      "properties": {
+        "background": "var(--wd-figma-accents-blue)"
+      }
+    },
+    {
+      "id": "14570:1191",
+      "properties": {
+        "background": "var(--wd-figma-accents-blue)"
+      }
+    },
+    {
+      "id": "14570:1192",
+      "properties": {
+        "background": "var(--wd-figma-accents-blue)"
+      }
+    },
+    {
+      "id": "14570:1193",
+      "properties": {
+        "background": "var(--wd-figma-accents-blue)"
+      }
+    },
+    {
+      "id": "14570:1194",
+      "properties": {
+        "background": "var(--wd-figma-accents-blue)"
+      }
+    },
+    {
+      "id": "14570:1195",
+      "properties": {
+        "background": "var(--wd-figma-accents-blue)"
+      }
+    },
+    {
+      "id": "14570:1208",
+      "properties": {
+        "background": "var(--wd-figma-backgrounds-secondary)",
+        "boxShadow": "inset 0 0 0 1px var(--wd-figma-separators-vibrant)"
+      }
+    },
+    {
+      "id": "I14579:920;14570:1076",
+      "segmentColors": [
+        "var(--wd-figma-labels-secondary)"
+      ]
+    },
+    {
+      "id": "I14579:920;14570:1079",
+      "segmentColors": [
+        "var(--wd-figma-labels-primary)"
+      ]
+    },
+    {
+      "id": "I14579:920;14570:1080",
+      "segmentColors": [
+        "var(--wd-figma-labels-secondary)"
+      ]
+    },
+    {
+      "id": "I14579:920;14578:5676",
+      "segmentColors": [
+        "var(--wd-figma-accents-red)"
+      ]
+    },
+    {
+      "id": "14570:1217",
+      "properties": {
+        "background": "var(--wd-figma-separators-opaque)"
+      }
+    },
+    {
+      "id": "14570:1218",
+      "segmentColors": [
+        "var(--wd-figma-labels-secondary)"
+      ]
+    },
+    {
+      "id": "14570:1219",
+      "properties": {
+        "background": "var(--wd-figma-separators-opaque)"
+      }
+    },
+    {
+      "id": "14570:1221",
+      "properties": {
+        "background": "var(--wd-figma-separators-opaque)"
+      }
+    },
+    {
+      "id": "14570:1220",
+      "segmentColors": [
+        "var(--wd-figma-labels-secondary)"
+      ]
+    },
+    {
+      "id": "14570:1222",
+      "segmentColors": [
+        "var(--wd-figma-labels-secondary)"
+      ]
+    },
+    {
+      "id": "14570:1237",
+      "properties": {
+        "background": "var(--wd-figma-backgrounds-secondary)",
+        "boxShadow": "inset 0 0 0 1px var(--wd-figma-separators-vibrant)"
+      }
+    },
+    {
+      "id": "I14579:930;14570:1076",
+      "segmentColors": [
+        "var(--wd-figma-labels-secondary)"
+      ]
+    },
+    {
+      "id": "I14579:930;14570:1079",
+      "segmentColors": [
+        "var(--wd-figma-labels-primary)"
+      ]
+    },
+    {
+      "id": "I14579:930;14570:1080",
+      "segmentColors": [
+        "var(--wd-figma-labels-secondary)"
+      ]
+    },
+    {
+      "id": "14570:1246",
+      "properties": {
+        "background": "var(--wd-figma-separators-opaque)"
+      }
+    },
+    {
+      "id": "14570:1247",
+      "segmentColors": [
+        "var(--wd-figma-labels-secondary)"
+      ]
+    },
+    {
+      "id": "14570:1248",
+      "properties": {
+        "background": "var(--wd-figma-separators-opaque)"
+      }
+    },
+    {
+      "id": "14570:1249",
+      "segmentColors": [
+        "var(--wd-figma-labels-secondary)"
+      ]
+    },
+    {
+      "id": "14570:1250",
+      "properties": {
+        "background": "var(--wd-figma-separators-opaque)"
+      }
+    },
+    {
+      "id": "14570:1251",
+      "segmentColors": [
+        "var(--wd-figma-labels-secondary)"
+      ]
+    },
+    {
+      "id": "14561:1104",
+      "segmentColors": [
+        "var(--wd-figma-labels-secondary)"
+      ]
+    },
+    {
+      "id": "14612:8369",
+      "properties": {
+        "background": "none",
+        "boxShadow": "none"
+      }
+    },
+    {
+      "id": "I14612:8369;14612:7804",
+      "segmentColors": [
+        "var(--wd-figma-labels-secondary)"
+      ]
+    },
+    {
+      "id": "14613:1162",
+      "properties": {
+        "background": "none",
+        "borderBottom": "1px solid var(--wd-figma-separators-opaque)",
+        "boxShadow": "none"
+      }
+    },
+    {
+      "id": "I14613:1162;14612:7804",
+      "segmentColors": [
+        "var(--wd-figma-labels-primary)"
+      ]
+    },
+    {
+      "id": "14613:1190",
+      "properties": {
+        "background": "none",
+        "borderBottom": "1px solid var(--wd-figma-separators-opaque)",
+        "boxShadow": "none"
+      }
+    },
+    {
+      "id": "I14613:1190;14612:7804",
+      "segmentColors": [
+        "var(--wd-figma-labels-primary)"
+      ]
+    },
+    {
+      "id": "14613:1210",
+      "properties": {
+        "background": "none",
+        "boxShadow": "none"
+      }
+    },
+    {
+      "id": "I14613:1210;14612:7804",
+      "segmentColors": [
+        "var(--wd-figma-labels-primary)"
+      ]
+    },
+    {
+      "id": "14612:8380",
+      "properties": {
+        "background": "none",
+        "boxShadow": "none"
+      }
+    },
+    {
+      "id": "I14612:8380;14612:7804",
+      "segmentColors": [
+        "var(--wd-figma-labels-secondary)"
+      ]
+    },
+    {
+      "id": "I14612:8380;14612:7806;14420:2076;14420:2071",
+      "segmentColors": [
+        "var(--wd-figma-labels-vibrant-secondary)"
+      ]
+    },
+    {
+      "id": "14613:1250",
+      "properties": {
+        "background": "none",
+        "borderBottom": "1px solid var(--wd-figma-separators-opaque)",
+        "boxShadow": "none"
+      }
+    },
+    {
+      "id": "I14613:1250;14612:7804",
+      "segmentColors": [
+        "var(--wd-figma-labels-primary)"
+      ]
+    },
+    {
+      "id": "14613:1270",
+      "properties": {
+        "background": "none",
+        "borderBottom": "1px solid var(--wd-figma-separators-opaque)",
+        "boxShadow": "none"
+      }
+    },
+    {
+      "id": "I14613:1270;14612:7804",
+      "segmentColors": [
+        "var(--wd-figma-labels-primary)"
+      ]
+    },
+    {
+      "id": "14613:1290",
+      "properties": {
+        "background": "none",
+        "borderBottom": "1px solid var(--wd-figma-separators-opaque)",
+        "boxShadow": "none"
+      }
+    },
+    {
+      "id": "I14613:1290;14612:7804",
+      "segmentColors": [
+        "var(--wd-figma-labels-primary)"
+      ]
+    },
+    {
+      "id": "14613:1310",
+      "properties": {
+        "background": "none",
+        "borderBottom": "1px solid var(--wd-figma-separators-opaque)",
+        "boxShadow": "none"
+      }
+    },
+    {
+      "id": "I14613:1310;14612:7804",
+      "segmentColors": [
+        "var(--wd-figma-labels-primary)"
+      ]
+    },
+    {
+      "id": "14613:1330",
+      "properties": {
+        "background": "none",
+        "boxShadow": "none"
+      }
+    },
+    {
+      "id": "I14613:1330;14612:7804",
+      "segmentColors": [
+        "var(--wd-figma-labels-primary)"
+      ]
+    },
+    {
+      "id": "14612:8402",
+      "properties": {
+        "background": "none",
+        "boxShadow": "none"
+      }
+    },
+    {
+      "id": "I14612:8402;14612:7804",
+      "segmentColors": [
+        "var(--wd-figma-labels-secondary)"
+      ]
+    },
+    {
+      "id": "I14612:8402;14612:7806;14420:2076;14420:2071",
+      "segmentColors": [
+        "var(--wd-figma-labels-vibrant-secondary)"
+      ]
+    },
+    {
+      "id": "14613:1350",
+      "properties": {
+        "background": "none",
+        "borderBottom": "1px solid var(--wd-figma-separators-opaque)",
+        "boxShadow": "none"
+      }
+    },
+    {
+      "id": "14613:1371",
+      "properties": {
+        "background": "none",
+        "borderBottom": "1px solid var(--wd-figma-separators-opaque)",
+        "boxShadow": "none"
+      }
+    },
+    {
+      "id": "14613:1392",
+      "properties": {
+        "background": "none",
+        "borderBottom": "1px solid var(--wd-figma-separators-opaque)",
+        "boxShadow": "none"
+      }
+    },
+    {
+      "id": "14613:1413",
+      "properties": {
+        "background": "none",
+        "borderBottom": "1px solid var(--wd-figma-separators-opaque)",
+        "boxShadow": "none"
+      }
+    },
+    {
+      "id": "14613:1434",
+      "properties": {
+        "background": "none",
+        "boxShadow": "none"
+      }
+    },
+    {
+      "id": "I14612:8369;14612:7804",
+      "segmentColors": [
+        "var(--wd-figma-labels-secondary)"
+      ]
+    },
+    {
+      "id": "I14613:1162;14612:7804",
+      "segmentColors": [
+        "var(--wd-figma-labels-primary)"
+      ]
+    },
+    {
+      "id": "I14613:1190;14612:7804",
+      "segmentColors": [
+        "var(--wd-figma-labels-primary)"
+      ]
+    },
+    {
+      "id": "I14613:1210;14612:7804",
+      "segmentColors": [
+        "var(--wd-figma-labels-primary)"
+      ]
+    },
+    {
+      "id": "I14612:8380;14612:7804",
+      "segmentColors": [
+        "var(--wd-figma-labels-secondary)"
+      ]
+    },
+    {
+      "id": "I14612:8380;14612:7806;14420:2076;14420:2071",
+      "segmentColors": [
+        "var(--wd-figma-labels-vibrant-secondary)"
+      ]
+    },
+    {
+      "id": "I14613:1250;14612:7804",
+      "segmentColors": [
+        "var(--wd-figma-labels-primary)"
+      ]
+    },
+    {
+      "id": "I14613:1270;14612:7804",
+      "segmentColors": [
+        "var(--wd-figma-labels-primary)"
+      ]
+    },
+    {
+      "id": "I14613:1290;14612:7804",
+      "segmentColors": [
+        "var(--wd-figma-labels-primary)"
+      ]
+    },
+    {
+      "id": "I14613:1310;14612:7804",
+      "segmentColors": [
+        "var(--wd-figma-labels-primary)"
+      ]
+    },
+    {
+      "id": "I14613:1330;14612:7804",
+      "segmentColors": [
+        "var(--wd-figma-labels-primary)"
+      ]
+    },
+    {
+      "id": "I14612:8402;14612:7804",
+      "segmentColors": [
+        "var(--wd-figma-labels-secondary)"
+      ]
+    },
+    {
+      "id": "I14612:8402;14612:7806;14420:2076;14420:2071",
+      "segmentColors": [
+        "var(--wd-figma-labels-vibrant-secondary)"
+      ]
+    },
+    {
+      "id": "I14613:1350;14612:7804",
+      "segmentColors": [
+        "var(--wd-figma-labels-tertiary)",
+        "var(--wd-figma-labels-primary)"
+      ]
+    },
+    {
+      "id": "I14613:1371;14612:7804",
+      "segmentColors": [
+        "var(--wd-figma-labels-tertiary)",
+        "var(--wd-figma-labels-primary)"
+      ]
+    },
+    {
+      "id": "I14613:1392;14612:7804",
+      "segmentColors": [
+        "var(--wd-figma-labels-tertiary)",
+        "var(--wd-figma-labels-primary)"
+      ]
+    },
+    {
+      "id": "I14613:1413;14612:7804",
+      "segmentColors": [
+        "var(--wd-figma-labels-tertiary)",
+        "var(--wd-figma-labels-primary)"
+      ]
+    },
+    {
+      "id": "I14613:1434;14612:7804",
+      "segmentColors": [
+        "var(--wd-figma-labels-tertiary)",
+        "var(--wd-figma-labels-primary)"
+      ]
+    }
+  ],
+  "assets": [
+    {
+      "id": "I14445:3354;14420:2221;14420:2194",
+      "file": "light/imgBoldSearchRoundedMagnifer.svg"
+    },
+    {
+      "id": "I14613:1162;14612:7803",
+      "file": "light/imgBoldEssentionalUiBoltCircle.svg"
+    },
+    {
+      "id": "I14613:1190;14612:7803",
+      "file": "light/imgBoldMoneyTicket.svg"
+    },
+    {
+      "id": "I14612:8380;14612:7807",
+      "file": "light/imgLinearArrowsAltArrowRight.svg"
+    },
+    {
+      "id": "I14613:1250;14612:7803",
+      "file": "light/imgBoldEssentionalUiBolt.svg"
+    },
+    {
+      "id": "I14613:1250;14612:7807",
+      "file": "light/imgLinearArrowsAltArrowRight.svg"
+    },
+    {
+      "id": "I14613:1270;14612:7803",
+      "file": "light/imgBoldEssentionalUiBolt.svg"
+    },
+    {
+      "id": "I14613:1270;14612:7807",
+      "file": "light/imgLinearArrowsAltArrowRight.svg"
+    },
+    {
+      "id": "I14613:1290;14612:7803",
+      "file": "light/imgBoldEssentionalUiBolt.svg"
+    },
+    {
+      "id": "I14613:1290;14612:7807",
+      "file": "light/imgLinearArrowsAltArrowRight.svg"
+    },
+    {
+      "id": "I14613:1310;14612:7803",
+      "file": "light/imgBoldEssentionalUiBolt.svg"
+    },
+    {
+      "id": "I14613:1310;14612:7807",
+      "file": "light/imgLinearArrowsAltArrowRight.svg"
+    },
+    {
+      "id": "I14613:1330;14612:7803",
+      "file": "light/imgBoldEssentionalUiBolt.svg"
+    },
+    {
+      "id": "I14613:1330;14612:7807",
+      "file": "light/imgLinearArrowsAltArrowRight.svg"
+    },
+    {
+      "id": "I14612:8402;14612:7807",
+      "file": "light/imgLinearArrowsAltArrowRight.svg"
+    },
+    {
+      "id": "I14613:1350;14612:7803",
+      "file": "light/imgLinearTimeClockCircle.svg"
+    },
+    {
+      "id": "I14613:1350;14612:7807",
+      "file": "light/imgLinearArrowsAltArrowRight.svg"
+    },
+    {
+      "id": "I14613:1371;14612:7803",
+      "file": "light/imgLinearTimeClockCircle.svg"
+    },
+    {
+      "id": "I14613:1371;14612:7807",
+      "file": "light/imgLinearArrowsAltArrowRight.svg"
+    },
+    {
+      "id": "I14613:1392;14612:7803",
+      "file": "light/imgLinearTimeClockCircle.svg"
+    },
+    {
+      "id": "I14613:1392;14612:7807",
+      "file": "light/imgLinearArrowsAltArrowRight.svg"
+    },
+    {
+      "id": "I14613:1413;14612:7803",
+      "file": "light/imgLinearTimeClockCircle.svg"
+    },
+    {
+      "id": "I14613:1413;14612:7807",
+      "file": "light/imgLinearArrowsAltArrowRight.svg"
+    },
+    {
+      "id": "I14613:1434;14612:7803",
+      "file": "light/imgLinearTimeClockCircle.svg"
+    },
+    {
+      "id": "I14613:1434;14612:7807",
+      "file": "light/imgLinearArrowsAltArrowRight.svg"
+    },
+    {
+      "id": "I14537:4416;14536:3828",
+      "file": "light/imgBoldEssentionalUiBoltCircle1.svg"
+    },
+    {
+      "id": "I14537:4416;14536:3833;14445:4526",
+      "file": "light/imgBoldAstronomyPlanet4.svg"
+    },
+    {
+      "id": "I14537:3925;14536:3828",
+      "file": "light/imgBoldEssentionalUiDanger.svg"
+    },
+    {
+      "id": "I14537:3925;14536:3833;14445:4526",
+      "file": "light/imgBoldAstronomyPlanet4.svg"
+    },
+    {
+      "id": "I14537:3891;14536:3828",
+      "file": "light/imgBoldElectronicDevicesDevices.svg"
+    },
+    {
+      "id": "I14537:3908;14536:3828",
+      "file": "light/imgBoldElectronicDevicesLightning.svg"
+    },
+    {
+      "id": "I14578:6106;14420:2221;14420:2194",
+      "file": "light/imgBoldTimeCalendar.svg"
+    },
+    {
+      "id": "I14612:8453;14420:2221;14420:2194",
+      "file": "light/imgLinearArrowsRefresh.svg"
+    },
+    {
+      "id": "14570:1089",
+      "file": "light/imgHourlyEnergyGeneratedArea.svg"
+    },
+    {
+      "id": "14570:1090",
+      "file": "light/imgHourlyEnergyGeneratedLine.svg"
+    },
+    {
+      "id": "14570:1091",
+      "file": "light/imgHoverVerticalGuide.svg"
+    },
+    {
+      "id": "14570:1126",
+      "file": "light/imgHourlyEnergyConsumedArea.svg"
+    },
+    {
+      "id": "14570:1127",
+      "file": "light/imgHourlyEnergyConsumedLine.svg"
+    },
+    {
+      "id": "14570:1223",
+      "file": "light/imgHourlySitesAffectedByIssuesArea.svg"
+    },
+    {
+      "id": "14570:1224",
+      "file": "light/imgHourlySitesAffectedByIssuesLine.svg"
+    },
+    {
+      "id": "14570:1252",
+      "file": "light/imgHourlyNewServiceTicketsArea.svg"
+    },
+    {
+      "id": "14570:1253",
+      "file": "light/imgHourlyNewServiceTicketsLine.svg"
+    }
+  ]
+}
