@@ -5,6 +5,7 @@ import {classifyCornerProfile} from "../foundations/geometry.js";
 import {motionDuration,motionEasing,reducedMotion} from "../foundations/motion.js";
 import {iconAsset,isNeutralIconFile,opaqueMaskURL} from "./icons.js";
 import {createInputClear,syncInputClear} from "./input-clear.js";
+import {SEARCH_FIELD_PLACEHOLDER} from "./search.js";
 
 const HISTORY_KEY = "wattdesk.searchHistory.v1";
 const HISTORY_MAX = 8;
@@ -117,7 +118,7 @@ export function searchShortcutLabel() {
 /**
  * The one search-field structure used by Home and fullscreen. Both surfaces
  * share the glass host, 46px capsule, icon slot and clear control. Fullscreen
- * only changes its placeholder and omits the shortcut keycaps.
+ * only omits the shortcut keycaps; its visible default copy is shared.
  */
 export function createSearchField({glass, placeholder, label, className = ""}) {
   const field = document.createElement("div");
@@ -593,7 +594,7 @@ export function createFullscreenSearch({model, items, glass, onOpen, onRequestCl
   stage.className = "wd-search-stage";
   const {field, input, clear} = createSearchField({
     glass,
-    placeholder: "Search WattDesk",
+    placeholder: SEARCH_FIELD_PLACEHOLDER,
     label: "Search WattDesk",
   });
 

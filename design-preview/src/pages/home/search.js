@@ -1,6 +1,6 @@
 // Home search: inline results, fullscreen search, local index and recent
 // searches. All state stays on this page; navigation is supplied by the caller.
-import {createSearchInput} from "../../components/search.js";
+import {createSearchInput,SEARCH_FIELD_PLACEHOLDER} from "../../components/search.js";
 import {createInputClear,syncInputClear} from "../../components/input-clear.js";
 import {createSearchModel,createInlineSearchPanel,createFullscreenSearch,createShortcutKeycaps} from "../../components/search-surface.js";
 import {reducedMotion,motionDuration} from "../../foundations/motion.js";
@@ -9,7 +9,7 @@ import {ROUTE_CATALOG as routeCatalog,buildSearchIndex} from "./routes.js";
 export function createHomeSearch({get,glass,motion,overlays,toast,close,homeColumn,targetChrome,navigate}){
 let inlineShortcutRow=null;
 const searchNode=get("I14445:3354;14420:2221;14420:2195");
-searchNode.replaceChildren();const input=createSearchInput({label:"Search sites, devices and people",placeholder:"Search sites, devices, people, or anything…"});
+searchNode.replaceChildren();const input=createSearchInput({label:"Search sites, devices and people",placeholder:SEARCH_FIELD_PLACEHOLDER});
 // The clear button is shared with fullscreen search and other inputs. Keep it
 // inside the existing text row so it never changes the field's 46px height.
 const inlineClear=createInputClear({label:"Clear search",onClear:()=>{input.value="";syncInlineClear("");if(inlineSearch)inlineSearch.content.setQuery("");else openInlineSearch();syncInlineSearchActive();input.focus({preventScroll:true});}});
@@ -233,7 +233,7 @@ function closeFullscreenSearch(immediate=false){
   // The veil intentionally outlives the content; keep the dialog mounted for
   // the longest tail, otherwise removing it cuts the frost mid-fade.
   const exit=Math.max(
-   motionDuration("--wd-motion-search-out")+motionDuration("--wd-motion-search-stagger")*2,
+   motionDuration("--wd-motion-search-out")+motionDuration("--wd-motion-search-out-stagger"),
    motionDuration("--wd-motion-search-veil-delay")+motionDuration("--wd-motion-search-veil-out")
   )+16;
   // Never animate the dialog root here. Any opacity animation on the root

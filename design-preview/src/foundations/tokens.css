@@ -14,13 +14,14 @@
   /* Fullscreen search: field and results arrive/leave on one offset timeline.
    * The entrance is deliberately slower than a popover and uses a gentle
    * overshoot so the glass settles instead of snapping into place. */
-  --wd-motion-search-in:980ms;--wd-motion-search-out:260ms;--wd-motion-search-stagger:90ms;
+  --wd-motion-search-in:980ms;--wd-motion-search-out:180ms;--wd-motion-search-stagger:90ms;--wd-motion-search-out-stagger:40ms;
   /* The veil outlives the content so the frosted page clears on a slow tail
-   * instead of snapping back into focus behind the leaving cards. Tint and blur
-   * sit on separate layers: the tint thins first, the frost keeps the page
-   * soft for the rest of the tail, then releases. */
-  --wd-motion-search-veil-out:640ms;--wd-motion-search-veil-delay:110ms;
-  --wd-ease-search-veil-out:cubic-bezier(.45,0,.25,1);
+   * instead of snapping back into focus behind the leaving cards. The tail is
+   * staged in perceptually even frost steps rather than one long interpolation,
+   * because a single curve drops most of the blur in its first third. Tint and
+   * blur stay on the same layer and recede together. */
+  --wd-motion-search-veil-out:490ms;--wd-motion-search-veil-delay:70ms;
+  --wd-ease-search-veil-out:cubic-bezier(.36,0,.24,1);
   --wd-ease-search-in:cubic-bezier(.18,1.12,.3,1);
   --wd-motion-theme:620ms;--wd-ease-theme:cubic-bezier(.4,0,.2,1);
   /* Loading is real waiting only: delayed entrance, single sheen, one short exit. */
@@ -29,6 +30,10 @@
   --wd-ease-skeleton-in:cubic-bezier(.2,0,.2,1);--wd-ease-skeleton-out:cubic-bezier(.4,0,.2,1);
   --wd-skeleton-base:rgba(235,235,245,.14);--wd-skeleton-sheen:rgba(255,255,255,.22);--wd-skeleton-opacity:1;
   --wd-motion-glass-hover:300ms;--wd-motion-glass-press:110ms;--wd-motion-glass-release:420ms;
+  /* Search has its own veil: a full-page overlay cannot share the denser
+   * activity tint without turning the page behind it into a flat sheet. */
+  --wd-search-veil:var(--wd-overlay-activity);--wd-search-veil-blur-base:28px;
+  --wd-search-drop-y:24px;--wd-search-drop-blur:26px;
   --wd-ease-glass:cubic-bezier(.22,.8,.25,1);--wd-ease-glass-press:cubic-bezier(.16,.84,.28,1);--wd-ease-glass-release:cubic-bezier(.16,.84,.24,1);
   --wd-glass-hover-scale:1.025;--wd-glass-press-scale:1.065;
   --wd-glass-hover-stretch:.006;--wd-glass-press-stretch:.014;
@@ -78,4 +83,9 @@
   --wd-label-primary-rgb:0,0,0;--wd-label-secondary-rgb:60,60,67;--wd-label-tertiary-rgb:60,60,67;--wd-label-quaternary-rgb:60,60,67;
   --wd-label-secondary-opacity:.6;
   --wd-skeleton-base:rgba(60,60,67,.14);--wd-skeleton-sheen:rgba(255,255,255,.84);--wd-skeleton-opacity:.92;
+  /* Fullscreen search keeps the page recognizable. A light veil must not turn
+   * the backdrop into a flat grey sheet, so its tint and frost are search-only. */
+  --wd-search-veil:rgba(0,0,0,.10);--wd-search-veil-blur-base:16px;
+  --wd-search-outline:rgba(0,0,0,.08);--wd-search-outline-side:rgba(0,0,0,.10);
+  --wd-search-drop:rgba(0,0,0,.055);--wd-search-contact:rgba(0,0,0,.02);--wd-search-drop-y:16px;--wd-search-drop-blur:34px;
 }

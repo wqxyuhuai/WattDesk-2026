@@ -82,7 +82,7 @@ const assert=require('node:assert/strict');
 
     const resultInput=page.locator('input[aria-label="Search sites, devices and people"]');
     await resultInput.fill('p');
-    await page.waitForTimeout(300);
+    await page.waitForTimeout(180);
     const resultStart=await page.evaluate(()=>{
       const rows=[...document.querySelectorAll('.wd-search-panel [role="option"]')];
       const active=rows.find((row)=>row.getAttribute('aria-selected')==='true');
@@ -122,6 +122,8 @@ const assert=require('node:assert/strict');
     assert.equal(await page.locator('.wd-search-panel').count(),0,'Open must dismiss the inline surface');
     assert.equal(await page.locator('.workspace-tab').count(),1,'Opening a result must not create a new tab');
 
+    const inlinePlaceholder=await page.locator('input[aria-label="Search sites, devices and people"]').getAttribute('placeholder');
+    assert.ok(inlinePlaceholder,'The inline field must declare its default copy');
     await page.locator('input[aria-label="Search sites, devices and people"]').fill('555');
     await page.waitForTimeout(400);
     const empty=await page.evaluate(()=>{
@@ -153,6 +155,7 @@ const assert=require('node:assert/strict');
         panelTop:popup.top,
         shortcut:field.querySelector('kbd')?.textContent||null,
         value:field.querySelector('.wd-search-input').value,
+        placeholder:field.querySelector('.wd-search-input').placeholder,
         clearVisible:!clear.hidden,
         backdrop:getComputedStyle(document.querySelector('.wd-search-backdrop')).backdropFilter,
         glass:{
@@ -167,6 +170,7 @@ const assert=require('node:assert/strict');
     assert.deepEqual({width:full.field.width,height:full.field.height,radius:full.field.radius},{width:816,height:46,radius:'23px'});
     assert.ok(full.panelTop>=full.field.bottom+8,'The fullscreen panel must start below the fixed capsule');
     assert.equal(full.shortcut,null,'Fullscreen search must not repeat Ctrl K');
+    assert.equal(full.placeholder,inlinePlaceholder,'Both search fields must share one default placeholder');
     assert.equal(full.value,'555','Opening fullscreen must carry over the inline query');
     assert.equal(full.clearVisible,true,'A carried-over query must expose the clear button');
     assert.match(full.backdrop,/blur\(28px\)/);
@@ -174,6 +178,38 @@ const assert=require('node:assert/strict');
     assert.equal(full.glass.backdrop,full.glass.inlineBackdrop,'Both fields must share one backdrop filter');
     assert.match(full.iconMask,/masks\/asset-35\.svg/,'Fullscreen must use the Home magnifier with an opaque mask');
     assert.match(full.glass.background,/153, 153, 153/,'The field must keep the shared glass tint');
+
+    // Light mode needs its own veil. The shared activity tint turns the whole
+    // page into a grey sheet behind the search, so keep the page recognizable
+    // and give the result sheet a softer contact/depth shadow than cards.
+    await page.evaluate(()=>{localStorage.setItem('wattdesk-home-theme','light')});
+    await page.reload({waitUntil:'networkidle'});
+    await page.waitForFunction(()=>document.documentElement.dataset.ready==='true'&&document.documentElement.dataset.theme==='light');
+    await page.waitForTimeout(700);
+    await page.keyboard.press('Control+k');
+    await page.waitForFunction(()=>{const root=document.querySelector('.wd-search-fullscreen');return root&&!root.hasAttribute('data-entering')});
+    await page.waitForTimeout(120);
+    const lightSearch=await page.evaluate(()=>{
+      const veil=getComputedStyle(document.querySelector('.wd-search-backdrop'));
+      const panel=document.querySelector('.wd-search-panel--fullscreen');
+      const fill=getComputedStyle(panel.querySelector('.wd-glass-fill'));
+      return {tint:veil.backgroundColor,blur:veil.backdropFilter,shadow:fill.boxShadow};
+    });
+    assert.equal(lightSearch.tint,'rgba(0, 0, 0, 0.1)','The light veil must let the page show through');
+    assert.match(lightSearch.blur,/blur\(16px\)/,'The light veil must use the lighter search frost');
+    assert.match(lightSearch.shadow,/rgba\(0, 0, 0, 0\.055\) 0px 16px 34px/,'The search sheet must not use the dense card drop');
+    assert.match(lightSearch.shadow,/rgba\(0, 0, 0, 0\.02\) 0px 2px 4px -1px/,'The search sheet must keep only a faint contact shadow');
+    assert.match(lightSearch.shadow,/rgba\(0, 0, 0, 0\.08\) 0px 0px 0px 0\.6px/,'The light search rim must not draw a black outline');
+    assert.match(lightSearch.shadow,/rgba\(0, 0, 0, 0\.1\) 1\.25px 0px 0px -0\.75px/,'The light search side rim must stay faint');
+    await page.keyboard.press('Escape');
+    await page.waitForTimeout(900);
+    await page.evaluate(()=>{localStorage.setItem('wattdesk-home-theme','dark')});
+    await page.reload({waitUntil:'networkidle'});
+    await page.waitForFunction(()=>document.documentElement.dataset.ready==='true'&&document.documentElement.dataset.theme==='dark');
+    await page.waitForTimeout(500);
+    await page.keyboard.press('Control+k');
+    await page.waitForFunction(()=>{const root=document.querySelector('.wd-search-fullscreen');return root&&!root.hasAttribute('data-entering')});
+    await page.waitForTimeout(120);
 
     const fullField=page.locator('.wd-search-field');
     const fullBox=await fullField.boundingBox();
@@ -248,9 +284,12 @@ const assert=require('node:assert/strict');
       };
     });
     assert.equal(exitOrder.panel.delay,0,'Results must start the exit');
-    assert.equal(exitOrder.field.delay,90,'The field follows one stagger step later');
-    assert.equal(exitOrder.backdrop.delay,110,'The veil waits until both glass surfaces are leaving');
-    assert.ok(exitOrder.backdrop.duration>=640,'The veil must clear on a slow tail, not with the content');
+    assert.equal(exitOrder.panel.duration,180,'The result sheet must leave on the short exit rhythm');
+    assert.equal(exitOrder.field.delay,40,'The field follows on the shorter exit stagger');
+    assert.equal(exitOrder.field.duration,180,'The field must share the result sheet exit duration');
+    assert.equal(exitOrder.backdrop.delay,70,'The veil waits until both glass surfaces are leaving');
+    assert.equal(exitOrder.backdrop.duration,490,'The veil must clear on a softened, readable tail');
+
     assert.ok(exitOrder.backdrop.duration>exitOrder.panel.duration,'The veil must outlive the result sheet');
     assert.ok(exitOrder.backdrop.duration>exitOrder.field.duration,'The veil must outlive the field');
 
@@ -266,33 +305,54 @@ const assert=require('node:assert/strict');
       if(!veil)return {filter:null,blur:null};
       const filter=getComputedStyle(veil).backdropFilter;
       const tint=getComputedStyle(veil).backgroundColor;
+      const alpha=(tint.match(/\/\s*([\d.]+)\s*\)$/)||tint.match(/,\s*([\d.]+)\)$/))?.[1];
       return {
         filter,
         blur:(filter.match(/blur\(([\d.]+)px\)/)||[])[1]||null,
         opacity:getComputedStyle(veil).opacity,
         tint,
-        tintAlpha:Number((tint.match(/rgba?\([^)]*?,\s*([\d.]+)\)/)||[])[1]),
+        tintAlpha:Number(alpha),
         rootAnimations:root?root.getAnimations().length:null,
       };
     });
     assert.ok(Number(veilMid.blur)>0,'The veil must still be frosted once the glass surfaces have left');
     assert.equal(veilMid.opacity,'1','The veil element must stay opaque so its backdrop-filter keeps compositing');
     assert.equal(veilMid.rootAnimations,0,'The dialog root must never animate: that breaks backdrop sampling');
-    assert.match(veilMid.tint,/rgba?\(/,'The veil must keep a tint while its blur is still resolving');
+    assert.match(veilMid.tint,/rgba?\(|oklab\(/,'The veil must keep a tint while its blur is still resolving');
 
-    await page.waitForTimeout(280);
+    await page.waitForTimeout(120);
     const veilTail=await page.evaluate(()=>{
       const veil=document.querySelector('.wd-search-backdrop');
       if(!veil)return null;
       const style=getComputedStyle(veil);
+      const tint=style.backgroundColor;
+      const alpha=(tint.match(/\/\s*([\d.]+)\s*\)$/)||tint.match(/,\s*([\d.]+)\)$/))?.[1];
       return {
         blur:Number((style.backdropFilter.match(/blur\(([\d.]+)px\)/)||[])[1]),
-        tintAlpha:Number((style.backgroundColor.match(/rgba?\([^)]*?,\s*([\d.]+)\)/)||[])[1]),
+        tintAlpha:Number(alpha),
       };
     });
     assert.ok(veilTail,'The veil must outlive the glass surfaces long enough to refocus the page');
     assert.ok(veilTail.blur<Number(veilMid.blur),'The frost must be easing down, not snapping at unmount');
     assert.ok(veilTail.tintAlpha<veilMid.tintAlpha,'The tint must thin with the blur so the page never snaps sharp');
+    assert.ok(veilTail.blur>0,'The frost must still be visible in the late tail, not cut early');
+
+    // The entrance was already accepted. Shortening the exit must not leak into
+    // the shared stagger and make the result sheet snap in behind the field.
+    await page.waitForTimeout(300);
+    assert.equal(await page.locator('.wd-search-fullscreen').count(),0,'The veil must unmount after its tail');
+    await page.keyboard.press('Control+k');
+    await page.waitForTimeout(30);
+    const enterTiming=await page.evaluate(()=>{
+      const node=document.querySelector('.wd-search-panel--fullscreen');
+      const animation=node?.getAnimations().find(item=>item.animationName==='wd-search-panel-in');
+      if(!animation)return null;
+      const value=animation.effect.getTiming();
+      return {delay:value.delay,duration:value.duration};
+    });
+    assert.deepEqual(enterTiming,{delay:90,duration:980},'The accepted entrance rhythm must stay unchanged');
+    await page.keyboard.press('Escape');
+    await page.waitForTimeout(700);
 
     await page.mouse.click(40,800);
     await page.waitForTimeout(900);

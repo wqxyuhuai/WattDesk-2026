@@ -45,8 +45,16 @@
  * below the top edge so it cannot paint across the 16px gap and make the field
  * look like a rectangle extending down into the results. */
 .wd-search-panel.wd-search-panel--fullscreen > .wd-glass-material {
-  --wd-glass-drop-y: 24px;
-  --wd-glass-drop-blur: 26px;
+  --wd-glass-drop-y: var(--wd-search-drop-y);
+  --wd-glass-drop-blur: var(--wd-search-drop-blur);
+}
+/* The light surface's shared contact shadow is tuned for dense cards; over a
+ * frosted full-page veil it reads as a black band under the result sheet. */
+:root[data-theme="light"] .wd-search-panel.wd-search-panel--fullscreen > .wd-glass-material {
+  --wd-glass-outline: var(--wd-search-outline);
+  --wd-glass-outline-side: var(--wd-search-outline-side);
+  --wd-glass-drop: var(--wd-search-drop);
+  --wd-glass-contact: var(--wd-search-contact);
 }
 
 .wd-search-section-label {
@@ -312,8 +320,8 @@
 .wd-search-backdrop {
   position: absolute;
   inset: 0;
-  --wd-search-veil-blur: 28px;
-  background-color: var(--wd-overlay-activity);
+  --wd-search-veil-blur: var(--wd-search-veil-blur-base, 28px);
+  background-color: var(--wd-search-veil);
   backdrop-filter: blur(var(--wd-search-veil-blur)) saturate(1.05);
   -webkit-backdrop-filter: blur(var(--wd-search-veil-blur)) saturate(1.05);
 }
@@ -361,7 +369,7 @@
  * whole life; only its tint fades, so the page never turns crisp under a
  * still-visible glass pane. */
 .wd-search-fullscreen[data-closing] .wd-search-field {
-  animation: wd-search-field-out var(--wd-motion-search-out) var(--wd-ease-hover-out) var(--wd-motion-search-stagger) both;
+  animation: wd-search-field-out var(--wd-motion-search-out) var(--wd-ease-hover-out) var(--wd-motion-search-out-stagger) both;
 }
 .wd-search-fullscreen[data-closing] .wd-search-panel {
   animation: wd-search-panel-out var(--wd-motion-search-out) var(--wd-ease-hover-out) both;
@@ -381,11 +389,16 @@
    * backdrop-filter stops sampling as soon as its layer falls below full
    * opacity, which used to drop the frost on the first exit frame.
    * Hold both at full strength until the field and results are gone, then
-   * let the page refocus underneath a tint that thins at the same rate, so
-   * the last frame is already clear instead of a hard cut. */
-  from { --wd-search-veil-blur: 28px; background-color: var(--wd-overlay-activity); }
-  /* 42% of 640ms lands just after the field (90ms delay + 260ms) has left. */
-  42% { --wd-search-veil-blur: 28px; background-color: var(--wd-overlay-activity); animation-timing-function: var(--wd-ease-search-veil-out); }
+   * refocus in staged frost steps. A two-stop interpolation spends most of its
+   * visible travel in the first third, which reads as a sudden clear; the
+   * intermediate stops keep the last half of the tail perceptible. Tint is
+   * mixed at the same ratio as blur so the page never brightens ahead of it. */
+  from { --wd-search-veil-blur: var(--wd-search-veil-blur-base, 28px); background-color: var(--wd-search-veil); }
+  /* 36% of 490ms lands just after the field (40ms delay + 180ms) has left. */
+  36% { --wd-search-veil-blur: var(--wd-search-veil-blur-base, 28px); background-color: var(--wd-search-veil); animation-timing-function: var(--wd-ease-search-veil-out); }
+  54% { --wd-search-veil-blur: calc(var(--wd-search-veil-blur-base, 28px) * .75); background-color: color-mix(in srgb, var(--wd-search-veil) 75%, transparent); }
+  70% { --wd-search-veil-blur: calc(var(--wd-search-veil-blur-base, 28px) * .46); background-color: color-mix(in srgb, var(--wd-search-veil) 46%, transparent); }
+  85% { --wd-search-veil-blur: calc(var(--wd-search-veil-blur-base, 28px) * .18); background-color: color-mix(in srgb, var(--wd-search-veil) 18%, transparent); }
   to { --wd-search-veil-blur: 0px; background-color: transparent; }
 }
 @keyframes wd-search-field-in {
