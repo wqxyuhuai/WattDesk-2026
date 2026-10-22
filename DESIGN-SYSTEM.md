@@ -248,6 +248,7 @@
 - 标准头像 `.wd-avatar` 使用共享 **1px** 内描边，描边颜色与内部填充相同；深色以中心扩散的短距离阴影表现厚度，阴影不向下偏移，浅色不显示外投影。两种主题都不扩大布局。参数在 `avatar.css`。浅色主内容面板使用 `--wd-main-panel-shadow` 的短距离投影，保留普通表面和 1px 原描边，不套用玻璃或扩大为光晕；深色面板保持原材质。
 - 首页全部状态卡片和图表卡片保留原稿 **30px**，右侧整体内容底板保留 **10px**，同样使用共享连续曲线，不能为恢复视觉大小退回 `round` 或添加 `.wd-corners-original` 例外。浏览器轮廓验收：当前 `superellipse(1.2)` 在 30px 对角边界处比原普通圆角内收约 **0.97px**，肩部更紧但视觉半径仍读作 30px；直接套完整 Squircle 则向内收缩约 **4px**。38 个主要组件的半径保持不变。`verify-foundations.cjs` 检查审计表面的原始半径、实际命中轮廓、连续曲线确实生效、玻璃各层贴合，以及不支持增强时的回退；响应式后的尺寸与位置由 `verify-responsive.cjs` 单独验收。Figma 归档读数：深色首两张图表 smoothing 为 6%，浅色首两张、其余图表和主底板为 60%；`1.2` 只作为当前确认的视觉曲线，不回写或等同于任一 Figma smoothing 数值，也不改变各元素各自的半径。
 - 快捷入口行间分割线为 `--wd-divider-width:1px`，Workspace 的 Statistics (coming soon) 下方隐藏分隔线；其他分组原本没有末尾分隔线的继续隐藏。不用加粗描边表示分组结束。
+- 快捷入口三列的所有行都是可操作目标：Workspace 的 Plants、Service ticket、Statistics 打开各自路由，Following 的电站行在详情路由接入前统一进入 Plants。复用共享 `enhanceControl()` / `openRoute()`，支持 Enter、Space 并在当前标签内打开，不新增标签。回归见 `tests/verify-shortcuts.cjs`。
 - 浅色主题前两张状态卡右上箭头使用降透明度的墨色（`brightness(0) opacity(.55)`），不得使用纯黑；深色主题保持原稿状态。
 - 首页内容画布最大 `1000px`，由内容列按视口收窄，不使用区域级 `transform: scale()`；画布在右侧工作区内水平居中，左右各保留共享 `48px` 阴影空间。内容列最小 `240px`，窄屏继续纵向重排，不引入横向滚动。
 - 首页重排节奏固定：状态卡与业务图表卡 `4 → 2 → 1` 列（内容宽 `≥860px` / `≥520px` / 更窄），两张能源卡 `2 → 1`，快捷入口 `3 → 2 → 1` 列（内容宽 `≥680px` / `≥440px` / 更窄）。不得出现 `3+1` 的残行组合；卡片换列时高度真实撑开，由页面纵向滚动承接。
@@ -279,6 +280,7 @@ npm run dev
 npm run check
 npm test
 node tests/verify-home.cjs
+node tests/verify-shortcuts.cjs
 node tests/verify-glass.cjs
 node tests/verify-theme.cjs
 node tests/verify-foundations.cjs
@@ -289,7 +291,7 @@ npm run sync:themes
 npm run sync:type
 ```
 
-`npm test` 检查当前首页交互、响应式重排、正式玻璃、主题、字体/圆角、共享组件、共享动效与搜索控件；若旧视觉基线失败会停在对应专项。浏览器运行配置见 `design-preview/tests/runtime.cjs` 和运行 README，可通过环境变量指定 Playwright、Chrome、Python；截图输出到 `tests/output/`，固定基线在 `tests/fixtures/`。`npm run test:visual` 对比整理前四张主题/尺寸基线，`npm run audit:assets` 检查引用。更新归档来源后用 `npm run sync` 生成运行数据与样式；生成文件不手改。
+`npm test` 检查当前首页交互、快捷入口行导航、响应式重排、正式玻璃、主题、字体/圆角、共享组件、共享动效与搜索控件；若旧视觉基线失败会停在对应专项。浏览器运行配置见 `design-preview/tests/runtime.cjs` 和运行 README，可通过环境变量指定 Playwright、Chrome、Python；截图输出到 `tests/output/`，固定基线在 `tests/fixtures/`。`npm run test:visual` 对比整理前四张主题/尺寸基线，`npm run audit:assets` 检查引用。更新归档来源后用 `npm run sync` 生成运行数据与样式；生成文件不手改。
 
 ## 9. 维护约定
 

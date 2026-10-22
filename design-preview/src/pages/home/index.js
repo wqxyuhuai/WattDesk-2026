@@ -119,9 +119,20 @@ for(const [id,label] of [
  action(id,label,()=>openRoute("plants"));
 }
 // All three shortcut columns share the same stationary underline interaction.
-for(const id of ["14613:1162","14613:1190","14613:1210","14613:1250","14613:1270","14613:1290","14613:1310","14613:1330"]){
+// Workspace rows open their own routes; Following sites are an interim jump
+// into Plants until a station detail route exists.
+for(const [id,route] of [
+ ["14613:1162","plants"],
+ ["14613:1190","service"],
+ ["14613:1210","statistics"],
+ ["14613:1250","plants"],
+ ["14613:1270","plants"],
+ ["14613:1290","plants"],
+ ["14613:1310","plants"],
+ ["14613:1330","plants"]
+]){
  const el=get(id);const label=el.textContent.trim();
- action(id,label,()=>toast(`${label} · Coming soon`));el.classList.add("shortcut-link");
+ action(id,label,()=>openRoute(route));el.classList.add("shortcut-link");
 }
 get("14613:1210").classList.add("shortcut-link-last");
 // The summary labels share one visual treatment but keep distinct targets:

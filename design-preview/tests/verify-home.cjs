@@ -20,9 +20,16 @@ const assert = require('node:assert/strict');
   for(const theme of ['dark','light']){
     if(await page.evaluate(()=>document.documentElement.dataset.theme)!==theme)await page.getByRole('button',{name:'Toggle light and dark mode'}).click();
     await page.waitForFunction(theme=>document.documentElement.dataset.theme===theme&&!document.documentElement.dataset.themeTransition,theme);
-    // The view-transition completes before the shared hover colour transition
-    // on the arrow; wait for the theme ink to settle before comparing.
-    await page.waitForTimeout(320);
+    // The view transition finishes before the arrow's shared colour transition.
+    // Wait beyond the declared duration instead of sampling an intermediate mix.
+    const arrowColorDuration=await page.locator('.target-account-arrow').evaluate(el=>{
+      const styles=getComputedStyle(el);
+      const property=styles.transitionProperty.split(',').map(value=>value.trim()).indexOf('color');
+      if(property<0)return 0;
+      const value=styles.transitionDuration.split(',')[property]?.trim()||'0s';
+      return parseFloat(value)*(value.endsWith('ms')?1:1000);
+    });
+    await page.waitForTimeout(arrowColorDuration+40);
     const name=await page.locator('.target-account-copy strong').evaluate(el=>getComputedStyle(el).color);
     const primary=await page.evaluate(()=>getComputedStyle(document.documentElement).getPropertyValue('--wd-label-primary').trim());
     const probe=await page.evaluate(value=>{const el=document.createElement('span');el.style.color=value;document.body.append(el);const color=getComputedStyle(el).color;el.remove();return color;},primary);
@@ -486,12 +493,12 @@ const assert = require('node:assert/strict');
   const idleNavBackground = await plantsNav.evaluate(el => getComputedStyle(el).backgroundColor);
   await plantsNav.hover();
   const hoverFade=await plantsNav.evaluate(el=>el.getAnimations().filter(a=>a.transitionProperty==='background-color').map(a=>({property:a.transitionProperty,duration:a.effect.getTiming().duration})));
-  assert.equal(hoverFade[0]?.duration,160);
+  assert.equal(hoverFade[0]?.duration,240);
   await page.waitForTimeout(320);
   const hoverNavBackground = await plantsNav.evaluate(el => getComputedStyle(el).backgroundColor);
   await page.mouse.move(0, 0);
   const leaveFade=await plantsNav.evaluate(el=>el.getAnimations().filter(a=>a.transitionProperty==='background-color').map(a=>a.effect.getTiming().duration));
-  assert.equal(leaveFade[0],240);
+  assert.equal(leaveFade[0],360);
   await page.waitForTimeout(320);
   const shadowGutters=await page.evaluate(()=>{
     const viewport=document.querySelector('[data-node-id="14578:7006"]').getBoundingClientRect();

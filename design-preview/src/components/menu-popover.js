@@ -22,6 +22,7 @@ export function menuRow(label,{iconFile,iconTone="mono",checked=false,onSelect}=
  const row=document.createElement("button");
  row.type="button";
  row.className="wd-menu-row";
+ row.setAttribute("aria-label",label);
  applyTypeStyle(row,"14/14 medium");
  if(checked)row.setAttribute("aria-checked","true");
  row.setAttribute("role",checked?"menuitemradio":"menuitem");
