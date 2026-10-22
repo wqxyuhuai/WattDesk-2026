@@ -4,7 +4,7 @@
 // the global superellipse curve from geometry.css.
 const ROUND = 'round';
 const CONTINUOUS = 'continuous';
-const SUPPORTED = typeof CSS !== 'undefined' && CSS.supports('corner-shape', 'superellipse(1.05)');
+const SUPPORTED = typeof CSS !== 'undefined' && CSS.supports('corner-shape', 'superellipse(1.2)');
 
 const INHERITED_SURFACES = '.wd-glass-material,.wd-glass-fill,.wd-glass-optics,.wd-glass-rim,.wd-glass-state,.wd-glass-glow';
 

@@ -1,11 +1,11 @@
 /* Shared continuous curve; the component still owns its original radius.
- * Uncalibrated squircle = superellipse(2) contracts the visible corner. Use
- * a gentler exponent: >1 gives zero curvature at the straight-edge join,
- * while the 45deg contour of a 30px corner stays within .3px of the source.
- * Figma 65% is a visual reference, not a numeric mapping to this exponent.
+ * Figma corner smoothing 60% extends the tangent beyond the radius and cannot
+ * be expressed by this exponent: superellipse() always stays inside the
+ * border-radius box. 1.2 is the reviewed visual match -- a tighter, calmer
+ * shoulder than round while retaining the original radius.
  * Unsupported browsers retain the existing ordinary border-radius. */
-:root{--wd-corner-shape:superellipse(1.05);--wd-divider-width:1px}
-@supports (corner-shape:superellipse(1.05)){
+:root{--wd-corner-shape:superellipse(1.2);--wd-divider-width:1px}
+@supports (corner-shape:superellipse(1.2)){
  *,*::before,*::after{corner-shape:var(--wd-corner-shape)}
  /* Circular / capsule silhouettes keep their shape. Percentage radii are
   * always circular in CSS; named controls cover saturated px radii. */

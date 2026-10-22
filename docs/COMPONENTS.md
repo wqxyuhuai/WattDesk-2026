@@ -257,6 +257,6 @@ await skeletons.allSettled();
 - 首帧加载 `theme-bootstrap.js` 读取偏好，后续只走共享 theme controller。键 `wattdesk-home-theme` 保留兼容旧偏好，后续页面共用。`apply(mode)` 只适配确有差异的图像/图表；CSS token 自动跟随。
 - Popover controller 返回 `popover(anchor,trustedHTML,width)`、`close(immediate)`、`toast(message)`、`destroy()`；提供 overlays 与 role=status 的 toast 宿主。支持 Esc、外部点击及焦点恢复；这是轻量浮层，不是完整模态焦点陷阱。
 - Motion controller 提供 `openPanel`、`closePanel`、`observeCharts(cards,scrollRoot)`。曲线挂 `.chart-mark`，柱形另挂 `.chart-bar`，观察点挂 `.chart-observation`；首次可见播放一次，减少动态效果时直接可见。
-- 圆角使用共享校准 `superellipse(1.05)`，保留组件自己的半径。Figma 65% 是视觉参考，并不与 CSS 参数数值相等；原稿正圆/胶囊保持 round，玻璃各层继承宿主，不加 clip-path 裁掉投影。
+- 圆角使用共享 `superellipse(1.2)`，保留组件自己的半径。该值由用户在实际 30px 卡片上确认，并非 Figma Corner Smoothing 60% 的数值换算；Figma 会延长切线，CSS 指数始终限制在半径盒内，两者不能逐点精确匹配。原稿正圆/胶囊保持 round，玻璃各层继承宿主，不加 clip-path 裁掉投影。
 
 新增组件核对默认、hover、focus、选中、禁用/加载（适用时）、双主题和减少动态效果。共享参数调整必须检查全部使用处。

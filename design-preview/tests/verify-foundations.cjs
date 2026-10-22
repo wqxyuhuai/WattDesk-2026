@@ -41,7 +41,7 @@ const fs=require('node:fs');
  }
  for(const [selector,radius] of [['.stat-chart-card','30px'],['.wd-main-panel','10px'],['.wd-glass[data-corner-profile="continuous"]:not(.wd-glass--surface)','30px'],['.wd-glass--surface[data-corner-profile="continuous"]','12px']]){
   for(const value of await page.locator(selector).evaluateAll(es=>es.map(e=>({shape:getComputedStyle(e).cornerShape,radius:getComputedStyle(e).borderRadius})))){
-   assert.equal(value.shape,'superellipse(1.05)',selector+' must have a continuous curve, not ordinary round or full squircle');assert.equal(value.radius,radius);
+   assert.equal(value.shape,'superellipse(1.2)',selector+' must have a continuous curve, not ordinary round or full squircle');assert.equal(value.radius,radius);
   }
  }
  for(const match of await page.locator('.wd-glass').evaluateAll(es=>es.map(host=>[...host.querySelectorAll('.wd-glass-material,.wd-glass-fill,.wd-glass-optics,.wd-glass-rim,.wd-glass-state,.wd-glass-glow')].every(layer=>getComputedStyle(layer).cornerShape===getComputedStyle(host).cornerShape))))assert.equal(match,true,'All glass layers must follow host silhouette');
@@ -61,8 +61,10 @@ const fs=require('node:fs');
   const continuous=diagonal(shared),round=diagonal('round'),fullSquircle=diagonal('squircle');
   probe.remove();return {shared,continuous,round,fullSquircle};
  });
- assert.equal(contour.shared,'superellipse(1.05)');
- assert.ok(Math.abs(contour.continuous-contour.round)<.5,'30px corner must retain the original visible radius');
+ assert.equal(contour.shared,'superellipse(1.2)');
+ // The reviewed exponent tightens the 45deg contour slightly inside a circular
+ // 30px corner. Keep it under 1.5px so the radius still reads as 30px.
+ assert.ok(contour.round-contour.continuous>0.5&&contour.round-contour.continuous<1.5,'30px corner must stay near the original radius with a tightened shoulder');
  assert.ok(Math.abs(contour.continuous-contour.round)>.03,'Continuous curve must actually render, not silently fall back to round');
  assert.ok(Math.abs(contour.fullSquircle-contour.round)>3,'Probe must detect the previously reported silhouette regression');
  const coverage=await page.evaluate(()=>{
@@ -76,7 +78,7 @@ const fs=require('node:fs');
   return rows;
  });
  for(const row of coverage){
-  assert.match(row.shape,/^(?:superellipse\(1\.05\)|superellipse\(1\))$/,`Unexpected corner shape: ${row.shape} @ ${row.radius}`);
+  assert.match(row.shape,/^(?:superellipse\(1\.2\)|superellipse\(1\))$/,`Unexpected corner shape: ${row.shape} @ ${row.radius}`);
   assert.ok(!/^(?:\d+(?:\.\d+)?%)+$/.test(row.radius)||row.radius==='50%',`Unexpected percentage radius in the page: ${row.radius}`);
  }
  const roundCoverage=coverage.filter(row=>row.shape==='superellipse(1)');
@@ -95,7 +97,7 @@ const fs=require('node:fs');
  });
  await page.waitForTimeout(30);
  const firstDynamic=await page.evaluate(()=>{const node=document.getElementById('geometry-dynamic-probe');return {profile:node.dataset.cornerProfile||'',shape:getComputedStyle(node).cornerShape,radius:getComputedStyle(node).borderRadius};});
- assert.equal(firstDynamic.profile,'continuous');assert.equal(firstDynamic.shape,'superellipse(1.05)');assert.equal(firstDynamic.radius,'18px');
+ assert.equal(firstDynamic.profile,'continuous');assert.equal(firstDynamic.shape,'superellipse(1.2)');assert.equal(firstDynamic.radius,'18px');
  await page.evaluate(()=>{document.getElementById('geometry-dynamic-probe').style.height='36px';});
  await page.waitForTimeout(30);
  const capsuleDynamic=await page.evaluate(()=>{const node=document.getElementById('geometry-dynamic-probe');return {profile:node.dataset.cornerProfile||'',shape:getComputedStyle(node).cornerShape,radius:getComputedStyle(node).borderRadius};});
