@@ -10,6 +10,7 @@ import {enhanceControl} from "../../components/controls.js";
 import {prepareCard} from "../../components/cards.js";
 import {createPopoverController} from "../../components/popover.js";
 import {createHistoryPopover} from "../../components/history-popover.js";
+import {menuHeading,menuList,menuRow,menuNote,mountMenu} from "../../components/menu-popover.js";
 import {renderHomeScene} from "./scene.js";
 import {ROUTE_CATALOG as routeCatalog,displayTitle} from "./routes.js";
 import {createHomeLayout} from "./layout.js";
@@ -168,12 +169,34 @@ targetChrome.history.addEventListener("click",()=>openHistory());
 const homeSnapshot=()=>({scrollTop:homeColumn.scrollTop,query:search.input.value,period:period.label(),range:period.rangeSnapshot()});
 const recentVisits=createRecentVisits({get,onOpen:openRoute});
 workspace=createWorkspace({get,glass,toast,close,homeColumn,input:search.input,period,homeSnapshot,targetChrome,workspacePanel,searchClose:search.closeAll,recentVisits});
-targetChrome.language.addEventListener("click",()=>popover(targetChrome.language,'<h2>Language</h2><button>English ✓</button><button>简体中文</button>',200));
-targetChrome.settings.addEventListener("click",()=>{
- const panel=popover(targetChrome.settings,'<h2>Appearance</h2><button data-appearance>Toggle light and dark mode</button>',240);
- panel.querySelector("[data-appearance]").onclick=()=>{close();themeController?.toggle();};
+// Shell menus share the history panel's interior anatomy. Placeholder locales
+// are visual-only: nothing here changes the page language or persists a choice.
+function openMenu(anchor,label,children){
+ const panel=document.createElement("div");
+ panel.className="popover popover--menu";
+ mountMenu(panel,{label,children:[menuHeading(label),...children]});
+ return registerPanel(panel,anchor,{label,radius:30});
+}
+targetChrome.language.addEventListener("click",()=>{
+ const list=menuList();
+ [["English",true],["简体中文",false],["Deutsch",false],["Čeština",false]].forEach(([name,checked])=>{
+  const row=menuRow(name,{checked});
+  row.addEventListener("click",()=>{
+   for(const item of list.children)item.setAttribute("aria-checked",String(item===row));
+   close();
+  });
+  list.append(row);
+ });
+ openMenu(targetChrome.language,"Language",[list]);
 });
-targetChrome.support.addEventListener("click",()=>popover(targetChrome.support,"<h2>WattDesk</h2><div class='no-results'>Home visual preview</div>",220));
+targetChrome.settings.addEventListener("click",()=>{
+ const panel=openMenu(targetChrome.settings,"Appearance",[menuList()]);
+ const list=panel.querySelector(".wd-menu-list");
+ const row=menuRow("Light / dark mode");
+ row.addEventListener("click",()=>{close();themeController?.toggle();});
+ list.append(row);
+});
+targetChrome.support.addEventListener("click",()=>openMenu(targetChrome.support,"WattDesk",[menuNote("Home visual preview")]));
 // Keep the single annotated observation from Figma visible for visual review.
 // Live chart sampling will be connected when the real time-series API exists.
 // The shell and Home surface are assembled. Measure once, arm only the marked

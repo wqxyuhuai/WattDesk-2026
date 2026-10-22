@@ -25,6 +25,7 @@
 | 控件状态 | `components/control-states.js` / `.css` | 内容挂载后 `await prepareControlStates(container)` |
 | 历史浮窗 | `components/history-popover.js` / `.css` | `createHistoryPopover({anchor,entries,onSelect,registerPanel,close,motion})`；复用共享玻璃与 30px 浮层圆角，最多 8 行 |
 | 浮层 / 提示 | `components/popover.js` / `.css` | `createPopoverController({overlays,toastElement,motion,glass})`；菜单、tooltip、toast 自动使用 Glass Surface |
+| 标准浮层菜单 | `components/menu-popover.js`、`popover.css` 的 `.wd-menu` | `menuHeading / menuList / menuRow / menuNote / mountMenu`；顶栏紧凑菜单 200px，历史 280px 例外 |
 | 有限动效 | `foundations/motion.js` | `createHomeMotion({duration,easing,reducedMotion})`；名称保留，行为共享 |
 | JS 动效节奏 | `foundations/motion.js` | `motionDuration(token)` / `motionEasing(token)`，禁止硬编码毫秒或曲线 |
 | 主题 | `foundations/theme-controller.js` | `createThemeController({initialTheme,apply})`，每页一个 |
@@ -121,12 +122,32 @@ const material=createGlassMaterial({surfaces:[{host:panel,radius:30}]});
 ```
 
 - `.wd-glass--surface` 选择更强的浮层雾面参数；`.wd-glass-popup` 表示整块面板不随点击缩放，只有内部独立玻璃控件响应。
-- 浮层圆角按尺度取共享 token：紧凑 tooltip / 数据浮签用 `--wd-radius-compact`（12px），标准菜单用 `--wd-radius-medium`（18px），大面板用 `--wd-radius-large`（30px）。`addSurface()` 的 `radius` 必须与宿主实际 `border-radius` 一致；玻璃层继承宿主，不在内容或伪元素上另写半径。
+- 浮层圆角按尺度取共享 token：紧凑 tooltip / 数据浮签用 `--wd-radius-compact`（12px），通用 popover / 图表菜单用 `--wd-radius-medium`（18px），标准浮层菜单与大面板用 `--wd-radius-large`（30px）。`addSurface()` 的 `radius` 必须与宿主实际 `border-radius` 一致；玻璃层继承宿主，不在内容或伪元素上另写半径。
 - 已自带 `.wd-glass` 的面板（日期、历史、搜索）不能再调用 `addSurface()`；共享控制器检测到已有材质会自动跳过，避免双层模糊和重复观察。tooltip、toast 与图表数据浮签传 `interactive:false`：保留材质和指针光晕，但不缩放。动态文案写入内部 span，不得用 `textContent` 清空宿主。
 - 内容独立放在同级容器（如 `.wd-date-picker-content`、`.wd-search-panel-body`），不要塞进 `.wd-glass-material`。
 - 深色 `18px` 模糊 / `30%` 中性底；浅色 `9px` 模糊 / `44%` 浅灰底 + `saturate 1.45`，模糊太高会把背后卡片抹成均匀白膜。深浅主题都保留背后页面可辨；不要再写 `backdrop-filter`、`background` 或局部 `--wd-glass-surface-tint` 覆盖。
 - hover 时指针附近出现光斑和一段边缘弧，由共享材质自动处理；深色是白弧，浅色是深色弧配白色内光斑。不要给浮层另外写 `:hover` 阴影或渐变。
 - 嵌套玻璃以最内层为准：弹窗里的输入框、按钮、月份圆钮各自响应 hover，外层浮层不接管 `data-glass-pointer`。共享材质已按 `event.target.closest('.wd-glass')` 判定，新组件无需额外处理。
+
+### 标准浮层菜单
+
+文本型菜单只复用一套内胆，外壳宽度由具体入口决定。顶栏 `Language` / `Appearance` / `WattDesk` 使用 `.popover.popover--menu`（200px），历史浮窗 `.wd-history-popover` 保留 280px；两者的标题、行、勾选和尾距都来自 `.wd-menu`。
+
+```js
+import {menuHeading,menuList,menuRow,mountMenu} from "/src/components/menu-popover.js";
+
+const panel=document.createElement("div");
+panel.className="popover popover--menu";
+const list=menuList();
+list.append(menuRow("English",{checked:true}),menuRow("简体中文"));
+mountMenu(panel,{label:"Language",children:[menuHeading("Language"),list]});
+registerPanel(panel,trigger,{label:"Language",radius:30});
+```
+
+- `.wd-menu`：顶部 20px，左右/底部 10px，标题与列表间距 10px；标题 `Footnote/Emphasized` 次级色、14px 缩进；行 36px 高、14/14 medium（14px / 510）、胶囊 hover，中性图标与文字同步转主文字色。
+- 勾选槽固定 `20px`，使用 `currentColor` + `/home-assets/tickle.svg` 遮罩；未选中时保留槽位并隐藏，避免切换语言导致文字位移。列表末尾到底缘固定 10px。
+- `menuRow(label,{iconFile,iconTone,checked,onSelect})` 输出语义按钮和 `aria-checked`；`menuNote(text)` 用于无操作说明。不要在页面内再拼 `.wd-menu-heading` / `.wd-menu-row` 的独立样式。
+- 语言占位只改变本地勾选视觉，不切换页面语言、不持久化；真正接入本地化时另立需求并替换占位数据。
 
 hover / 按下的视觉缩放由材质与 `motion.css` 自动继承，调用方不写缩放值：
 

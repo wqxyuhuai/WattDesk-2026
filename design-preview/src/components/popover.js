@@ -36,9 +36,9 @@ function close(immediate=false){
   panel._anchor?.setAttribute("aria-expanded","false");motion.closePanel(panel,immediate);
  }
 }
-function registerPanel(panel,anchor,{width,label,align="start"}={}){
+function registerPanel(panel,anchor,{width,label,align="start",radius=18}={}){
  close(true);
- ensureSurface(panel);
+ ensureSurface(panel,{radius});
  const previousClose=panel._onClose;
  panel._onClose=()=>{try{previousClose?.();}finally{releaseSurface(panel);panel._anchor?.setAttribute("aria-expanded","false");}};
  if(width)panel.style.width=width+"px";
@@ -55,6 +55,7 @@ function popover(anchor,content,width=288){
  const panel=document.createElement("div");panel.className="popover";panel.innerHTML=content;
  return registerPanel(panel,anchor,{width,label:panel.querySelector("h2")?.textContent});
 }
+
 
  // Any pointer press outside an open panel dismisses it, including sidebar
  // rows and other shell controls. Those controls keep their own action; the

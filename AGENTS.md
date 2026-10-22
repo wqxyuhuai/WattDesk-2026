@@ -39,6 +39,7 @@
 - Figma 颜色的原始双主题绑定保存在 `design-preview/design/figma/figma-color-source.json`，生成文件为 `src/foundations/colors.css`。颜色按变量 ID 与语义引用，不能根据深色十六进制值猜浅色。更新源数据后运行 `npm run sync:themes`；首页提取场景由 `scene-theme.js` 适配，新增语义组件直接用 token。
 - 玻璃参数与分层：`design-preview/src/components/glass-material.css`；挂载和微光：`design-preview/src/components/glass-material.js`。
 - 操作按钮统一使用共享标准按钮：`design-preview/src/components/button.css` 的 `.wd-button--pill` 配 `.wd-button--neutral`（中性玻璃）或 `.wd-button--primary`（实心 Accents/Blue）；固定 36px 高、左右 16px 内距、13px / 510。面板、菜单、表单与页面不得另写按钮颜色、圆角、材质或光晕，每个视图只保留一个主按钮。
+- 文本型浮层菜单统一使用 `design-preview/src/components/menu-popover.js` 与 `popover.css` 的 `.wd-menu` 内胆：面板顶部内距 20px、左右/底部 10px，标题 Footnote/Emphasized（13px / 590、次级色、左右 14px），行高 36px、14/14 medium（14px / 510）、胶囊 hover 与固定 20px 尾随勾选槽。顶栏 `Language` / `Appearance` / `WattDesk` 等紧凑菜单统一 200px 宽、30px 圆角；历史浮窗因路由名称较长保留 280px 外壳，但内部结构相同。不得为单个菜单另写宽度、行样式、勾选样式或材质变体；选中、hover、图标和文字均走共享状态。
 - 浮层开合与图表载入：`design-preview/src/foundations/motion.js`；首页装配：`design-preview/src/pages/home/home.css` / `src/pages/home/index.js`。
 - 全屏搜索的入场与退场互为反向：结果面先走、搜索框随后、背景遮罩最后；退场一律向下位移并淡出。遮罩的模糊必须比内容更晚收完，使用 `--wd-motion-search-veil-out` / `--wd-motion-search-veil-delay`，不能与内容共用短时长；遮罩只淡出颜色和模糊，不对元素自身做 `opacity` 退场。
 - 控件文字与图标联动使用 `design-preview/src/components/control-states.css` / `control-states.js` 的共享状态；周期选择等控件 hover / focus 时图标和文字同时变主文字色，不能只改其中一个。

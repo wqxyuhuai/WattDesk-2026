@@ -2,6 +2,10 @@
 /* A popover carries Glass Surface; the material paints the plate, outline and
  * elevation. Keep only layout here so a local background cannot mask the blur. */
 .popover{position:absolute;pointer-events:auto;width:288px;border:0;border-radius:18px;padding:8px;font-size:13px}
+/* Compact shell menus: one shared 200px width so Language, Appearance and
+ * WattDesk keep the same silhouette. The history panel stays wider because
+ * its page titles are longer. */
+.popover--menu{width:200px;padding:0;border-radius:30px;font-size:inherit}
 html[data-theme="light"] .popover{color:var(--wd-label-primary)}
 .popover h2{margin:5px 8px 8px;font-size:13px;font-weight:590;color:var(--wd-label-secondary)}
 .popover button{display:block;width:100%;padding:9px 12px;text-align:left;background:none;border:0;border-radius:10px}
@@ -10,6 +14,25 @@ html[data-theme="light"] .popover{color:var(--wd-label-primary)}
 .popover label{display:block;padding:7px 8px;color:var(--wd-label-secondary)}.popover input[type=date]{width:100%;margin-top:5px;border:1px solid var(--wd-control-outline);border-radius:8px;background:var(--wd-bg-secondary);padding:7px;color:var(--wd-label-primary)}
 .popover .apply{background:var(--wd-blue);text-align:center;margin-top:6px}
 .popover .no-results{padding:12px;color:var(--wd-label-secondary)}
+
+/* Shared menu anatomy. History, Language, Appearance and WattDesk all use the
+ * same panel padding, heading inset, 36px capsule rows and 10px tail spacing;
+ * only the host decides width, placement and which list it contains. */
+.wd-menu{display:flex;flex-direction:column;gap:10px;min-width:0;padding:20px 10px 10px;color:var(--wd-label-primary);font-family:var(--wd-font-family)}
+.wd-menu .wd-menu-heading{margin:0;padding:0 14px;overflow:hidden;font-size:var(--wd-text-footnote-emphasized-size);font-weight:var(--wd-text-footnote-emphasized-weight);line-height:var(--wd-text-footnote-emphasized-leading);letter-spacing:var(--wd-text-footnote-emphasized-tracking);color:var(--wd-label-secondary);text-overflow:ellipsis;white-space:nowrap}
+.wd-menu-list{display:flex;flex-direction:column;gap:1px;min-width:0}
+.wd-menu .wd-menu-row{display:flex;align-items:center;width:100%;min-width:0;height:36px;padding:0 14px;gap:8px;border:0;border-radius:999px;background:none;text-align:left;color:var(--wd-label-secondary);font-size:var(--wd-text-14-14-medium-size);font-weight:var(--wd-text-14-14-medium-weight);letter-spacing:var(--wd-text-14-14-medium-tracking)}
+.wd-menu .wd-menu-row:is(button,a){cursor:pointer}
+.wd-menu .wd-menu-row:is(:hover,:focus-visible){background:var(--wd-fill-secondary);color:var(--wd-label-primary)}
+.wd-menu .wd-menu-row:focus-visible{outline:2px solid var(--wd-label-primary);outline-offset:-2px}
+.wd-menu .wd-menu-row .target-nav-icon{color:var(--wd-label-secondary)}
+.wd-menu .wd-menu-row:is(:hover,:focus-visible) .target-nav-icon{color:var(--wd-label-primary)}
+.wd-menu-label{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:inherit}
+.wd-menu .wd-menu-note{margin:0;padding:0 14px;color:var(--wd-label-tertiary);font-size:var(--wd-text-14-14-medium-size);font-weight:var(--wd-text-14-14-medium-weight);letter-spacing:var(--wd-text-14-14-medium-tracking)}
+/* The check holds a fixed trailing slot so switching languages never shifts a label. */
+.wd-menu-check{flex:0 0 20px;width:20px;height:20px;margin-left:auto;background:currentColor;mask:url("/home-assets/tickle.svg") center/contain no-repeat;-webkit-mask:url("/home-assets/tickle.svg") center/contain no-repeat;opacity:0}
+.wd-menu-row[aria-checked="true"] .wd-menu-label{color:var(--wd-label-primary)}
+.wd-menu-row[aria-checked="true"] .wd-menu-check{opacity:1;color:var(--wd-label-primary)}
 /* The toast is a static Glass Surface; its silhouette stays pill-shaped while
  * the shared material supplies the tint, blur and pointer optics. */
 #toast{position:fixed;left:calc(50% + 140px);bottom:30px;transform:translateX(-50%);font-size:13px;padding:11px 18px;border:0;border-radius:24px;z-index:110}

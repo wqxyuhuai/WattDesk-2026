@@ -14,14 +14,22 @@
 - 背景遮罩延后 `70ms`、以 `490ms` 分段化开，内容退完后才明显变清晰，尾段不再突然消失。
 - 保留已确认的 `980ms` 进场节奏；退场使用独立错落 token，不反向影响进场。
 
+### 浮层菜单
+
+- 新增共享菜单内胆 `.wd-menu` 与 `menu-popover.js`，`Language`、`Appearance`、`WattDesk`、`Recently visited` 统一标题、行高、悬停、勾选与尾距。
+- 顶栏三个紧凑菜单统一为 `200px` 宽、`30px` 圆角；历史浮窗因路由名称较长保留 `280px`，内部结构与侧/底 `10px` 间距保持一致。
+- 语言菜单补充 `简体中文`、`Deutsch`、`Čeština` 占位，仅提供本地视觉勾选；未接入本地化、持久化或新路由。
+- 同步更新项目入口、设计规范、组件手册与需求记录，明确后续文本型浮窗必须复用同一套菜单结构。
+
 ### 范围
 
-- 本次只调整首页全屏搜索的材质、文案共享与动效节奏。
+- 本次调整首页全屏搜索的材质、文案共享与动效节奏，以及顶栏/历史浮层菜单的共享内部结构。
+- 语言占位只提供视觉勾选，未接入本地化、持久化或新路由。
 - 未新增页面路由、后端能力或真实业务数据。
 
 ### 验证
 
-- `npm run check` 通过。
-- `npm run build:site:public` 通过，产物 `dist/`，共 179 个文件。
-- `verify-search`、`verify-responsive`、`verify-glass`、`verify-floating-surfaces`、`verify-theme`、`verify-foundations`、`verify-components`、`verify-motion` 通过。
-- 已知既有问题：`verify-home.cjs` 的账户箭头颜色断言只等待 `320ms`，而共享颜色过渡为 `360ms`，会读到中间色；与本轮搜索改动无关。
+- `npm run check` 通过，59 个 JavaScript 文件语法有效。
+- `npm run build:site:public` 通过，产物 `dist/`，共 181 个文件。
+- `verify-floating-surfaces` 通过。
+- 已知既有问题：`verify-home.cjs` 的账户箭头颜色断言只等待 `320ms`，而共享颜色过渡为 `360ms`，会读到中间色；与本轮搜索及浮窗改动无关。

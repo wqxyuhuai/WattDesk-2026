@@ -97,7 +97,7 @@
 - 名称：**Glass Surface**（浮层玻璃材质）。来源分支 `.wd-glass--surface`；宿主同时加 `.wd-glass-popup` 表示“整面板不缩放”，与 `.wd-glass-chrome` 不是同一语义。
 - 默认范围：所有菜单、popover、tooltip、toast 和图表数据浮签等**浮层一律默认使用 Glass Surface**；已有浮层和将来新增浮层都按此执行。图表卡片、状态卡等常驻数据容器仍是普通表面，不因本条自动玻璃化。
 - 复用方式：直接用共享 `createPopoverController({overlays,toastElement,motion,glass})`。`popover()` / `registerPanel()` 会自动加 `.wd-glass--surface wd-glass-popup` 并以 `radius:18,interactive:false` 挂载，调用方不要再手写材质。自定义面板需自行加类并调用 `glass.addSurface()`；内容放在同级容器，禁止自己写 `blur`、底色或 `box-shadow`。
-- 浮层圆角按尺度分三档，统一取 token：紧凑提示 / 数据浮签 / tooltip 用 `--wd-radius-compact`（12px），标准菜单与 popover 用 `--wd-radius-medium`（18px），日期、搜索、历史等大面板用 `--wd-radius-large`（30px）。圆角只由宿主声明，玻璃各层继承；不按单个内容再发明半径，也不为“看起来更大”随意加值。图表数据浮签按此规则从原稿的 8px 提到 12px。
+- 浮层圆角按尺度分三档，统一取 token：紧凑提示 / 数据浮签 / tooltip 用 `--wd-radius-compact`（12px），通用 popover / 图表菜单用 `--wd-radius-medium`（18px），标准浮层菜单与日期、搜索、历史等大面板用 `--wd-radius-large`（30px）。圆角只由宿主声明，玻璃各层继承；不按单个内容再发明半径，也不为“看起来更大”随意加值。图表数据浮签按此规则从原稿的 8px 提到 12px。
 - 已自带 `.wd-glass` 的弹窗（日期、历史、搜索）由控制器自动跳过，不能重复挂载第二层材质或第二个 `ResizeObserver`。tooltip、toast 与图表数据浮签属于只读表面，必须传 `interactive:false`，保留材质和指针光晕但不响应 hover / 按下缩放；它们的文案要放在独立 span 中，不能用 `textContent` 覆盖宿主，否则会删掉材质子层。
 - 结构仍是 **Fill + Shadow 底层 + Glass Effect 高光层**：`.wd-glass-fill` 负责底色、背景模糊、暗外轮廓与投影；`.wd-glass-optics` 负责内亮边、hover 状态层和指针微光。内容不穿过 filter。
 - 深色：`blur 18px`、`saturate 1.20`、底色 `rgba(28,28,30,.30)`；浅色：`blur 9px`、`saturate 1.45`、底色 `rgba(232,237,244,.44)`。浮层必须能透出背后页面，不能读成实心卡片；浅色尤其不能靠加高不透明度换取“干净”。浅色模糊压到 `9px` 是为了保留背后卡片的边缘与色块，模糊越大越读成均匀白膜。
@@ -108,6 +108,15 @@
 - 共享材质只提供零优先级的定位默认值 `:where(.wd-glass){position:relative}`，用于让材质层有包含块；不得用普通类选择器声明 `position` 覆盖页面节点的 `absolute` 或顶栏按钮的绝对定位。首页节点、侧栏圆钮和浮层各自拥有定位，材质层不得改变布局。
 - 微光只跟随当前鼠标所在的一个表面，每帧最多更新一次；没有持续空转循环，不倾斜或移动控件。移出、滚动与窗口失焦后淡出；触屏和减少动态效果关闭跟随。嵌套时以最内层玻璃为准，避免外层浮层吞掉控件自己的光。
 - 浮层退出统一由共享生命周期处理：点击外部、Apply / Cancel、按 Esc、切换侧栏路由、切换工作区标签或离开当前页面时，宿主内容、`.wd-glass-fill` 与 `.wd-glass-optics` 必须沿同一时间轴淡出后再整体移除，不能先隐藏内容、后收底板，也不能让浮层跨页残留。新浮层接入共享控制器即可继承，不逐组件补退出逻辑。
+
+#### 标准浮层菜单（Standard Shell Menu）
+
+- 适用：顶栏 `Language`、`Appearance`、`WattDesk`，历史浮窗及后续文本型菜单。统一使用 `components/menu-popover.js` 的 `menuHeading` / `menuList` / `menuRow` / `menuNote` / `mountMenu`，内容根节点为 `.wd-menu`；外壳仍由 `registerPanel()` 或历史面板自己挂载 Glass Surface。
+- 外壳：紧凑菜单固定 **200px** 宽、**30px** 圆角、0 内距，由 `.popover--menu` 提供；历史浮窗因路由标题较长，是唯一保留 **280px** 宽度的例外。不能按文案临时加宽，也不能为单个菜单另写外壳。
+- 内胆：`.wd-menu` 顶部内距 `20px`，左右与底部各 `10px`，标题/列表纵向间距 `10px`；标题使用 `Footnote/Emphasized`（13px / 590、`Labels/Secondary`），左右内缩 `14px`。列表行固定 `36px` 高、胶囊圆角，左右内距 `14px`、图标间距 `8px`，文字用 `14/14 medium`（14px / 510），默认 `Labels/Secondary`。
+- 状态：行 hover / 键盘 focus 使用 `--wd-fill-secondary` 背景并让文字、中性图标同步转为 `Labels/Primary`；选中行文字为主文字色。勾选固定占尾部 `20px` 槽位，用 `currentColor` 加 `/home-assets/tickle.svg` 不透明遮罩，未选中仅隐藏不占位变化，切换语言时标签不能左右跳。
+- 尾距：列表最后一行到面板底缘固定 `10px`。历史列表与紧凑菜单共用同一内胆，不为历史另写行高、标题或勾选样式。
+- 扩展：语言等预览菜单可以放占位语言并做本地勾选切换，但不得据此声称已接入本地化、持久化或真实后端。新增菜单先复用上述 API；只有确实需要图表自定义布局时才使用通用 18px popover。
 
 - 禁用控件不响应；未选中 tab 保留默认材质，不能看起来像 disabled。新页面直接挂载共享组件，不复制材质 CSS 或恢复旧提取光学层。
 
