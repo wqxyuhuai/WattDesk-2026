@@ -125,6 +125,7 @@ tabs.onUnmount = tab => glass.removeSurface(tab);
 - 标签之间及标签与 Add 之间的间距为 5px。
 - 标题最多保留 28 个字符；超出容器时用省略号，hover 或键盘 focus 320ms 后显示完整标题 tooltip。
 - 完整标题通过独立 `role="tooltip"` 浮层显示，超出视口时左右夹紧；标签同时关联 `aria-describedby`。
+- tooltip 以标签为锚点，不在打开时缓存坐标：页面或标签条滚动、窗口与 `visualViewport` 变化时逐帧重测；标签超过一半离开视口或关闭时收起，不能停在原位置。
 - 可用宽度不足以让每个标签保持 58px 时，标签条进入 `is-overflowing`，保持 58px 可读宽度并允许横向滚动，不继续压缩字号或内容。
 - 横向滚动区隐藏滚动条但保留滚轮/触控板/键盘可访问性；滚动到激活标签时保证其可见。
 - 标签宽度变化使用共享布局槽位过渡（当前 `--wd-motion-tab-out`，约 220ms），不是 `transition: all`；时长以 `motion.css` token 为准，不在组件层另写。

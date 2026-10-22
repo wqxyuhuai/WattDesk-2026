@@ -39,7 +39,7 @@ function comparePixels(a,b){
  assert.equal(light.canvas,'rgb(242, 242, 247)');assert.match(light.content,/rgb\(255, 255, 255\).*rgb\(242, 242, 247\)/);
  assert.match(light.outline,/198, 198, 200/);assert.equal(light.card,'rgb(242, 242, 247)');assert.match(light.cardBorder,/230, 230, 230/);
  assert.equal(light.grid,'rgb(198, 198, 200)');assert.equal(light.primary,'rgb(0, 0, 0)');assert.equal(light.secondary,'rgba(60, 60, 67, 0.6)');
- assert.match(light.glass,/246, 248, 252, 0.7/);assert.match(light.line,/light\/imgHourlyEnergyGeneratedLine.svg/);assert.equal(light.pressed,'true');
+ assert.match(light.glass,/238, 240, 243, 0.74/);assert.match(light.line,/light\/imgHourlyEnergyGeneratedLine.svg/);assert.equal(light.pressed,'true');
   const focusedTheme=await page.evaluate(()=>getComputedStyle(document.querySelector('.target-theme')).color);
   assert.equal(focusedTheme,'rgba(60, 60, 67, 0.6)','The clicked theme button must return to idle ink while focused');
  await page.screenshot({path:'tests/output/home-light-1545.png'});

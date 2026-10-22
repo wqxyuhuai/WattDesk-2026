@@ -27,6 +27,7 @@ html[data-theme="light"] .popover{color:var(--wd-label-primary)}
 .wd-menu .wd-menu-row:focus-visible{outline:2px solid var(--wd-label-primary);outline-offset:-2px}
 .wd-menu .wd-menu-row .target-nav-icon{color:var(--wd-label-secondary)}
 .wd-menu .wd-menu-row:is(:hover,:focus-visible) .target-nav-icon{color:var(--wd-label-primary)}
+.wd-menu .wd-menu-row:is(:hover,:focus-visible) .target-icon-neutral::after{opacity:1}
 .wd-menu-label{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:inherit}
 .wd-menu .wd-menu-note{margin:0;padding:0 14px;color:var(--wd-label-tertiary);font-size:var(--wd-text-14-14-medium-size);font-weight:var(--wd-text-14-14-medium-weight);letter-spacing:var(--wd-text-14-14-medium-tracking)}
 /* The check holds a fixed trailing slot so switching languages never shifts a label. */

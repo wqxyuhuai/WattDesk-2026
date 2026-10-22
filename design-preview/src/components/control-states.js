@@ -1,5 +1,36 @@
 // Reuse exported SVG geometry; remove baked-in label alpha only in state masks.
 // CSS filters run before masking, so filtering the host cannot make a .7 mask opaque.
+const masks=new Map();
+function opaqueMask(source){
+ if(!masks.has(source))masks.set(source,fetch(source).then(async response=>{
+  if(!response.ok)throw new Error(`Icon mask unavailable: ${source}`);
+  const svg=new DOMParser().parseFromString(await response.text(),"image/svg+xml");
+  for(const node of svg.querySelectorAll("*")){
+   for(const attribute of ["opacity","fill-opacity","stroke-opacity"]){
+    if(node.hasAttribute(attribute)&&Number(node.getAttribute(attribute))>0)node.setAttribute(attribute,"1");
+    if(node.style?.getPropertyValue(attribute)&&parseFloat(node.style.getPropertyValue(attribute))>0)node.style.setProperty(attribute,"1");
+   }
+  }
+  return `url("data:image/svg+xml,${encodeURIComponent(new XMLSerializer().serializeToString(svg.documentElement))}")`;
+ }));
+ return masks.get(source);
+}
+// Normalise any icon mask created after the first paint, so dynamically-built
+// menus use the same opaque inline source as the sidebar instead of the raw
+// export whose baked alpha would dim primary ink on hover.
+export async function prepareIconMasks(root){
+ const work=[];
+ for(const icon of root.querySelectorAll('[style*="--icon-mask"]')){
+  const source=icon.style.getPropertyValue("--icon-mask").match(/url\(["']?([^"')]+)["']?\)/)?.[1];
+  // A cloned sidebar icon already carries the normalised mask; only raw exports
+  // need the extra fetch.
+  if(source&&!source.startsWith("data:")){
+   icon.style.setProperty("--icon-source",`url("${source}")`);
+   work.push(opaqueMask(source).then(mask=>icon.style.setProperty("--icon-mask",mask)));
+  }
+ }
+ await Promise.all(work);
+}
 export async function prepareControlStates(root){
  // aria-disabled is semantic only; prevent both pointer and keyboard activation.
  for(const event of ["click","keydown"])root.addEventListener(event,e=>{
@@ -15,29 +46,8 @@ export async function prepareControlStates(root){
    if(label.tagName==="SPAN"&&!label.className.includes("icon")&&!label.classList.contains("wd-glass-material")&&!label.classList.contains("target-shortcut"))label.classList.add("wd-control-label");
   }
  }
- const masks=new Map();
- function opaqueMask(source){
-  if(!masks.has(source))masks.set(source,fetch(source).then(async response=>{
-   if(!response.ok)throw new Error(`Icon mask unavailable: ${source}`);
-   const svg=new DOMParser().parseFromString(await response.text(),"image/svg+xml");
-   for(const node of svg.querySelectorAll("*")){
-    for(const attribute of ["opacity","fill-opacity","stroke-opacity"]){
-     if(node.hasAttribute(attribute)&&Number(node.getAttribute(attribute))>0)node.setAttribute(attribute,"1");
-     if(node.style?.getPropertyValue(attribute)&&parseFloat(node.style.getPropertyValue(attribute))>0)node.style.setProperty(attribute,"1");
-    }
-   }
-   return `url("data:image/svg+xml,${encodeURIComponent(new XMLSerializer().serializeToString(svg.documentElement))}")`;
-  }));
-  return masks.get(source);
- }
  const work=[];
- for(const icon of root.querySelectorAll('[style*="--icon-mask"]')){
-  const source=icon.style.getPropertyValue("--icon-mask").match(/url\(["']?([^"')]+)["']?\)/)?.[1];
-  if(source){
-   icon.style.setProperty("--icon-source",`url("${source}")`);
-   work.push(opaqueMask(source).then(mask=>icon.style.setProperty("--icon-mask",mask)));
-  }
- }
+ const maskWork=prepareIconMasks(root);work.push(maskWork);
  for(const icon of root.querySelectorAll(".target-account-arrow")){
   work.push(opaqueMask(icon.querySelector("img").getAttribute("src")).then(mask=>icon.style.setProperty("--icon-mask",mask)));
  }

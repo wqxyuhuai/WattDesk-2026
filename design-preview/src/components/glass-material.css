@@ -10,14 +10,14 @@
   --wd-glass-reflection-top:transparent;
   --wd-glass-reflection-bottom:transparent;
   --wd-glass-reflection-mid:transparent;
-  --wd-glass-rim-top:rgba(255,255,255,.17);
+  --wd-glass-rim-top:rgba(255,255,255,.145);
   --wd-glass-rim-side:transparent;
-  --wd-glass-rim-bottom:rgba(255,255,255,.14);
+  --wd-glass-rim-bottom:rgba(255,255,255,.118);
   --wd-glass-rim-width:.6px;
   --wd-glass-outline:rgba(0,0,0,.95);--wd-glass-outline-width:.5px;
   --wd-glass-optical-burn:rgba(0,0,0,.215);
-  --wd-glass-optical-light-top:rgba(255,255,255,.10);
-  --wd-glass-optical-light-bottom:rgba(255,255,255,.14);
+  --wd-glass-optical-light-top:rgba(255,255,255,.085);
+  --wd-glass-optical-light-bottom:rgba(255,255,255,.12);
   --wd-glass-inner-top:transparent;
   --wd-glass-inner-bottom:transparent;
   --wd-glass-inner-depth:5px;
@@ -33,27 +33,46 @@
   --wd-glass-glow-edge-radius:44px;
   --wd-glass-optical-offset:40px;--wd-glass-optical-spread:-40px;
   --wd-glass-optical-burn-blur:30px;--wd-glass-optical-light-blur:10px;
+  /* Figma's dark card brightens over roughly the last 10px instead of drawing
+   * a single inset line. Keep the top as a short falloff and give the bottom
+   * enough body to read as the near face of the glass. */
+  --wd-glass-reflection-field:
+    linear-gradient(180deg,rgba(255,255,255,.095) 0,rgba(255,255,255,.05) 2px,rgba(255,255,255,.014) 5px,rgba(255,255,255,0) 9px),
+    linear-gradient(0deg,rgba(255,255,255,.095) 0,rgba(255,255,255,.075) 2px,rgba(255,255,255,.052) 4px,rgba(255,255,255,.031) 6px,rgba(255,255,255,.015) 8px,rgba(255,255,255,.005) 10px,rgba(255,255,255,0) 12px);
 }
 :root[data-theme="light"]{
-  /* Reviewed light optics; raw stacked fills remain in design/figma. */
-  --wd-glass-outline:rgba(0,0,0,.12);
-  --wd-glass-outline-side:rgba(0,0,0,.16);
+  /* Reviewed light optics; raw stacked fills remain in design/figma.
+   * The source paints one 0.5px black stroke plus two 1.25/-.75 LINEAR_BURN
+   * side shadows. Browsers cannot blend those onto an already-composited
+   * backdrop, so the same result is built from a light top/bottom ring and a
+   * darker 1px side band. This is what gives the outline its vertical
+   * gradient; a single uniform ring reads as a grey frame. */
+  --wd-glass-outline:rgba(0,0,0,.09);
+  /* Keep the sides darker than the top/bottom so the frame still reads as a
+   * vertical gradient, but cap the alpha and width: a near-black 1px band
+   * makes the whole card look framed rather than like glass. */
+  --wd-glass-outline-side:rgba(0,0,0,.38);
+  --wd-glass-outline-width:.75px;
+  /* Light thickness: the face is deliberately below white so the Figma
+   * LINEAR_DODGE inner shadows can read as a real top/bottom edge band. The
+   * top is a narrow soft falloff; the bottom is a wider white shelf. */
   --wd-glass-optical-burn:rgba(0,0,0,.035);
-  --wd-glass-optical-light-top:rgba(255,255,255,.60);
-  --wd-glass-optical-light-bottom:rgba(255,255,255,.72);
-  --wd-glass-tint:rgba(246,248,252,.70);
+  --wd-glass-optical-light-top:rgba(255,255,255,.98);
+  --wd-glass-optical-light-bottom:rgba(255,255,255,1);
+  --wd-glass-optical-light-blur:15px;
+  --wd-glass-tint:rgba(238,240,243,.74);
   --wd-glass-reflection-top:transparent;
   --wd-glass-reflection-bottom:transparent;
   --wd-glass-reflection-mid:transparent;
   --wd-glass-rim-top:rgba(255,255,255,1);
   --wd-glass-rim-side:transparent;
   --wd-glass-rim-bottom:rgba(255,255,255,1);
-  --wd-glass-inner-top:rgba(255,255,255,.86);
-  --wd-glass-inner-bottom:rgba(255,255,255,.54);
-  --wd-glass-drop:rgba(0,0,0,.075);
+  --wd-glass-inner-top:rgba(255,255,255,.92);
+  --wd-glass-inner-bottom:rgba(255,255,255,.62);
+  --wd-glass-drop:rgba(0,0,0,.04);
   --wd-glass-drop-y:10px;
-  --wd-glass-drop-blur:18px;
-  --wd-glass-contact:rgba(0,0,0,.045);
+  --wd-glass-drop-blur:22px;
+  --wd-glass-contact:rgba(0,0,0,.004);
   --wd-glass-hover-tint:rgba(255,255,255,.16);
   --wd-glass-hover-bottom:rgba(255,255,255,.70);
   --wd-glass-selected-tint:rgba(255,255,255,.025);
@@ -61,8 +80,14 @@
   --wd-glass-glow-edge:rgba(0,0,0,.42);
   --wd-glass-glow-edge-inset:-.5px;
   --wd-glass-glow-edge-width:.5px;
-  --wd-glass-reflection-field:radial-gradient(ellipse at 50% 0%,rgba(255,255,255,.30),transparent 72%),
-    linear-gradient(180deg,rgba(255,255,255,.20),transparent 42%,rgba(210,220,232,.04) 70%,rgba(255,255,255,.16));
+  /* These two bands replace the old full-face wash. Their stops come from the
+   * Figma card profile: a short top falloff with only a trace of burn, and a
+   * 14px bottom shelf that starts at .78 and decays continuously. Keeping a
+   * short, soft shelf is what makes the material read as having thickness
+   * without turning into a flat white band. */
+  --wd-glass-reflection-field:
+    linear-gradient(180deg,rgba(255,255,255,.92) 0,rgba(255,255,255,.44) 2px,rgba(255,255,255,.06) 5px,rgba(255,255,255,0) 9px,rgba(0,0,0,0) 10px,rgba(0,0,0,.005) 14px,rgba(0,0,0,0) 20px),
+    linear-gradient(0deg,rgba(255,255,255,.78) 0,rgba(255,255,255,.72) 2px,rgba(255,255,255,.60) 4px,rgba(255,255,255,.46) 6px,rgba(255,255,255,.32) 8px,rgba(255,255,255,.19) 10px,rgba(255,255,255,.08) 12px,rgba(255,255,255,0) 14px);
   --wd-glass-rim-width:.65px;
   --wd-glass-inner-depth:4px;
   --wd-glass-hover-field:linear-gradient(180deg,rgba(255,255,255,.22),rgba(255,255,255,.06) 55%,rgba(255,255,255,.18));
@@ -95,7 +120,15 @@
   --wd-glass-glow-edge:rgba(255,255,255,.62);
   --wd-glass-glow-radius:180px;
   --wd-glass-glow-edge-radius:120px;
-  --wd-glass-reflection-field:linear-gradient(180deg,rgba(255,255,255,.055),transparent 24%,transparent 76%,rgba(255,255,255,.03));
+  /* Surfaces are large, so a full-face diagonal sheen becomes a grey quadrant.
+   * Give them the same top/bottom edge bands as the card instead, at a lower
+   * strength, and let the pointer follow-light provide the local reflection. */
+  --wd-glass-reflection-field:
+    linear-gradient(180deg,rgba(255,255,255,.085) 0,rgba(255,255,255,.04) 2px,rgba(255,255,255,.012) 5px,rgba(255,255,255,0) 9px),
+    linear-gradient(0deg,rgba(255,255,255,.10) 0,rgba(255,255,255,.075) 2px,rgba(255,255,255,.048) 5px,rgba(255,255,255,.025) 8px,rgba(255,255,255,.009) 11px,rgba(255,255,255,0) 14px);
+  --wd-glass-rim-top:rgba(255,255,255,.15);
+  --wd-glass-rim-bottom:rgba(255,255,255,.118);
+  --wd-glass-rim-width:.68px;
 }
 :root[data-theme="light"] .wd-glass--surface>.wd-glass-material{
   /* Light glass stays translucent. Blur above ~12px averages the cards behind
@@ -118,7 +151,12 @@
   --wd-glass-glow-edge-inset:-.5px;
   --wd-glass-glow-radius:140px;
   --wd-glass-glow-edge-radius:120px;
-  --wd-glass-reflection-field:linear-gradient(160deg,rgba(255,255,255,.62),transparent 34%,transparent 64%,rgba(176,190,211,.18));
+  --wd-glass-reflection-field:
+    linear-gradient(180deg,rgba(255,255,255,.56) 0,rgba(255,255,255,.26) 2px,rgba(255,255,255,.04) 5px,rgba(255,255,255,0) 9px),
+    linear-gradient(0deg,rgba(255,255,255,.46) 0,rgba(255,255,255,.34) 3px,rgba(255,255,255,.21) 6px,rgba(255,255,255,.10) 9px,rgba(255,255,255,.03) 12px,rgba(255,255,255,0) 15px);
+  --wd-glass-rim-top:rgba(255,255,255,.94);
+  --wd-glass-rim-bottom:rgba(255,255,255,.80);
+  --wd-glass-rim-width:.72px;
 }
 
 /* Small round controls need a tighter optical response than a card. The
@@ -147,8 +185,8 @@
 
 :root[data-theme="light"] .wd-glass:not(:disabled):not([aria-disabled="true"]):is(:hover,:focus-visible,:has(:focus-visible)){
   --wd-glass-drop:rgba(0,0,0,.085);
-  --wd-glass-outline:rgba(0,0,0,.14);
-  --wd-glass-outline-side:rgba(0,0,0,.18);
+  --wd-glass-outline:rgba(0,0,0,.11);
+  --wd-glass-outline-side:rgba(0,0,0,.42);
 }
 
 /* Liquid depth is a shared material contract, not a per-card value. Hover
@@ -228,16 +266,22 @@
   box-shadow:inset 0 1px var(--wd-glass-inner-depth) var(--wd-glass-inner-top),inset 0 -1px var(--wd-glass-inner-depth) var(--wd-glass-inner-bottom);
 }
 /* The source uses different side and outer burn outlines in light mode. */
-:root[data-theme="light"] .wd-glass-fill{box-shadow:1.25px 0 0 -.75px var(--wd-glass-outline-side),-1.25px 0 0 -.75px var(--wd-glass-outline-side),0 0 0 var(--wd-glass-outline-width) var(--wd-glass-outline),0 2px 4px -1px var(--wd-glass-contact),0 var(--wd-glass-drop-y) var(--wd-glass-drop-blur) var(--wd-glass-drop)}
+:root[data-theme="light"] .wd-glass-fill{box-shadow:1.1px 0 0 -.4px var(--wd-glass-outline-side),-1.1px 0 0 -.4px var(--wd-glass-outline-side),0 .95px 0 -.2px var(--wd-glass-outline),0 -.95px 0 -.2px var(--wd-glass-outline),0 2px 4px -1px var(--wd-glass-contact),0 var(--wd-glass-drop-y) var(--wd-glass-drop-blur) var(--wd-glass-drop)}
 /* Original inner-shadow geometry: y +40 / blur30 / spread -40 darkening;
- * y +/-40 / blur10 / spread -40 light. Theme-calibrated alpha reproduces
- * the source additive brightness over the neutral glass face. These form thickness,
- * rather than washing the entire face with a white gradient.
+ * y +/-40 / blur10 / spread -40 light. Light mode paints that profile as
+ * clipped edge bands in the optics background so the additive white survives
+ * the rounded host; dark mode keeps the original inset box-shadows below.
  */
 :root .wd-glass-optics::before,
 :root .wd-glass-optics::after{
   content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;
 }
+/* The light bands live on the optics background itself. Painting them as
+ * semi-transparent insets over a near-white face lost the additive Figma
+ * highlight, and the dark burn pseudo-element covered the top band. */
+:root[data-theme="light"] .wd-glass-optics::before,
+:root[data-theme="light"] .wd-glass-optics::after{box-shadow:none}
+:root[data-theme="light"] .wd-glass-optics{box-shadow:none}
 :root .wd-glass-optics::before{box-shadow:inset 0 var(--wd-glass-optical-offset) var(--wd-glass-optical-burn-blur) var(--wd-glass-optical-spread) var(--wd-glass-optical-burn)}
 :root .wd-glass-optics::after{
   box-shadow:inset 0 calc(-1 * var(--wd-glass-optical-offset)) var(--wd-glass-optical-light-blur) var(--wd-glass-optical-spread) var(--wd-glass-optical-light-bottom),inset 0 var(--wd-glass-optical-offset) var(--wd-glass-optical-light-blur) var(--wd-glass-optical-spread) var(--wd-glass-optical-light-top);

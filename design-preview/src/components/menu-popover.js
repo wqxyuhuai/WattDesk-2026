@@ -2,7 +2,7 @@
 // Glass Surface stay with the popover host; this module only builds the
 // heading/list anatomy defined in popover.css.
 import {applyTypeStyle} from "../foundations/typography.js";
-import {iconAsset,isNeutralIconFile} from "./icons.js";
+import {iconAsset} from "./icons.js";
 
 export function menuHeading(text){
  const heading=document.createElement("h2");
@@ -18,7 +18,11 @@ export function menuList(){
  return list;
 }
 
-export function menuRow(label,{iconFile,iconTone="mono",checked=false,onSelect}={}){
+// `iconNode` lets a caller hand in an icon that already exists elsewhere in the
+// shell (the history panel clones the sidebar glyph). Keep the tone verbatim in
+// that path: do not re-derive mono/colour from the filename, or neutral exports
+// silently lose their shared hover mask.
+export function menuRow(label,{iconFile,iconTone="mono",iconNode,checked=false,onSelect}={}){
  const row=document.createElement("button");
  row.type="button";
  row.className="wd-menu-row";
@@ -26,7 +30,7 @@ export function menuRow(label,{iconFile,iconTone="mono",checked=false,onSelect}=
  applyTypeStyle(row,"14/14 medium");
  if(checked)row.setAttribute("aria-checked","true");
  row.setAttribute("role",checked?"menuitemradio":"menuitem");
- if(iconFile)row.append(menuIcon(iconFile,iconTone));
+ if(iconFile||iconNode)row.append(menuIcon(iconFile,iconTone,iconNode));
  const text=document.createElement("span");
  text.className="wd-menu-label";
  text.textContent=label;
@@ -47,10 +51,10 @@ export function menuNote(text){
  return note;
 }
 
-function menuIcon(file,tone){
+function menuIcon(file,tone,node){
  const icon=document.createElement("span");
  icon.className="target-nav-icon";
- icon.append(iconAsset(file,isNeutralIconFile(file)?"mono":tone));
+ icon.append(node??iconAsset(file,tone));
  return icon;
 }
 

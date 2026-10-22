@@ -124,6 +124,23 @@ function applyFullscreenHistory(query){
  fullscreenSearch.input.focus({preventScroll:true});
 }
 function positionInlineSearch(){inlineSearch?.position();}
+// The inline results belong to the search field, not the viewport. Re-measure
+// on every scroll (including nested work areas) instead of caching the opening
+// coordinates; once most of the field has left view, the result surface no
+// longer has a usable anchor and must dismiss rather than clamp to an edge.
+function syncInlinePlacement(){
+ if(!inlineSearch)return;
+ const rect=searchAnchor.getBoundingClientRect();
+ const visibleWidth=Math.max(0,Math.min(rect.right,innerWidth)-Math.max(rect.left,0));
+ const visibleHeight=Math.max(0,Math.min(rect.bottom,innerHeight)-Math.max(rect.top,0));
+ if(rect.width>0&&rect.height>0&&visibleWidth*visibleHeight<rect.width*rect.height*.5){closeInlineSearch();return;}
+ inlineSearch.position();
+}
+let inlinePlacementFrame=0;
+function scheduleInlinePlacement(){
+ if(inlinePlacementFrame||!inlineSearch)return;
+ inlinePlacementFrame=requestAnimationFrame(()=>{inlinePlacementFrame=0;syncInlinePlacement();});
+}
 function syncInlineSearchActive(){
  if(!inlineSearch)return;
  const id=inlineSearch.content.activeId;
@@ -173,10 +190,14 @@ input.addEventListener("keydown",event=>{
   input.focus();
  }
 });
-addEventListener("resize",()=>positionInlineSearch());
-homeColumn.addEventListener("scroll",()=>{if(inlineSearch)closeInlineSearch(true);},{passive:true});
+addEventListener("resize",scheduleInlinePlacement);
+visualViewport?.addEventListener("resize",scheduleInlinePlacement);
+visualViewport?.addEventListener("scroll",scheduleInlinePlacement);
+// The results surface is anchored to a field inside the work area, so it must
+// move with that field. Capture catches nested scroll containers, matching the
+// shared popover placement contract; placement is coalesced per frame.
+document.addEventListener("scroll",scheduleInlinePlacement,{capture:true,passive:true});
 function openFullscreenSearch(){
- if(fullscreenSearch)return;
  close(true);
  closeInlineSearch(true);
  const previousFocus=document.activeElement;
@@ -262,6 +283,5 @@ document.addEventListener("pointerdown",event=>{
 });
  return {
   input,
-  closeAll(immediate=false){closeInlineSearch(immediate);closeFullscreenSearch(immediate);}
- };
+ closeAll(immediate=false){if(inlinePlacementFrame){cancelAnimationFrame(inlinePlacementFrame);inlinePlacementFrame=0;}closeInlineSearch(immediate);closeFullscreenSearch(immediate);} };
 }

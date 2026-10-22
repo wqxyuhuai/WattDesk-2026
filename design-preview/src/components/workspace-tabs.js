@@ -60,6 +60,8 @@ export function createWorkspaceTabs({
   let activeId = null;
   let tooltipTimer = 0;
   let resizeFrame = 0;
+  let tooltipFrame = 0;
+  let tooltipTab = null;
   let pointerInsideList = false;
   let widthsFrozen = false;
   let frozenTabWidth = "";
@@ -93,8 +95,41 @@ export function createWorkspaceTabs({
   };
 
   function hideTooltip() {
+    tooltipTab = null;
     tooltip.hidden = true;
     for (const tab of tabs) tab.removeAttribute("aria-describedby");
+  }
+
+  // A tooltip is anchored to its tab, not to the viewport. Re-measure on every
+  // scroll and viewport change just like the shared popover controller; tab
+  // strips can scroll horizontally inside the page, so a one-time rect would
+  // leave the label floating over the wrong tab.
+  function positionTooltip() {
+    const tab = tooltipTab;
+    if (!tab || !tab.isConnected || !overflowOf(tab)) {
+      hideTooltip();
+      return;
+    }
+    const rect = tab.getBoundingClientRect();
+    const visibleWidth = Math.min(rect.right, innerWidth) - Math.max(rect.left, 0);
+    const visibleHeight = Math.min(rect.bottom, innerHeight) - Math.max(rect.top, 0);
+    if (rect.width <= 0 || rect.height <= 0 ||
+        visibleWidth * visibleHeight < rect.width * rect.height * 0.5) {
+      hideTooltip();
+      return;
+    }
+    Object.assign(tooltip.style, {
+      left: Math.max(8, Math.min(innerWidth - tooltip.offsetWidth - 8, rect.left + rect.width / 2 - tooltip.offsetWidth / 2)) + "px",
+      top: rect.bottom + 8 + "px"
+    });
+  }
+
+  function scheduleTooltip() {
+    if (tooltipFrame || tooltip.hidden) return;
+    tooltipFrame = requestAnimationFrame(() => {
+      tooltipFrame = 0;
+      positionTooltip();
+    });
   }
 
   function updateTooltip(tab) {
@@ -102,14 +137,23 @@ export function createWorkspaceTabs({
       hideTooltip();
       return;
     }
+    tooltipTab = tab;
     tooltipText.textContent = titleOf(tab._state);
     tooltip.hidden = false;
-    const rect = tab.getBoundingClientRect();
-    Object.assign(tooltip.style, {
-      left: Math.max(8, Math.min(innerWidth - tooltip.offsetWidth - 8, rect.left + rect.width / 2 - tooltip.offsetWidth / 2)) + "px",
-      top: rect.bottom + 8 + "px"
-    });
-    tab.setAttribute("aria-describedby", tooltip.id);
+    positionTooltip();
+    if (!tooltip.hidden) tab.setAttribute("aria-describedby", tooltip.id);
+  }
+
+  // A route change can rename the tab while its tooltip is open. Re-read the
+  // stored title and re-measure rather than leaving stale text over the tab.
+  function refreshTooltip(tab) {
+    if (tooltipTab !== tab) return;
+    if (!overflowOf(tab)) {
+      hideTooltip();
+      return;
+    }
+    tooltipText.textContent = titleOf(tab._state);
+    positionTooltip();
   }
 
   function updateOverflow(tab) {
@@ -458,6 +502,7 @@ export function createWorkspaceTabs({
 
     const finish = () => {
       const previousScrollLeft = widthsFrozen ? frozenScrollLeft : list.scrollLeft;
+      if (tooltipTab === tab) hideTooltip();
       tab.remove();
       tabs = tabs.filter(item => item !== tab);
       if (widthsFrozen) applyFrozenLayout();
@@ -532,6 +577,7 @@ export function createWorkspaceTabs({
         label.animate([{opacity: 0, translate: "0 2px"}, {opacity: 1, translate: "0 0"}], timing).finished.catch(() => {});
       }
       updateOverflow(tab);
+      refreshTooltip(tab);
     };
     if (reduced) {
       commit();
@@ -575,6 +621,7 @@ export function createWorkspaceTabs({
     labelOf(tab).textContent = capped;
     tab.querySelector(".workspace-tab-close").setAttribute("aria-label", `Close ${capped} tab`);
     updateOverflow(tab);
+    refreshTooltip(tab);
   }
 
   list.addEventListener("pointerenter", () => { pointerInsideList = true; });
@@ -583,6 +630,12 @@ export function createWorkspaceTabs({
     releaseFrozenWidths();
   });
   addEventListener("resize", scheduleLayout, {passive: true});
+  const onTooltipViewportChange = () => scheduleTooltip();
+  const tooltipScrollOptions = {capture: true, passive: true};
+  document.addEventListener("scroll", onTooltipViewportChange, tooltipScrollOptions);
+  addEventListener("resize", onTooltipViewportChange, {passive: true});
+  visualViewport?.addEventListener("resize", onTooltipViewportChange);
+  visualViewport?.addEventListener("scroll", onTooltipViewportChange);
   return {
     add,
     find,
@@ -609,7 +662,13 @@ export function createWorkspaceTabs({
     destroy() {
       clearTimeout(tooltipTimer);
       cancelAnimationFrame(resizeFrame);
+      cancelAnimationFrame(tooltipFrame);
       removeEventListener("resize", scheduleLayout);
+      document.removeEventListener("scroll", onTooltipViewportChange, tooltipScrollOptions);
+      removeEventListener("resize", onTooltipViewportChange);
+      visualViewport?.removeEventListener("resize", onTooltipViewportChange);
+      visualViewport?.removeEventListener("scroll", onTooltipViewportChange);
+      hideTooltip();
       tooltip.remove();
       list.remove();
     }

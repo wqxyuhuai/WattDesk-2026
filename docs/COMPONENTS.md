@@ -147,6 +147,7 @@ registerPanel(panel,trigger,{label:"Language",radius:30});
 - `.wd-menu`：顶部 20px，左右/底部 10px，标题与列表间距 10px；标题 `Footnote/Emphasized` 次级色、14px 缩进；行 36px 高、14/14 medium（14px / 510）、胶囊 hover，中性图标与文字同步转主文字色。
 - 勾选槽固定 `20px`，使用 `currentColor` + `/home-assets/tickle.svg` 遮罩；未选中时保留槽位并隐藏，避免切换语言导致文字位移。列表末尾到底缘固定 10px。
 - `menuRow(label,{iconFile,iconTone,checked,onSelect})` 输出语义按钮和 `aria-checked`；`menuNote(text)` 用于无操作说明。不要在页面内再拼 `.wd-menu-heading` / `.wd-menu-row` 的独立样式。
+- 需要和侧栏完全一致的路由图标时，传 `iconNode`（现成 `.target-icon-art`），例如历史浮窗克隆 `.target-nav[data-route]` 的同款节点；这条路径必须保留原 `tone`，不得按文件名再转 mono，也不要另建“文件名 → 颜色”表。`Plants` 保持橙色、`Service ticket` 蓝色、中性导出与侧栏同灰，hover 时统一转主文字色。
 - 语言占位只改变本地勾选视觉，不切换页面语言、不持久化；真正接入本地化时另立需求并替换占位数据。
 
 hover / 按下的视觉缩放由材质与 `motion.css` 自动继承，调用方不写缩放值：
@@ -255,7 +256,8 @@ await skeletons.allSettled();
 ## 主题、浮层、图表与圆角
 
 - 首帧加载 `theme-bootstrap.js` 读取偏好，后续只走共享 theme controller。键 `wattdesk-home-theme` 保留兼容旧偏好，后续页面共用。`apply(mode)` 只适配确有差异的图像/图表；CSS token 自动跟随。
-- Popover controller 返回 `popover(anchor,trustedHTML,width)`、`close(immediate)`、`toast(message)`、`destroy()`；提供 overlays 与 role=status 的 toast 宿主。支持 Esc、外部点击及焦点恢复；这是轻量浮层，不是完整模态焦点陷阱。
+- Popover controller 返回 `popover(anchor,trustedHTML,width)`、`close(immediate)`、`toast(message)`、`reposition()`、`destroy()`；提供 overlays 与 role=status 的 toast 宿主。支持 Esc、外部点击及焦点恢复；这是轻量浮层，不是完整模态焦点陷阱。
+- 锚定面板由 `registerPanel()` 实时跟随触发元素：打开、`scroll`（document 捕获阶段，覆盖嵌套滚动区）、`resize` 与 `visualViewport` 变化都重新测量。位置以 `offsetWidth` / `offsetHeight` 计算，避免开合 `scale()` 让翻转点漂移；触发元素一半以上滚出视口时关闭，不能贴在视口边缘。调用方不得缓存坐标或另写滚动监听；内联搜索结果与工作区标签 tooltip 沿用同一约定（tooltip 由 workspace-tabs.js 自管坐标，但必须使用相同的捕获阶段监听与 rAF 合并）。
 - Motion controller 提供 `openPanel`、`closePanel`、`observeCharts(cards,scrollRoot)`。曲线挂 `.chart-mark`，柱形另挂 `.chart-bar`，观察点挂 `.chart-observation`；首次可见播放一次，减少动态效果时直接可见。
 - 圆角使用共享 `superellipse(1.2)`，保留组件自己的半径。该值由用户在实际 30px 卡片上确认，并非 Figma Corner Smoothing 60% 的数值换算；Figma 会延长切线，CSS 指数始终限制在半径盒内，两者不能逐点精确匹配。原稿正圆/胶囊保持 round，玻璃各层继承宿主，不加 clip-path 裁掉投影。
 

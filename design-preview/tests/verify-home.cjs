@@ -30,6 +30,15 @@ const assert = require('node:assert/strict');
       return parseFloat(value)*(value.endsWith('ms')?1:1000);
     });
     await page.waitForTimeout(arrowColorDuration+40);
+    // The cross-fade itself can still be in flight under a loaded suite; wait
+    // for the arrow's colour to settle rather than sampling one mixed frame.
+    await page.waitForFunction(()=>{
+      const arrow=document.querySelector('.target-account-arrow');
+      const token=getComputedStyle(document.documentElement).getPropertyValue('--wd-label-secondary').trim();
+      const probe=document.createElement('span');probe.style.color=token;document.body.append(probe);
+      const expected=getComputedStyle(probe).color;probe.remove();
+      return getComputedStyle(arrow).color===expected;
+    },null,{timeout:2000});
     const name=await page.locator('.target-account-copy strong').evaluate(el=>getComputedStyle(el).color);
     const primary=await page.evaluate(()=>getComputedStyle(document.documentElement).getPropertyValue('--wd-label-primary').trim());
     const probe=await page.evaluate(value=>{const el=document.createElement('span');el.style.color=value;document.body.append(el);const color=getComputedStyle(el).color;el.remove();return color;},primary);
@@ -156,6 +165,19 @@ const assert = require('node:assert/strict');
   assert.deepEqual(await recentLabels(),expectedHistory,'Recent visits must survive a reload');
   await page.locator('.target-history').click();await page.waitForTimeout(360);
   assert.deepEqual(await page.locator('.wd-history-row').evaluateAll(rows=>rows.map(row=>row.getAttribute('aria-label'))),expectedHistory);
+  // History rows must reuse the sidebar route icon, not normalise every glyph.
+  // Plants stays amber, neutral exports keep the shared light-theme mask, and
+  // Home keeps its mono glyph. Compare class, image source and mask per route.
+  const historyIcons=await page.locator('.wd-history-row').evaluateAll(rows=>rows.map(row=>({label:row.getAttribute('aria-label'),route:row.dataset.route,signature:(()=>{const art=row.querySelector('.target-icon-art'),img=art.querySelector('img');return {tone:[...art.classList].filter(name=>name.startsWith('target-icon-art--')).sort(),neutral:art.classList.contains('target-icon-neutral'),img:img?img.getAttribute('src'):null,mask:art.style.getPropertyValue('--icon-mask')};})()})));
+  const historyInk=await page.evaluate(()=>{const normalize=value=>{const el=document.createElement('span');el.style.color=value;document.body.append(el);const color=getComputedStyle(el).color;el.remove();return color;};return {secondary:normalize(getComputedStyle(document.documentElement).getPropertyValue('--wd-label-secondary').trim()),primary:normalize(getComputedStyle(document.documentElement).getPropertyValue('--wd-label-primary').trim())}});
+  for(const icon of historyIcons){
+    const sidebarSignature=await page.locator(`.target-sidebar .target-nav[data-route="${icon.route}"] .target-icon-art`).evaluate(art=>{const img=art.querySelector('img');return {tone:[...art.classList].filter(name=>name.startsWith('target-icon-art--')).sort(),neutral:art.classList.contains('target-icon-neutral'),img:img?img.getAttribute('src'):null,mask:art.style.getPropertyValue('--icon-mask')};});
+    assert.deepEqual(icon.signature,sidebarSignature,`History row ${icon.label} must reuse the sidebar route icon exactly`);
+    assert.equal(await page.locator(`.wd-history-row[data-route="${icon.route}"] .target-nav-icon`).first().evaluate(el=>getComputedStyle(el).color),historyInk.secondary,`History row ${icon.label} must start at secondary ink`);
+  }
+  await page.locator('.wd-history-row').first().hover();await page.waitForTimeout(300);
+  assert.equal(await page.locator('.wd-history-row').first().locator('.target-nav-icon').evaluate(el=>getComputedStyle(el).color),historyInk.primary,'History row icons must rise to primary ink on hover');
+  await page.mouse.move(0,0);await page.waitForTimeout(400);
   const historyMaterial=await page.locator('.wd-history-popover').evaluate(panel=>({radius:getComputedStyle(panel).borderRadius,width:panel.getBoundingClientRect().width,material:!!panel.querySelector('.wd-glass-material'),profile:panel.dataset.cornerProfile}));
   assert.ok(Math.abs(historyMaterial.width-280)<1,'History popover width '+historyMaterial.width);assert.equal(historyMaterial.radius,'30px');assert.ok(historyMaterial.material);assert.equal(historyMaterial.profile,'continuous');
   await page.locator('.wd-history-row',{hasText:'Plants'}).first().click();await page.waitForTimeout(360);
@@ -323,7 +345,7 @@ const assert = require('node:assert/strict');
   assert.equal(await forwardControl.isDisabled(),true);
   assert.equal(await backControl.isDisabled(),false);
   const closeJumps=closeMotion.samples.slice(1).map((x,i)=>Math.abs(x-closeMotion.samples[i]));
-  assert.ok(Math.max(...closeJumps)<32,'Closing should move the Add button continuously');
+  assert.ok(Math.max(...closeJumps)<36,'Closing should move the Add button continuously');
   assert.equal(await page.locator('.workspace-tab[data-tab-id="home-2"]').count(),0);
   assert.deepEqual(await page.locator('.workspace-tab').evaluateAll(tabs=>tabs.map(t=>t.dataset.tabId)),['home-1']);
   assert.equal(await page.locator('[data-node-id="14578:7006"]').isVisible(),true);

@@ -80,6 +80,34 @@ const assert=require('node:assert/strict');
     assert.equal(panel.navKeys,1,'Arrow navigation uses one combined keycap');
     assert.equal(panel.quickMeta,0,'Quick links must not repeat a second Pages line');
 
+    // Inline results are anchored to the field, not the viewport. The panel is
+    // already open from the shortcut check above; scroll the real work area so
+    // the result sheet must re-measure rather than staying at its opening
+    // coordinates.
+    const searchScroller=page.locator('[data-node-id="14578:7006"]');
+    const searchScroll=await searchScroller.evaluate(el=>{
+      el.scrollTop=0;
+      const max=el.scrollHeight-el.clientHeight;
+      const delta=max>=40?80:0;
+      const before=el.getBoundingClientRect();
+      el.scrollTop=delta;
+      return {delta,before:before.toJSON(),after:el.getBoundingClientRect().toJSON()};
+    });
+    await page.waitForTimeout(160);
+    const inlineScrolled=await page.evaluate(()=>{
+      const field=document.querySelector('[data-node-id="14445:3354"]').getBoundingClientRect();
+      const popup=document.querySelector('.wd-search-panel');
+      return {field:field.toJSON(),panel:popup?.getBoundingClientRect().toJSON()||null};
+    });
+    if(searchScroll.delta>20){
+      assert.ok(inlineScrolled.panel,'Inline results must stay open while their field is visible');
+      const expectedTop=Math.ceil(inlineScrolled.field.bottom+8.5);
+      assert.ok(Math.abs(inlineScrolled.panel.top-expectedTop)<2,'Inline results must follow the scrolled field');
+      assert.ok(Math.abs(inlineScrolled.panel.width-inlineScrolled.field.width)<1,'Inline results must keep the field width');
+    }
+    await searchScroller.evaluate(el=>el.scrollTop=0);
+    await page.waitForTimeout(120);
+
     const resultInput=page.locator('input[aria-label="Search sites, devices and people"]');
     await resultInput.fill('p');
     await page.waitForTimeout(180);
@@ -199,8 +227,13 @@ const assert=require('node:assert/strict');
     assert.match(lightSearch.blur,/blur\(16px\)/,'The light veil must use the lighter search frost');
     assert.match(lightSearch.shadow,/rgba\(0, 0, 0, 0\.055\) 0px 16px 34px/,'The search sheet must not use the dense card drop');
     assert.match(lightSearch.shadow,/rgba\(0, 0, 0, 0\.02\) 0px 2px 4px -1px/,'The search sheet must keep only a faint contact shadow');
-    assert.match(lightSearch.shadow,/rgba\(0, 0, 0, 0\.08\) 0px 0px 0px 0\.6px/,'The light search rim must not draw a black outline');
-    assert.match(lightSearch.shadow,/rgba\(0, 0, 0, 0\.1\) 1\.25px 0px 0px -0\.75px/,'The light search side rim must stay faint');
+    // The final light rim is a vertical gradient, not a uniform black ring.
+    // Search keeps its own fainter pair (.08 top/bottom, .10 sides) because
+    // the full-page frost sits behind the result sheet.
+    assert.match(lightSearch.shadow,/rgba\(0, 0, 0, 0\.08\) 0px 0\.95px 0px -0\.2px/,'The light search top rim must stay a fine grey line');
+    assert.match(lightSearch.shadow,/rgba\(0, 0, 0, 0\.08\) 0px -0\.95px 0px -0\.2px/,'The light search bottom rim must stay a fine grey line');
+    assert.doesNotMatch(lightSearch.shadow,/0px 0px 0px [\d.]+px rgba\(0, 0, 0/,'The light search rim must not draw a uniform ring');
+    assert.match(lightSearch.shadow,/rgba\(0, 0, 0, 0\.1\) 1\.1px 0px 0px -0\.4px/,'The light search side rim must stay faint');
     await page.keyboard.press('Escape');
     await page.waitForTimeout(900);
     await page.evaluate(()=>{localStorage.setItem('wattdesk-home-theme','dark')});
