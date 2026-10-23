@@ -41,3 +41,9 @@ design-preview/annotations.json
 /_inspect-search.cjs
 /design-preview/_inspect-search.cjs
 /design-preview/_search-open.cjs
+
+# ── 本地预览启动器（仅本机使用，不入库）──
+design-preview/preview-start.cmd
+design-preview/preview-stop.cmd
+design-preview/dev/preview.ps1
+design-preview/dev/stop-preview.ps1
