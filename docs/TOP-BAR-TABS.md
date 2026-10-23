@@ -1,6 +1,6 @@
 # 顶栏工作区标签：功能、交互与接入
 
-更新：2026-10-20。适用入口 `design-preview/home.html?glass=figma`。本文记录当前**设计预览**的真实能力与后续接入约束；交互与视觉规范以 [DESIGN-SYSTEM.md](../DESIGN-SYSTEM.md) 为准，组件 API 摘要见 [COMPONENTS.md](./COMPONENTS.md)。
+更新：2026-10-23。适用入口 `design-preview/home.html?glass=figma`。本文记录当前**设计预览**的真实能力与后续接入约束；交互与视觉规范以 [DESIGN-SYSTEM.md](../DESIGN-SYSTEM.md) 为准，组件 API 摘要见 [COMPONENTS.md](./COMPONENTS.md)。
 
 ## 1. 边界
 
@@ -22,7 +22,7 @@
 | `design-preview/src/pages/home/index.js` | 页面级业务装配：路由切换、快照保存/恢复、玻璃表面挂载 |
 | `design-preview/tests/verify-home.cjs` | 默认状态、宽度、图标、连续关闭、主题等回归检查 |
 
-依赖方向仍是页面 → 外壳/组件 → 基础，组件不引用首页节点 ID。
+依赖方向仍是页面 → 外壳/组件 → 基础，组件不引用首页节点 ID。外壳通过 `workspacePanelId` 把页面面板 ID 传给标签组件；标签只在收到 `panelId` 时输出 `aria-controls`。
 
 ## 3. 公共 API
 
@@ -31,6 +31,7 @@ const tabs = createWorkspaceTabs({
   container,       // 标签条外部容器，需位于顶栏
   addButton,       // 已存在的 Add 按钮
   createIcon,      // 图标工厂，外壳传入共享 createIcon
+  panelId,         // 标签控制的面板 ID；省略时不写 aria-controls
   onSelect,        // 切换完成后同步页面
   onBeforeSelect,  // 切换前处理
   onClose,         // 标签关闭后清理业务状态

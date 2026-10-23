@@ -45,9 +45,3 @@ export function installSceneTheme(root,elements,source){
   for(const item of images)item.image.setAttribute('src',item[theme]);
  }};
 }
-
-// Compatibility entry for the page, which passes the already-loaded scene
-// data as the third argument and awaits the adapter before marking ready.
-export function createSceneTheme(root,elements,source){
- return installSceneTheme(root,elements,source);
-}

@@ -1,5 +1,20 @@
 # 更新记录
 
+## 2026-10-23
+
+### 架构
+
+- 排版运行期数据改为从 Figma 归档生成的 `src/pages/home/data/type-runtime.json`，只保留 `styles` 与 `rows`；发布产物不再携带完整设计归档。
+- 工作区标签的面板关联改由页面传入：`createAppShell({workspacePanelId})` → `createWorkspaceTabs({panelId})`，共享组件不再写死首页节点 ID。
+- 删除无引用的 `geometry-entry.css` / `.js`，连续圆角适配器统一由页面显式导入 `geometry.js` 启动。
+- 清理已应用的过期搜索补丁、一次性调试探针和本地日志；同步架构、组件、顶栏标签和运行说明。
+
+### 范围与验证
+
+- 未改变首页视觉、交互、路由占位和业务数据；未引入框架、依赖、后端或新路由。
+- `npm run check`、完整 `npm test`（10 个套件）与 `npm run build:site:public` 通过。
+- 发布产物已检查：不再包含 `design/figma/`，首页、排版数据、字体与资产均从运行目录加载。
+
 ## 2026-10-22
 
 ### 全屏搜索

@@ -15,8 +15,8 @@ const required = [
   'src/pages/home/data/scene.json',
   'src/pages/home/data/asset-map.json',
   'src/pages/home/data/theme-map.json',
-  'home-assets/sf-pro.woff2',
-  'design/figma/figma-type-source.json'
+  'src/pages/home/data/type-runtime.json',
+  'home-assets/sf-pro.woff2'
 ];
 
 for (const file of required) {
@@ -38,7 +38,6 @@ const copy = (from, to = from) => {
 
 copy('src');
 copy('home-assets');
-copy('design/figma/figma-type-source.json');
 
 const html = fs.readFileSync(path.join(root, 'home.html'), 'utf8');
 const robots = publicSite ? '' : '<meta name="robots" content="noindex, nofollow">';

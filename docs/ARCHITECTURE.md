@@ -1,6 +1,6 @@
 # 架构与扩展约定
 
-更新：2026-10-16。当前阶段采用原生网页，不引入新的 UI 框架、状态库或构建链。
+更新：2026-10-23。当前阶段采用原生网页，不引入新的 UI 框架、状态库或构建链。
 
 ```text
 Source/
@@ -16,7 +16,7 @@ Source/
       components/               控件、搜索、头像、玻璃、卡片、折叠、浮层
       layouts/                  app-shell：侧栏与顶栏的组合
       pages/home/               首页装配、专用场景适配、局部 CSS
-        data/                   生成的精简节点、素材绑定、主题映射
+        data/                   生成的精简节点、素材绑定、主题映射、运行期排版投影
     home-assets/                实际使用的本地 SVG / 字体
     design/figma/               完整 Figma 来源归档
     scripts/                    生成和静态检查
@@ -29,9 +29,9 @@ Source/
 
 依赖方向为页面 → layout / component → foundation。共享组件不能反向导入 `pages/home` 或依赖具体 Figma 节点 ID。`home-assets` 名称保留以稳定原素材 URL，实际是全站共用资产。
 
-- 基础：`tokens.css` 的语义颜色引用按 Figma 变量 ID 生成的 `colors.css`；文字绑定完整命名 style。材质和共享投影由各自组件入口控制。
+- 基础：`tokens.css` 的语义颜色引用按 Figma 变量 ID 生成的 `colors.css`；文字绑定完整命名 style。`design/figma/figma-type-source.json` 是带来源元数据的完整归档，`src/pages/home/data/type-runtime.json` 只保留运行所需的 `styles` 与 `rows`，由 `npm run sync:type` 同时生成，页面不直接读取设计归档。`geometry.js` 是连续圆角适配器的唯一启动入口，页面模块显式导入；不再需要 CSS 或独立空壳入口转发。材质和共享投影由各自组件入口控制。
 - 组件：共享外观、状态和行为契约；内容、尺寸、半径与业务操作由调用方提供，不能为了“统一”改变原稿几何。
-- 外壳：`layouts/app-shell.js` 组合组件。当前菜单以首页确认稿为准；后续按真实需求扩展配置，不提前制造不存在的路由。
+- 外壳：`layouts/app-shell.js` 组合组件，`createAppShell({sidebar,header,workspacePanelId})` 接收页面提供的标签面板 ID，标签通过 `aria-controls` 指向该面板；组件不写死首页节点 ID。尚未提供 `workspacePanelId` 时组件不输出无效的 `aria-controls`。当前菜单以首页确认稿为准；后续按真实需求扩展配置，不提前制造不存在的路由。
 - 首页：`scene.js` 只适配当前 Figma 绝对坐标提取，不是全站布局引擎。新页面使用语义 DOM 和适合内容的布局，不复制 scene JSON。
 - 交互：`pages/home/index.js` 只做装配；`layout.js` 负责响应式重排，`period.js` 周期与刷新，`search.js` 内联/全屏搜索，`workspace.js` 标签与标签内路由历史，`recent-visits.js` 本地最近访问，`routes.js` 是路由与搜索索引的唯一清单。新增页面照此拆模块，不把业务逻辑堆回 `index.js`。
 

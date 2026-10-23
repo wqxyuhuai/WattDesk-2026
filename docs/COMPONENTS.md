@@ -1,6 +1,6 @@
 # 共享组件手册
 
-更新：2026-10-19。本文对应实际模块；完整视觉要求见 [DESIGN-SYSTEM.md](../DESIGN-SYSTEM.md)。路径均相对 `design-preview/`。
+更新：2026-10-23。本文对应实际模块；完整视觉要求见 [DESIGN-SYSTEM.md](../DESIGN-SYSTEM.md)。路径均相对 `design-preview/`。
 
 所有页面加载 `/src/shared.css`，包含 SF Pro、语义颜色、完整 Figma 字体 styles、材质、状态、动效、头像和连续曲线。页面局部 CSS 在共享入口之前加载，不自行拼出另一套基础。
 
@@ -30,8 +30,8 @@
 | JS 动效节奏 | `foundations/motion.js` | `motionDuration(token)` / `motionEasing(token)`，禁止硬编码毫秒或曲线 |
 | 主题 | `foundations/theme-controller.js` | `createThemeController({initialTheme,apply})`，每页一个 |
 | 圆角 | `foundations/geometry.js` / `.css` | `preserveCornerProfile(el,{radius,width,height,ellipse})` |
-| 工作区标签 | `components/workspace-tabs.js` / `.css` | `createWorkspaceTabs({container,addButton,createIcon,...})`；`add/find/update/activate/closeActive`、`captureCurrent` 与状态快照 |
-| 外壳 | `layouts/app-shell.js` / `.css` | `createAppShell({sidebar,header})`；调用方提供位置与业务事件 |
+| 工作区标签 | `components/workspace-tabs.js` / `.css` | `createWorkspaceTabs({container,addButton,createIcon,panelId,...})`；`add/find/update/activate/closeActive`、`captureCurrent` 与状态快照；`panelId` 用于 `aria-controls`，省略时不写该属性 |
+| 外壳 | `layouts/app-shell.js` / `.css` | `createAppShell({sidebar,header,workspacePanelId})`；调用方提供位置、标签面板 ID 与业务事件 |
 
 ## 文字与颜色
 

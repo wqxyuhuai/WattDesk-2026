@@ -1,7 +1,10 @@
 // Generate shared type styles from inspected Figma styles, never from size guesses.
+// The Figma archive keeps provenance metadata; runtime only needs the style
+// table and node bindings, so a minimal projection is written for the page.
 const fs = require('node:fs');
 const path = require('node:path');
 const source = JSON.parse(fs.readFileSync(path.join(__dirname,'../design/figma/figma-type-source.json'),'utf8'));
+const runtime = { styles: source.styles, rows: source.rows };
 const slug = name => name.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
 const length = (value, percentUnit) => value.unit === 'AUTO' ? 'normal' : value.unit === 'PERCENT' ? `${value.value / 100}${percentUnit}` : `${Number(value.value.toFixed(5))}px`;
 // Figma sometimes reports variable-font weights as floats (for example 590.8).
@@ -20,4 +23,5 @@ for(const [name,[,,,size]] of styles){
  lines.push(`:root [data-type-style="${name}"]{font-family:var(--wd-font-family);font-size:var(${key}-size);font-weight:var(${key}-weight);line-height:var(${key}-leading);letter-spacing:var(${key}-tracking);font-variation-settings:"wdth" 100,"opsz" ${Math.max(17,Math.min(28,size))};font-optical-sizing:none;font-style:${/Italic/.test(name)?'italic':'normal'}}`);
 }
 fs.writeFileSync(path.join(__dirname,'../src/foundations/type.css'), lines.join('\n')+'\n');
+fs.writeFileSync(path.join(__dirname,'../src/pages/home/data/type-runtime.json'), JSON.stringify(runtime)+'\n');
 console.log(`Synced ${styles.size} Figma text styles.`);

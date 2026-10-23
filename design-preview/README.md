@@ -48,7 +48,7 @@ npm run build:site:public   # 本地构建到 dist/，仅用于自检，不入�
 - design/figma/：原始变量、文字 style、玻璃分层与完整场景，不是第二套运行配置。
 - src/foundations/colors.css、type.css：生成文件，不手改。
 - src/foundations/tokens.css：语义别名、共享节奏及已确认的控件值。
-- src/pages/home/data/：生成的精简场景、素材绑定和主题适配。
+- src/pages/home/data/：生成的精简场景、素材绑定、主题适配和运行期排版投影；排版投影由 `npm run sync:type` 从设计归档生成，避免把完整 Figma 元数据发布到站点。
 - home-assets/：实际使用的本地 Figma SVG / 字体，保留文件名溯源。
 
 更新来源后运行 npm run sync，再检查引用与真实浏览器。Figma 修改不会自动同步到网页。

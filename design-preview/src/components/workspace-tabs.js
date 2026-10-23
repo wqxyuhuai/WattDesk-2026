@@ -16,6 +16,7 @@ export function createWorkspaceTabs({
   container,
   addButton,
   createIcon,
+  panelId,
   onSelect = null,
   onBeforeSelect = null,
   onClose = null,
@@ -304,7 +305,7 @@ export function createWorkspaceTabs({
     tab.id = `workspace-tab-${state.id}`;
     tab.setAttribute("role", "tab");
     tab.setAttribute("aria-selected", "false");
-    tab.setAttribute("aria-controls", "home-workspace-panel");
+    if (panelId) tab.setAttribute("aria-controls", panelId);
     if (state.kind === "home") tab.setAttribute("aria-label", "Home tab");
     tab.tabIndex = -1;
 

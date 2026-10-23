@@ -6,7 +6,7 @@ import {applyTypeStyle} from "../foundations/typography.js";
 import {createAvatar} from "../components/avatar.js";
 import {createWorkspaceTabs} from "../components/workspace-tabs.js";
 import {createShortcutKeycaps} from "../components/search-surface.js";
-export function createAppShell({sidebar,header}){
+export function createAppShell({sidebar,header,workspacePanelId}){
  sidebar.replaceChildren();header.replaceChildren();
  sidebar.classList.add("target-sidebar");header.classList.add("target-header");
  const top=document.createElement("div");top.className="target-sidebar-top";
@@ -44,7 +44,7 @@ export function createAppShell({sidebar,header}){
  const tabs=document.createElement("div");tabs.className="target-main-tabs";
  const add=button("Add tab","target-add-tab");add.append(createIcon("add"));
  tabs.append(add);header.append(tabs);
- const workspaceTabs=createWorkspaceTabs({container:tabs,addButton:add,createIcon,onEmpty:()=>chromeRef?.onEmpty?.()});
+ const workspaceTabs=createWorkspaceTabs({container:tabs,addButton:add,createIcon,panelId:workspacePanelId,onEmpty:()=>chromeRef?.onEmpty?.()});
  let chromeRef=null;
 
  const actions=document.createElement("div");actions.className="target-header-actions";

@@ -19,10 +19,11 @@ import {createRecentVisits} from "./recent-visits.js";
 import {createHomeSearch} from "./search.js";
 import {createWorkspace} from "./workspace.js";
 import {mountSkeletons} from "../../components/skeleton.js";
+import "../../foundations/geometry.js";
 const load=url=>fetch(url).then(r=>{if(!r.ok)throw Error("Page resource unavailable: "+url);return r.json()});
 const [sourceScene,assets,typeSource,themeSource]=await Promise.all([
  load(new URL("./data/scene.json",import.meta.url)),load(new URL("./data/asset-map.json",import.meta.url)),
- load(new URL("../../../design/figma/figma-type-source.json",import.meta.url)),
+ load(new URL("./data/type-runtime.json",import.meta.url)),
  load(new URL("./data/theme-map.json",import.meta.url))
 ]);
 const root=document.querySelector("#home");
@@ -31,7 +32,7 @@ const get=id=>elements.get(id);
 // The shell and real card surfaces can paint immediately. Theme mapping only
 // swaps inline paints, so it must not hold the whole page off-screen.
 const sceneTheme=installSceneTheme(root,elements,themeSource);
-const targetChrome=createAppShell({sidebar:get("14445:3629"),header:get("14612:8479")});
+const targetChrome=createAppShell({sidebar:get("14445:3629"),header:get("14612:8479"),workspacePanelId:"home-workspace-panel"});
 const workspacePanel=get("14578:6145");workspacePanel.id="home-workspace-panel";workspacePanel.setAttribute("role","tabpanel");
 prepareCard(workspacePanel,"panel");
 const glass=createGlassMaterial({surfaces:[
