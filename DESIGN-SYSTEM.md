@@ -214,6 +214,9 @@
 | 柱形逐项延迟 | 每项 35ms | `--wd-motion-stagger` |
 | 点击刷新图标转一圈 | 640ms | `--wd-motion-refresh` |
 | 深浅主题整体淡变 | 620ms | `--wd-motion-theme` / `--wd-ease-theme` |
+| 顶部 overscroll 回弹 | 640ms | `--wd-motion-pull-rebound` / `--wd-ease-spring` |
+
+- Plants 长列表保留原生滚动行为，视觉滚动滑块是 DOM 层：默认 `6px`、hover `8px`；颜色与宽度按共享 `240 / 360ms` 进入/离开节奏，轨道宽度保持 `10px`，不引发表格重排。滑块位置由表体滚动同步并支持拖动。表体顶部和底部 overscroll 都先经过约 `4px` 粘滞区，再逐步显示最高 `16px` 的主题背景空白，不使用白色底；松手回位使用上表共享 spring 缓动；减少动态效果时不显示位移回弹。
 
 ### 玻璃按压反馈
 

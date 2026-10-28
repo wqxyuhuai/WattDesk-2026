@@ -304,7 +304,13 @@ export function createPlantsPage({glass,registerPanel,close,toast,onOpenPlant,on
  chips.setAttribute("role","group");
  chips.setAttribute("aria-label","Active filters");
 
+ const scrollShell=text("div","plants-table-shell");
+ const pullRegion=text("div","plants-table-pull-region plants-table-pull-region--start");
+ pullRegion.setAttribute("aria-hidden","true");
+ const pullRegionEnd=text("div","plants-table-pull-region plants-table-pull-region--end");
+ pullRegionEnd.setAttribute("aria-hidden","true");
  const scroll=text("div","plants-table-scroll");
+ scroll.tabIndex=0;
  const table=text("table","plants-table");
  const caption=text("caption","plants-caption","Plants with connection and running status, power, firmware and last update.");
  const colgroup=document.createElement("colgroup");
@@ -313,6 +319,11 @@ export function createPlantsPage({glass,registerPanel,close,toast,onOpenPlant,on
  tbody.id="plants-rows";
  table.append(caption,colgroup,thead,tbody);
  scroll.append(table);
+ const scrollIndicator=text("div","plants-scroll-indicator");
+ scrollIndicator.setAttribute("aria-hidden","true");
+ const scrollThumb=text("div","plants-scroll-indicator-thumb");
+ scrollIndicator.append(scrollThumb);
+ scrollShell.append(pullRegion,pullRegionEnd,scroll,scrollIndicator);
 
  const empty=text("div","plants-empty");
  empty.hidden=true;
@@ -348,13 +359,233 @@ export function createPlantsPage({glass,registerPanel,close,toast,onOpenPlant,on
  detailInner.append(backButton,detailKicker,detailTitle,detailMeta,detailNote);
  detail.append(detailInner);
 
- inner.append(header,toolbar,chips,scroll,empty);
+ inner.append(header,toolbar,chips,scrollShell,empty);
  element.append(inner,detail);
 
  glass.addSurface({host:emptyAction,radius:18});
  glass.addSurface({host:backButton,radius:18});
  glass.addSurface({host:newButton,radius:18});
  for(const button of [filterTrigger,columnTrigger,refresh])glass.addSurface({host:button,radius:18});
+
+ // ── Scroll feedback ───────────────────────────────────────────────────────
+ const MAX_PULL=20;
+ const PULL_DEAD_ZONE=4;
+ let scrollFrame=0,pullFrame=0,pullDistance=0,pullTarget=0,pullReleaseTimer=0,touchStart=null;
+ let pullSide=null;
+ let pullAnimations=[];
+
+ function syncScrollIndicator(){
+  cancelAnimationFrame(scrollFrame);
+  scrollFrame=requestAnimationFrame(()=>{
+   const viewport=scroll.clientHeight;
+   const content=scroll.scrollHeight;
+   const visible=!scroll.hidden&&content>viewport+1;
+   scrollIndicator.hidden=!visible;
+   if(!visible)return;
+   const trackHeight=viewport;
+   const thumbHeight=Math.max(24,Math.round(trackHeight*viewport/content));
+   const maxTop=Math.max(0,trackHeight-thumbHeight);
+   const maxScroll=Math.max(1,content-viewport);
+   const top=Math.max(0,Math.min(maxTop,scroll.scrollTop/maxScroll*maxTop));
+   const shellRect=scrollShell.getBoundingClientRect();
+   const scrollRect=scroll.getBoundingClientRect();
+   scrollIndicator.style.top=`${scrollRect.top-shellRect.top+scroll.clientTop}px`;
+   scrollIndicator.style.height=`${trackHeight}px`;
+   scrollThumb.style.height=`${thumbHeight}px`;
+   scrollThumb.style.transform=`translate3d(0,${top}px,0)`;
+  });
+ }
+
+ function renderPullVisual(){
+  const visibleDistance=Math.max(0,pullDistance-PULL_DEAD_ZONE);
+  const atEnd=pullSide==="end";
+  const active=visibleDistance>0&&pullSide;
+  table.classList.toggle("is-pulling",Boolean(active));
+  table.style.transform=active?`translate3d(0,${atEnd?-visibleDistance:visibleDistance}px,0)`:"";
+  pullRegion.style.height=`${active&&!atEnd?visibleDistance:0}px`;
+  pullRegion.style.opacity=String(active&&!atEnd?Math.min(1,visibleDistance/8):0);
+  pullRegionEnd.style.height=`${active&&atEnd?visibleDistance:0}px`;
+  pullRegionEnd.style.opacity=String(active&&atEnd?Math.min(1,visibleDistance/8):0);
+ }
+
+ function advancePull(){
+  pullFrame=0;
+  const delta=pullTarget-pullDistance;
+  if(Math.abs(delta)<.08){
+   pullDistance=pullTarget;
+   renderPullVisual();
+   return;
+  }
+  pullDistance+=delta*.16;
+  renderPullVisual();
+  pullFrame=requestAnimationFrame(advancePull);
+ }
+
+ function requestPullFrame(){
+  if(!pullFrame)pullFrame=requestAnimationFrame(advancePull);
+ }
+
+ function settlePull(){
+  clearTimeout(pullReleaseTimer);
+  cancelAnimationFrame(pullFrame);
+  pullFrame=0;
+  pullTarget=0;
+  const settledSide=pullSide;
+  const start=Math.max(0,pullDistance-PULL_DEAD_ZONE);
+  pullDistance=0;
+  for(const animation of pullAnimations)animation.cancel();
+  pullAnimations=[];
+  if(start<=0){
+   pullSide=null;
+   renderPullVisual();
+   return;
+  }
+  if(reducedMotion()){
+   pullSide=null;
+   renderPullVisual();
+   return;
+  }
+  const timing={
+   duration:motionDuration("--wd-motion-pull-rebound"),
+   easing:motionEasing("--wd-ease-spring")
+  };
+  const tableAnimation=table.animate([
+   {transform:`translate3d(0,${settledSide==="end"?-start:start}px,0)`},
+   {transform:"translate3d(0,0,0)"}
+  ],timing);
+  const surface=settledSide==="end"?pullRegionEnd:pullRegion;
+  const surfaceAnimation=surface.animate([
+   {height:`${start}px`,opacity:String(Math.min(1,start/10))},
+   {height:"0px",opacity:"0"}
+  ],timing);
+  pullAnimations=[tableAnimation,surfaceAnimation];
+  Promise.allSettled([tableAnimation.finished,surfaceAnimation.finished]).then(()=>{
+   if(pullDistance>0)return;
+   table.style.transform="";
+   pullRegion.style.height="0px";
+   pullRegion.style.opacity="0";
+   pullRegionEnd.style.height="0px";
+   pullRegionEnd.style.opacity="0";
+   table.classList.remove("is-pulling");
+   pullSide=null;
+   pullAnimations=[];
+  });
+ }
+
+ function pullBy(delta){
+  if(reducedMotion())return;
+  clearTimeout(pullReleaseTimer);
+  for(const animation of pullAnimations)animation.cancel();
+  pullAnimations=[];
+  const resistance=1-pullTarget/(MAX_PULL*1.6);
+  pullTarget=Math.max(0,Math.min(MAX_PULL,pullTarget+delta*resistance));
+  requestPullFrame();
+  pullReleaseTimer=setTimeout(settlePull,180);
+ }
+
+ function handleWheel(event){
+  if(event.ctrlKey||event.metaKey)return;
+  const maxScroll=Math.max(0,scroll.scrollHeight-scroll.clientHeight);
+  const atStart=scroll.scrollTop<=0;
+  const atEnd=maxScroll>0&&scroll.scrollTop>=maxScroll-1;
+  const active=pullSide&&(pullTarget>0||pullDistance>0);
+  if(active){
+   if((pullSide==="start"&&!atStart)||(pullSide==="end"&&!atEnd)){
+    settlePull();
+    return;
+   }
+   event.preventDefault();
+   const outward=(pullSide==="start"&&event.deltaY<0)||(pullSide==="end"&&event.deltaY>0);
+   pullBy(outward?Math.abs(event.deltaY)*.035:-Math.abs(event.deltaY)*.035);
+   return;
+  }
+  if(atStart&&event.deltaY<0){
+   pullSide="start";
+   event.preventDefault();
+   pullBy(-event.deltaY*.035);
+  }else if(atEnd&&event.deltaY>0){
+   pullSide="end";
+   event.preventDefault();
+   pullBy(event.deltaY*.035);
+  }else if(pullTarget>0||pullDistance>0){
+   event.preventDefault();
+   pullBy(-Math.abs(event.deltaY)*.035);
+  }
+ }
+
+ scroll.addEventListener("wheel",handleWheel,{passive:false});
+ scroll.addEventListener("scroll",()=>{
+  syncScrollIndicator();
+  if(!pullSide)return;
+  const maxScroll=Math.max(0,scroll.scrollHeight-scroll.clientHeight);
+  const movedAway=(pullSide==="start"&&scroll.scrollTop>0)||(pullSide==="end"&&scroll.scrollTop<maxScroll-1);
+  if(movedAway)settlePull();
+ },{passive:true});
+ scroll.addEventListener("touchstart",event=>{
+  touchStart=scroll.scrollTop<=0&&event.touches.length===1?event.touches[0].clientY:null;
+ },{passive:true});
+ scroll.addEventListener("touchmove",event=>{
+  if(touchStart===null||scroll.scrollTop>0)return;
+  const distance=event.touches[0].clientY-touchStart;
+  if(distance<=0)return;
+  event.preventDefault();
+  pullSide="start";
+  pullTarget=Math.min(MAX_PULL,distance*.25);
+  requestPullFrame();
+ },{passive:false});
+ scroll.addEventListener("touchend",()=>{
+  touchStart=null;
+  settlePull();
+ },{passive:true});
+ scroll.addEventListener("touchcancel",()=>{
+  touchStart=null;
+  settlePull();
+ },{passive:true});
+
+ /*
+  * The native scrollbar stays interactive but invisible. This sibling mirrors
+  * its position so the visual thumb can animate width/color without reflowing
+  * the table when hovered.
+  */
+ let scrollDrag=null;
+ scrollThumb.addEventListener("pointerdown",event=>{
+  if(event.button!==0)return;
+  event.preventDefault();
+  scrollDrag={
+   pointerId:event.pointerId,
+   startY:event.clientY,
+   startScroll:scroll.scrollTop,
+   thumbHeight:scrollThumb.getBoundingClientRect().height
+  };
+  scrollIndicator.classList.add("is-dragging");
+  scrollThumb.setPointerCapture?.(event.pointerId);
+ });
+ scrollThumb.addEventListener("pointermove",event=>{
+  if(!scrollDrag||event.pointerId!==scrollDrag.pointerId)return;
+  const trackHeight=scrollIndicator.clientHeight;
+  const maxTop=Math.max(1,trackHeight-scrollDrag.thumbHeight);
+  const maxScroll=Math.max(0,scroll.scrollHeight-scroll.clientHeight);
+  scroll.scrollTop=scrollDrag.startScroll+(event.clientY-scrollDrag.startY)/maxTop*maxScroll;
+ });
+ const endScrollDrag=event=>{
+  if(!scrollDrag||event.pointerId!==scrollDrag.pointerId)return;
+  scrollThumb.releasePointerCapture?.(event.pointerId);
+  scrollIndicator.classList.remove("is-dragging");
+  scrollDrag=null;
+ };
+ scrollThumb.addEventListener("pointerup",endScrollDrag);
+ scrollThumb.addEventListener("pointercancel",endScrollDrag);
+ scrollIndicator.addEventListener("pointerdown",event=>{
+  if(event.target===scrollThumb||event.button!==0)return;
+  const rect=scrollIndicator.getBoundingClientRect();
+  const thumbHeight=scrollThumb.getBoundingClientRect().height;
+  const maxTop=Math.max(1,rect.height-thumbHeight);
+  const maxScroll=Math.max(0,scroll.scrollHeight-scroll.clientHeight);
+  scroll.scrollTop=Math.max(0,Math.min(1,(event.clientY-rect.top-thumbHeight/2)/maxTop))*maxScroll;
+ });
+ scrollIndicator.addEventListener("wheel",handleWheel,{passive:false});
+ new ResizeObserver(syncScrollIndicator).observe(scroll);
+ new ResizeObserver(syncScrollIndicator).observe(scrollShell);
 
  // ── State helpers ────────────────────────────────────────────────────────
  const activeFilterCount=()=>state.companies.size+state.types.size+state.devices.size+state.statuses.size;
@@ -455,10 +686,9 @@ function visibleRows(){
    const visible=COLUMNS.filter(column=>!state.hidden.has(column.id));
    const baseWidth=column=>Number.parseInt(column.width,10);
    const minimum=visible.reduce((sum,column)=>sum+baseWidth(column),0);
-   // At the wide breakpoint the table reserves its existing 24px content
-   // inset while the scrollbar itself moves to the panel edge. Exclude that
-   // trailing padding from the measured table width so the columns still end
-   // on the same content line as the toolbar controls.
+   // The visual scrollbar lives in the right gutter while the table keeps its
+   // content line. Exclude that reserved gutter from the measured table width
+   // so the columns still end on the same line as the toolbar controls.
    const scrollStyle=getComputedStyle(scroll);
    const scrollPadding=(Number.parseFloat(scrollStyle.paddingLeft)||0)+(Number.parseFloat(scrollStyle.paddingRight)||0);
    const available=Math.max(scroll.clientWidth-scrollPadding,minimum);
@@ -953,11 +1183,13 @@ function visibleRows(){
  function render(){
   const rows=visibleRows();
   tbody.replaceChildren(...rows.map((plant,index)=>createRow(plant,index)));
+  scrollShell.hidden=rows.length===0;
   scroll.hidden=rows.length===0;
   empty.hidden=rows.length!==0;
   if(!rows.length)renderEmpty();
   updateFilterTrigger();
   renderChips();
+  syncScrollIndicator();
  }
 
  function show(params={}){
@@ -984,6 +1216,7 @@ function visibleRows(){
   if(!width||width===lastColumnWidth)return;
   lastColumnWidth=width;
   renderColgroup();
+  syncScrollIndicator();
  });
  columnResize.observe(scroll);
  renderHeader();

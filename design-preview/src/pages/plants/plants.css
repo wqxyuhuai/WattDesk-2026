@@ -91,34 +91,50 @@
 .plants-clear:is(:hover,:focus-visible){background:var(--wd-control-hover);color:var(--wd-label-primary)}
 
 /* ── Table ─────────────────────────────────────────────────────────────── */
+.plants-table-shell{
+ --plants-scrollbar-edge-gap:10px;
+ --plants-scrollbar-lane:10px;
+ position:relative;display:flex;flex:1 1 auto;min-height:0;
+}
+.plants-table-shell[hidden]{display:none}
+.plants-table-pull-region{
+ position:absolute;top:2px;left:0;right:0;height:0;
+ border-radius:0 0 12px 12px;
+ background:var(--wd-bg-tertiary);opacity:0;pointer-events:none;
+}
+.plants-table-pull-region--end{top:auto;bottom:0;border-radius:12px 12px 0 0}
 .plants-table-scroll{
- flex:1 1 auto;min-height:0;overflow:auto;overscroll-behavior:contain;
- scrollbar-width:thin;scrollbar-color:var(--wd-label-tertiary) transparent;
+ position:relative;z-index:1;
+ flex:1 1 auto;min-width:0;min-height:0;overflow-x:auto;overflow-y:scroll;overscroll-behavior:contain;
+ scrollbar-width:none;
  scroll-padding-top:38px;
+ /* Keep the table body on the 24px page line while moving only the scrollbar
+  * into the gutter. The same geometry applies at every width, so crossing a
+  * responsive breakpoint cannot make the thumb jump sideways. */
+ margin-right:calc(-1 * (var(--plants-page-inset) - var(--plants-scrollbar-edge-gap)));
  /* The 2px breathing room lives outside the scrollport. Padding would leave a
  * strip above the sticky header where scrolled row text leaks through. */
  margin-top:2px;
- padding:0 0 14px;
+ padding:0 calc(var(--plants-page-inset) - var(--plants-scrollbar-edge-gap)) 14px 0;
 }
 .plants-table-scroll[hidden]{display:none}
-.plants-table-scroll::-webkit-scrollbar{width:10px;height:10px}
-.plants-table-scroll::-webkit-scrollbar-track{background:transparent}
-.plants-table-scroll::-webkit-scrollbar-thumb{
- background:var(--wd-label-tertiary);border:3px solid transparent;border-radius:999px;
- background-clip:padding-box;
+.plants-table-scroll::-webkit-scrollbar{display:none}
+.plants-scroll-indicator{
+ position:absolute;z-index:4;right:calc(-1 * (var(--plants-page-inset) - var(--plants-scrollbar-edge-gap)));
+ width:var(--plants-scrollbar-lane);pointer-events:auto;
 }
-
-@media (min-width:1600px){
- /* Keep the table content on the existing 24px page line while letting the
-  * vertical scrollbar sit against the panel edge. */
- .plants-table-scroll{
-  margin-right:calc(-1 * var(--plants-page-inset));
-  padding-right:var(--plants-page-inset);
- }
- .plants-table-scroll::-webkit-scrollbar{width:8px;height:8px}
- .plants-table-scroll::-webkit-scrollbar-thumb{
-  border-width:2px;
- }
+.plants-scroll-indicator[hidden]{display:none}
+.plants-scroll-indicator-thumb{
+ position:absolute;left:2px;top:0;width:6px;min-height:24px;
+ border-radius:999px;background:var(--wd-label-tertiary);cursor:grab;
+}
+.plants-scroll-indicator:is(:hover,:focus-within,.is-dragging) .plants-scroll-indicator-thumb{
+ left:1px;width:8px;background:var(--wd-label-secondary);
+}
+.plants-scroll-indicator.is-dragging .plants-scroll-indicator-thumb{cursor:grabbing}
+.plants-table.is-pulling{
+ transform-origin:50% 0;
+ will-change:transform;
 }
 
 /* The table is borderless; the row surface itself carries the hover, so no

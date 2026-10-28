@@ -20,7 +20,7 @@ const sameLocation=(left,right)=>
 
 export function createWorkspace({
  get,glass,toast,close,homeColumn,input,period,homeSnapshot,targetChrome,
- workspacePanel,searchClose,recentVisits,resolvePlantName
+ workspacePanel,searchClose,recentVisits,resolvePlantName,layoutHome
 }){
 const routeRows=[...targetChrome.sidebar.querySelectorAll(".target-nav[data-route]")];
 let activeRoute="home";
@@ -41,6 +41,7 @@ emptyWorkspace.append(emptyState.element);
 homeWorkspace.append(emptyWorkspace);
 const defaultSnapshot=homeSnapshot();
 let nextHome=1;
+let homeLayoutFrame=0;
 const workspaceTabs=targetChrome.workspaceTabs;
 // Navigation history is local to each tab. It records location descriptors
 // (route + params), so /plants and /plants/p02 are separate entries.
@@ -124,6 +125,14 @@ function updateTabLocation(tab,location){
  });
 }
 
+function scheduleHomeLayout(){
+ cancelAnimationFrame(homeLayoutFrame);
+ homeLayoutFrame=requestAnimationFrame(()=>{
+  if(activeRoute!=="home"||homeColumn.hidden)return;
+  layoutHome?.();
+ });
+}
+
 function renderLocation(location){
  const route=location.route;
  const params=location.params||{};
@@ -154,6 +163,10 @@ function renderLocation(location){
   if(changed&&definition)emptyState.play();
  }
  if(!isHome&&view)view.show?.(params);
+ // Home can be mounted and measured while hidden (for example a direct load
+ // on /plants). Its absolute scene must be reflowed after it becomes visible,
+ // before the next paint, or stale zero-height measurements make sections overlap.
+ if(isHome)scheduleHomeLayout();
  homeWorkspace.setAttribute("aria-label",
   definition?`${definition.title} workspace`:"Page not found workspace");
  for(const row of routeRows){

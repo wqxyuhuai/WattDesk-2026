@@ -188,7 +188,8 @@ workspace=createWorkspace({
  resolvePlantName:id=>{
   const plant=plantById(id);
   return plant?.name||(plant?"Unassigned device":"");
- }
+ },
+ layoutHome:()=>layout.resize()
 });
 // The Plants list is a real surface inside the same workspace panel; the shell
 // reveals it for the plants route instead of the shared "Coming soon" fallback.

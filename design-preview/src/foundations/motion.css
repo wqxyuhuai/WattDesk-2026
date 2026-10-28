@@ -147,6 +147,21 @@
   transition-timing-function: var(--wd-hover-ease);
 }
 
+/* A custom scrollbar is a visual control, so it enters and leaves on the same
+ * shared hover rhythm as icons and buttons. The track width stays fixed; only
+ * the thumb grows inside it, avoiding table reflow while the pointer is over
+ * the scroll lane. */
+:where(.plants-scroll-indicator-thumb) {
+  transition-property: width, left, background-color;
+  transition-duration: var(--wd-motion-hover-out);
+  transition-timing-function: var(--wd-ease-hover-out);
+}
+
+:where(.plants-scroll-indicator:is(:hover, :focus-within, .is-dragging) .plants-scroll-indicator-thumb) {
+  transition-duration: var(--wd-motion-hover);
+  transition-timing-function: var(--wd-ease-hover);
+}
+
 /* Disclosure: the same solid glyph rotates; the positioning box does not.
  * Transition only the visible glyph and its exact-path masks. Putting
  * transform on the host would also animate its layout box and could move
