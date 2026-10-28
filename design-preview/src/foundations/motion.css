@@ -41,6 +41,15 @@
   [role='radio'],
   [role='option'],
   [role='treeitem'],
+  /* Dense table rows and headers own the same colour rhythm as other hosts, so
+   * a row hover or a focus ring never snaps ahead of the text inside it. */
+  tr,
+  td,
+  th,
+  [role='row'],
+  [role='cell'],
+  [role='columnheader'],
+  [role='rowheader'],
   [aria-expanded],
   [aria-pressed],
   [aria-invalid="true"],
@@ -92,6 +101,15 @@
   [role='radio'],
   [role='option'],
   [role='treeitem'],
+  /* Dense table rows and headers own the same colour rhythm as other hosts, so
+   * a row hover or a focus ring never snaps ahead of the text inside it. */
+  tr,
+  td,
+  th,
+  [role='row'],
+  [role='cell'],
+  [role='columnheader'],
+  [role='rowheader'],
   [aria-expanded],
   [aria-pressed],
   [aria-invalid="true"],

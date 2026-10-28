@@ -8,7 +8,9 @@ const fs=require('node:fs');
  await page.goto(require('./runtime.cjs').previewURL);
  await page.waitForFunction(()=>document.documentElement.dataset.ready==='true');
  await page.evaluate(()=>document.fonts.ready);await page.waitForTimeout(1100);
- const geometry=await page.locator('.wd-glass,.target-nav,.target-avatar,.target-header-action,.stat-chart-card,[data-node-id="14578:6145"]').evaluateAll(es=>es.map(e=>{const s=getComputedStyle(e),b=e.getBoundingClientRect();return {radius:s.borderRadius,rect:[b.x,b.y,b.width,b.height]}}));
+ // Hidden route surfaces are mounted inside the shell; keep this audit scoped to
+ // the visible scene so a new page does not change Home's sampled surface set.
+ const geometry=await page.locator('.wd-glass,.target-nav,.target-avatar,.target-header-action,.stat-chart-card,[data-node-id="14578:6145"]').evaluateAll(es=>es.filter(e=>{const b=e.getBoundingClientRect();return b.width&&b.height}).map(e=>{const s=getComputedStyle(e),b=e.getBoundingClientRect();return {radius:s.borderRadius,rect:[b.x,b.y,b.width,b.height]}}));
  // Responsive reflow deliberately changes card/sidebar widths and positions.
  // Keep the archived geometry for provenance, but assert the invariant that
  // matters here: every audited surface retains its original radius.

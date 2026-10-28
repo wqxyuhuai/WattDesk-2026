@@ -6,7 +6,7 @@
 
 - Figma：[WattDesk-UI / Home-主画板](https://www.figma.com/design/7hGGOqflIMGWTYQMm9tce0/WattDesk-UI?node-id=14434-3261)。以该画板、当前母版状态和最新用户标注为准。
 - 浅色依据：[Home-主画板 - 浅色模式](https://www.figma.com/design/7hGGOqflIMGWTYQMm9tce0/WattDesk-UI?node-id=14704-3871)。深浅画板分别核对，不能用反色、黑色滤镜或深色 RGB 近似映射代替真实变量绑定。
-- 网页入口：`design-preview/home.html?glass=figma`。基准尺寸 1920×1080；实际评审尺寸还包括 1545×1252。
+- 网页入口：`/home?glass=figma`；`/`、`/home.html` 会规范到 `/home`。基准尺寸 1920×1080；实际评审尺寸还包括 1545×1252。
 - 当前技术：原生 HTML / CSS / JavaScript。沿用已有结构，避免为单个页面引入另一套样式与组件体系。
 - 历史 glass / linear / workspace 原型已移除并备份，2026-09 业务规划在 `docs/history/`。它们的旧菜单、材质、字体和动效值不覆盖本规范，历史功能不代表已迁移。
 - 后续页面复用通用 token 与控件状态。首页的 Figma 绝对坐标提取用于当前还原，不应作为所有页面的布局模板；新页面采用语义结构与适合内容的布局。
@@ -130,6 +130,7 @@
 - 中性按钮：挂共享普通玻璃（默认 `18px` 半径），默认 `Labels/Secondary`，hover / 键盘 focus 变为 `Labels/Primary`；用于 `Cancel`、关闭、次要操作。
 - 主按钮：实心 `Accents/Blue`，关闭模糊、白色反射场和上下内阴影，只保留细深色外轮廓、极细亮边和指针高光；hover 只轻微提亮，不能洗成浅蓝。每个视图只保留一个主按钮，用于 `Apply`、保存、确认等唯一主动作。
 - 两个变体都属于可交互玻璃：hover / 按下缩放、指针边缘光弧、禁用 `opacity .55` 与 `cursor:default` 全部由共享材质和状态层提供，调用方不写局部 `transform`、`box-shadow` 或 transition。真实 `disabled` / `aria-disabled` 必须阻止点击和 Enter / Space。
+- 圆形图标动作复用同一胶囊按钮，加 `.wd-button--disc`：`36×36`、零左右内距、`50%` 圆角，保留共享中性玻璃、缩放、指针光弧、焦点和禁用契约。用于工具栏的筛选、列显示、刷新等动作；不得另建页面局部圆钮材质。宿主为正方形且半径饱和时，共享材质自动加 `.wd-glass--disc`。
 - 旧 `.wd-date-action` 仅作为日期选择器的兼容别名，不再承载任何材质；新增组件直接使用标准类名，不复制日期选择器样式。
 
 ## 5. 控件状态约定
@@ -144,7 +145,7 @@
 | 工具栏组内图标 | 保持组内分隔与共享玻璃 | 图标下方圆形高亮，不用整格矩形色块 | 轻量浮层开合 |
 | 前进/后退等中性图标控件 | 可用时 Labels/Secondary，不可用时 Labels/Quaternary | 可用时图标主文字色；不可用时保持 Quaternary，不高亮玻璃或微光 | 不可用时阻止点击、Enter 和 Space；由实际业务状态控制 |
 | 图表三点菜单 | 原始三点字形 | 三点下方圆形亮起，图标提亮 | 扩大命中区时保持原图标中心 |
-| 前两张状态卡片 | 默认玻璃与右上箭头 | 卡片略亮，内部箭头向右上 2px 并平滑复位；卡片本体不动 | 在当前标签内跳转 Plants；筛选待真实路由接入，预览不伪造筛选结果 |
+| 前两张状态卡片 | 默认玻璃与右上箭头 | 卡片略亮，内部箭头向右上 2px 并平滑复位；卡片本体不动 | 在当前标签内跳转 `/plants`；筛选结果待真实接口接入，预览不伪造筛选结果 |
 | 快捷入口 / View all | 原始文字与图标 | 下划线淡入，保持几何稳定 | 本页反馈，不假装完成未实现的跳转 |
 
 真正 disabled 必须有业务或状态依据并阻止操作；未选中不是 disabled。每个交互控件同时检查默认、hover、focus、选中和禁用/加载（适用时）。
@@ -165,7 +166,9 @@
 
 全屏搜索（`Ctrl/Cmd+K` 与顶栏搜索按钮）复用首页内联搜索框的字段实现：同一 `46px / 23px` 胶囊、`20px` 左内边距、18px 放大镜和共享玻璃填充/模糊；只隐藏右侧快捷键，不另建字段材质或图标。放大镜统一使用 `asset-35.svg` 的不透明状态遮罩，避免全屏沿用 `asset-4.svg` 的 30% 导出透明度而显得发灰。首页内联结果浮窗复用日期选择器的玻璃材质，不另建材质；全屏搜索使用同一玻璃分层，并增加整页高斯模糊底层，不把模糊从玻璃中拆掉。结果浮窗不得用投影或连续背景与搜索框视觉连成一体。
 
-首页内联搜索框与全屏搜索框始终是高度固定的胶囊：边框半径等于高度一半，结果面板以独立间距出现在下方。两处搜索框都挂 `.wd-glass--no-scale`，hover、点击和键盘 focus 只改变材质高光，不放大、不拉伸、不向下延伸；不能因为结果区域高度或 stage 高度改变搜索框轮廓。Esc 或点击全屏空白区域关闭全屏搜索。内联结果中的空态和操作提示使用 `Footnote/Regular`，不能放大为主标题或正文尺寸。
+`createSearchField({...,size:"compact"})` 提供侧栏 Quick search 的紧凑字段：`36px` 高、`18px` 圆角、`0 14px` 内距、`9px` 图标间距、`14/14 medium`；结构与玻璃、放大镜、清空按钮仍共用同一工厂。用于内容页工具栏等与侧栏搜索同级的控件，例如 Plants 列表；宽度由宿主页面决定，不把紧凑尺寸扩散到首页内联或全屏搜索的 `46px` 胶囊。
+
+首页内联搜索框与全屏搜索框始终是高度固定的胶囊：边框半径等于高度一半，结果面板以独立间距出现在下方。这两处搜索框挂 `.wd-glass--no-scale`，hover、点击和键盘 focus 只改变材质高光，不放大、不拉伸、不向下延伸；不能因为结果区域高度或 stage 高度改变搜索框轮廓。内容页工具栏的紧凑搜索（例如 Plants）是独立宿主，刻意启用 `scalable:true`，按共享玻璃材质响应 hover / 按下缩放，与筛选、列等玻璃按钮的动效一致；不得因首页的固定胶囊规则把工具栏搜索一起禁用。Esc 或点击全屏空白区域关闭全屏搜索。内联结果中的空态和操作提示使用 `Footnote/Regular`，不能放大为主标题或正文尺寸。
 
 全屏搜索的入场与退场是同一组动作的正反方向，不各自另编时序。入场时结果面晚搜索框一步进入；退场时结果面先向下离开、搜索框随后向下离开，二者共用 `--wd-motion-search-out`，错落使用独立的 `--wd-motion-search-out-stagger`，不得复用较长的进场 stagger。退场必须明显快于入场，当前为结果面 `0ms`、搜索框 `40ms` 开始，玻璃各 `180ms`；背景遮罩使用 `--wd-motion-search-veil-delay: 70ms` + `--wd-motion-search-veil-out: 490ms`，在 `36%` 前完整保留模糊，等两块玻璃都离开后按 `75% / 46% / 18%` 的模糊与底色比例分段化开，总退场约 `560ms`。遮罩尾段必须保留可感知的中间段，不能用一个两段插值让模糊在前三分之一就掉光；也要避免过长导致关闭显得拖沓。遮罩只动画模糊半径与底色，且两者同步收拢；不对遮罩或弹窗根节点做 `opacity` 动画——任何祖先的不透明度动画都会把 `backdrop-filter` 放进独立合成层，模糊在第一帧就失效。因此模糊与底色必须落在同一层（`background-color`，不用伪层或 `background` 简写），尾帧两者同时归零，卸载时不会出现清晰帧跳变。组件必须保持挂载到遮罩退场结束，不能提前卸载。减少动态效果时所有搜索入场/退场直接结束。浅色全屏搜索使用独立搜索遮罩与投影 token，不沿用 `Overlays/Activity View Controller` 的密集活动遮罩：底色 `rgba(0,0,0,.10)`、模糊 `16px`，保留页面轮廓与色块；结果卡片使用 `--wd-search-outline: .08`、`--wd-search-outline-side: .10`、`--wd-search-drop: .055 / 16px / 34px` 与 `--wd-search-contact: .02`，不得直接沿用普通卡片的 `.16` 外轮廓和 `.16` 深投影，否则浅色下会形成明显黑边与黑底。参数只作用于 `.wd-search-panel--fullscreen` 的浅色分支；深色遮罩仍用 `29% + 28px`，深色投影、普通玻璃和其他浮层不得改变。
 
@@ -191,6 +194,7 @@
 
 - 所有页面通过 `src/shared.css` 自动加载 `foundations/motion.css`。新页面、新组件和后续动态挂载的 DOM 无需逐个补 transition；原生控件、常见 ARIA role（button / tab / menuitem / switch / checkbox / radio / option / treeitem 等）、`.wd-control-state` / `.wd-control-label`、共享玻璃层、Workspace tab、快捷入口和折叠箭头都继承统一节奏。
 - 共享默认只过渡 `color`、`background-color`、`border-color`、`box-shadow`、`opacity`、`text-decoration-color`、`filter`。hover 进入使用 `--wd-motion-hover:240ms` / `--wd-ease-hover:cubic-bezier(.16,1,.3,1)`，离开使用 `--wd-motion-hover-out:360ms` / `--wd-ease-hover-out:cubic-bezier(.3,0,.2,1)`；宿主在 hover / 键盘 focus 时切换共享变量，文字与图标叶节点继承同一节奏。这是 2026-10-21 用户确认的“弹性灵动”方向，进入快、离开柔。组件与页面 CSS 只声明视觉状态，不再写 `transition`、`transition-property`、`transition-duration` 或缓动；禁止 `transition: all`。
+- `2026-10-26` 表格行与表头并入同一契约：`tr` / `td` / `th` 与 `[role=row]` / `[role=cell]` / `[role=columnheader]` / `[role=rowheader]` 同时获得过渡属性与 hover 变量切换，密集列表的行底色、焦点环因此不需要页面局部 `transition`。电站列表（`src/pages/plants/`）是首个使用方。
 - JS 动画必须调用 `motionDuration(token)` / `motionEasing(token)`，不得硬编码毫秒或 `cubic-bezier`。CSS 与 WAAPI 共用同一组 token；减少动态效果时由共享层压到 `1ms`，并关闭位移、旋转、缩放和鼠标跟随。
 - 文字与图标联动时，最深层可见文字叶节点承担一次淡变；嵌套 `.wd-control-label` 不重复计时。中性图标走共享状态遮罩，原始彩色图标不改色。
 - 图标状态遮罩（`::before` / `::after`）是独立图层，不能继承宿主的 `transition`，必须在共享层单独声明同一 hover 节奏；它们与文字、`<img>` 必须同步渐入渐出，不能瞬间切换或出现黑灰中间态。伪元素选择器不能写进 `:is()` / `:where()` 的参数列表，否则整条规则会被解析器丢弃、退回浏览器默认 `0s`。
@@ -241,7 +245,7 @@
 - 普通 hover 不移动、缩放、旋转控件和文字，不改变布局。唯一位移例外是前两张可点击状态卡内部箭头向右上移动 `2px`，卡片本体不动。
 - 点击展开允许高度、透明度和轻微浮层缩放，可中断、可反向；不等待动画结束才响应输入。图表标题、数值、单位和坐标轴稳定显示，曲线从左至右揭示、柱形从底部展开，首次可见播放一次，不循环、不伪造网络进度。
 - 刷新只转图标一圈，容器不动，期间防重复触发。
-- 主题使用一次有限的整页交叉淡入：`620ms`，包含外部 SVG、渐变和玻璃；首次载入不播放，连续切换以最后一次意图为准，减少动态效果立即到最终态。禁止全页反色、`transition: all` 或残留的临时过渡。
+- 主题使用一次有限的整页交叉淡入：`620ms`，包含外部 SVG、渐变和玻璃；首次载入不播放，连续切换以最后一次意图为准，减少动态效果立即到最终态。新主题快照生成期间（`data-theme-snapshot`）元素过渡统一压到 `0s`，避免把旧主题的中间色冻结进快照；`transition.ready` 后立即恢复 `240 / 360ms`。禁止全页反色、`transition: all` 或残留的临时过渡。
 - `tests/verify-motion.cjs` 检查共享入口与模板加载、动态控件继承、页面无局部 transition、折叠宿主不动、唯一位移例外及深浅主题/减少动态效果。
 - `tests/verify-responsive.cjs` 在 1920–420px 的 12 个宽度上检查内容居中、无横向滚动、画布/列无缩放、状态卡与业务卡 `4/2/1`、能源卡 `2/1`、快捷入口 `3/2/1`、图表与菜单不越界、刷新与周期右缘对齐、窄屏图标轨及账户/通知不重叠；同时覆盖状态卡悬停后箭头仍在边界内。
 
@@ -251,7 +255,7 @@
 - 标准头像 `.wd-avatar` 使用共享 **1px** 内描边，描边颜色与内部填充相同；深色以中心扩散的短距离阴影表现厚度，阴影不向下偏移，浅色不显示外投影。两种主题都不扩大布局。参数在 `avatar.css`。浅色主内容面板使用 `--wd-main-panel-shadow` 的短距离投影，保留普通表面和 1px 原描边，不套用玻璃或扩大为光晕；深色面板保持原材质。
 - 首页全部状态卡片和图表卡片保留原稿 **30px**，右侧整体内容底板保留 **10px**，同样使用共享连续曲线，不能为恢复视觉大小退回 `round` 或添加 `.wd-corners-original` 例外。浏览器轮廓验收：当前 `superellipse(1.2)` 在 30px 对角边界处比原普通圆角内收约 **0.97px**，肩部更紧但视觉半径仍读作 30px；直接套完整 Squircle 则向内收缩约 **4px**。38 个主要组件的半径保持不变。`verify-foundations.cjs` 检查审计表面的原始半径、实际命中轮廓、连续曲线确实生效、玻璃各层贴合，以及不支持增强时的回退；响应式后的尺寸与位置由 `verify-responsive.cjs` 单独验收。Figma 归档读数：深色首两张图表 smoothing 为 6%，浅色首两张、其余图表和主底板为 60%；`1.2` 只作为当前确认的视觉曲线，不回写或等同于任一 Figma smoothing 数值，也不改变各元素各自的半径。
 - 快捷入口行间分割线为 `--wd-divider-width:1px`，Workspace 的 Statistics (coming soon) 下方隐藏分隔线；其他分组原本没有末尾分隔线的继续隐藏。不用加粗描边表示分组结束。
-- 快捷入口三列的所有行都是可操作目标：Workspace 的 Plants、Service ticket、Statistics 打开各自路由，Following 的电站行在详情路由接入前统一进入 Plants。复用共享 `enhanceControl()` / `openRoute()`，支持 Enter、Space 并在当前标签内打开，不新增标签。回归见 `tests/verify-shortcuts.cjs`。
+- 快捷入口三列的所有行都是可操作目标：Workspace 的 Plants、Service ticket、Statistics 打开各自路由，Following 的电站行进入 Plants（示例名称尚未对应真实电站 ID）。复用共享 `enhanceControl()` / `openRoute()`，支持 Enter、Space 并在当前标签内打开，不新增标签。回归见 `tests/verify-shortcuts.cjs`。
 - 浅色主题前两张状态卡右上箭头使用降透明度的墨色（`brightness(0) opacity(.55)`），不得使用纯黑；深色主题保持原稿状态。
 - 首页内容画布最大 `1000px`，由内容列按视口收窄，不使用区域级 `transform: scale()`；画布在右侧工作区内水平居中，左右各保留共享 `48px` 阴影空间。内容列最小 `240px`，窄屏继续纵向重排，不引入横向滚动。
 - 首页重排节奏固定：状态卡与业务图表卡 `4 → 2 → 1` 列（内容宽 `≥860px` / `≥520px` / 更窄），两张能源卡 `2 → 1`，快捷入口 `3 → 2 → 1` 列（内容宽 `≥680px` / `≥440px` / 更窄）。不得出现 `3+1` 的残行组合；卡片换列时高度真实撑开，由页面纵向滚动承接。
@@ -265,7 +269,16 @@
 - 分类使用设计稿实心箭头，维护 `aria-expanded` / `aria-controls`；隐藏内容不可聚焦。浮层支持 Esc 和外部点击关闭，退出后不残留透明遮挡层。
 - 三点菜单的圆形 hover 背景与命中区为 30px，保持原始三点中心。标题容器允许控件溢出，不能用 18px 标题行裁切圆底；文字省略仍由文字节点自身控制，不全局取消图表或滚动区域裁切。
 - 不用全局 `transform:none` 修复 hover，它会破坏布局定位和响应式缩放。图标对齐需看真实路径的视觉中心。
-- 当前仅首页预览，其他路由、真实账号、设备控制及后端统计未接入。样例数据、CSV 和提示应如实说明预览范围。
+- 当前 Home 与 Plants 列表是真实页面；`/plants/:id` 已有可刷新 URL，但详情内容仍是明确的预览占位。其余路由、真实账号、设备控制及后端统计未接入。样例数据、CSV 和提示应如实说明预览范围。
+
+### 路由与 URL
+
+- 规范 URL 与完整表见 [站点路由](./docs/ROUTING.md)：Home `/home`、Plants `/plants`、电站详情 `/plants/:id`，其余侧栏页面使用对应短路径。`/`、`/home.html`、`/index.html` 以 `308` 规范到 `/home`。
+- 地址栏镜像当前激活工作区标签的 `{route, params}`；切换标签、侧栏导航、页面内跳转都更新 URL，刷新和复制链接恢复同一页面，不得回到 Home。
+- 深链接由服务端/静态资源层返回 SPA 外壳：本地 `server.js` 与线上 `_redirects` 必须同步路径；HTML 使用 `<base href="/">`，多级路径下的脚本、样式和素材仍从站点根解析。
+- 路由层是唯一可以写浏览器历史的位置：页面调用 `openRoute(route,{params})`，不直接在组件里拼 URL 或调用 `pushState`。未知路径和未知电站 ID 显示 not-found，不静默回首页。
+- 路由变化先关闭活动浮层；页面标题随路由更新。详情类 URL 使用稳定业务 ID，不按名称或数组下标生成。
+- 新增路由同时更新 `ROUTE_CATALOG`、`server.js` 的 `canonicalRoutes`、构建脚本的 `appRoutes` 与 `tests/verify-routing.cjs`。
 
 ## 8. 开发与验收
 
@@ -284,6 +297,7 @@ npm run check
 npm test
 node tests/verify-home.cjs
 node tests/verify-shortcuts.cjs
+node tests/verify-routing.cjs
 node tests/verify-glass.cjs
 node tests/verify-theme.cjs
 node tests/verify-foundations.cjs
@@ -294,7 +308,7 @@ npm run sync:themes
 npm run sync:type
 ```
 
-`npm test` 检查当前首页交互、快捷入口行导航、响应式重排、正式玻璃、主题、字体/圆角、共享组件、共享动效与搜索控件；若旧视觉基线失败会停在对应专项。浏览器运行配置见 `design-preview/tests/runtime.cjs` 和运行 README，可通过环境变量指定 Playwright、Chrome、Python；截图输出到 `tests/output/`，固定基线在 `tests/fixtures/`。`npm run test:visual` 对比整理前四张主题/尺寸基线，`npm run audit:assets` 检查引用。更新归档来源后用 `npm run sync` 生成运行数据与样式；生成文件不手改。
+`npm test` 检查当前首页交互、快捷入口行导航、URL/刷新、响应式重排、正式玻璃、主题、字体/圆角、共享组件、共享动效与搜索控件；若旧视觉基线失败会停在对应专项。浏览器运行配置见 `design-preview/tests/runtime.cjs` 和运行 README，可通过环境变量指定 Playwright、Chrome、Python；截图输出到 `tests/output/`，固定基线在 `tests/fixtures/`。`npm run test:visual` 对比整理前四张主题/尺寸基线，`npm run audit:assets` 检查引用。更新归档来源后用 `npm run sync` 生成运行数据与样式；生成文件不手改。
 
 ## 9. 维护约定
 

@@ -1,5 +1,32 @@
 # 更新记录
 
+## 2026-10-28
+
+### Plants 宽屏布局
+
+- 宽屏余量不再几乎全部分配给电站名列；`Plant name / Device / Power / Status / SN / Firmware / Last update` 的拉伸权重按面板宽度平滑过渡，右侧指标区获得更大的自适应间距。
+- 视口不小于 `1600px` 时，滚动容器延伸到面板右缘，纵向滚动条可贴边；表格文字仍保留 24px 内容内距，并与 `New plant` 和工具栏共用右缘。
+- 1545px 紧凑布局与 1920px 宽屏布局均保持无横向滚动。
+
+### 验证
+
+- `npm run check` 通过，65 个 JavaScript 文件语法有效。
+- 完整 `npm test` 通过（11 个套件）；`verify-routing` 新增宽屏列宽、24px 内容右缘及贴边滚动容器断言。
+
+## 2026-10-26
+
+### 路由与 URL
+
+- Home、Plants 与各侧栏页面改用普通路径：`/home`、`/plants`、`/service`、`/statistics` 等；电站详情为 `/plants/:id`。
+- 地址栏镜像当前激活工作区标签，刷新、复制链接、浏览器前进/后退不再回到首页；`/`、`/home.html`、`/index.html` 规范到 `/home`。
+- 本地服务器与 Cloudflare `_redirects` 为深层路径返回 SPA 外壳，HTML 使用 `<base href="/">`；未使用会吞掉静态资源的全站代理。
+- 新增 `tests/verify-routing.cjs`，覆盖根路径、列表/详情刷新、标签切换、前进后退、Coming soon 路由与未知 ID；文档新增 `docs/ROUTING.md`。
+
+### 范围
+
+- Plants 行点击进入 `/plants/:id`；详情视觉未立项，当前是明确的预览占位，不虚构设备数据或控制能力。
+- 未接入后端、权限、实时数据或多标签跨刷新恢复。
+
 ## 2026-10-23
 
 ### 架构

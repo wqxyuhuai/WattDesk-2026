@@ -170,7 +170,7 @@ const assert=require('node:assert/strict');
     await page.waitForFunction(()=>!document.querySelector('.wd-search-fullscreen')?.hasAttribute('data-entering'));
     await page.waitForTimeout(60);
     const full=await page.evaluate(()=>{
-      const field=document.querySelector('.wd-search-field');
+      const field=document.querySelector('.wd-search-fullscreen .wd-search-field');
       const box=field.getBoundingClientRect();
       const popup=document.querySelector('.wd-search-panel--fullscreen').getBoundingClientRect();
       const fill=field.querySelector('.wd-glass-fill');
@@ -244,7 +244,7 @@ const assert=require('node:assert/strict');
     await page.waitForFunction(()=>{const root=document.querySelector('.wd-search-fullscreen');return root&&!root.hasAttribute('data-entering')});
     await page.waitForTimeout(120);
 
-    const fullField=page.locator('.wd-search-field');
+    const fullField=page.locator('.wd-search-fullscreen .wd-search-field');
     const fullBox=await fullField.boundingBox();
     await page.mouse.move(fullBox.x+24,fullBox.y+fullBox.height/2);
     await page.mouse.down();
@@ -254,18 +254,18 @@ const assert=require('node:assert/strict');
     assert.equal(pressed.transform,'matrix(1, 0, 0, 1, 0, 0)','Clicking the fullscreen field must not scale it');
     assert.equal(pressed.box.width,816);assert.equal(pressed.box.height,46);
 
-    const fullInput=page.locator('.wd-search-input');
+    const fullInput=page.locator('.wd-search-fullscreen .wd-search-input');
     await fullInput.fill('555');
     await page.waitForTimeout(300);
     assert.equal(await page.locator('.wd-search-empty').count(),1,'Typing a missing query must show the empty state');
-    await page.locator('.wd-search-field .wd-input-clear').click();
+    await page.locator('.wd-search-fullscreen .wd-search-field .wd-input-clear').click();
     await page.waitForTimeout(300);
     const cleared=await page.evaluate(()=>({
-      value:document.querySelector('.wd-search-input').value,
-      clearHidden:document.querySelector('.wd-search-field .wd-input-clear').hidden,
+      value:document.querySelector('.wd-search-fullscreen .wd-search-input').value,
+      clearHidden:document.querySelector('.wd-search-fullscreen .wd-search-field .wd-input-clear').hidden,
       quick:document.querySelectorAll('.wd-search-panel--fullscreen .wd-search-quick-link').length,
       empty:document.querySelectorAll('.wd-search-empty').length,
-      expanded:document.querySelector('.wd-search-input').getAttribute('aria-expanded'),
+      expanded:document.querySelector('.wd-search-fullscreen .wd-search-input').getAttribute('aria-expanded'),
     }));
     assert.deepEqual(cleared,{value:'',clearHidden:true,quick:5,empty:0,expanded:'true'});
 
@@ -312,7 +312,7 @@ const assert=require('node:assert/strict');
       };
       return {
         panel:timing('.wd-search-panel--fullscreen'),
-        field:timing('.wd-search-field'),
+        field:timing('.wd-search-fullscreen .wd-search-field'),
         backdrop:timing('.wd-search-backdrop'),
       };
     });
@@ -395,8 +395,39 @@ const assert=require('node:assert/strict');
     await page.keyboard.press('Escape');
     await page.waitForTimeout(900);
     assert.equal(await page.locator('.wd-search-fullscreen').count(),0,'Escape must close fullscreen search');
+
+    // Plants uses the same compact field but opts into the shared glass depth:
+    // hovering grows it and pressing presses it further, unlike the fixed Home
+    // surfaces above. It also filters in place instead of opening a result sheet.
+    await page.goto(`${new URL(previewURL).origin}/plants?glass=figma`,{waitUntil:'networkidle'});
+    await page.waitForFunction(()=>document.documentElement.dataset.ready==='true');
+    await page.waitForTimeout(500);
+    const plantsField=page.locator('.plants-toolbar .plants-search');
+    const plantsBox=await plantsField.boundingBox();
+    const plantsResting=await plantsField.evaluate((node)=>({
+      transform:getComputedStyle(node).transform,
+      noScale:node.classList.contains('wd-glass--no-scale'),
+      height:node.getBoundingClientRect().height,
+    }));
+    assert.equal(plantsResting.noScale,false,'The Plants field must opt into the shared glass scaling');
+    assert.equal(plantsResting.height,36,'The Plants field must stay the compact 36px control');
+    assert.ok(plantsResting.transform==='none'||plantsResting.transform==='matrix(1, 0, 0, 1, 0, 0)','The Plants field must rest at its natural size');
+    await page.mouse.move(plantsBox.x+plantsBox.width/2,plantsBox.y+plantsBox.height/2);
+    await page.waitForTimeout(420);
+    const plantsHover=await plantsField.evaluate((node)=>new DOMMatrix(getComputedStyle(node).transform).a);
+    assert.ok(plantsHover>1.01,`The Plants field must grow on hover, got ${plantsHover}`);
+    await page.mouse.down();
+    await page.waitForTimeout(220);
+    const plantsPressed=await plantsField.evaluate((node)=>new DOMMatrix(getComputedStyle(node).transform).a);
+    await page.mouse.up();
+    assert.ok(plantsPressed>plantsHover,'Pressing must add depth beyond the hover growth');
+    await page.locator('.plants-toolbar .plants-search input').fill('Andreas');
+    await page.waitForTimeout(260);
+    assert.equal(await page.locator('.wd-search-panel').count(),0,'The Plants field filters in place instead of opening a result sheet');
+    assert.equal(await page.locator('.plants-row').count(),1,'Typing must filter the Plants table');
+
     assert.deepEqual(errors,[]);
-    console.log(JSON.stringify({keycaps:'shared',inline:'fixed 46px capsule',fullscreen:'shared 816x46 field',sharedGlass:true,stableOnPress:true,errors},null,2));
+    console.log(JSON.stringify({keycaps:'shared',inline:'fixed 46px capsule',fullscreen:'shared 816x46 field',plants:'compact 36px, shared depth',sharedGlass:true,stableOnPress:true,errors},null,2));
   }finally{
     await browser.close();
   }

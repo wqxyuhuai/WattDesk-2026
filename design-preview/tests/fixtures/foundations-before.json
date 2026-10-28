@@ -112,36 +112,6 @@
       ]
     },
     {
-      "key": "Wattsonic Technology",
-      "radius": "18px",
-      "rect": [
-        20,
-        487,
-        260,
-        36
-      ]
-    },
-    {
-      "key": "Your teams",
-      "radius": "18px",
-      "rect": [
-        20,
-        524,
-        260,
-        36
-      ]
-    },
-    {
-      "key": "End users",
-      "radius": "18px",
-      "rect": [
-        20,
-        561,
-        260,
-        36
-      ]
-    },
-    {
       "key": "target-avatar14",
       "radius": "50%",
       "rect": [
@@ -169,16 +139,6 @@
         20,
         180,
         36
-      ]
-    },
-    {
-      "key": "workspace-tab-tooltip",
-      "radius": "12px",
-      "rect": [
-        0,
-        0,
-        0,
-        0
       ]
     },
     {

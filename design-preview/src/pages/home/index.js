@@ -18,6 +18,8 @@ import {createPeriodControl} from "./period.js";
 import {createRecentVisits} from "./recent-visits.js";
 import {createHomeSearch} from "./search.js";
 import {createWorkspace} from "./workspace.js";
+import {createPlantsPage} from "../plants/index.js";
+import {plantById} from "../plants/data.js";
 import {mountSkeletons} from "../../components/skeleton.js";
 import "../../foundations/geometry.js";
 const load=url=>fetch(url).then(r=>{if(!r.ok)throw Error("Page resource unavailable: "+url);return r.json()});
@@ -180,7 +182,28 @@ targetChrome.theme.addEventListener("click",()=>themeController?.toggle());
 targetChrome.history.addEventListener("click",()=>openHistory());
 const homeSnapshot=()=>({scrollTop:homeColumn.scrollTop,query:search.input.value,period:period.label(),range:period.rangeSnapshot()});
 const recentVisits=createRecentVisits({get,onOpen:openRoute});
-workspace=createWorkspace({get,glass,toast,close,homeColumn,input:search.input,period,homeSnapshot,targetChrome,workspacePanel,searchClose:search.closeAll,recentVisits});
+workspace=createWorkspace({
+ get,glass,toast,close,homeColumn,input:search.input,period,homeSnapshot,targetChrome,
+ workspacePanel,searchClose:search.closeAll,recentVisits,
+ resolvePlantName:id=>{
+  const plant=plantById(id);
+  return plant?.name||(plant?"Unassigned device":"");
+ }
+});
+// The Plants list is a real surface inside the same workspace panel; the shell
+// reveals it for the plants route instead of the shared "Coming soon" fallback.
+// Mounting is guarded so a failure inside the new page cannot take the Home
+// surface down with it; the error stays visible in the console.
+try{
+ const plantsPage=createPlantsPage({
+  glass,registerPanel,close,toast,
+  onOpenPlant:plant=>openRoute("plants",{params:{plantId:plant.id}}),
+  onBackToList:()=>openRoute("plants")
+ });
+ workspace.registerRouteView("plants",plantsPage);
+}catch(error){
+ console.error("Plants view failed to mount",error);
+}
 // Shell menus share the history panel's interior anatomy. Placeholder locales
 // are visual-only: nothing here changes the page language or persists a choice.
 function openMenu(anchor,label,children){

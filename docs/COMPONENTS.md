@@ -14,8 +14,9 @@
 | 图标 | `components/icons.js` | `createIcon(name,tone?)`，注册表 `ICONS` 保留原文件与 tone |
 | 按钮 | `components/controls.js`、`button.css` | `button(label,className="wd-button",trustedHTML="")`；标准胶囊按钮组合 `.wd-button--pill` + `.wd-button--neutral` / `.wd-button--primary` |
 | 现有节点控件化 | `components/controls.js` | `enhanceControl(el,{label,onActivate})`，返回事件清理函数 |
-| 搜索 | `components/search.js` | `createSearchTrigger(label,className)` / `createSearchInput({label,placeholder,className})` |
+| 搜索 | `components/search.js`、`search-surface.js` | `createSearchTrigger(label,className)` / `createSearchInput({label,placeholder,className})`；内联与工具栏字段用 `createSearchField({glass,placeholder,label,size})` |
 | 导航 | `components/navigation.js` | `makeNavRow(label,key,file,extraClass,tone)`，不自行导航 |
+| 路由与 URL | `pages/home/routes.js`、`pages/home/workspace.js` | `routeFromPath(pathname)` → `{route,params}`；`pathForRoute(route,params)`；页面只调用 `openRoute(route,{params})`。`/`、`/home.html` 规范到 `/home`，深链接由 `server.js` / `_redirects` 回退，详见 [ROUTING.md](./ROUTING.md) |
 | 折叠 | `components/disclosure.js` | `bindDisclosure(heading,content)` |
 | 头像 | `components/avatar.js`、`avatar.css` | `createAvatar(initials,{size=36,className})` |
 | 日期选择 | `components/date-picker.js` / `.css` | `createDatePicker({trigger,glass,registerPanel,close,onApply,range})` → `{panel,close,getRange}`；另有 `presetRange / describeRange / parseDateInput / formatDateInput` |
@@ -82,11 +83,14 @@ import {button} from "/src/components/controls.js";
 
 const cancel=button("Cancel","wd-button wd-button--pill wd-button--neutral");
 const apply=button("Apply","wd-button wd-button--pill wd-button--primary");
+const refresh=button("","wd-button wd-button--pill wd-button--disc wd-button--neutral");
 material.addSurface({host:cancel,radius:18});
 material.addSurface({host:apply,radius:18});
+material.addSurface({host:refresh,radius:18});
 ```
 
 - 两者固定 `36px` 高、左右内距 `16px`、胶囊圆角、`13px / 510 / 18px`；不按文案长度改尺寸。
+- 圆形图标动作使用同一胶囊按钮并追加 `.wd-button--disc`：`36×36`、零左右内距、`50%` 圆角；图标保持视觉居中，并保留共享玻璃、缩放、焦点和禁用行为。不要为工具栏另写圆钮背景、描边或投影。
 - `.wd-button--neutral` 使用共享普通玻璃，默认 `Labels/Secondary`，hover / 键盘 focus 为 `Labels/Primary`，用于 `Cancel`、关闭和次要操作。
 - `.wd-button--primary` 是实心 `Accents/Blue`：关闭模糊、白色反射场和上下内阴影，只保留细深色外轮廓、极细亮边与指针高光；hover 仅轻微提亮，不能洗成浅蓝。一个视图只保留一个主按钮，用于 `Apply`、保存、确认。
 - 缩放、边缘光弧、指针跟随和禁用态由共享材质与 `.wd-control-state` 提供；调用方不写局部 `transform`、`box-shadow`、transition，也不新增第三套玻璃。日期选择器的 `.wd-date-action` 只是兼容别名，新组件直接用标准类名。
@@ -188,7 +192,7 @@ const avatar=createAvatar("CW",{size:36});
 
 卡片 variant 为 `panel` / `chart` / `status`，表示表面/状态契约，不强制大小卡片共用尺寸。`chart` 用 Vibrant 描边，`panel` 复用浅色面板投影，`status` 可配共享玻璃；背景、布局、内边距与业务内容按各自设计提供。`prepareCard` 增强已有节点，不改原尺寸半径。
 
-搜索输入放入已定位、有明确宽高的容器；工厂提供输入和命名字体，查询/结果由页面提供。侧栏搜索入口复用 `createSearchTrigger`。
+搜索输入放入已定位、有明确宽高的容器；工厂提供输入和命名字体，查询/结果由页面提供。侧栏搜索入口复用 `createSearchTrigger`。内联或全屏默认字段调用 `createSearchField({glass,placeholder,label})`，保持 `46px / 23px` 胶囊；内容页需要与侧栏 Quick search 同尺寸时传 `size:"compact"`，得到 `36px / 18px`、`0 14px` 与 `14/14 medium`，宽度仍由页面容器控制。两种尺寸共用结构、玻璃、图标与清空逻辑，不能自建另一套输入框。
 
 全屏搜索由 `components/search-surface.js` / `.css` 提供，入场和退场使用同一组共享 token，页面不另写时长。退场与入场方向相反：结果面板先向下离开，搜索框晚一个 `--wd-motion-search-stagger` 向下离开，背景遮罩最后才退。遮罩必须保留完整模糊直到内容走完，再用 `--wd-motion-search-veil-delay` + `--wd-motion-search-veil-out` 的长尾化开；不要让它和内容共用 `--wd-motion-search-out`。遮罩退场只能动画底色与 `backdrop-filter`，不能降低元素自身 `opacity`，否则 `backdrop-filter` 会提前丢失。调用方要等遮罩退场结束再卸载全屏搜索节点，避免背景突然变清晰。
 

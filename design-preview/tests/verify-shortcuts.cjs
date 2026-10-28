@@ -43,11 +43,16 @@ const assert = require('node:assert/strict');
     assert.equal((await page.locator('.workspace-tab.selected .workspace-tab-label').textContent()).trim(), title);
     assert.equal(await page.locator(`.target-nav[data-route="${route}"]`).getAttribute('aria-current'), 'page');
     assert.equal(await page.locator('[data-node-id="14578:7006"]').isVisible(), false, `${id} must leave Home visible=false`);
-    assert.equal(await page.locator('.wd-empty-state').isVisible(), true, `${id} must show the shared route surface`);
-    assert.equal((await page.locator('.wd-empty-state-label').textContent()).trim(), 'Coming soon');
-    assert.equal(page.url(), previewURL, `${id} must stay in the preview route`);
+    if (route === 'plants') {
+      assert.equal(await page.locator('.plants-view').isVisible(), true, `${id} must show the real Plants surface`);
+    } else {
+      assert.equal(await page.locator('.wd-empty-state').isVisible(), true, `${id} must show the shared route surface`);
+      assert.equal((await page.locator('.wd-empty-state-label').textContent()).trim(), 'Coming soon');
+    }
+    assert.equal(new URL(page.url()).pathname, `/${route}`, `${id} must update the browser URL`);
     await page.locator('.target-nav[data-route="home"]').click();
     await page.waitForTimeout(320);
+    assert.equal(new URL(page.url()).pathname, '/home', `${id} must return to /home`);
   }
 
   assert.deepEqual(errors, []);

@@ -5,6 +5,10 @@ const root = __dirname;
 const port = Number(process.env.WATTDESK_PREVIEW_PORT || 4173);
 const annotationsFile = path.join(root, 'annotations.json');
 const types = { '.html':'text/html; charset=utf-8','.css':'text/css; charset=utf-8','.js':'text/javascript; charset=utf-8','.svg':'image/svg+xml','.woff2':'font/woff2','.woff':'font/woff','.ttf':'font/ttf','.json':'application/json' };
+const canonicalRoutes = new Set([
+  '/home','/plants','/service','/statistics','/cell-balance','/module-balance',
+  '/device-track','/organisation','/teams','/users'
+]);
 
 // 本地批注层：只在 ?annotate=1 时注入，正式页面与截图基线不受影响。
 const annotateTags = '<link rel="stylesheet" href="./dev/annotate.css"><script src="./dev/annotate.js" defer></script>';
@@ -12,6 +16,18 @@ const send = (res, status, body, type = 'text/plain; charset=utf-8') => {
   res.writeHead(status, { 'Content-Type': type, 'Cache-Control': 'no-cache' });
   res.end(body);
 };
+
+function normalizePath(pathname) {
+  return pathname.length > 1 ? pathname.replace(/\/+$/, '') : pathname;
+}
+
+// `/plants` and `/plants/p02` are real entry points. The preview server
+// returns the SPA shell for them so a refresh never falls back to Home; the
+// browser router then renders the route named by the URL.
+function isAppPath(pathname) {
+  const clean = normalizePath(pathname);
+  return canonicalRoutes.has(clean) || /^\/plants\/[^/]+$/.test(clean);
+}
 
 http.createServer(async (req, res) => {
   let url;
@@ -46,7 +62,15 @@ http.createServer(async (req, res) => {
     return send(res, 405, 'Method not allowed');
   }
 
-  const file = path.resolve(root, '.' + (pathname === '/' ? '/home.html' : pathname));
+  // Old bookmarks and the root URL canonicalise to /home. Keep the query so
+  // `?glass=figma` and `?annotate=1` still work while developing.
+  if (pathname === '/' || pathname === '/home.html' || pathname === '/index.html') {
+    res.writeHead(308, { Location: `/home${url.search}`, 'Cache-Control': 'no-cache' });
+    return res.end();
+  }
+
+  const appRequest = isAppPath(pathname);
+  const file = appRequest ? path.join(root, 'home.html') : path.resolve(root, '.' + pathname);
   if (!file.startsWith(root + path.sep)) return send(res, 403, 'Forbidden');
   fs.readFile(file, (err, content) => {
     if (err) return send(res, 404, 'Not found');
@@ -58,6 +82,7 @@ http.createServer(async (req, res) => {
     res.end(body);
   });
 }).listen(port, '127.0.0.1', () => {
-  console.log(`WattDesk Home: http://127.0.0.1:${port}/home.html?glass=figma`);
-  console.log(`Annotate: http://127.0.0.1:${port}/home.html?glass=figma&annotate=1`);
+  console.log(`WattDesk Home: http://127.0.0.1:${port}/home?glass=figma`);
+  console.log(`Plants: http://127.0.0.1:${port}/plants`);
+  console.log(`Annotate: http://127.0.0.1:${port}/home?glass=figma&annotate=1`);
 });

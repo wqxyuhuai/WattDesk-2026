@@ -45,14 +45,32 @@ const deployHtml = robots ? html.replace('<head>', `<head>${robots}`) : html;
 fs.writeFileSync(path.join(out, 'index.html'), deployHtml);
 fs.writeFileSync(path.join(out, 'home.html'), deployHtml);
 
-// No redirect rules: the static-asset layer already serves /home from
-// home.html and 307s /home.html to /home. A rule mapping /home back to
-// /home.html would create an infinite redirect loop.
-fs.writeFileSync(path.join(out, '_redirects'), [
-  '# /home is served from home.html by the asset layer; do not add a rule here.',
+// `/home` is served from home.html by the static-asset layer; never map it
+// back to home.html or the automatic /home.html -> /home redirect loops.
+// Every other public route is a client-rendered deep link, so proxy it to the
+// SPA shell. `/plants/*` covers `/plants/:id` without enumerating sample IDs.
+const appRoutes = ['/plants','/service','/statistics','/cell-balance','/module-balance','/device-track','/organisation','/teams','/users'];
+const redirectRules = [
+  '# Canonical home. Do not add a /home -> /home.html rule (redirect loop).',
+  '/ /home 308',
+  '/home.html /home 308',
+  '/index.html /home 308',
+  '',
+  '# Client-rendered routes return the SPA shell with a 200 proxy.',
+  '/plants /index.html 200',
+  '/plants/ /index.html 200',
+  '/plants/* /index.html 200',
+  ...appRoutes.filter(route => route !== '/plants').map(route => `${route} /index.html 200`),
   ''
-].join('\n'));
+];
+fs.writeFileSync(path.join(out, '_redirects'), redirectRules.join('\n'));
 
+const routeCacheHeaders = appRoutes.flatMap(route => [
+  route,
+  '  Cache-Control: public, max-age=0, must-revalidate',
+  '',
+  ...(route === '/plants' ? [`${route}/*`, '  Cache-Control: public, max-age=0, must-revalidate', ''] : [])
+]);
 fs.writeFileSync(path.join(out, '_headers'), [
   '/*',
   '  X-Content-Type-Options: nosniff',
@@ -71,6 +89,9 @@ fs.writeFileSync(path.join(out, '_headers'), [
   '',
   '/home-assets/*',
   '  Cache-Control: public, max-age=0, must-revalidate',
+  '',
+  '# Deep-linked HTML must revalidate like the shell it proxies to.',
+  ...routeCacheHeaders,
   ''
 ].join('\n'));
 

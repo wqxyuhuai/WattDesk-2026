@@ -1,6 +1,6 @@
 # 发布与部署
 
-更新：2026-10-21。适用于当前首页设计预览。构建行为以本文件与 `design-preview/scripts/build-site.cjs` 为准。
+更新：2026-10-26。适用于当前设计预览。构建行为以本文件与 `design-preview/scripts/build-site.cjs` 为准。
 
 ## 线上入口
 
@@ -42,8 +42,10 @@
 ## 运行时行为
 
 - `wrangler deploy --assets` 默认按 `html_handling: auto-trailing-slash` 处理 HTML：`/home.html` 会 307 到 `/home`，`/home` 直接返回 `home.html`。
-- 因此 `_redirects` **不能**再写 `/home /home.html`，否则与上面的 307 形成死循环。当前 `_redirects` 只有一行注释，没有规则。
-- `_headers` 对 `/*.html`、`/src/*`、`/home-assets/*` 统一使用 `max-age=0, must-revalidate`。运行资源文件名没有 hash，长缓存会在部署后造成 HTML 与 JS/CSS 版本错配。
+- 因此 `_redirects` **不能**写 `/home /home.html`，否则与上面的 307 形成死循环。构建脚本只生成 `/home.html /home`、`/index.html /home` 与 `/ /home` 三条规范规则。
+- `/plants`、`/plants/*` 和其余业务路径在 `_redirects` 中以 `200` 代理到 `/index.html`，刷新时返回 SPA 外壳；客户端再按路径渲染。不得改成 `/* /index.html 200`，否则会吞掉 `/src/*` 与 `/home-assets/*`。
+- `home.html` / `index.html` 使用 `<base href="/">`，多级详情路径 `/plants/p02` 下的相对脚本与素材仍从站点根解析。
+- `_headers` 对 `/*.html`、`/src/*`、`/home-assets/*` 以及深链接路由统一使用 `max-age=0, must-revalidate`。运行资源文件名没有 hash，长缓存会在部署后造成 HTML 与 JS/CSS 版本错配。
 - `robots.txt` 由构建模式决定：`--public` 输出 `Allow: /`；不带 public 时输出 `Disallow: /` 并在 HTML 加 `noindex`。当前线上允许索引；如需隐藏预览站，改用预览构建或加 Cloudflare Access。
 
 ## 发布后验证
@@ -52,13 +54,15 @@
 curl.exe -sS -o NUL -w "%{http_code} %{redirect_url}`n" --max-redirs 0 https://wattdesk-preview.carlwang.cn/
 curl.exe -sS -o NUL -w "%{http_code} %{redirect_url}`n" --max-redirs 0 https://wattdesk-preview.carlwang.cn/home
 curl.exe -sS -o NUL -w "%{http_code} %{redirect_url}`n" --max-redirs 0 https://wattdesk-preview.carlwang.cn/home.html
+curl.exe -sS -o NUL -w "%{http_code} %{redirect_url}`n" --max-redirs 0 https://wattdesk-preview.carlwang.cn/plants
+curl.exe -sS -o NUL -w "%{http_code} %{redirect_url}`n" --max-redirs 0 https://wattdesk-preview.carlwang.cn/plants/p02
 curl.exe -sSI https://wattdesk-preview.carlwang.cn/src/foundations/tokens.css | Select-String 'cache-control'
 ```
 
-期望：`/` 与 `/home` 返回 200；`/home.html` 一次 307 到 `/home` 后 200，不循环；缓存头为 `max-age=0`。
+期望：`/` 与 `/home` 返回 200；`/home.html` 一次 307 到 `/home` 后 200，不循环；直接打开 `/plants`、`/plants/p02` 返回 200 的 SPA 外壳，刷新后页面不回到 Home；缓存头为 `max-age=0`。
 
 ## 已知限制
 
-- 线上是设计预览：没有后端、真实路由、登录权限或实时数据，统计数字为设计稿快照。
+- 线上是设计预览：URL 路由与深链接已接入，但没有后端、登录权限或实时数据；统计数字为设计稿快照，Plant 详情为占位。
 - Git 历史仍保留 2026-10-21 之前提交的测试截图与构建产物，取消跟踪不会让仓库体积立刻下降；如需瘦身须改写历史，风险高，暂不做。
 - 构建产物和 `_headers` / `_redirects` 由脚本生成，不手改 `dist/`。

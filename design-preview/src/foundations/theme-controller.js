@@ -7,7 +7,7 @@ export function createThemeController({apply,initialTheme='dark'}){
   html.dataset.theme=mode;html.style.colorScheme=mode;apply(mode);
   try{localStorage.setItem('wattdesk-home-theme',mode)}catch{/* Persistence is optional. */}
  }
- function clear(){clearTimeout(timer);html.classList.remove('wd-theme-fallback');delete html.dataset.themeTransition;}
+ function clear(){clearTimeout(timer);html.classList.remove('wd-theme-fallback');delete html.dataset.themeTransition;delete html.dataset.themeSnapshot;}
  function set(mode,{animate=true}={}){
   if(!['light','dark'].includes(mode))return;
   requested=mode;const current=++revision;
@@ -16,9 +16,13 @@ export function createThemeController({apply,initialTheme='dark'}){
   if(document.startViewTransition){
    // Old callbacks can still run after skipTransition: always commit latest intent.
    html.dataset.themeTransition='crossfade';
+   // The incoming snapshot is painted from live styles. Without this window a
+   // control-level colour transition would be captured mid-flight, freezing the
+   // old theme's ink into the new snapshot for the whole crossfade.
+   html.dataset.themeSnapshot='';
    transition=document.startViewTransition(()=>commit(requested));
-   transition.ready.catch(()=>{});
-   transition.finished.catch(()=>{}).finally(()=>{if(revision===current){transition=null;delete html.dataset.themeTransition;}});
+   transition.ready.catch(()=>{}).finally(()=>{delete html.dataset.themeSnapshot;});
+   transition.finished.catch(()=>{}).finally(()=>{if(revision===current){transition=null;clear();}});
   }else{
    html.dataset.themeTransition='colors';html.classList.add('wd-theme-fallback');void html.offsetWidth;commit(mode);
    const value=getComputedStyle(html).getPropertyValue('--wd-motion-theme').trim();

@@ -119,10 +119,30 @@ export function searchShortcutLabel() {
  * The one search-field structure used by Home and fullscreen. Both surfaces
  * share the glass host, 46px capsule, icon slot and clear control. Fullscreen
  * only omits the shortcut keycaps; its visible default copy is shared.
+ *
+ * `scalable` is off by default: the Home inline field and the fullscreen field
+ * are persistent editable surfaces whose result sheet is anchored to their
+ * laid-out box, so they must not grow on hover or press. The compact Plants
+ * toolbar field opts in to the same glass depth feedback as every other
+ * control on that page; the scale itself still comes from the shared material.
  */
-export function createSearchField({glass, placeholder, label, className = ""}) {
+export function createSearchField({
+  glass,
+  placeholder,
+  label,
+  className = "",
+  size = "default",
+  scalable = false,
+}) {
+  const compact = size === "compact";
   const field = document.createElement("div");
-  field.className = ["wd-search-field", "wd-glass", "wd-glass--no-scale", className]
+  field.className = [
+    "wd-search-field",
+    compact ? "wd-search-field--compact" : "",
+    "wd-glass",
+    scalable ? "" : "wd-glass--no-scale",
+    className,
+  ]
     .filter(Boolean)
     .join(" ");
   const icon = document.createElement("span");
@@ -142,7 +162,9 @@ export function createSearchField({glass, placeholder, label, className = ""}) {
   input.setAttribute("aria-autocomplete", "list");
   input.setAttribute("autocomplete", "off");
   input.spellcheck = false;
-  applyTypeStyle(input, "Subheadline/Regular");
+  // The compact field is the 36px sidebar control; the default stays the 46px
+  // Home/fullscreen capsule. Both keep the same structure and material.
+  applyTypeStyle(input, compact ? "14/14 medium" : "Subheadline/Regular");
   const clear = createInputClear({
     label: "Clear search",
     onClear: () => {
@@ -159,7 +181,7 @@ export function createSearchField({glass, placeholder, label, className = ""}) {
   // that attach their own result/refresh handler after construction.
   input.addEventListener("input", () => syncInputClear(clear, input.value));
   field.append(icon, input, clear);
-  glass.addSurface({host: field, radius: 23});
+  glass.addSurface({host: field, radius: compact ? 18 : 23});
   classifyCornerProfile(field);
   return {field, input, clear, icon};
 }

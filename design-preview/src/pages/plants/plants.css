@@ -1,0 +1,285 @@
+/*
+ * Plants list — dense workbench layout for the plants route.
+ *
+ * Every colour, material, type style and motion rhythm comes from the shared
+ * layer; this file only declares structure and states. No transition, duration
+ * or easing is written here (see foundations/motion.css).
+ */
+
+.plants-view{
+ position:absolute;inset:0;
+ display:flex;flex-direction:column;min-height:0;
+ border-radius:inherit;overflow:hidden;
+ background:var(--wd-bg-tertiary);
+ color:var(--wd-label-primary);
+}
+.plants-view[hidden]{display:none}
+
+.plants-inner{
+ --plants-page-inset:24px;
+ display:flex;flex-direction:column;min-height:0;height:100%;
+ padding:var(--wd-space-3) var(--plants-page-inset) 0;
+}
+.plants-inner[hidden]{display:none}
+
+/* ── /plants/:id placeholder ─────────────────────────────────────────────── */
+/* The URL is real and survives refresh; the detail design is not part of this
+ * build yet, so this surface only identifies the plant and states that fact. */
+.plants-detail{position:absolute;inset:0;display:flex;align-items:flex-start;justify-content:center;overflow:auto;padding:32px 24px}
+.plants-detail[hidden]{display:none}
+.plants-detail-inner{width:min(560px,100%);display:flex;flex-direction:column;align-items:flex-start;gap:10px;padding-top:24px}
+.plants-detail-back{margin-bottom:18px}
+.plants-detail-kicker{margin:0;color:var(--wd-label-tertiary);letter-spacing:.4px;text-transform:uppercase}
+.plants-detail-title{
+ margin:0;color:var(--wd-label-primary);
+ font-size:34px;font-weight:590;line-height:41px;letter-spacing:.4px;
+ overflow-wrap:anywhere;
+}
+.plants-detail-meta{margin:0;color:var(--wd-label-secondary);font-variant-numeric:tabular-nums}
+.plants-detail-note{max-width:440px;margin:8px 0 0;color:var(--wd-label-tertiary)}
+
+/* ── Header ─────────────────────────────────────────────────────────────── */
+.plants-header{position:relative;display:flex;align-items:center;gap:12px;flex:0 0 auto;min-height:36px;padding:0 0 8px}
+/* The header rule reaches the panel edges instead of stopping at the content
+ * inset, so the line reads as the top of the table rather than a text underline. */
+.plants-header::after{
+ content:"";position:absolute;left:calc(-1 * var(--plants-page-inset));right:calc(-1 * var(--plants-page-inset));bottom:0;
+ height:var(--wd-divider-width);background:var(--wd-separator-nonopaque);
+ pointer-events:none;
+}
+.plants-heading{display:flex;align-items:baseline;gap:8px;min-width:0}
+.plants-title{margin:0;white-space:nowrap;color:var(--wd-label-primary)}
+.plants-actions{margin-left:auto;display:flex;align-items:center;gap:8px}
+
+/* ── Toolbar ─────────────────────────────────────────────────────────────── */
+/* Keep the controls clear of the header rule; the top inset matches the page's
+ * 12px spacing rhythm, while the existing 8px below separates them from rows. */
+.plants-toolbar{display:flex;align-items:center;gap:4px;flex:0 0 auto;padding:var(--wd-space-3) 0 8px;min-width:0}
+.plants-toolbar-spacer{flex:1 1 auto;min-width:8px}
+
+/* The shared search field owns its height, radius, glyph, clear control and
+ * material; only the width is page-specific. */
+.plants-toolbar>.plants-search{flex:0 1 360px;min-width:200px;max-width:440px}
+
+.plants-toolbar-actions{display:flex;align-items:center;gap:8px;flex:0 0 auto}
+/* Standard disc's shared material owns size, radius, colour and focus. Only
+ * the activity dot for "a filter is on" / "columns differ" stays here. */
+.plants-icon-button[data-dot="true"]::after{
+ content:"";position:absolute;top:4px;right:4px;
+ width:5px;height:5px;border-radius:50%;background:var(--wd-blue);
+}
+
+/* ── Active filter chips ─────────────────────────────────────────────────── */
+.plants-chips{display:flex;flex-wrap:wrap;align-items:center;gap:6px;flex:0 0 auto;padding-bottom:8px}
+.plants-chips[hidden]{display:none}
+.plants-chip{
+ display:inline-flex;align-items:center;gap:2px;max-width:280px;
+ height:26px;padding:0 4px 0 10px;border-radius:999px;
+ background:var(--wd-fill-tertiary);color:var(--wd-label-secondary);
+}
+.plants-chip-label{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.plants-chip-remove{
+ display:inline-flex;align-items:center;justify-content:center;
+ width:18px;height:18px;border:0;border-radius:999px;background:none;
+ color:var(--wd-label-secondary);
+}
+.plants-chip-remove:is(:hover,:focus-visible){background:var(--wd-control-hover);color:var(--wd-label-primary)}
+.plants-clear{
+ display:inline-flex;align-items:center;height:26px;padding:0 8px;
+ border:0;border-radius:999px;background:none;color:var(--wd-label-secondary);
+}
+.plants-clear:is(:hover,:focus-visible){background:var(--wd-control-hover);color:var(--wd-label-primary)}
+
+/* ── Table ─────────────────────────────────────────────────────────────── */
+.plants-table-scroll{
+ flex:1 1 auto;min-height:0;overflow:auto;overscroll-behavior:contain;
+ scrollbar-width:thin;scrollbar-color:var(--wd-label-tertiary) transparent;
+ scroll-padding-top:38px;
+ /* The 2px breathing room lives outside the scrollport. Padding would leave a
+ * strip above the sticky header where scrolled row text leaks through. */
+ margin-top:2px;
+ padding:0 0 14px;
+}
+.plants-table-scroll[hidden]{display:none}
+.plants-table-scroll::-webkit-scrollbar{width:10px;height:10px}
+.plants-table-scroll::-webkit-scrollbar-track{background:transparent}
+.plants-table-scroll::-webkit-scrollbar-thumb{
+ background:var(--wd-label-tertiary);border:3px solid transparent;border-radius:999px;
+ background-clip:padding-box;
+}
+
+@media (min-width:1600px){
+ /* Keep the table content on the existing 24px page line while letting the
+  * vertical scrollbar sit against the panel edge. */
+ .plants-table-scroll{
+  margin-right:calc(-1 * var(--plants-page-inset));
+  padding-right:var(--plants-page-inset);
+ }
+ .plants-table-scroll::-webkit-scrollbar{width:8px;height:8px}
+ .plants-table-scroll::-webkit-scrollbar-thumb{
+  border-width:2px;
+ }
+}
+
+/* The table is borderless; the row surface itself carries the hover, so no
+ * cell paints an opaque background over the rounded state. */
+.plants-table{width:100%;border-collapse:separate;border-spacing:0;table-layout:fixed}
+.plants-caption{
+ position:absolute;width:1px;height:1px;padding:0;margin:-1px;
+ overflow:hidden;clip-path:inset(50%);white-space:nowrap;
+}
+
+/* Column headings are the quieter layer: 12px regular, secondary ink. The
+ * header row is one 36px line so the table's leading bookmark aligns with the
+ * start of the page title and the rows below. */
+.plants-table thead th{
+ position:sticky;top:0;z-index:3;
+ height:36px;padding:0 6px;
+ background:var(--wd-bg-tertiary);
+ color:var(--wd-label-secondary);text-align:left;font-weight:400;white-space:nowrap;
+}
+.plants-th--connection .plants-th-label{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+
+.plants-sort{
+ display:inline-flex;align-items:center;gap:4px;max-width:100%;
+ height:24px;margin-left:-6px;padding:0 6px;border:0;border-radius:6px;background:none;
+ color:var(--wd-label-secondary);white-space:nowrap;
+}
+.plants-sort:is(:hover,:focus-visible){background:var(--wd-control-hover);color:var(--wd-label-primary)}
+.plants-sort-label{min-width:0;overflow:hidden;text-overflow:ellipsis}
+.plants-sort-caret{opacity:0;color:inherit}
+.plants-sort[data-dir="asc"] .plants-sort-caret,
+.plants-sort[data-dir="desc"] .plants-sort-caret{opacity:1}
+.plants-sort[data-dir="asc"] .plants-sort-caret{rotate:180deg}
+
+/* Hover is a floating rounded row. Each cell paints the same translucent fill;
+ * only the first and last cell round their outer corners, so the surface reads
+ * as one continuous capsule without a pseudo-element participating in table
+ * layout (a <tr>::before is treated as an extra cell by some engines). */
+.plants-table tbody tr{height:44px;cursor:pointer}
+.plants-table tbody tr:is(:hover,:focus-visible,:focus-within) .plants-cell{background:var(--wd-fill-quaternary)}
+.plants-table tbody tr:is(:hover,:focus-visible,:focus-within) .plants-cell:first-child{border-radius:10px 0 0 10px}
+.plants-table tbody tr:is(:hover,:focus-visible,:focus-within) .plants-cell:last-child{border-radius:0 10px 10px 0}
+.plants-table tbody tr:focus-visible{outline:2px solid var(--wd-blue);outline-offset:-2px;border-radius:10px}
+
+.plants-cell{
+ height:44px;padding:0 6px;
+ background:none;
+ color:var(--wd-label-secondary);
+ white-space:nowrap;overflow:hidden;text-overflow:ellipsis;vertical-align:middle;
+}
+
+/* The leading bookmark and connection share the table's left edge with the
+ * page title. The name follows the compact connection icon without a wide
+ * gutter, so the identity block reads as one line at every viewport. */
+.plants-col-bookmark{width:32px;padding-left:0!important}
+.plants-cell.plants-col-connection,.plants-th.plants-col-connection{padding:0 4px}
+.plants-cell.plants-col-name{padding-left:4px}
+.plants-th.plants-col-name{padding-left:4px}
+/* The name header keeps the same 4px inset as its cells so the title and the
+ * first column start on one line; the button's own padding provides the pill. */
+.plants-th.plants-col-name .plants-sort{margin-left:-4px;padding:0 4px}
+/* Device opens the metrics block, so it carries a slightly larger left inset
+ * than the rest of the row; the header uses the same inset to stay in line. */
+.plants-cell.plants-col-device,.plants-th.plants-col-device{padding-left:20px;padding-right:0}
+.plants-cell.plants-col-power{padding-right:2px}
+.plants-th.plants-col-power{padding-right:0}
+.plants-th.plants-col-power .plants-sort{gap:2px;margin-left:-3px;padding:0 3px}
+.plants-cell.plants-col-firmware,.plants-th.plants-col-firmware{padding-left:2px}
+.plants-th.plants-col-firmware .plants-sort{gap:2px;margin-left:-4px;padding:0 4px}
+.plants-cell.plants-col-updated,.plants-th.plants-col-updated{padding-left:0}
+/* The time group owns the table's right edge. Right-aligning the header and
+ * the values keeps both on one edge instead of leaving the short time strings
+ * stranded at the left of a wide column. */
+.plants-cell.plants-col-updated{padding-right:11px;text-align:right}
+.plants-th.plants-col-updated{text-align:right}
+.plants-th.plants-col-updated .plants-sort{margin-left:0}
+/* The trailing header keeps its pill flush with the cell text while tightening
+ * the inner gap just enough for "Last update" plus its caret at the minimum. */
+.plants-th.plants-col-updated .plants-sort{gap:2px;margin-left:-5px;padding:0 5px}
+
+/* ── Cell content ────────────────────────────────────────────────────────── */
+.plants-name{display:block;overflow:hidden;text-overflow:ellipsis;color:var(--wd-label-primary)}
+.plants-text,.plants-mono,.plants-updated{display:block;overflow:hidden;text-overflow:ellipsis;color:var(--wd-label-secondary)}
+.plants-text,.plants-mono{color:var(--wd-vibrant-label-secondary)}
+.plants-mono{letter-spacing:0}
+.plants-updated{color:var(--wd-label-tertiary);font-variant-numeric:tabular-nums}
+
+.plants-cell--power{text-align:left;font-variant-numeric:tabular-nums}
+.plants-power{color:var(--wd-vibrant-label-secondary);font-variant-numeric:tabular-nums}
+.plants-power--empty{color:var(--wd-label-tertiary)}
+
+/* Connection is icon-only. The supplied artwork carries its own neutral ink and
+ * red alert; "ink" follows the primary label colour (white in dark, black in
+ * light), while the muted bars keep their 30% opacity. */
+/* Icon-only cells must not ask the browser for a text ellipsis: the narrow
+ * content box would otherwise paint ".." beside the glyph. */
+.plants-cell--icon,.plants-bookmark-cell{text-overflow:clip;overflow:visible}
+.plants-connection-glyph{
+ display:block;flex:0 0 auto;
+ width:18px;height:18px;
+ color:var(--wd-label-primary);
+}
+
+/* Status is icon + text in one colour. Attention and offline share red;
+ * unbound stays neutral; normal is green. */
+.plants-health{display:inline-flex;align-items:center;gap:6px;white-space:nowrap;color:var(--plants-health-color,var(--wd-label-secondary))}
+.plants-health--green{--plants-health-color:var(--wd-accent-green)}
+.plants-health--red{--plants-health-color:var(--wd-accent-red)}
+.plants-health--neutral{--plants-health-color:var(--wd-label-tertiary)}
+.plants-health-glyph{color:var(--plants-health-color,var(--wd-label-tertiary))}
+
+.plants-bookmark{
+ display:inline-flex;align-items:center;justify-content:flex-start;
+ width:28px;height:28px;padding:0 0 0 8px;border:0;border-radius:7px;background:none;
+ color:var(--wd-label-tertiary);opacity:0;
+}
+.plants-table tbody tr:is(:hover,:focus-within) .plants-bookmark,
+.plants-bookmark[aria-pressed="true"]{opacity:1}
+.plants-bookmark[aria-pressed="true"]{color:var(--wd-label-primary)}
+.plants-bookmark:is(:hover,:focus-visible){color:var(--wd-label-primary)}
+.plants-bookmark:focus-visible{outline:2px solid var(--wd-blue);outline-offset:-2px}
+.plants-bookmark-glyph{display:block;width:18px;height:18px}
+
+.plants-unknown{
+ display:inline-flex;align-items:center;justify-content:center;
+ width:22px;height:22px;border:0;border-radius:50%;
+ background:var(--wd-fill-tertiary);color:var(--wd-label-secondary);
+}
+.plants-unknown:is(:hover,:focus-visible){background:var(--wd-control-fill-hover);color:var(--wd-label-primary)}
+
+.plants-tooltip{padding:10px 12px;width:auto;max-width:248px}
+.plants-tooltip-text{margin:0;color:var(--wd-label-secondary)}
+
+/* ── Panels ──────────────────────────────────────────────────────────────── */
+.plants-panel{padding:0}
+.plants-filter-menu{max-height:min(64vh,520px);overflow:auto;padding:20px 10px 10px}
+.plants-filter-group{display:flex;flex-direction:column;gap:2px}
+
+/* ── Empty state ─────────────────────────────────────────────────────────── */
+.plants-empty{
+ flex:1 1 auto;min-height:0;
+ display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;
+ padding-bottom:72px;text-align:center;
+}
+.plants-empty[hidden]{display:none}
+.plants-empty-title{margin:0;color:var(--wd-label-primary)}
+.plants-empty-body{margin:0;max-width:360px;color:var(--wd-label-secondary)}
+.plants-empty-action{margin-top:6px}
+.plants-empty-action[hidden]{display:none}
+
+/* ── Masked glyphs ───────────────────────────────────────────────────────── */
+.plants-icon{
+ display:inline-block;flex:0 0 auto;
+ background-color:currentColor;
+ mask:var(--icon-mask) center/contain no-repeat;
+ -webkit-mask:var(--icon-mask) center/contain no-repeat;
+}
+.plants-icon--16{width:16px;height:16px}
+.plants-icon--14{width:14px;height:14px}
+.plants-icon--10{width:10px;height:10px}
+.plants-icon--8{width:8px;height:8px}
+
+@media (max-width:900px){
+ .plants-search{flex-basis:200px;min-width:140px}
+}

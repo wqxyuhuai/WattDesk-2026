@@ -24,10 +24,11 @@ const assert=require('node:assert/strict');
   // cards, then let the tab count explain the remainder instead of baking in
   // a snapshot that breaks when tabs are added or restored.
   const tabCount=await page.locator('.workspace-tab').count();
-  // Base chrome/cards (13) + one glass per open tab + the persistent tab
-  // tooltip (mounted once so it can show without a first-hover flash) + the
-  // annotated chart observation label, which is a read-only Glass Surface.
-  assert.equal(await page.locator('.wd-glass').count(),15+tabCount);
+  // Painted Home surfaces: base chrome/cards (13), one glass per open tab and
+  // the annotated chart observation label (a read-only Glass Surface). The tab
+  // tooltip is mounted but hidden until hover, and hidden route modules (Plants)
+  // stay assembled; neither has a box, so neither belongs to this count.
+  assert.equal(await page.locator('.wd-glass').evaluateAll(hosts=>hosts.filter(host=>host.getClientRects().length).length),14+tabCount);
   // Shared material adds a positional default only. Page nodes and absolute chrome
   // own their positioning; a higher-specificity glass rule collapses the reflow.
   const positioning=await page.evaluate(()=>({
@@ -40,7 +41,7 @@ const assert=require('node:assert/strict');
   assert.equal(positioning.history,'absolute','Glass must not override sidebar chrome positioning');
   assert.equal(positioning.forward,'absolute','Glass must not override sidebar chrome positioning');
   assert.equal(new Set(positioning.cards).size,1,'Status cards must remain on one row at the base viewport');
-  const geometry=await page.locator('.wd-glass').evaluateAll(hosts=>hosts.map(host=>{
+  const geometry=await page.locator('.wd-glass').evaluateAll(hosts=>hosts.filter(host=>host.getClientRects().length).map(host=>{
    const material=host.querySelector(':scope>.wd-glass-material'),h=host.getBoundingClientRect(),m=material.getBoundingClientRect(),style=getComputedStyle(host.querySelector(".wd-glass-fill"));
    return {surface:host.classList.contains('wd-glass--surface'),layers:[...material.children].map(layer=>{const b=layer.getBoundingClientRect();return [b.x,b.y,b.width,b.height]}),name:host.getAttribute('aria-label')||host.dataset.name,host:[h.x,h.y,h.width,h.height],material:[m.x,m.y,m.width,m.height],background:style.background,shadow:style.boxShadow,filter:style.backdropFilter};
   }));
@@ -55,8 +56,10 @@ const assert=require('node:assert/strict');
    assert.equal(new Set(group.map(g=>g.shadow)).size,1,`${surface?'Surfaces':'Controls'} must share one shadow`);
   }
   const discs=page.locator('.wd-glass--disc');
-  assert.ok(await discs.count()>=4,'Circular controls must share the automatic disc modifier');
-  for(const disc of await discs.all()){
+  const visibleDiscs=[];
+  for(const disc of await discs.all())if(await disc.isVisible())visibleDiscs.push(disc);
+  assert.ok(visibleDiscs.length>=4,'Circular controls must share the automatic disc modifier');
+  for(const disc of visibleDiscs){
     const state=disc.locator('.wd-glass-state');
     const idleEdge=await state.evaluate(el=>getComputedStyle(el,'::after').boxShadow);
     assert.match(idleEdge,/inset/);

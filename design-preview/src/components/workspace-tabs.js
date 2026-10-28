@@ -602,6 +602,10 @@ export function createWorkspaceTabs({
     if (!tab || !changes) return;
     const next = {...tab._state, ...changes};
     next.title = titleOf(next);
+    // Detail routes keep the Plants label and icon while only the URL params
+    // change. Do not replay the tab's swap animation when visible content is
+    // unchanged; route surfaces still receive their own `show(params)`.
+    const contentChanged = next.title !== tab._state.title || next.iconFile !== tab._state.iconFile;
     tab._state = next;
     tab.dataset.kind = next.kind || "";
     tab.dataset.route = next.route || "";
@@ -610,7 +614,7 @@ export function createWorkspaceTabs({
     if (tab.dataset.kind === "home") tab.setAttribute("aria-label", "Home tab");
     else if (next.kind === "home") tab.removeAttribute("aria-label");
     else tab.setAttribute("aria-label", `${next.title} tab`);
-    swapTabContent(tab, next);
+    if (contentChanged) swapTabContent(tab, next);
     scheduleLayout();
   }
 

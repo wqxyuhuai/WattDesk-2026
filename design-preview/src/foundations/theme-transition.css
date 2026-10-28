@@ -5,6 +5,9 @@
 ::view-transition-old(root){animation:none;mix-blend-mode:normal}
 ::view-transition-new(root){animation:wd-theme-reveal var(--wd-motion-theme) var(--wd-ease-theme) both;mix-blend-mode:normal}
 @keyframes wd-theme-reveal{from{opacity:0}to{opacity:1}}
+/* The new snapshot is one still frame: idle-to-theme colours must already be
+ * final inside it. Hover and focus keep their normal rhythm once it is ready. */
+html[data-theme-snapshot] :where(*,*::before,*::after){transition-duration:0s!important;transition-delay:0s!important}
 /* Older engines interpolate their paint properties during this short window.
  * Scope it to a deliberate theme change; normal control timings stay separate. */
 .wd-theme-fallback body,.wd-theme-fallback #home,.wd-theme-fallback .node,

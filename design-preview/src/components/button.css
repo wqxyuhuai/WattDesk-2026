@@ -9,8 +9,13 @@
  * Neutral keeps the shared glass face; Primary is the one solid accent and
  * suppresses the white reflection field that would otherwise wash the blue. */
 .wd-button--pill{position:relative;display:inline-flex;align-items:center;justify-content:center;min-height:36px;height:36px;padding:0 16px;border:0;border-radius:999px;font-size:13px;font-weight:510;line-height:18px;letter-spacing:-.08px;white-space:nowrap}
+/* Circular icon variant of the standard pill. The 36px glass disc keeps the
+ * shared neutral material, press depth, focus ring and disabled contract; only
+ * the silhouette and padding change, so toolbar actions cannot invent a local
+ * button material. */
+.wd-button--pill.wd-button--disc{width:36px;min-width:36px;padding:0;border-radius:50%}
 .wd-button--neutral{color:var(--wd-label-secondary)}
-.wd-button--neutral:is(:hover,:focus-visible){color:var(--wd-label-primary)}
+.wd-button--neutral:is(:hover,:focus-visible,[aria-expanded="true"]){color:var(--wd-label-primary)}
 .wd-button--primary{color:var(--wd-figma-grays-white)}
 .wd-button--primary>.wd-glass-material{
   --wd-glass-tint:var(--wd-blue);

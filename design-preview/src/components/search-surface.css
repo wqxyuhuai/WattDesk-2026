@@ -478,6 +478,19 @@
 .wd-search-input:focus-visible {
   outline: 0;
 }
+/* Compact field: the 36px sidebar Quick search geometry. Plants uses it so the
+ * toolbar field and the sidebar entry read as the same control; Home and
+ * fullscreen keep the default 46px capsule. Only geometry and type change --
+ * the glass host, glyph, clear control and clear behaviour stay shared. */
+.wd-search-field.wd-search-field--compact {
+  height: 36px;
+  padding: 0 14px;
+  gap: 9px;
+  border-radius: 18px;
+}
+.wd-search-field--compact .wd-search-field-icon {
+  flex-basis: 18px;
+}
 @media (max-width: 560px) {
   .wd-search-fullscreen { padding-top: 16vh; }
   .wd-search-panel--fullscreen { max-height: min(420px, calc(100vh - 16vh - 88px)); }

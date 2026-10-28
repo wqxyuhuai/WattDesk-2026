@@ -1,6 +1,6 @@
 # WattDesk
 
-当前交付是首页设计预览，使用原生 HTML、CSS 和 JavaScript。深浅主题、玻璃、字体、圆角及控件反馈共用一套基础；尚未接入其他页面路由或业务后端。
+当前交付是 WattDesk 设计预览，使用原生 HTML、CSS 和 JavaScript。Home 与 Plants 列表是真实页面，电站详情拥有可刷新的 `/plants/:id` URL；深浅主题、玻璃、字体、圆角及控件反馈共用一套基础。后端、登录权限和实时数据仍未接入。
 
 线上预览：<https://wattdesk-preview.carlwang.cn/>（Cloudflare 从 `master` 构建，发布流程见 [发布与部署](./docs/DEPLOYMENT.md)）。
 
@@ -9,7 +9,7 @@ cd design-preview
 npm run dev
 ```
 
-打开 [本地首页](http://127.0.0.1:4173/home.html?glass=figma)。运行网页无需安装第三方依赖。检查环境见 [运行说明](./design-preview/README.md)。
+打开 [本地首页](http://127.0.0.1:4173/home?glass=figma)。`/` 与 `/home.html` 会规范到 `/home`；Plants 为 `/plants`，电站详情为 `/plants/:id`。运行网页无需安装第三方依赖。检查环境见 [运行说明](./design-preview/README.md)。
 
 ## 开发与新对话阅读入口
 
@@ -18,6 +18,7 @@ npm run dev
 | 文档 | 用途 |
 |---|---|
 | [架构与扩展约定](./docs/ARCHITECTURE.md) | 目录职责、数据边界、增加页面的方法 |
+| [站点路由与 URL](./docs/ROUTING.md) | 规范路径、刷新还原、深链接回退与新增路由步骤 |
 | [组件手册](./docs/COMPONENTS.md) | 实际 API、颜色、文字、玻璃、卡片等的用法 |
 | [用户要求记录](./docs/USER-REQUIREMENTS.md) | 明确要求、最新修正与不能回退的事项 |
 | [顶栏标签规范](./docs/TOP-BAR-TABS.md) | 功能、API、交互、可访问性与真实接入清单 |

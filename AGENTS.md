@@ -6,7 +6,7 @@
 
 - 当前运行代码按 `design-preview/src/foundations`、`components`、`layouts`、`pages` 分层，所有页面加载 `src/shared.css`；不复制一套新的基础。页面依赖组件，组件依赖基础，共享层不得反向依赖首页节点 ID。
 - 原始 Figma 来源在 `design-preview/design/figma/`，运行资产在 `home-assets/`，生成场景在 `src/pages/home/data/`。完整同步用 `npm run sync`。生成文件不手改；原稿写死的几何值可保留。
-- 新页面使用语义布局，参考 `templates/page.html`，不复制首页绝对坐标 scene。真实路由、后端与权限在需求明确时逐步引入，不能虚构。
+- 新页面使用语义布局，参考 `templates/page.html`，不复制首页绝对坐标 scene。URL、深链接与刷新规则见 [站点路由](./docs/ROUTING.md)；新页面必须同时登记规范路径、服务端回退和回归断言。后端与权限仍未接入，不能虚构。
 - 完成需求后同步当前状态；共享规则更新设计规范；用户明确纠正更新要求记录。对话不能成为唯一记录。清理资产先检查引用与来源，保留可恢复路径。
 - 开始改动前阅读 [经验与防回归清单](./docs/LESSONS-LEARNED.md)；涉及顶部工作区标签时同时阅读 [顶栏标签规范](./docs/TOP-BAR-TABS.md)。
 - 构建与发布配置见 [发布与部署](./docs/DEPLOYMENT.md)：线上由 Cloudflare 从 `master` 构建，构建产物不入库，发布由维护者手动 push 触发。
@@ -15,7 +15,7 @@
 
 - 用户当前明确要求优先；同一事项按最新反馈执行，并同步规范。
 - 当前首页设计来源是同一 Figma 文件 `7hGGOqflIMGWTYQMm9tce0` 中的深色 **Home-主画板**（`14434:3261`）和浅色 **Home-主画板 - 浅色模式**（`14704:3871`）。修改前核对对应主题画板、组件状态与分层，不使用同名旧稿代替。
-- 当前首页入口：`design-preview/home.html?glass=figma`。历史 glass / linear / workspace 原型已在整理时移除，恢复快照在 Source 外的 Backups；业务规划在 `docs/history/`，不能用其旧视觉值覆盖当前规范。
+- 当前首页入口：`/home?glass=figma`；`/`、`/home.html` 会规范到 `/home`。Plants 为 `/plants`，电站详情为 `/plants/:id`。完整 URL 表见 [站点路由](./docs/ROUTING.md)。历史 glass / linear / workspace 原型已在整理时移除，恢复快照在 Source 外的 Backups；业务规划在 `docs/history/`，不能用其旧视觉值覆盖当前规范。
 - 能从设计和现有实现确定的事项直接执行；缺少关键设计或业务信息时询问，不能编造素材、数据或后端能力。
 
 ## 工作方式与边界
@@ -24,8 +24,8 @@
 - 一次性视觉微调默认只影响当前范围；只有用户明确表达长期偏好或同类问题复现时，才升级为全局规则。规则只保留最终确认方案，已推翻的旧要求不再作为有效规则。
 - 账户入口与通知按钮的旧上下文/通知浮层已按用户要求移除，等待重做；不得从旧组件、历史文档或备份恢复。按钮、玻璃和共享 hover 保留，重做后另行记录新的内容与交互。
 - 只修改需求范围内文件；规则归档或文档整理任务不得夹带功能、视觉、资源和测试变更。
-- 用户可用本地批注模式（`home.html?glass=figma&annotate=1`）在具体元素上留言；最近一次批注保存在 `design-preview/annotations.json`（按页面分组，已 gitignore）。开始视觉修改前先读该文件，完成后按需清理，避免把旧批注当成新需求。
-- 当前只有首页是设计预览的真实页面；非 Home 页面是 Coming soon 占位。搜索、菜单、示例数据、状态卡跳转和筛选均按现有实现如实描述，不虚构路由、权限、持久化、筛选结果或后端能力；接入真实业务时另立规则并验收。
+- 用户可用本地批注模式（`/home?glass=figma&annotate=1`）在具体元素上留言；最近一次批注保存在 `design-preview/annotations.json`（按页面分组，已 gitignore）。开始视觉修改前先读该文件，完成后按需清理，避免把旧批注当成新需求。
+- 当前真实页面为 Home 与 Plants 列表；`/plants/:id` 已有可刷新 URL，但详情内容仍是明确的预览占位，不虚构设备数据或控制能力。Service ticket、Statistics、Device tool 等其余路由继续使用 Coming soon。搜索、菜单、示例数据、状态卡跳转和筛选均按现有实现如实描述，不虚构权限、持久化、筛选结果或后端能力；接入真实业务时另立规则并验收。
 
 ## 共享优先
 
@@ -80,4 +80,4 @@
 - 快捷入口和 View all 在 hover / focus 显示下划线；快捷入口区左右各内收 20px；图表卡片用 Separators/Vibrant。
 - 阴影不被裁切；滚动到底的底部留白以单独布局文档为准，不在本文件或组件规范里另定 32px；仍检查 1545×1252 与基准 1920×1080。
 - 使用与改动匹配的检查和真实浏览器验证；共享视觉修改需截图。脚本和运行方法见 `DESIGN-SYSTEM.md`。
-- 当前首页是设计预览，未接入其他页面路由、后端统计和真实设备操作；反馈必须如实说明。
+- 当前是设计预览：URL 路由、深链接和刷新已接入，Home/Plants 为本地示例，Plant 详情仍是占位；未接入后端统计、权限和真实设备操作，反馈必须如实说明。

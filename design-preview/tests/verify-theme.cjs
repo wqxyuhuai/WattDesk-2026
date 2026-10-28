@@ -25,7 +25,22 @@ function comparePixels(a,b){
  await page.waitForFunction(()=>document.getAnimations().some(a=>a.animationName==='wd-theme-reveal'));
  const fade=await page.evaluate(()=>{const a=document.getAnimations().find(a=>a.animationName==='wd-theme-reveal');const time=a.currentTime;a.pause();a.currentTime=310;const opacity=Number(getComputedStyle(document.documentElement,'::view-transition-new(root)').opacity);a.currentTime=time;a.play();return {duration:a.effect.getTiming().duration,opacity}});
  assert.equal(fade.duration,620);assert.ok(fade.opacity>0&&fade.opacity<1,'Theme must have a visible intermediate state');
- await settle();await page.mouse.move(0,0);await settle();
+ // The incoming snapshot must already hold target-theme ink. A control-level
+ // colour transition captured mid-flight would freeze the old ink into the
+ // crossfade and flash a white Home glyph in light mode.
+ // Force the Home row into its unselected state without changing routes or tabs.
+ await page.evaluate(()=>{const home=document.querySelector('.target-nav[data-route="home"]');home.classList.remove('active');home.removeAttribute('aria-current');});
+ await button.click();await page.waitForFunction(()=>document.documentElement.dataset.theme==='dark');
+ await page.waitForFunction(()=>document.getAnimations().some(a=>a.animationName==='wd-theme-reveal'));
+ const iconMid=await page.evaluate(()=>{const a=document.getAnimations().find(a=>a.animationName==='wd-theme-reveal');a.pause();a.currentTime=310;
+  const art=document.querySelector('.target-nav[data-route="home"] .target-icon-art');
+  return {ink:getComputedStyle(art).backgroundColor,dur:getComputedStyle(art).transitionDuration};});
+ assert.equal(iconMid.ink,'rgba(235, 235, 245, 0.7)','Home icon must carry target-theme ink in the new snapshot');
+ await page.evaluate(()=>document.getAnimations().find(a=>a.animationName==='wd-theme-reveal').finish());await settle();
+ assert.equal(await page.evaluate(()=>getComputedStyle(document.querySelector('.target-nav[data-route="home"] .target-icon-art')).transitionDuration),'0.36s','Hover rhythm must return after the snapshot');
+ await button.click();await page.waitForFunction(()=>document.documentElement.dataset.theme==='light');await settle();
+ await page.evaluate(()=>{const home=document.querySelector('.target-nav[data-route="home"]');home.classList.add('active');home.setAttribute('aria-current','page');});
+ await page.mouse.move(0,0);await settle();
  const light=await page.evaluate(()=>{
   const node=id=>document.querySelector(`[data-node-id="${id}"]`),css=(e,pseudo)=>getComputedStyle(e,pseudo);
   const glass=document.querySelector('.wd-glass-fill');
