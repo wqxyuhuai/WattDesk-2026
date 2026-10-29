@@ -1,6 +1,6 @@
 # 发布与部署
 
-更新：2026-10-26。适用于当前设计预览。构建行为以本文件与 `design-preview/scripts/build-site.cjs` 为准。
+更新：2026-10-29。适用于当前设计预览。构建行为以本文件、`design-preview/wrangler.jsonc` 与 `design-preview/scripts/build-site.cjs` 为准。
 
 ## 线上入口
 
@@ -32,6 +32,24 @@
 3. 在 GitHub Desktop 提交并 Push 到 `master`。
 4. 等 Cloudflare 构建完成（通常 1 分钟内），按“发布后验证”检查。
 5. 失败时在 Cloudflare 部署列表查看 Build 日志；回滚用 GitHub 上的 Revert，不要手改线上文件。
+
+### GitHub Desktop 发布
+
+可以，但这里的“发布”本质是提交并推送 `master`，不是 GitHub Desktop 自己执行部署：
+
+1. 确认当前分支是 `master`，并已包含本地提交。
+2. 在 GitHub Desktop 点击 `Push origin`；只有推送成功且 GitHub 远端 `master` 更新，Cloudflare 才会构建。
+3. 推送完成后打开 GitHub 提交旁的 Cloudflare check。`Build command completed` 只代表代码构建成功，必须等到 check 变为成功才表示部署完成。
+4. 按“发布后验证”检查首页、Plants、详情深链接和缓存头。
+
+不要在功能分支上点击 `Publish branch` 代替发布；生产触发分支固定为 `master`。只在 Cloudflare 自身故障导致 Git 构建无法运行时，才使用 Dashboard 的临时手动部署，并在恢复后重新触发一次 `master` 构建。手动部署不替代版本库记录。
+
+### 2026-10-29 发布故障复盘
+
+- 现象：`npm run build:site:public` 在 Cloudflare 内成功，但随后创建 Worker 版本失败；GitHub check 最终显示失败。
+- 根因：`_redirects` 将 `/plants` 等 SPA 路径以 `200` 重写到 `/index.html`。新版 Workers 识别到 HTML 后缀归一化可能再次触发该规则，返回错误 `100324: Infinite loop detected`。
+- 修复：深链接改用 `wrangler.jsonc` 中 `assets.not_found_handling: "single-page-application"`；`_redirects` 只保留 `/`、`/home.html`、`/index.html` 到 `/home` 的规范跳转。
+- 防回归：`tests/verify-build-config.cjs` 检查 Worker 名称、SPA 回退配置和生成后的 `_redirects`，禁止重新加入 `/index.html 200` 代理。以后遇到“Build completed 但 Deploy failed”，先查看 Deploy 日志中的错误码，不把它误判为前端构建失败。
 
 ## 产物与仓库边界
 
