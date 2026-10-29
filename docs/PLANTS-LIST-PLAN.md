@@ -422,4 +422,4 @@ type Plant = {
 - 复选框只切换状态并立即筛选，浮层保持打开；条件名称按钮应用并关闭。每次改变都通过同一个 `state.filters` 重算表格和 chips，不另存第二份筛选状态。
 - 每个具体条件生成独立短 chip（只显示条件文字），例如 `Hybrid Inverter`；chips 后只有一个复用筛选浮层的小加号，唯一 `Clear` 固定在条件区最右侧并跨多行垂直居中。条件区使用设计稿 `Backgrounds/Tertiary Elevated` 实底，chip 使用 `Fills/Secondary`，不使用偏粉或偏紫的透明叠色。
 - 列可视性使用用户提供的 `Eye` / `Eye Closed` 图标置于文字前，不再使用尾部对勾；素材来源索引为 `design-preview/design/figma/plants/icons-source.json`。
-- 新增 `tests/verify-plants-filters.cjs`，`npm test` 现为 12 个套件；深浅主题实拍见 `design-preview/tests/output/plants-filter-*.png` 与 `plants-visibility-*.png`。
+- 新增 `tests/verify-plants-filters.cjs`；合并后的 `npm test` 现为 13 个套件。深浅主题实拍见 `design-preview/tests/output/plants-filter-*.png` 与 `plants-visibility-*.png`。

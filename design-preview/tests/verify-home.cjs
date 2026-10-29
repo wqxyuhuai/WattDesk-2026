@@ -164,6 +164,17 @@ const origin = new URL(require('./runtime.cjs').previewURL).origin;
   assert.deepEqual(await recentLabels(),expectedHistory);
   await page.reload();await page.waitForFunction(()=>document.documentElement.dataset.ready==='true');
   assert.deepEqual(await recentLabels(),expectedHistory,'Recent visits must survive a reload');
+  const recentPlantsRow=page.locator('[data-recent-visit="true"]',{hasText:'Plants'}).first();
+  await recentPlantsRow.hover();await page.waitForTimeout(300);
+  const recentUnderline=await recentPlantsRow.locator('.wd-history-path').evaluate(path=>({line:getComputedStyle(path).textDecorationLine,color:getComputedStyle(path).textDecorationColor}));
+  assert.equal(recentUnderline.line,'underline','Recent visit breadcrumbs must underline on hover');
+  assert.notEqual(recentUnderline.color,'rgba(0, 0, 0, 0)');
+  await page.mouse.move(0,0);await page.waitForTimeout(400);
+  assert.equal(
+    await recentPlantsRow.locator('.wd-history-path').evaluate(path=>getComputedStyle(path).textDecorationColor),
+    'rgba(0, 0, 0, 0)',
+    'Recent visit breadcrumb underlines must fade out after pointer leave'
+  );
   await page.locator('.target-history').click();await page.waitForTimeout(360);
   assert.deepEqual(await page.locator('.wd-history-row').evaluateAll(rows=>rows.map(row=>row.getAttribute('aria-label'))),expectedHistory);
   // History rows must reuse the sidebar route icon, not normalise every glyph.
@@ -180,7 +191,7 @@ const origin = new URL(require('./runtime.cjs').previewURL).origin;
   assert.equal(await page.locator('.wd-history-row').first().locator('.target-nav-icon').evaluate(el=>getComputedStyle(el).color),historyInk.primary,'History row icons must rise to primary ink on hover');
   await page.mouse.move(0,0);await page.waitForTimeout(400);
   const historyMaterial=await page.locator('.wd-history-popover').evaluate(panel=>({radius:getComputedStyle(panel).borderRadius,width:panel.getBoundingClientRect().width,material:!!panel.querySelector('.wd-glass-material'),profile:panel.dataset.cornerProfile}));
-  assert.ok(Math.abs(historyMaterial.width-280)<1,'History popover width '+historyMaterial.width);assert.equal(historyMaterial.radius,'30px');assert.ok(historyMaterial.material);assert.equal(historyMaterial.profile,'continuous');
+  assert.ok(Math.abs(historyMaterial.width-380)<1,'History popover width '+historyMaterial.width);assert.equal(historyMaterial.radius,'30px');assert.ok(historyMaterial.material);assert.equal(historyMaterial.profile,'continuous');
   await page.locator('.wd-history-row',{hasText:'Plants'}).first().click();await page.waitForTimeout(360);
   assert.equal(await page.locator('.wd-history-popover').count(),0,'Selecting a history row closes the popover');
   assert.equal(await page.locator('.workspace-tab').count(),1,'Selecting a history row keeps the current tab');

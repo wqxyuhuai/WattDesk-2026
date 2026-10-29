@@ -151,13 +151,13 @@
  * shared hover rhythm as icons and buttons. The track width stays fixed; only
  * the thumb grows inside it, avoiding table reflow while the pointer is over
  * the scroll lane. */
-:where(.plants-scroll-indicator-thumb) {
+:where(.wd-scroll-feedback__thumb) {
   transition-property: width, left, background-color;
   transition-duration: var(--wd-motion-hover-out);
   transition-timing-function: var(--wd-ease-hover-out);
 }
 
-:where(.plants-scroll-indicator:is(:hover, :focus-within, .is-dragging) .plants-scroll-indicator-thumb) {
+:where(.wd-scroll-feedback:is(:hover, :focus-within, .is-dragging) .wd-scroll-feedback__thumb) {
   transition-duration: var(--wd-motion-hover);
   transition-timing-function: var(--wd-ease-hover);
 }
@@ -217,7 +217,7 @@
 }
 
 /* Shortcut links reveal their underline on hover/focus. */
-:where(.shortcut-link.text, .shortcut-link .text) {
+:where(.shortcut-link.text, .shortcut-link .text, .recent-visit-row .wd-history-path) {
   transition-property: text-decoration-color;
   transition-duration: var(--wd-hover-duration);
   transition-timing-function: var(--wd-hover-ease);

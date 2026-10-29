@@ -11,6 +11,7 @@
 // paint and needs the same opaque mask the sidebar got on load.
 import {classifyCornerProfile} from "../foundations/geometry.js";
 import {prepareIconMasks} from "./control-states.js";
+import {renderHistoryPath} from "./history-path.js";
 import {menuHeading,menuList,menuRow,mountMenu} from "./menu-popover.js";
 
 const MAX_ITEMS=8;
@@ -32,7 +33,10 @@ export function createHistoryPopover({glass,registerPanel,close,onSelect}){
    const row=menuRow(entry.title,{iconFile:entry.iconFile||"asset-5.svg",iconTone:"color",iconNode:sidebarRouteIcon(entry.route)});
    row.classList.add("wd-history-row");
    row.dataset.route=entry.route;
-   row.addEventListener("click",()=>{onSelect?.(entry.route);close();});
+   row.title=entry.title;
+   const label=row.querySelector(".wd-menu-label");
+   if(label)renderHistoryPath(label,entry.parts||[{text:entry.title,tone:"current"}]);
+   row.addEventListener("click",()=>{onSelect?.(entry.route,{params:entry.params||{}});close();});
    list.append(row);
   }
   // The sidebar's route icons get their opaque inline masks on first paint.

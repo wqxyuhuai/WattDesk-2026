@@ -42,6 +42,33 @@ export const COMPANIES=Object.freeze([
  {id:"ksw",label:"KSW Handwerks GmbH"}
 ]);
 
+// Multi-level company source for the Plants filter. The flat COMPANIES list
+// remains for existing row/search labels, while this tree preserves the
+// organisation hierarchy shown in the filter panel.
+export const COMPANY_TREE=Object.freeze([
+ {id:"wattsonic",label:"Wattsonic Energy Technology",children:[
+  {id:"fe",label:"FE Energiesysteme GmbH (AC)",children:[
+   {id:"fe-nord",label:"FE Energiesysteme Nord GmbH"}
+  ]},
+  {id:"bischoff",label:"Bischoff Energiesysteme GmbH",children:[
+   {id:"bischoff-service",label:"Bischoff Service & Wartung GmbH"}
+  ]},
+  {id:"rheinland",label:"Rheinland Energie Technik GmbH"},
+  {id:"alpenstrom",label:"Alpenstrom Handels GmbH",children:[
+   {id:"alpenstrom-sued",label:"Alpenstrom Süd Service GmbH"}
+  ]},
+  {id:"ekd",label:"Energiekonzepte Deutschland GmbH",children:[
+   {id:"winkler",label:"Elektro-Service Winkler"},
+   {id:"ksw",label:"KSW Handwerks GmbH"},
+   {id:"sonnenwerk",label:"Sonnenwerk Vertrieb GmbH",children:[
+    {id:"sonnenwerk-service",label:"Sonnenwerk Service Nord GmbH"}
+   ]},
+   {id:"nordlicht",label:"Nordlicht Solar GmbH"}
+  ]},
+  {id:"nordsee",label:"Nordsee Wärmesysteme GmbH"}
+ ]}
+]);
+
 export const PLANT_TYPES=Object.freeze([
  {id:"heating",label:"Heating system"},
  {id:"battery",label:"Battery system"},

@@ -17,6 +17,7 @@
 |---|---|---|
 | 主题、语义色、字体、字号、间距、圆角、动效节奏 | `design-preview/src/foundations/tokens.css` | 引用 token，不重复定义同义值 |
 | 组件级共享动效契约 | `design-preview/src/foundations/motion.css` | `shared.css` 自动加载；组件只声明默认与激活视觉值，不写局部 transition 时长 |
+| 长列表滚动反馈 | `design-preview/src/components/scroll-feedback.js` / `.css` | 自定义滑块样式、hover / 拖动、上下越界弹性与回弹缩短；页面提供容器、内容节点和几何内距 |
 | Figma 文字样式源与生成 token | `design-preview/design/figma/figma-type-source.json` / `src/foundations/type.css` | `npm run sync:type` 生成；`typography.js` 将节点或语义组件绑定至命名 style |
 | 全局连续圆角与分隔线宽度 | `design-preview/src/foundations/geometry.css` / `geometry.js` | 保留半径、尺寸；普通圆角矩形平滑，原稿圆形和胶囊形保持 round |
 | 标准头像 | `design-preview/src/components/avatar.css` / `.wd-avatar` | 1px 同色内描边；深色中心扩散阴影，浅色无外投影。组件只负责尺寸与内容 |
@@ -56,6 +57,7 @@
 - 新增工作区标签时，先按插入后的标签数量算出最终平均槽位，再让既有标签在首帧直接采用该槽位；新标签只从 0 展开到该槽位。入场期间由 `is-entering` / `is-resizing` 隔离宽度过渡，禁止既有标签再播放第二条 `flex-basis` / `width` 动画，也禁止新标签先按旧平均宽度出现一帧。回归以 `getComputedStyle(...).width` 验证布局槽位，不能用包含玻璃按压缩放的 `getBoundingClientRect()` 代替。
 - 工作区标签在压缩或横向溢出时，鼠标停留于标签条内关闭任意标签，剩余标签保持当前宽度、位置与 `scrollLeft`；后一个标签的关闭 X 移入空出的位置，支持在原位连续关闭。鼠标离开标签条后才按可用空间恢复自适应宽度。溢出期间用隐藏的尾部占位维持滚动范围，避免删除节点夹紧滚动位置；宽标签未压缩时保留标准关闭动画。
 - 顶部标签总宽度已占满可用空间时，Add 按钮固定在标签条最右侧；新标签从 0 展开不得带动 Add 左移。占满时标签列表填满剩余宽度（`is-slot-filled`），未占满时仍按内容自然增长。验收用真实指针逐帧核对 Add 的位置，不允许只检查静态布局或 `flex` 值。
+- 工作区标签支持按住拖拽改序：水平移动超过 `4px` 后进入拖动，跨过相邻标签中心即实时换位，邻居使用共享 `--wd-motion-tab-out`（`220ms`）与 `--wd-ease-tab-in` 做 FLIP；释放后源标签平滑吸附，不得误触发标签切换或关闭。拖动中活动标签、页面内容和 URL 保持不变；焦点始终随活动标签，不会落到未被激活的拖动标签。触屏仅接管水平手势；溢出时靠近标签条左右边缘自动横向滚动。键盘可用 `Ctrl/Cmd + Shift + ←/→` 等价换位，并通过 polite live region 报出新的位置。
 - hover / focus 的中性图标必须实际显示为主文字色，深色下为纯白。原始 SVG 的标签透明度只用于默认状态；共享状态遮罩去除该透明度，不能只设置 CSS 颜色却仍显示半透明灰。保留原始路径与原始素材，彩色图标继续显示原色。
 
 ## 4. 统一玻璃材质
@@ -116,7 +118,7 @@
 #### 标准浮层菜单（Standard Shell Menu）
 
 - 适用：顶栏 `Language`、`Appearance`、`WattDesk`，历史浮窗及后续文本型菜单。统一使用 `components/menu-popover.js` 的 `menuHeading` / `menuList` / `menuRow` / `menuNote` / `mountMenu`，内容根节点为 `.wd-menu`；外壳仍由 `registerPanel()` 或历史面板自己挂载 Glass Surface。
-- 外壳：紧凑菜单固定 **200px** 宽、**30px** 圆角、0 内距，由 `.popover--menu` 提供；历史浮窗因路由标题较长，是唯一保留 **280px** 宽度的例外。不能按文案临时加宽，也不能为单个菜单另写外壳。
+- 外壳：紧凑菜单固定 **200px** 宽、**30px** 圆角、0 内距，由 `.popover--menu` 提供；历史浮窗因完整层级路径，是唯一保留最多 **380px** 宽度（小视口下为视口减 16px）的例外。不能按文案临时加宽，也不能为单个菜单另写外壳。
 - 内胆：`.wd-menu` 顶部内距 `20px`，左右与底部各 `10px`，标题/列表纵向间距 `10px`；标题使用 `Footnote/Emphasized`（13px / 590、`Labels/Secondary`），左右内缩 `14px`。列表行固定 `36px` 高、胶囊圆角，左右内距 `14px`、图标间距 `8px`，文字用 `14/14 medium`（14px / 510），默认 `Labels/Secondary`。
 - 状态：行 hover / 键盘 focus 使用 `--wd-fill-secondary` 背景并让文字、中性图标同步转为 `Labels/Primary`；选中行文字为主文字色。勾选固定占尾部 `20px` 槽位，用 `currentColor` 加 `/home-assets/tickle.svg` 不透明遮罩，未选中仅隐藏不占位变化，切换语言时标签不能左右跳。
 - 图标来源：菜单行不另建按文件名猜色的逻辑，直接复用侧栏路由图标。`Home` 为灰色 mono 遮罩；`Plants`、`Service ticket`、`Statistics` 保留原始彩色；`Cell balance`、`Module balance`、`Device track`、`WattDesk`、`Your teams`、`End users` 等中性素材走 `isNeutralIconFile()` 的共享灰色/主色状态。不得把全部行统一压成 mono，也不得在浅色下贴入白色 Home 原图。动态生成的菜单（历史浮窗等）必须在挂载前调用 `prepareIconMasks()`，得到与首屏侧栏相同的 `opaqueMaskURL` 不透明内联遮罩；否则原始导出的 `fill-opacity` 会让 hover 主色发灰。悬停反馈共用 `.wd-menu-row` 的图标与文字状态，不另写颜色或节奏。
@@ -214,13 +216,14 @@
 | toast 淡入 | 320ms | `--wd-motion-panel` / `--wd-ease-panel` |
 | toast 淡出 | 200ms | `--wd-motion-panel-exit` / `--wd-ease-hover-out` |
 | Workspace 标签关闭 | 260ms | `--wd-motion-tab-close` / `--wd-ease-hover-out` |
+| Workspace 标签拖拽换位 | 220ms | `--wd-motion-tab-out` / `--wd-ease-tab-in` |
 | 图表首次进入可视区 | 740ms | `--wd-motion-chart` / `--wd-ease-chart` |
 | 柱形逐项延迟 | 每项 35ms | `--wd-motion-stagger` |
 | 点击刷新图标转一圈 | 640ms | `--wd-motion-refresh` |
 | 深浅主题整体淡变 | 620ms | `--wd-motion-theme` / `--wd-ease-theme` |
 | 顶部 overscroll 回弹 | 640ms | `--wd-motion-pull-rebound` / `--wd-ease-spring` |
 
-- Plants 长列表保留原生滚动行为，视觉滚动滑块是 DOM 层：默认 `6px`、hover `8px`；颜色与宽度按共享 `240 / 360ms` 进入/离开节奏，轨道宽度保持 `10px`，不引发表格重排。滑块位置由表体滚动同步并支持拖动。表体顶部和底部 overscroll 都先经过约 `4px` 粘滞区，再逐步显示最高 `16px` 的主题背景空白，不使用白色底；松手回位使用上表共享 spring 缓动；减少动态效果时不显示位移回弹。
+- 长列表滚动反馈由共享 `components/scroll-feedback.js` / `.css` 提供，Plants 为首个使用方。原生滚动行为保留，视觉滑块是 DOM 层：默认 `6px`、hover `8px`；颜色与宽度按共享 `240 / 360ms` 进入/离开节奏，轨道宽度保持 `10px`，不引发表格重排。轨道顶部从固定表头下方的数据起始线开始，底部与内容区底边保留 `10px` 安全留白，并由轨道自身裁切；滑块位置由滚动同步并支持拖动。上下 overscroll 都先经过约 `4px` 粘滞区，再逐步显示最高 `16px` 的主题背景空白；越界过程中滑块同步收缩，松手回位使用上表共享 spring 缓动，滑块长度也沿同一时间轴恢复；减少动态效果时不显示位移与收缩动画。Home 主内容和其他具备 overflow 的小型控件本轮不自动接入，后续只在实际“数据列表”场景复用共享组件，避免页面画布、菜单和搜索面板被强行替换成同一种滚动条。
 
 ### 玻璃按压反馈
 
@@ -255,6 +258,7 @@
 - 主题使用一次有限的整页交叉淡入：`620ms`，包含外部 SVG、渐变和玻璃；首次载入不播放，连续切换以最后一次意图为准，减少动态效果立即到最终态。新主题快照生成期间（`data-theme-snapshot`）元素过渡统一压到 `0s`，避免把旧主题的中间色冻结进快照；`transition.ready` 后立即恢复 `240 / 360ms`。禁止全页反色、`transition: all` 或残留的临时过渡。
 - `tests/verify-motion.cjs` 检查共享入口与模板加载、动态控件继承、页面无局部 transition、折叠宿主不动、唯一位移例外及深浅主题/减少动态效果。
 - `tests/verify-responsive.cjs` 在 1920–420px 的 12 个宽度上检查内容居中、无横向滚动、画布/列无缩放、状态卡与业务卡 `4/2/1`、能源卡 `2/1`、快捷入口 `3/2/1`、图表与菜单不越界、刷新与周期右缘对齐、窄屏图标轨及账户/通知不重叠；同时覆盖状态卡悬停后箭头仍在边界内。
+- `tests/verify-workspace-tabs.cjs` 用真实指针和键盘检查标签双向跨位拖动、活动标签与 URL 保持、拖后焦点归属、快捷键及深浅主题截图。
 
 ## 7. 布局、语义与交互
 
@@ -272,6 +276,7 @@
 - 侧栏玻璃、卡片本体与文字字号不随响应式缩放；重排只改变列宽、列数和可见标签。正文与控件文字保持原设计字号，不通过缩小字体换列。
 - 首页内容画布保留最大 1000px 时，搜索下方快捷入口左右各内收 20px，等分列间距 20px；收窄后沿用 `3 → 2 → 1` 列节奏，仍不通过缩小字体实现内收。
 - 滚动区域左右各保留共享 48px 阴影空间；底部留白以最后一张图表卡片为基准，具体数值由单独的布局文档负责，本规范不另设固定 32px。Period statistics 的时区与 As-of 文案节点已永久删除，不做隐藏或恢复。调整 `overflow` 与层叠后重新检查阴影。
+- `Recently visited` 与左上角历史浮窗共用一份跨标签的访问归档；保存单位是 `{route, params}`，因此 `Plants` 列表和 `Plants / 电站名` 是两条独立记录。详情路径中父级与 `/` 使用 Labels/Secondary，最后一级电站名使用 Labels/Primary；首页行与浮窗均通过 `components/history-path.js` 渲染并展示完整路径。首页历史行在 hover / 键盘 focus 时，所有面包屑片段都显示与当前片段文字色一致的下划线，不能只给外层容器设线而漏掉 `inline-flex` 子级。顶栏后退 / 前进继续按标签独立，不读取或修改这份公共访问归档。
 - 优先使用真实 button / input；提取节点需提供等效角色、Enter/Space 和可见焦点。鼠标 hover 有对应 focus 状态。
 - 分类使用设计稿实心箭头，维护 `aria-expanded` / `aria-controls`；隐藏内容不可聚焦。浮层支持 Esc 和外部点击关闭，退出后不残留透明遮挡层。
 - 三点菜单的圆形 hover 背景与命中区为 30px，保持原始三点中心。标题容器允许控件溢出，不能用 18px 标题行裁切圆底；文字省略仍由文字节点自身控制，不全局取消图表或滚动区域裁切。
@@ -320,6 +325,7 @@ node tests/verify-home.cjs
 node tests/verify-shortcuts.cjs
 node tests/verify-routing.cjs
 node tests/verify-plants-filters.cjs
+node tests/verify-workspace-tabs.cjs
 node tests/verify-glass.cjs
 node tests/verify-theme.cjs
 node tests/verify-foundations.cjs
@@ -330,7 +336,7 @@ npm run sync:themes
 npm run sync:type
 ```
 
-`npm test` 检查当前首页交互、快捷入口行导航、URL/刷新、Plants 筛选与可视性、响应式重排、正式玻璃、主题、字体/圆角、共享组件、共享动效与搜索控件；若旧视觉基线失败会停在对应专项。浏览器运行配置见 `design-preview/tests/runtime.cjs` 和运行 README，可通过环境变量指定 Playwright、Chrome、Python；截图输出到 `tests/output/`，固定基线在 `tests/fixtures/`。`npm run test:visual` 对比整理前四张主题/尺寸基线，`npm run audit:assets` 检查引用。更新归档来源后用 `npm run sync` 生成运行数据与样式；生成文件不手改。
+`npm test` 检查当前首页交互、工作区标签拖拽排序、快捷入口行导航、URL/刷新、Plants 筛选与可视性、响应式重排、正式玻璃、主题、字体/圆角、共享组件、共享动效与搜索控件；若旧视觉基线失败会停在对应专项。浏览器运行配置见 `design-preview/tests/runtime.cjs` 和运行 README，可通过环境变量指定 Playwright、Chrome、Python；截图输出到 `tests/output/`，固定基线在 `tests/fixtures/`。`npm run test:visual` 对比整理前四张主题/尺寸基线，`npm run audit:assets` 检查引用。更新归档来源后用 `npm run sync` 生成运行数据与样式；生成文件不手改。
 
 ## 9. 维护约定
 

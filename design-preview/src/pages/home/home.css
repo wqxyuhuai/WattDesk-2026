@@ -57,6 +57,25 @@
 .shortcut-columns>.node>.node,.shortcut-columns [data-name="sidebar inner"],.shortcut-columns .shortcut-link{width:100%!important}
 .shortcut-columns [data-name="left content"]{max-width:calc(100% - 42px)}
 .shortcut-columns [data-name="right content"]{left:auto!important;right:0}
+/* Recently visited keeps the whole location on one line. The breadcrumb gets
+ * the space up to the trailing arrow instead of the narrow title width from
+ * the single-word Figma sample. */
+.recent-visit-row [data-name="left content"]{width:calc(100% - 16px)!important;max-width:none}
+.recent-visit-row .recent-visit-copy{width:calc(100% - 26px)!important}
+.recent-visit-row .recent-visit-path{
+  width:100%!important;overflow:visible!important;text-overflow:clip!important;
+}
+.recent-visit-row .wd-history-path{
+  display:block;
+  width:100%;
+  white-space:nowrap;
+  text-decoration-line:underline;
+  text-decoration-color:transparent;
+  text-underline-offset:2px;
+}
+.recent-visit-row:is(:hover,:focus-visible) .wd-history-path{
+  text-decoration-color:var(--wd-label-primary);
+}
 /* The inline search reuses the shared keycaps; only its right anchor is local. */
 .scene-search-shortcut{width:auto!important;height:22px;flex:0 0 auto}
 /* The only hover movement is the explicitly requested 2px arrow-glyph feedback. */

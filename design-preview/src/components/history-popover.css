@@ -1,10 +1,11 @@
-/* History panel host, Figma "history" (14803:7563). The panel is 280px wide
+/* History panel host, Figma "history" (14803:7563). The panel is 380px wide
  * with a 30px continuous radius; its heading/rows and 10px tail spacing come
- * from the shared .wd-menu anatomy in popover.css. */
+ * from the shared .wd-menu anatomy in popover.css. The extra width is reserved
+ * for complete breadcrumbs such as "Plants / <plant name>". */
 .wd-history-popover{
   position:fixed;
   z-index:105;
-  width:280px;
+  width:min(380px,calc(100vw - 16px));
   padding:0;
   overflow:visible;
   pointer-events:auto;
@@ -14,3 +15,17 @@
   isolation:isolate;
 }
 .wd-history-popover>.wd-glass-material{z-index:-1}
+.wd-menu .wd-history-row{
+  height:auto;
+  min-height:36px;
+  padding-top:7px;
+  padding-bottom:7px;
+}
+.wd-history-row .wd-menu-label{
+  overflow:visible;
+  text-overflow:clip;
+  white-space:normal;
+}
+.wd-history-row .wd-history-path{
+  white-space:normal;
+}

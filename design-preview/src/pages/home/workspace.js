@@ -152,6 +152,7 @@ function renderLocation(location){
  const changed=!sameLocation({route:previous,params:activeParams},location);
  activeRoute=route;
  activeParams=params;
+ if(changed&&definition)recentVisits.record(route,params);
 
  homeColumn.hidden=!isHome;
  if(previous!==route){
@@ -208,7 +209,6 @@ function openRoute(route,{record=true,params={},historyMode="push"}={}){
  close(true);
  searchClose(true);
  if(sameLocation({route:activeRoute,params:activeParams},{route,params}))return tab;
- recentVisits.record(route);
  workspaceTabs.captureCurrent();
  return commitLocation({route,params},{urlMode:record?historyMode:"replace",recordHistory:record});
 }
@@ -282,8 +282,6 @@ workspaceTabs.captureState=()=>({
 });
 workspaceTabs.restoreState=snapshot=>{
  const location={route:snapshot?.route||"home",params:snapshot?.params||{}};
- activeRoute=location.route;
- activeParams=location.params;
  renderLocation(location);
  const home=snapshot?.home||snapshot;
  if(!home)return;
@@ -324,11 +322,7 @@ workspaceTabs.onSelect=(state,tab)=>{
  close(true);
  searchClose(true);
  const next={route:state.route||"home",params:state.params||{}};
- const changed=!sameLocation({route:activeRoute,params:activeParams},next);
- activeRoute=next.route;
- activeParams=next.params;
  renderLocation(next);
- if(changed)recentVisits.record(next.route);
  updatePageTitle();
  workspacePanel.setAttribute("aria-label",`${routeCatalog[next.route]?.title||"Page"} workspace`);
  workspacePanel.setAttribute("aria-labelledby",tab.id);
@@ -427,8 +421,6 @@ return {
  addHomeTab,
  registerRouteView,
  showRoute(route,params={}){
-  activeRoute=route;
-  activeParams=params;
   renderLocation({route,params});
   updatePageTitle();
  }

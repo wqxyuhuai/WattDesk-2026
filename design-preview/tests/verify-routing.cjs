@@ -47,9 +47,11 @@ const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
   assert.equal(await page.locator('.plants-row').count(), 46);
   const scrollUi = await page.evaluate(() => {
     const scroll = document.querySelector('.plants-table-scroll');
-    const track = document.querySelector('.plants-scroll-indicator');
-    const thumb = document.querySelector('.plants-scroll-indicator-thumb');
+    const track = document.querySelector('.wd-scroll-feedback');
+    const thumb = document.querySelector('.wd-scroll-feedback__thumb');
     return {
+      shell: document.querySelector('.plants-table-shell').getBoundingClientRect().toJSON(),
+      header: document.querySelector('.plants-table thead').getBoundingClientRect().toJSON(),
       scroll: scroll.getBoundingClientRect().toJSON(),
       track: track.getBoundingClientRect().toJSON(),
       thumb: thumb.getBoundingClientRect().toJSON(),
@@ -57,30 +59,30 @@ const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
     };
   });
   assert.equal(Math.round(scrollUi.track.width), 10);
-  assert.equal(scrollUi.track.top, scrollUi.scroll.top);
-  assert.equal(scrollUi.track.bottom, scrollUi.scroll.bottom);
+  assert.equal(scrollUi.track.top, scrollUi.header.bottom, 'the rail must start below the fixed table header');
+  assert.equal(scrollUi.track.bottom, scrollUi.shell.bottom - 10, 'the rail must leave a 10px clearance above the content bottom edge');
   assert.ok(scrollUi.thumb.height < scrollUi.track.height * .7, 'the longer sample list must shorten the scrollbar thumb');
   assert.equal(scrollUi.width, '6px');
-  await page.locator('.plants-scroll-indicator').hover();
+  await page.locator('.wd-scroll-feedback').hover();
   await page.waitForTimeout(30);
   const scrollHover = await page.evaluate(() => {
-    const style = getComputedStyle(document.querySelector('.plants-scroll-indicator-thumb'));
+    const style = getComputedStyle(document.querySelector('.wd-scroll-feedback__thumb'));
     return { duration: style.transitionDuration, easing: style.transitionTimingFunction };
   });
   assert.equal(scrollHover.duration, '0.24s');
   assert.equal(scrollHover.easing, 'cubic-bezier(0.16, 1, 0.3, 1)');
   await page.waitForTimeout(240);
   assert.ok(
-    await page.locator('.plants-scroll-indicator-thumb').evaluate(element => Number.parseFloat(getComputedStyle(element).width)) >= 7.9
+    await page.locator('.wd-scroll-feedback__thumb').evaluate(element => Number.parseFloat(getComputedStyle(element).width)) >= 7.9
   );
   await page.mouse.move(700, 700);
   await page.waitForTimeout(30);
   assert.equal(
-    await page.locator('.plants-scroll-indicator-thumb').evaluate(element => getComputedStyle(element).transitionDuration),
+    await page.locator('.wd-scroll-feedback__thumb').evaluate(element => getComputedStyle(element).transitionDuration),
     '0.36s'
   );
 
-  const thumbBox = await page.locator('.plants-scroll-indicator-thumb').boundingBox();
+  const thumbBox = await page.locator('.wd-scroll-feedback__thumb').boundingBox();
   await page.mouse.move(thumbBox.x + thumbBox.width / 2, thumbBox.y + thumbBox.height / 2);
   await page.mouse.down();
   await page.mouse.move(thumbBox.x + thumbBox.width / 2, thumbBox.y + thumbBox.height / 2 + 100, { steps: 5 });
@@ -96,21 +98,25 @@ const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
   await pullWheel(1);
   await page.waitForTimeout(80);
   assert.ok(
-    await page.locator('.plants-table-pull-region--start').evaluate(element => Number.parseFloat(getComputedStyle(element).height)) <= 1,
+    await page.locator('.wd-scroll-feedback__pull--start').evaluate(element => Number.parseFloat(getComputedStyle(element).height)) <= 1,
     'the first overscroll gesture must feel sticky before revealing the gap'
   );
+  const restingTopThumbHeight = await page.locator('.wd-scroll-feedback__thumb').evaluate(element => element.getBoundingClientRect().height);
   await pullWheel(4);
   await page.waitForTimeout(120);
   const pulled = await page.evaluate(() => {
-    const surface = document.querySelector('.plants-table-pull-region--start');
+    const surface = document.querySelector('.wd-scroll-feedback__pull--start');
+    const thumb = document.querySelector('.wd-scroll-feedback__thumb');
     return {
       height: Number.parseFloat(getComputedStyle(surface).height),
-      background: getComputedStyle(surface).backgroundColor
+      background: getComputedStyle(surface).backgroundColor,
+      thumbHeight: thumb.getBoundingClientRect().height
     };
   });
   assert.ok(pulled.height > 0, 'pulling past the top must reveal the elastic surface');
   assert.ok(pulled.height <= 16, 'the elastic pull range must stay restrained');
   assert.notEqual(pulled.background, 'rgb(255, 255, 255)', 'the elastic region must use the page surface, not white');
+  assert.ok(pulled.thumbHeight < restingTopThumbHeight - 5, 'elastic top overscroll must visibly compress the scroll thumb');
   await page.waitForTimeout(140);
   assert.deepEqual(
     await page.locator('.plants-table').evaluate(element => {
@@ -121,7 +127,7 @@ const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
   );
   await page.waitForTimeout(720);
   assert.equal(
-    await page.locator('.plants-table-pull-region--start').evaluate(element => getComputedStyle(element).height),
+    await page.locator('.wd-scroll-feedback__pull--start').evaluate(element => getComputedStyle(element).height),
     '0px',
     'the elastic surface must settle back after release'
   );
@@ -129,31 +135,41 @@ const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
   await pullWheel(1, 180);
   await page.waitForTimeout(80);
   assert.ok(
-    await page.locator('.plants-table-pull-region--end').evaluate(element => Number.parseFloat(getComputedStyle(element).height)) <= 1,
+    await page.locator('.wd-scroll-feedback__pull--end').evaluate(element => Number.parseFloat(getComputedStyle(element).height)) <= 1,
     'the bottom edge must have the same sticky entry'
   );
+  const restingBottomThumbHeight = await page.locator('.wd-scroll-feedback__thumb').evaluate(element => element.getBoundingClientRect().height);
   await pullWheel(4, 180);
   await page.waitForTimeout(120);
   const pulledEnd = await page.evaluate(() => {
-    const surface = document.querySelector('.plants-table-pull-region--end');
+    const surface = document.querySelector('.wd-scroll-feedback__pull--end');
     const table = document.querySelector('.plants-table');
+    const thumb = document.querySelector('.wd-scroll-feedback__thumb');
     return {
       height: Number.parseFloat(getComputedStyle(surface).height),
       background: getComputedStyle(surface).backgroundColor,
-      offsetY: new DOMMatrix(getComputedStyle(table).transform).m42
+      offsetY: new DOMMatrix(getComputedStyle(table).transform).m42,
+      thumbHeight: thumb.getBoundingClientRect().height
     };
   });
   assert.ok(pulledEnd.height > 0 && pulledEnd.height <= 16, 'the bottom blank area must stay restrained');
   assert.equal(pulledEnd.background, pulled.background, 'top and bottom overscroll must share the same surface');
   assert.ok(pulledEnd.offsetY < 0, 'bottom overscroll must pull the table upward');
+  assert.ok(pulledEnd.thumbHeight < restingBottomThumbHeight - 5, 'elastic overscroll must visibly compress the scroll thumb');
   const bottomScrollbar = await page.evaluate(() => {
-    const scroll = document.querySelector('.plants-table-scroll').getBoundingClientRect();
-    const track = document.querySelector('.plants-scroll-indicator').getBoundingClientRect();
-    const thumb = document.querySelector('.plants-scroll-indicator-thumb').getBoundingClientRect();
-    return { scrollTop: scroll.top, scrollBottom: scroll.bottom, trackTop: track.top, trackBottom: track.bottom, thumbBottom: thumb.bottom };
+    const shell = document.querySelector('.plants-table-shell').getBoundingClientRect();
+    const scroll = document.querySelector('.plants-table-scroll');
+    const header = document.querySelector('.plants-table thead').getBoundingClientRect();
+    const track = document.querySelector('.wd-scroll-feedback').getBoundingClientRect();
+    const thumb = document.querySelector('.wd-scroll-feedback__thumb').getBoundingClientRect();
+    return { shellTop: shell.top, scrollOffsetTop: scroll.offsetTop, scrollClientTop: scroll.clientTop, headerHeight: header.height, shellBottom: shell.bottom, trackTop: track.top, trackBottom: track.bottom, thumbBottom: thumb.bottom };
   });
-  assert.equal(bottomScrollbar.trackTop, bottomScrollbar.scrollTop);
-  assert.equal(bottomScrollbar.trackBottom, bottomScrollbar.scrollBottom);
+  assert.equal(
+    bottomScrollbar.trackTop,
+    bottomScrollbar.shellTop + bottomScrollbar.scrollOffsetTop + bottomScrollbar.scrollClientTop + bottomScrollbar.headerHeight,
+    JSON.stringify(bottomScrollbar)
+  );
+  assert.equal(bottomScrollbar.trackBottom, bottomScrollbar.shellBottom - 10);
   assert.equal(bottomScrollbar.thumbBottom, bottomScrollbar.trackBottom);
   await page.waitForTimeout(880);
 

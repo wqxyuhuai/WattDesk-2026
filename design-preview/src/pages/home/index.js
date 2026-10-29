@@ -12,7 +12,6 @@ import {createPopoverController} from "../../components/popover.js";
 import {createHistoryPopover} from "../../components/history-popover.js";
 import {menuHeading,menuList,menuRow,menuNote,mountMenu} from "../../components/menu-popover.js";
 import {renderHomeScene} from "./scene.js";
-import {ROUTE_CATALOG as routeCatalog,displayTitle} from "./routes.js";
 import {createHomeLayout} from "./layout.js";
 import {createPeriodControl} from "./period.js";
 import {createRecentVisits} from "./recent-visits.js";
@@ -106,10 +105,14 @@ function returnToPlantsList(){return workspace?.returnToPlantsList();}
 targetChrome.workspaceTabs.setGlass(glass);
 // The history panel shares the date chooser's glass surface, radius and row
 // anatomy. It is closed through the same controller as every other panel.
-const historyPopover=createHistoryPopover({glass,registerPanel,close,onSelect:route=>openRoute(route)});
+const resolvePlantName=id=>{
+ const plant=plantById(id);
+ return plant?.name||(plant?"?":"");
+};
+const historyPopover=createHistoryPopover({glass,registerPanel,close,onSelect:(route,options)=>openRoute(route,options)});
 function openHistory(){
  if(overlays.firstElementChild)close(true);
- return historyPopover.open(targetChrome.history,recentVisits.list.map(entry=>({...entry,title:displayTitle(entry.route),iconFile:routeCatalog[entry.route]?.icon??null})));
+ return historyPopover.open(targetChrome.history,recentVisits.list.map(recentVisits.describe));
 }
 function action(id,label,handler){const el=get(id);if(el)enhanceControl(el,{label,onActivate:handler})}
 // Both summary cards navigate to Plants. Filtering will be connected with the
@@ -183,14 +186,11 @@ updateThemeButton(initialTheme);
 targetChrome.theme.addEventListener("click",()=>themeController?.toggle());
 targetChrome.history.addEventListener("click",()=>openHistory());
 const homeSnapshot=()=>({scrollTop:homeColumn.scrollTop,query:search.input.value,period:period.label(),range:period.rangeSnapshot()});
-const recentVisits=createRecentVisits({get,onOpen:openRoute});
+const recentVisits=createRecentVisits({get,onOpen:openRoute,resolvePlantName});
 workspace=createWorkspace({
  get,glass,toast,close,homeColumn,input:search.input,period,homeSnapshot,targetChrome,
  workspacePanel,searchClose:search.closeAll,recentVisits,
- resolvePlantName:id=>{
-  const plant=plantById(id);
-  return plant?.name||(plant?"?":"");
- },
+ resolvePlantName,
  layoutHome:()=>layout.resize()
 });
 // The Plants list is a real surface inside the same workspace panel; the shell

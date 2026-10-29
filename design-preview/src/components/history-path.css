@@ -1,0 +1,21 @@
+/*
+ * Shared breadcrumb for recently visited locations. Ancestors and separators
+ * stay tertiary while the actual destination uses primary ink.
+ */
+.wd-history-path{
+  display:inline;
+}
+
+.wd-history-path-part{
+  min-width:0;
+  white-space:nowrap;
+}
+
+.wd-history-path-part--ancestor,
+.wd-history-path-part--separator{
+  color:var(--wd-label-secondary);
+}
+
+.wd-history-path-part--current{
+  color:var(--wd-label-primary);
+}

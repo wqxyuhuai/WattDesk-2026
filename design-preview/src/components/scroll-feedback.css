@@ -1,0 +1,62 @@
+/*
+ * Shared scroll feedback: a thin rail that mirrors a native scroll viewport,
+ * plus optional elastic edge surfaces. Layout stays with the calling page.
+ */
+:where(.wd-scroll-feedback-host){
+  position:relative;
+}
+
+.wd-scroll-feedback{
+  --wd-scroll-feedback-right:0px;
+  --wd-scroll-feedback-lane:10px;
+  --wd-scroll-feedback-thumb:6px;
+  position:absolute;z-index:4;
+  right:var(--wd-scroll-feedback-right);
+  width:var(--wd-scroll-feedback-lane);
+  overflow:clip;pointer-events:auto;
+}
+
+.wd-scroll-feedback[hidden]{
+  display:none;
+}
+
+.wd-scroll-feedback__thumb{
+  position:absolute;top:0;left:calc((var(--wd-scroll-feedback-lane) - var(--wd-scroll-feedback-thumb)) / 2);
+  width:var(--wd-scroll-feedback-thumb);height:24px;min-height:24px;
+  border-radius:999px;
+  background:var(--wd-label-tertiary);
+  cursor:grab;
+}
+
+.wd-scroll-feedback:is(:hover,:focus-within,.is-dragging) .wd-scroll-feedback__thumb{
+  left:1px;width:8px;
+  background:var(--wd-label-secondary);
+}
+
+.wd-scroll-feedback.is-dragging .wd-scroll-feedback__thumb{
+  cursor:grabbing;
+}
+
+.wd-scroll-feedback__pull{
+  position:absolute;left:0;right:0;height:0;
+  z-index:0;opacity:0;pointer-events:none;
+  background:var(--wd-scroll-pull-surface,var(--wd-bg-tertiary));
+}
+
+.wd-scroll-feedback__pull--start{
+  border-radius:var(--wd-scroll-pull-start-radius,0);
+}
+
+.wd-scroll-feedback__pull--end{
+  bottom:0;
+  border-radius:var(--wd-scroll-pull-end-radius,0);
+}
+
+:where(.wd-scroll-feedback-content){
+  will-change:auto;
+}
+
+:where(.wd-scroll-feedback-content.is-pulling){
+  transform-origin:50% 0;
+  will-change:transform;
+}

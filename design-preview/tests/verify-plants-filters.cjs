@@ -18,6 +18,13 @@ const settle = page => page.evaluate(() => Promise.all(document.getAnimations().
   await page.evaluate(() => localStorage.setItem('wattdesk-home-theme', 'dark'));
   await page.reload({ waitUntil: 'domcontentloaded' });
   await page.waitForFunction(() => document.documentElement.dataset.ready === 'true');
+  const plantCounts = await page.evaluate(async () => {
+    const {PLANTS} = await import('/src/pages/plants/data.js');
+    return {
+      all: PLANTS.length,
+      withoutBischoff: PLANTS.filter(plant => !['bischoff','bischoff-service'].includes(plant.companyId)).length
+    };
+  });
 
   const filterTrigger = page.locator('.plants-toolbar-actions .plants-icon-button').first();
   const columnTrigger = page.locator('.plants-toolbar-actions .plants-icon-button').nth(1);
@@ -145,12 +152,12 @@ const settle = page => page.evaluate(() => Promise.all(document.getAnimations().
   assert.equal(await page.locator('#plants-filter-options').count(), 1);
   assert.equal(await page.locator('.plants-chip').count(), 1, 'selecting a top-level company produces one summary chip');
   assert.equal((await page.locator('.plants-chip').innerText()).replace(/\s*×\s*$/, '').trim(), 'Wattsonic Energy Technology');
-  assert.equal(await page.locator('.plants-row').count(), 26, 'the root company includes every child company');
+  assert.equal(await page.locator('.plants-row').count(), plantCounts.all, 'the root company includes every child company');
   const arrowAfter = await companyCategory.locator('.plants-filter-category-chevron').boundingBox();
   assert.ok(Math.abs(arrowAfter.x - arrowBefore.x) < 0.5, 'the category arrow must not move when its count appears');
 
   await companyRow('bischoff').locator('.plants-filter-checkbox').click();
-  assert.equal(await page.locator('.plants-row').count(), 22, 'a child checkbox must apply immediately');
+  assert.equal(await page.locator('.plants-row').count(), plantCounts.withoutBischoff, 'a child checkbox must apply immediately');
   assert.equal(
     await companyRow('wattsonic').locator('.plants-filter-checkbox').evaluate(input => input.indeterminate),
     true,
@@ -165,7 +172,7 @@ const settle = page => page.evaluate(() => Promise.all(document.getAnimations().
   await companyRow('bischoff').locator('.plants-filter-condition-choice').click();
   await page.waitForTimeout(260);
   assert.equal(await page.locator('#home-active-popover').count(), 0, 'clicking a condition name must apply and close');
-  assert.equal(await page.locator('.plants-row').count(), 26);
+  assert.equal(await page.locator('.plants-row').count(), plantCounts.all);
   await page.locator('.plants-clear').click();
   assert.equal(await page.locator('.plants-chips').isVisible(), false);
 
@@ -335,7 +342,7 @@ const settle = page => page.evaluate(() => Promise.all(document.getAnimations().
 
   await page.locator('.plants-clear').click();
   assert.equal(await page.locator('.plants-chips').isVisible(), false);
-  assert.equal(await page.locator('.plants-row').count(), 26);
+  assert.equal(await page.locator('.plants-row').count(), plantCounts.all);
   await page.setViewportSize({ width: 1440, height: 900 });
 
   // The filter and visibility menus share the same right edge.
@@ -387,7 +394,7 @@ const settle = page => page.evaluate(() => Promise.all(document.getAnimations().
   assert.equal(await columnTrigger.getAttribute('data-dot'), 'true');
   const refreshTrigger = page.getByRole('button', {name: 'Refresh plants'});
   await refreshTrigger.click();
-  await page.waitForFunction(() => document.querySelectorAll('.plants-row').length === 26);
+  await page.waitForFunction(count => document.querySelectorAll('.plants-row').length === count, plantCounts.all);
   assert.equal(await page.locator('.plants-chips').isVisible(), false, 'refresh clears all filters');
   assert.equal(await filterTrigger.getAttribute('data-dot'), 'false');
   assert.equal(await columnTrigger.getAttribute('data-dot'), 'false');

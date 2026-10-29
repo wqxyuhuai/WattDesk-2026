@@ -22,11 +22,13 @@
 | 日期选择 | `components/date-picker.js` / `.css` | `createDatePicker({trigger,glass,registerPanel,close,onApply,range})` → `{panel,close,getRange}`；另有 `presetRange / describeRange / parseDateInput / formatDateInput` |
 | 卡片 | `components/cards.js`、`cards.css` | `prepareCard(el,variant)` / `createCard({variant,radius,content})` |
 | 空状态 | `components/empty-state.js` / `.css` | `createEmptyState({iconFile,label})` → `{element,update,play}` |
+| 长列表滚动反馈 | `components/scroll-feedback.js` / `.css` | `createScrollFeedback({host,viewport,content,topInset,bottomInset,maxPull,deadZone})` → `{element,sync,destroy}`；负责滑块悬停、拖动、上下越界弹性与回弹缩短 |
 | 玻璃 | `components/glass-material.js` / `.css` | `createGlassMaterial({surfaces:[{host,radius,chrome,interactive}]})`，返回 `destroy()`；`interactive:false` 用于纯展示表面 |
 | 控件状态 | `components/control-states.js` / `.css` | 内容挂载后 `await prepareControlStates(container)` |
 | 历史浮窗 | `components/history-popover.js` / `.css` | `createHistoryPopover({anchor,entries,onSelect,registerPanel,close,motion})`；复用共享玻璃与 30px 浮层圆角，最多 8 行 |
 | 浮层 / 提示 | `components/popover.js` / `.css` | `createPopoverController({overlays,toastElement,motion,glass})`；菜单、tooltip、toast 自动使用 Glass Surface |
-| 标准浮层菜单 | `components/menu-popover.js`、`popover.css` 的 `.wd-menu` | `menuHeading / menuList / menuRow / menuNote / mountMenu`；顶栏紧凑菜单 200px，历史 280px 例外 |
+| 标准浮层菜单 | `components/menu-popover.js`、`popover.css` 的 `.wd-menu` | `menuHeading / menuList / menuRow / menuNote / mountMenu`；顶栏紧凑菜单 200px，历史完整层级最多 380px |
+| 历史层级路径 | `components/history-path.js` / `.css` | `renderHistoryPath(container,parts)`；父级/分隔符与末级分别使用语义色，首页最近访问和历史浮窗共用 |
 | 有限动效 | `foundations/motion.js` | `createHomeMotion({duration,easing,reducedMotion})`；名称保留，行为共享 |
 | JS 动效节奏 | `foundations/motion.js` | `motionDuration(token)` / `motionEasing(token)`，禁止硬编码毫秒或曲线 |
 | 主题 | `foundations/theme-controller.js` | `createThemeController({initialTheme,apply})`，每页一个 |
@@ -136,7 +138,7 @@ const material=createGlassMaterial({surfaces:[{host:panel,radius:30}]});
 
 ### 标准浮层菜单
 
-文本型菜单只复用一套内胆，外壳宽度由具体入口决定。顶栏 `Language` / `Appearance` / `WattDesk` 使用 `.popover.popover--menu`（200px），历史浮窗 `.wd-history-popover` 保留 280px；两者的标题、行、勾选和尾距都来自 `.wd-menu`。
+文本型菜单只复用一套内胆，外壳宽度由具体入口决定。顶栏 `Language` / `Appearance` / `WattDesk` 使用 `.popover.popover--menu`（200px），历史浮窗 `.wd-history-popover` 最多 380px，以保证 `Plants / 电站名` 等路径完整显示；两者的标题、行、勾选和尾距都来自 `.wd-menu`。历史行使用共享 `history-path.js`，长路径可自然换行并让行高增长，不能截断末级名称。
 
 ```js
 import {menuHeading,menuList,menuRow,mountMenu} from "/src/components/menu-popover.js";
@@ -195,6 +197,8 @@ tabs.activate(tab);tabs.closeActive();
 ```
 
 每个 tab 持有自己的 `snapshot`；激活新 tab 前会先 `captureCurrent()`。多 Home tab 统一标题与无障碍名称为 Home，内部 ID 仅用于区分和测试。顶部标签图标由 `createRouteIcon()` 同时建立原色层与单色遮罩层；`icons.js` 的 `isNeutralIconFile()` 标记灰色中性素材，这些图标在选中/hover 时隐藏灰色原图并显示 `currentColor` 遮罩（深色纯白），彩色素材仍显示原色层。中性素材的遮罩引用 `home-assets/masks/` 不透明副本（`npm run sync:masks` 生成），避免原稿 0.7 透明度让白色高亮变灰。`layout()` 在 58–180px 内计算宽度，空间不足进入横向滚动；初始只有一个 Home 标签，不预置 Plants 占位。新增/关闭、路由文字图标淡变、关闭 X 的颜色过渡读取共享 motion token，调用方不重复写时长。关闭中的 tab 临时解除 58px 最小宽度，确保槽位与间距一起收至零。压缩或溢出时，鼠标位于标签条内关闭任意标签，会冻结剩余标签的布局宽度与 `scrollLeft`；溢出时用尾部占位维持可滚动范围，使后一个 X 落在指针下，可原位连续关闭。指针离开标签条后移除占位并恢复布局；宽标签未压缩时保留标准关闭动画。新页面的侧栏和普通页内导航应调用 `update/activate`；Plants 列表行与自动建站 `?` 提示中的 `setup` 是已确认的新标签入口，调用 `workspace.openRouteInNewTab()`；自动建站电站的 tab 标题为 `?`。`Back to Plants` 调用 `workspace.returnToPlantsList()`：激活来源列表标签后关闭详情标签；来源已不存在时在当前详情标签内返回 Plants。
+
+标签支持指针拖拽重排，并暴露 `tabs.move(tab,index)` 供程序化排序。拖动超过 `4px` 才进入手势，跨过邻居中心实时换位，邻居用共享 FLIP 节奏移动；释放后源标签吸附，活动标签和 URL 不因拖动改变。溢出时左右 `28px` 边缘触发自动滚动。键盘使用 `Ctrl/Cmd + Shift + ←/→`，结果通过 polite live region 公布。不要把这段状态复制到页面层，也不要为拖拽另写时长。
 ## 卡片、搜索、头像与折叠
 
 ```js
@@ -211,6 +215,28 @@ const avatar=createAvatar("CW",{size:36});
 全屏搜索由 `components/search-surface.js` / `.css` 提供，入场和退场使用同一组共享 token，页面不另写时长。退场与入场方向相反：结果面板先向下离开，搜索框晚一个 `--wd-motion-search-stagger` 向下离开，背景遮罩最后才退。遮罩必须保留完整模糊直到内容走完，再用 `--wd-motion-search-veil-delay` + `--wd-motion-search-veil-out` 的长尾化开；不要让它和内容共用 `--wd-motion-search-out`。遮罩退场只能动画底色与 `backdrop-filter`，不能降低元素自身 `opacity`，否则 `backdrop-filter` 会提前丢失。调用方要等遮罩退场结束再卸载全屏搜索节点，避免背景突然变清晰。
 
 折叠 heading 先设置 `aria-expanded="true"`、`aria-controls` 指向 content.id，再调用 `bindDisclosure`；原始实心图标挂 `.wd-disclosure-icon`。共享逻辑维护 hidden/inert、高度/透明度动画及中途反向，不换图模拟旋转。
+
+## 长列表滚动反馈
+
+```js
+import {createScrollFeedback} from "/src/components/scroll-feedback.js";
+
+const feedback=createScrollFeedback({
+  host,
+  viewport,
+  content,
+  topInset:()=>viewport.offsetTop+header.offsetHeight,
+  bottomInset:10
+});
+// 内容重排、列显隐或数据刷新后：feedback.sync()
+// 页面销毁时：feedback.destroy()
+```
+
+`host` 是承载滚动视口的内容外壳，`viewport` 是实际 `overflow:auto/scroll` 的节点，`content` 是越界时参与平移的内容节点。组件自动创建轨道、滑块和上下回弹面，维护 `ResizeObserver`、滚动、滚轮、触摸与指针拖动；页面不再复制这些监听器或写局部动效时长。
+
+顶部和底部内距由调用方给出：列表有固定表头时，`topInset` 应返回表头下沿相对宿主顶端的位置；底部默认应保留 `10px` 安全留白，避免轨道端点落在圆角裁切区。`--wd-scroll-feedback-right` 可覆盖右缘定位，`--wd-scroll-feedback-lane` / `--wd-scroll-feedback-thumb` 控制轨道与默认滑块宽度，回弹面的背景与圆角由 `--wd-scroll-pull-surface` / `--wd-scroll-pull-start-radius` / `--wd-scroll-pull-end-radius` 提供。
+
+上下越界时，回弹面逐步展开，内容沿越界方向平移，滑块同步缩短并在松手后沿 `--wd-motion-pull-rebound` / `--wd-ease-spring` 恢复。`prefers-reduced-motion` 下直接复位，不保留位移动画。组件只替换滚动视觉与越界反馈，不负责列头、行 hover、排序、筛选或数据。
 
 ## 空状态
 

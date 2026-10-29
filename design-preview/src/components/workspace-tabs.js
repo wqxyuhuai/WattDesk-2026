@@ -6,6 +6,7 @@ import {motionDuration,motionEasing} from "../foundations/motion.js";
 const MAX_TAB_WIDTH = 180;
 const MIN_TAB_WIDTH = 58;
 const TITLE_MAX_LENGTH = 28;
+const DRAG_THRESHOLD = 4;
 
 function capTitle(value) {
   const clean = String(value || "").trim();
@@ -43,6 +44,12 @@ export function createWorkspaceTabs({
   list.className = "workspace-tab-list";
   list.setAttribute("role", "tablist");
   list.setAttribute("aria-label", "Workspace tabs");
+  const instructions = document.createElement("span");
+  instructions.className = "workspace-tab-instructions";
+  instructions.id = `workspace-tab-instructions-${Math.random().toString(36).slice(2)}`;
+  instructions.setAttribute("aria-live", "polite");
+  instructions.textContent = "Drag tabs to reorder. With a keyboard, press Control plus Shift plus Left or Right Arrow.";
+  list.setAttribute("aria-describedby", instructions.id);
 
   const tooltip = document.createElement("div");
   tooltip.className = "workspace-tab-tooltip wd-glass--surface wd-glass-popup";
@@ -70,11 +77,15 @@ export function createWorkspaceTabs({
   let frozenSpacer = null;
   let frozenScrollLeft = 0;
   const closing = new WeakSet();
+  const reorderAnimations = new Map();
+  let dragState = null;
+  let suppressClickUntil = 0;
+  let dragAutoScrollFrame = 0;
 
   container.classList.add("workspace-tabs");
   container.prepend(list);
   list.after(addButton);
-  container.append(tooltip);
+  container.append(instructions, tooltip);
 
   function setGlass(material) {
     if (!material) return;
@@ -295,6 +306,157 @@ export function createWorkspaceTabs({
     return icon;
   }
 
+  function animateSiblingReorder(previous, movedTab) {
+    const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    for (const tab of tabs) {
+      if (tab === movedTab) continue;
+      const before = previous.get(tab);
+      if (!before) continue;
+      const after = tab.getBoundingClientRect();
+      const dx = before.left - after.left;
+      const dy = before.top - after.top;
+      if (Math.abs(dx) < .5 && Math.abs(dy) < .5) continue;
+      reorderAnimations.get(tab)?.cancel();
+      if (reduced) continue;
+      const animation = tab.animate(
+        [{translate: `${dx}px ${dy}px`}, {translate: "0 0"}],
+        {duration: motionDuration("--wd-motion-tab-out"), easing: motionEasing("--wd-ease-tab-in")}
+      );
+      reorderAnimations.set(tab, animation);
+      animation.finished.catch(() => {}).finally(() => {
+        if (reorderAnimations.get(tab) === animation) reorderAnimations.delete(tab);
+      });
+    }
+  }
+
+  function applyOrder(nextTabs, movedTab = null) {
+    if (nextTabs.length !== tabs.length) return false;
+    if (nextTabs.every((tab, index) => tab === tabs[index])) return false;
+    const previous = new Map(tabs.map(tab => [tab, tab.getBoundingClientRect()]));
+    tabs = nextTabs;
+    for (const tab of tabs) list.insertBefore(tab, frozenSpacer);
+    animateSiblingReorder(previous, movedTab);
+    return true;
+  }
+
+  function reorderTab(tab, nextIndex, {movedWithPointer = false} = {}) {
+    const currentIndex = tabs.indexOf(tab);
+    if (currentIndex < 0) return false;
+    const others = tabs.filter(item => item !== tab);
+    const target = Math.max(0, Math.min(others.length, nextIndex));
+    const next = [...others];
+    next.splice(target, 0, tab);
+    if (!applyOrder(next, movedWithPointer ? tab : null)) return false;
+    updateOverflow(tab);
+    return true;
+  }
+
+  function moveTabBy(tab, direction) {
+    const current = tabs.indexOf(tab);
+    if (current < 0) return false;
+    const target = Math.max(0, Math.min(tabs.length - 1, current + direction));
+    if (target === current || !reorderTab(tab, target)) return false;
+    instructions.textContent = `${titleOf(tab._state)} tab moved to position ${target + 1} of ${tabs.length}.`;
+    scheduleLayout();
+    return true;
+  }
+
+  function positionDraggedTab(clientX) {
+    const drag = dragState;
+    if (!drag?.started) return;
+    const listRect = list.getBoundingClientRect();
+    const pointerX = list.scrollLeft + clientX - listRect.left;
+    const others = tabs.filter(item => item !== drag.tab);
+    const nextIndex = others.filter(item => item.offsetLeft + item.offsetWidth / 2 < pointerX).length;
+    if (nextIndex !== tabs.indexOf(drag.tab)) {
+      reorderTab(drag.tab, nextIndex, {movedWithPointer: true});
+      // Moving a captured DOM node to a new sibling position can implicitly
+      // release capture in Chromium. Rebind it immediately so the drag can
+      // continue across more than one tab.
+      try {
+        drag.tab.setPointerCapture?.(event.pointerId);
+      } catch {
+        // A cancelled pointer is handled by the browser's pointerup/cancel.
+      }
+    }
+    const currentLeft = listRect.left + drag.tab.offsetLeft - list.scrollLeft;
+    const desiredLeft = clientX - drag.grabOffsetX;
+    drag.tab.style.translate = `${desiredLeft - currentLeft}px 0`;
+  }
+
+  function updatePointerOrder(event) {
+    if (!dragState?.started) return;
+    event.preventDefault();
+    dragState.lastClientX = event.clientX;
+    positionDraggedTab(event.clientX);
+  }
+
+  function autoScrollDrag() {
+    dragAutoScrollFrame = 0;
+    const drag = dragState;
+    if (!drag?.started || !list.classList.contains("is-overflowing")) return;
+    const listRect = list.getBoundingClientRect();
+    const edge = 28;
+    let delta = 0;
+    if (drag.lastClientX < listRect.left + edge) {
+      delta = -Math.min(12, listRect.left + edge - drag.lastClientX);
+    } else if (drag.lastClientX > listRect.right - edge) {
+      delta = Math.min(12, drag.lastClientX - listRect.right + edge);
+    }
+    if (delta) {
+      const previous = list.scrollLeft;
+      list.scrollLeft = Math.max(0, Math.min(list.scrollWidth - list.clientWidth, list.scrollLeft + delta));
+      if (list.scrollLeft !== previous) positionDraggedTab(drag.lastClientX);
+    }
+    dragAutoScrollFrame = requestAnimationFrame(autoScrollDrag);
+  }
+
+  function startPointerDrag(event) {
+    if (!dragState || dragState.started) return;
+    dragState.started = true;
+    dragState.lastClientX = event.clientX;
+    freezeWidths();
+    list.classList.add("is-reordering");
+    dragState.tab.classList.add("is-dragging");
+    hideTooltip();
+    dragState.tab.setPointerCapture?.(event.pointerId);
+    dragAutoScrollFrame = requestAnimationFrame(autoScrollDrag);
+  }
+
+  function endPointerDrag(tab, event, {cancelled = false} = {}) {
+    const drag = dragState;
+    if (!drag || drag.tab !== tab || drag.pointerId !== event.pointerId) return;
+    dragState = null;
+    cancelAnimationFrame(dragAutoScrollFrame);
+    dragAutoScrollFrame = 0;
+    try {
+      if (tab.hasPointerCapture?.(event.pointerId)) tab.releasePointerCapture(event.pointerId);
+    } catch {
+      // Pointer capture may already have been released by the browser.
+    }
+    if (!drag.started) return;
+    const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const from = tab.style.translate || "0 0";
+    tab.classList.remove("is-dragging");
+    list.classList.remove("is-reordering");
+    suppressClickUntil = performance.now() + 320;
+    if (!cancelled && !reduced) {
+      const animation = tab.animate(
+        [{translate: from}, {translate: "0 0"}],
+        {duration: motionDuration("--wd-motion-tab-out"), easing: motionEasing("--wd-ease-tab-in")}
+      );
+      animation.finished.catch(() => {}).finally(() => tab.style.removeProperty("translate"));
+    } else {
+      tab.style.removeProperty("translate");
+    }
+    instructions.textContent = `${titleOf(tab._state)} tab moved to position ${tabs.indexOf(tab) + 1} of ${tabs.length}.`;
+    releaseFrozenWidths();
+    const focusTarget = drag.wasActive ? tab : tabs.find(item => item._state.id === activeId);
+    focusTarget?.focus({preventScroll: true});
+    hideTooltip();
+    scheduleLayout();
+  }
+
   function build(state) {
     const title = titleOf(state);
     const tab = document.createElement("div");
@@ -305,6 +467,7 @@ export function createWorkspaceTabs({
     tab.id = `workspace-tab-${state.id}`;
     tab.setAttribute("role", "tab");
     tab.setAttribute("aria-selected", "false");
+    tab.setAttribute("aria-keyshortcuts", "Control+Shift+ArrowLeft Control+Shift+ArrowRight");
     if (panelId) tab.setAttribute("aria-controls", panelId);
     if (state.kind === "home") tab.setAttribute("aria-label", "Home tab");
     tab.tabIndex = -1;
@@ -341,7 +504,14 @@ export function createWorkspaceTabs({
     close.addEventListener("focus", () => updateTooltip(tab));
     close.addEventListener("blur", hideTooltip);
 
-    tab.addEventListener("click", () => activate(tab));
+    tab.addEventListener("click", event => {
+      if (performance.now() < suppressClickUntil) {
+        event.preventDefault();
+        event.stopPropagation();
+        return;
+      }
+      activate(tab);
+    });
     tab.addEventListener("keydown", event => {
       if (event.target !== tab) return;
       if (event.key === "Enter" || event.key === " ") {
@@ -364,7 +534,11 @@ export function createWorkspaceTabs({
     tab.addEventListener("keydown", event => {
       if (event.target !== tab) return;
       const index = tabs.indexOf(tab);
-      if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
+      if ((event.ctrlKey || event.metaKey) && event.shiftKey &&
+          (event.key === "ArrowLeft" || event.key === "ArrowRight")) {
+        event.preventDefault();
+        moveTabBy(tab, event.key === "ArrowRight" ? 1 : -1);
+      } else if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
         event.preventDefault();
         const direction = event.key === "ArrowRight" ? 1 : -1;
         const next = tabs[(index + direction + tabs.length) % tabs.length];
@@ -379,6 +553,44 @@ export function createWorkspaceTabs({
         activate(target);
         target?.focus();
       }
+    });
+    tab.addEventListener("pointerdown", event => {
+      if (event.button !== 0 || event.isPrimary === false || event.target.closest(".workspace-tab-close")) return;
+      const rect = tab.getBoundingClientRect();
+      dragState = {
+        tab,
+        pointerId: event.pointerId,
+        startX: event.clientX,
+        startY: event.clientY,
+        grabOffsetX: event.clientX - rect.left,
+        wasActive: tab._state.id === activeId,
+        started: false
+      };
+      tab.setPointerCapture?.(event.pointerId);
+    });
+    tab.addEventListener("pointermove", event => {
+      if (!dragState || dragState.tab !== tab || dragState.pointerId !== event.pointerId) return;
+      if (!dragState.started) {
+        const dx = event.clientX - dragState.startX;
+        const dy = event.clientY - dragState.startY;
+        if (Math.abs(dx) < DRAG_THRESHOLD) return;
+        if (Math.abs(dy) > 18 && Math.abs(dy) > Math.abs(dx)) return;
+        startPointerDrag(event);
+      }
+      updatePointerOrder(event);
+    });
+    tab.addEventListener("pointerup", event => endPointerDrag(tab, event));
+    tab.addEventListener("pointercancel", event => endPointerDrag(tab, event, {cancelled: true}));
+    tab.addEventListener("lostpointercapture", event => {
+      if (dragState?.started && dragState.tab === tab) {
+        try {
+          tab.setPointerCapture(event.pointerId);
+          return;
+        } catch {
+          // Fall through to the normal cancellation path.
+        }
+      }
+      endPointerDrag(tab, event, {cancelled: true});
     });
 
     tabMountHandler?.(tab, tab._state);
@@ -631,6 +843,7 @@ export function createWorkspaceTabs({
 
   list.addEventListener("pointerenter", () => { pointerInsideList = true; });
   list.addEventListener("pointerleave", () => {
+    if (dragState?.started) return;
     pointerInsideList = false;
     releaseFrozenWidths();
   });
@@ -648,6 +861,7 @@ export function createWorkspaceTabs({
     remove: tab => closeTab(tab),
     closeActive: () => closeTab(tabs.find(tab => tab._state.id === activeId)),
     activate,
+    move: (tab, index) => reorderTab(tab, index),
     updateTitle,
     layout,
     setGlass,
@@ -668,6 +882,7 @@ export function createWorkspaceTabs({
       clearTimeout(tooltipTimer);
       cancelAnimationFrame(resizeFrame);
       cancelAnimationFrame(tooltipFrame);
+      cancelAnimationFrame(dragAutoScrollFrame);
       removeEventListener("resize", scheduleLayout);
       document.removeEventListener("scroll", onTooltipViewportChange, tooltipScrollOptions);
       removeEventListener("resize", onTooltipViewportChange);

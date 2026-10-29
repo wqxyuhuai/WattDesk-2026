@@ -1,16 +1,19 @@
 .workspace-tabs{position:absolute;left:0;top:0;height:36px;display:flex;align-items:center;gap:5px;width:calc(100% - 176px);max-width:calc(100% - 176px)}
 .workspace-tabs{overflow:visible;isolation:isolate}
 .workspace-tab-list{position:relative;display:flex;align-items:center;gap:5px;height:36px;min-width:0;overflow:visible;--workspace-tab-width:180px}
+.workspace-tab-list.is-reordering{cursor:grabbing;user-select:none}
 .workspace-tab-list.is-slot-filled{flex:1 1 0;max-width:calc(100% - 33px)}
 .workspace-tab-list.is-overflowing{flex:1 1 0;max-width:calc(100% - 33px);overflow-x:auto;overflow-y:visible;padding:22px 0 23px;margin:-22px 0 -23px;scrollbar-width:none;overscroll-behavior-x:contain;clip-path:inset(-22px 0 -23px 0)}
 .workspace-tab-list.is-overflowing::-webkit-scrollbar{display:none}
 .workspace-tab-list.is-overflowing>.workspace-tab-freeze-spacer{flex:0 0 var(--workspace-freeze-width,0px);width:var(--workspace-freeze-width,0px);min-width:0;height:1px;pointer-events:none}
-.workspace-tab{position:relative;height:36px;flex:0 0 var(--workspace-tab-width,180px);width:var(--workspace-tab-width,180px);max-width:180px;min-width:58px;padding:0 14px;gap:8px;overflow:visible;cursor:pointer;border-radius:var(--wd-radius-medium);background:transparent;color:var(--wd-label-tertiary);white-space:nowrap}
+.workspace-tab{position:relative;height:36px;flex:0 0 var(--workspace-tab-width,180px);width:var(--workspace-tab-width,180px);max-width:180px;min-width:58px;padding:0 14px;gap:8px;overflow:visible;cursor:grab;border-radius:var(--wd-radius-medium);background:transparent;color:var(--wd-label-tertiary);white-space:nowrap;touch-action:pan-y;user-select:none}
 .workspace-tab.is-entering{min-width:0;max-width:none}
 .workspace-tab.selected{color:var(--wd-label-primary)}
 .workspace-tab:is(:hover,:focus-visible,:has(:focus-visible)){color:var(--wd-label-primary)}
 .workspace-tab:focus-visible{z-index:2}
 .workspace-tab.is-closing{min-width:0;pointer-events:none}
+.workspace-tab.is-dragging{z-index:4;cursor:grabbing;will-change:translate}
+.workspace-tab.is-dragging .workspace-tab-action{opacity:0;pointer-events:none}
 .workspace-tab-icon{position:relative;flex:0 0 18px;width:18px;height:18px;color:currentColor;overflow:visible}
 .workspace-tab-icon-layer{position:absolute;inset:0;display:block;width:18px;height:18px}
 .workspace-tab-icon-mono{-webkit-mask:var(--icon-mask) center/contain no-repeat;mask:var(--icon-mask) center/contain no-repeat;background:currentColor}
@@ -39,4 +42,5 @@
 .workspace-tabs>.target-add-tab{position:relative;flex:none;width:28px;height:28px;display:grid;place-items:center}
 .workspace-tabs>.target-add-tab .target-icon-art{width:18px;height:18px}
 .workspace-tab-tooltip{position:fixed;z-index:120;max-width:280px;padding:7px 10px;border:0;border-radius:var(--wd-radius-compact);color:var(--wd-label-primary);font-size:13px;line-height:18px;pointer-events:none;white-space:nowrap}
+.workspace-tab-instructions{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
 /* Reduced motion is enforced by the shared motion contract. */

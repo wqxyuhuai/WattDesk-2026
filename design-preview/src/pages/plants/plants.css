@@ -104,17 +104,12 @@
 
 /* ── Table ─────────────────────────────────────────────────────────────── */
 .plants-table-shell{
- --plants-scrollbar-edge-gap:10px;
- --plants-scrollbar-lane:10px;
+ --wd-scroll-pull-surface:var(--wd-bg-tertiary);
+ --wd-scroll-pull-start-radius:0 0 12px 12px;
+ --wd-scroll-pull-end-radius:12px 12px 0 0;
  position:relative;display:flex;flex:1 1 auto;min-height:0;
 }
 .plants-table-shell[hidden]{display:none}
-.plants-table-pull-region{
- position:absolute;top:2px;left:0;right:0;height:0;
- border-radius:0 0 12px 12px;
- background:var(--wd-bg-tertiary);opacity:0;pointer-events:none;
-}
-.plants-table-pull-region--end{top:auto;bottom:0;border-radius:12px 12px 0 0}
 .plants-table-scroll{
  position:relative;z-index:1;
  flex:1 1 auto;min-width:0;min-height:0;overflow-x:auto;overflow-y:scroll;overscroll-behavior:contain;
@@ -123,30 +118,16 @@
  /* Keep the table body on the 24px page line while moving only the scrollbar
   * into the gutter. The same geometry applies at every width, so crossing a
   * responsive breakpoint cannot make the thumb jump sideways. */
- margin-right:calc(-1 * (var(--plants-page-inset) - var(--plants-scrollbar-edge-gap)));
+ margin-right:calc(-1 * (var(--plants-page-inset) - 10px));
  /* The 2px breathing room lives outside the scrollport. Padding would leave a
  * strip above the sticky header where scrolled row text leaks through. */
  margin-top:2px;
- padding:0 calc(var(--plants-page-inset) - var(--plants-scrollbar-edge-gap)) 14px 0;
+ padding:0 calc(var(--plants-page-inset) - 10px) 14px 0;
 }
 .plants-table-scroll[hidden]{display:none}
 .plants-table-scroll::-webkit-scrollbar{display:none}
-.plants-scroll-indicator{
- position:absolute;z-index:4;right:calc(-1 * (var(--plants-page-inset) - var(--plants-scrollbar-edge-gap)));
- width:var(--plants-scrollbar-lane);pointer-events:auto;
-}
-.plants-scroll-indicator[hidden]{display:none}
-.plants-scroll-indicator-thumb{
- position:absolute;left:2px;top:0;width:6px;min-height:24px;
- border-radius:999px;background:var(--wd-label-tertiary);cursor:grab;
-}
-.plants-scroll-indicator:is(:hover,:focus-within,.is-dragging) .plants-scroll-indicator-thumb{
- left:1px;width:8px;background:var(--wd-label-secondary);
-}
-.plants-scroll-indicator.is-dragging .plants-scroll-indicator-thumb{cursor:grabbing}
-.plants-table.is-pulling{
- transform-origin:50% 0;
- will-change:transform;
+.plants-table-shell>.wd-scroll-feedback{
+ --wd-scroll-feedback-right:calc(-1 * (var(--plants-page-inset) - 10px));
 }
 
 /* The table is borderless; the row surface itself carries the hover, so no
