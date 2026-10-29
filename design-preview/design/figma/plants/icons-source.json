@@ -1,0 +1,49 @@
+{
+  "source": "E:/OneDrive/Design files sync/AI/Proj. WattDesk/output/ICON 1",
+  "imported": "2026-10-28",
+  "assets": [
+    {
+      "sourceFile": "COM..svg",
+      "runtimeFile": "home-assets/plants/icons/company.svg",
+      "usage": "Company and Connection filter categories"
+    },
+    {
+      "sourceFile": "Device.svg",
+      "runtimeFile": "home-assets/plants/icons/device.svg",
+      "usage": "Device filter category"
+    },
+    {
+      "sourceFile": "Running Status.svg",
+      "runtimeFile": "home-assets/plants/icons/status.svg",
+      "usage": "Running status filter category"
+    },
+    {
+      "sourceFile": "Eye.svg",
+      "runtimeFile": "home-assets/plants/icons/eye.svg",
+      "usage": "Visible column state"
+    },
+    {
+      "sourceFile": "Eye Closed.svg",
+      "runtimeFile": "home-assets/plants/icons/eye-closed.svg",
+      "usage": "Hidden column state"
+    },
+    {
+      "source": "C:/Users/Administrator/Desktop/Bold/Essentional, UI/Filter.svg",
+      "runtimeFile": "home-assets/plants/filter.svg",
+      "usage": "Plants filter toolbar action"
+    },
+    {
+      "source": "C:/Users/Administrator/Desktop/Bold/Settings, Fine Tuning/Tuning 3.svg",
+      "runtimeFile": "home-assets/plants/columns.svg",
+      "usage": "Plants column visibility toolbar action"
+    }
+  ],
+  "archivedOnly": [
+    "Plant Name.svg",
+    "Power(kW).svg",
+    "SN.svg",
+    "Firmware Version.svg",
+    "Last Update.svg"
+  ],
+  "note": "The archived-only exports were used during the first filter draft. Their categories were removed by the 2026-10-28 review, so they are retained as provenance but not shipped as runtime assets."
+}

@@ -1,0 +1,14 @@
+/* Shared filter surfaces use the same 20px room as the standard popover menu,
+ * with content in normal flow so primary and secondary panels scale together. */
+.wd-filter-menu{
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+  min-width:0;
+  padding:var(--wd-space-5);
+  color:var(--wd-label-primary);
+}
+.wd-filter-menu .wd-menu-heading{
+  margin:0;
+  padding:0;
+}

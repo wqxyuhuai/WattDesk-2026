@@ -56,8 +56,8 @@ export const DEVICES=Object.freeze([
 
 // powerSigned mirrors the board note: BMS power is signed (charging +,
 // discharging -), heater power is never signed. name:"" means the device came
-// online without a plant and the plant creation is still pending, so the list
-// shows "?" plus the explanatory tooltip.
+// online and its plant was created automatically, but name/details are still
+// incomplete; the list shows "?" plus the explanatory tooltip.
 function make(tail){
  return `WSAUTSM382R22460${tail}`;
 }
@@ -111,8 +111,8 @@ export const PLANTS=Object.freeze([
  {id:"p46",name:"Sonnengarten Pankow",companyId:"winkler",installer:"Elektro-Service Winkler",sn:make("100146"),type:"hybrid",device:"inverter",powerKw:22.1,powerSigned:true,status:"normal",firmware:"V26.16.15.15",updatedMinutes:480}
 ]);
 
-export const UNASSIGNED_TOOLTIP =
- "This device is not currently associated with any plant. Please proceed with the setup.";
+export const AUTO_CREATED_TOOLTIP =
+ "This plant was created automatically when the device came online. Some plant information is still incomplete. Please proceed with the setup.";
 
 // Distributor / installer metadata is not a table column; it exists so the
 // search can reach the same organisations the design boards list. Sample data

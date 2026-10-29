@@ -78,12 +78,42 @@ const assert=require('node:assert/strict');
  }
  await page.mouse.move(0,0);await page.waitForTimeout(300);
  // Toast shares the material and is also non-interactive.
+ await page.waitForFunction(()=>document.querySelector('#toast').hidden);
  await page.getByRole('button',{name:'Add tab'}).click();await page.waitForTimeout(120);
  const toast=await page.locator('#toast').evaluate(el=>({hidden:el.hidden,classes:el.className,
   material:!!el.querySelector(':scope>.wd-glass-material'),static:el.classList.contains('wd-glass--static'),
-  filter:getComputedStyle(el.querySelector('.wd-glass-fill')).backdropFilter,border:getComputedStyle(el).borderTopWidth}));
+  filter:getComputedStyle(el.querySelector('.wd-glass-fill')).backdropFilter,border:getComputedStyle(el).borderTopWidth,
+  animation:el.getAnimations().map(animation=>({duration:animation.effect.getTiming().duration,easing:animation.effect.getTiming().easing,
+   opacityFrames:animation.effect.getKeyframes().map(frame=>frame.opacity),
+   translateFrames:animation.effect.getKeyframes().map(frame=>{
+    const value=String(frame.translate);
+    return value.includes(' ')?value:`${value} 0px`;
+   })})).find(entry=>entry.opacityFrames.some(value=>value!==undefined))}));
  assert.equal(toast.hidden,false);assert.ok(toast.material,'Toast must mount Glass Surface');assert.ok(toast.static);assert.match(toast.filter,/blur\(/);assert.equal(toast.border,'0px');
- await page.locator('#toast').evaluate(el=>el.hidden=true);
+ assert.equal(toast.animation?.duration,320,'toast fades in with the shared panel timing');
+ assert.equal(toast.animation?.easing,'cubic-bezier(0.22, 0.8, 0.25, 1)');
+ assert.deepEqual(toast.animation?.translateFrames,['0px -4px','0px 0px'],'toast enters by settling gently downward');
+ await page.waitForFunction(()=>{
+  const el=document.querySelector('#toast');
+  return !el.hidden&&el.getAnimations().some(animation=>animation.effect.getTiming().duration===200);
+ },null,{timeout:4000});
+ const toastExit=await page.locator('#toast').evaluate(el=>{
+  const animation=el.getAnimations().find(item=>item.effect.getTiming().duration===200);
+  return {
+   hidden:el.hidden,
+   duration:animation?.effect.getTiming().duration,
+   easing:animation?.effect.getTiming().easing,
+   translateFrames:animation?.effect.getKeyframes().map(frame=>{
+    const value=String(frame.translate);
+    return value.includes(' ')?value:`${value} 0px`;
+   })
+  };
+ });
+ assert.equal(toastExit.hidden,false);
+ assert.equal(toastExit.duration,200,'toast fades out with the shared panel-exit timing');
+ assert.equal(toastExit.easing,'cubic-bezier(0.3, 0, 0.2, 1)');
+ assert.deepEqual(toastExit.translateFrames,['0px 0px','0px -4px'],'toast exits by floating gently upward');
+ await page.waitForFunction(()=>document.querySelector('#toast').hidden);
 
  // The annotated chart observation is a read-only data label, so it gets the
  // same plate without the interactive lift. It must survive theme swaps too.

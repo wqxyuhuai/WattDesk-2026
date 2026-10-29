@@ -9,6 +9,8 @@
 @import url("./components/search-surface.css");
 @import url("./components/input-clear.css");
 @import url("./components/popover.css");
+@import url("./components/filter-menu.css");
+@import url("./components/scrollbar.css");
 @import url("./components/cards.css");
 @import url("./components/skeleton.css");
 @import url("./components/empty-state.css");

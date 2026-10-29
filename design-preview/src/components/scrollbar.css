@@ -1,0 +1,14 @@
+/* One scrollbar treatment for data surfaces and long filter menus. */
+.wd-scrollbar{
+  scrollbar-width:thin;
+  scrollbar-color:var(--wd-label-tertiary) transparent;
+  overscroll-behavior:contain;
+}
+.wd-scrollbar::-webkit-scrollbar{width:10px;height:10px}
+.wd-scrollbar::-webkit-scrollbar-track{background:transparent}
+.wd-scrollbar::-webkit-scrollbar-thumb{
+  background:var(--wd-label-tertiary);
+  border:3px solid transparent;
+  border-radius:999px;
+  background-clip:padding-box;
+}

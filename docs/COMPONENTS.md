@@ -1,6 +1,6 @@
 # 共享组件手册
 
-更新：2026-10-23。本文对应实际模块；完整视觉要求见 [DESIGN-SYSTEM.md](../DESIGN-SYSTEM.md)。路径均相对 `design-preview/`。
+更新：2026-10-29。本文对应实际模块；完整视觉要求见 [DESIGN-SYSTEM.md](../DESIGN-SYSTEM.md)。路径均相对 `design-preview/`。
 
 所有页面加载 `/src/shared.css`，包含 SF Pro、语义颜色、完整 Figma 字体 styles、材质、状态、动效、头像和连续曲线。页面局部 CSS 在共享入口之前加载，不自行拼出另一套基础。
 
@@ -128,6 +128,7 @@ const material=createGlassMaterial({surfaces:[{host:panel,radius:30}]});
 - `.wd-glass--surface` 选择更强的浮层雾面参数；`.wd-glass-popup` 表示整块面板不随点击缩放，只有内部独立玻璃控件响应。
 - 浮层圆角按尺度取共享 token：紧凑 tooltip / 数据浮签用 `--wd-radius-compact`（12px），通用 popover / 图表菜单用 `--wd-radius-medium`（18px），标准浮层菜单与大面板用 `--wd-radius-large`（30px）。`addSurface()` 的 `radius` 必须与宿主实际 `border-radius` 一致；玻璃层继承宿主，不在内容或伪元素上另写半径。
 - 已自带 `.wd-glass` 的面板（日期、历史、搜索）不能再调用 `addSurface()`；共享控制器检测到已有材质会自动跳过，避免双层模糊和重复观察。tooltip、toast 与图表数据浮签传 `interactive:false`：保留材质和指针光晕，但不缩放。动态文案写入内部 span，不得用 `textContent` 清空宿主。
+- toast 由共享 `#toast` 宿主统一固定在页面顶部 `top:78px`，水平中心沿用工作区内容中心线，纵向中心与页面标题对齐；不得在页面组件中写底部定位、局部偏移或另一套短提示。收藏、刷新、周期和预览反馈都复用该入口。首次出现从上方 `4px` 下落并使用 `--wd-motion-panel` / `--wd-ease-panel` 淡入，自动消失上浮 `4px` 并使用 `--wd-motion-panel-exit` / `--wd-ease-hover-out` 淡出；退出结束才设置 `hidden`，重复提示取消旧退场并从当前不透明度和位移恢复，减少动态效果时立即切换。
 - 内容独立放在同级容器（如 `.wd-date-picker-content`、`.wd-search-panel-body`），不要塞进 `.wd-glass-material`。
 - 深色 `18px` 模糊 / `30%` 中性底；浅色 `9px` 模糊 / `44%` 浅灰底 + `saturate 1.45`，模糊太高会把背后卡片抹成均匀白膜。深浅主题都保留背后页面可辨；不要再写 `backdrop-filter`、`background` 或局部 `--wd-glass-surface-tint` 覆盖。
 - hover 时指针附近出现光斑和一段边缘弧，由共享材质自动处理；深色是白弧，浅色是深色弧配白色内光斑。不要给浮层另外写 `:hover` 阴影或渐变。
@@ -166,6 +167,19 @@ hover / 按下的视觉缩放由材质与 `motion.css` 自动继承，调用方�
 - 新组件不手写缩放、延迟或禁用规则；减少动态效果与粗指针设备由共享层直接复位。
 - hover 边缘高光同样只由材质决定。浅色近黑轮廓、深色白色轮廓、`.wd-glass--disc` 的贴边和线宽以 `DESIGN-SYSTEM.md` 的玻璃参数表为准，组件不复制 CSS。
 
+### Plants 筛选与列可视性
+
+Plants 的结构化筛选与列显隐位于 `src/pages/plants/index.js` / `plants.css`，属于该页面的业务装配，不是第二套浮层材质：
+
+- 主筛选只调用一次 `registerPanel(panel,anchor,{radius:30,width:260,...})`，高度贴合 4 个类目。工具栏入口传 `align:"end",alignRight`，右缘与列可视性菜单一致；筛选条加号传 `align:"start"`，在加号下方左对齐，并传 `pinPosition:true` 固定打开瞬间的视口位置，新增 chip 导致锚点重排时面板不移动。类目 hover / focus 时通过 `registerPanel(...,{keepOpen:true,placement:"side"})` 注册独立条件 Glass Surface：Company 为 `260px`，Device / Connection / Running status 为 `208px`，保证选项单行且三项同宽。`keepOpen` 让主面板保留，`placement:"side"` 让次级浮窗以 12px 重叠贴住一级浮窗内缘。类目 hover 有 380ms 意图延迟。
+- `placement:"side"` 的 `sideTopOffset` 负责把第一个选项而非二级标题对齐类目行：Company 使用 `100`，其余条件组使用 `54`。函数形式可随活动类目变化；共享定位继续负责视口顶部夹紧。
+- 一级与二级内容共用 `components/filter-menu.css` 的 `.wd-filter-menu`（四边 20px），长列表共用 `components/scrollbar.css` 的 `.wd-scrollbar`。条件面板内的公司树搜索、父级展开和复选框使用该页面的单一 `state.filters`；搜索字段直接复用 `createSearchField({size:"compact",scalable:true})`，其清除按钮保持共享的 18px 零内距并垂直居中。示例公司树有 15 个节点；名称使用 `Footnote/Medium`，允许换行、禁止横向滚动，复选框对齐第一行，滚动条贴近卡片右缘；所有条件不显示数量，Company / Device 不显示选项图标，Connection / Running status 使用 18px 不透明状态图标，图标与文字间距固定 `4px`。掩码生成必须把任意 `fill-opacity` / `stroke-opacity` 归一到 `1`，否则 `.3` 导出的 Attention 会被削淡。表格 Status 图标与文字间距固定 `4px`；顶层公司的所有后代被选中时，chips 只显示一个顶层公司项。复选框点击只应用筛选并重绘结果，不关闭任何一个浮层；条件名称按钮才调用 `close()`。
+- 已应用条件由同一状态生成 chips，每个具体条件一个短 tab；条件条使用 `Backgrounds/Tertiary Elevated` 实底，chip 使用 `Fills/Secondary`，不得用透明叠加造成偏粉或偏紫。末尾只允许一个加号，它复用完整筛选内容和交互，并在自身下方左对齐打开；唯一 `Clear` 固定在最右侧并垂直居中。不得另存快捷筛状态或增加第二套清除入口。
+- Plants 刷新按钮继续使用共享圆钮材质和 `--wd-motion-refresh` 图标旋转。点击后同步清空全部筛选、将 `state.hidden` 恢复为 `DEFAULT_HIDDEN`、将 `state.sort` 恢复为 `{key:"updated",dir:DEFAULT_DIR.updated}`，再统一执行列、表头和行的重新渲染；搜索词和 `localStorage` 收藏状态不清除。
+- 列菜单沿用 `.wd-menu` 外壳和 36px 行高，但行结构为“Eye / Eye Closed 图标 + 文字”，不生成 `.wd-menu-check`。眼睛素材来自 `home-assets/plants/icons/`，原始副本与来源见 `design/figma/plants/`。
+- 名称为 `?` 的电站表示设备上线时已经自动建站、资料尚未补全，属于正常可进入的电站。`?` 在 hover / 键盘 focus 时显示共享锚定 Glass Surface；浮窗可以接收指针和键盘焦点，离开触发按钮后有短暂关闭意图缓冲，便于指针跨过锚点间距进入浮窗。说明文案需解释自动建站与资料未全；其中的 `setup.` 是真实按钮，加下划线但不使用按钮底色、外框或独立块级布局，始终留在原说明段落中；hover / focus 只把文字提为主文字色。点击 `?`、行内其他区域或提示中的 `setup.` 都可进入详情；标签与详情主标题显示 `?`。
+- 回归入口为 `tests/verify-plants-filters.cjs`，覆盖三态公司树、复选不关闭、名称点击关闭、筛选条、眼睛状态、键盘展开及浅色主题。
+
 ## 工作区标签
 
 ```js
@@ -180,7 +194,7 @@ tabs.update(tab,{route:"plants",title:"Plants",kind:"route",iconFile:"asset-6.sv
 tabs.activate(tab);tabs.closeActive();
 ```
 
-每个 tab 持有自己的 `snapshot`；激活新 tab 前会先 `captureCurrent()`。多 Home tab 统一标题与无障碍名称为 Home，内部 ID 仅用于区分和测试。顶部标签图标由 `createRouteIcon()` 同时建立原色层与单色遮罩层；`icons.js` 的 `isNeutralIconFile()` 标记灰色中性素材，这些图标在选中/hover 时隐藏灰色原图并显示 `currentColor` 遮罩（深色纯白），彩色素材仍显示原色层。中性素材的遮罩引用 `home-assets/masks/` 不透明副本（`npm run sync:masks` 生成），避免原稿 0.7 透明度让白色高亮变灰。`layout()` 在 58–180px 内计算宽度，空间不足进入横向滚动；初始只有一个 Home 标签，不预置 Plants 占位。新增/关闭、路由文字图标淡变、关闭 X 的颜色过渡读取共享 motion token，调用方不重复写时长。关闭中的 tab 临时解除 58px 最小宽度，确保槽位与间距一起收至零。压缩或溢出时，鼠标位于标签条内关闭任意标签，会冻结剩余标签的布局宽度与 `scrollLeft`；溢出时用尾部占位维持可滚动范围，使后一个 X 落在指针下，可原位连续关闭。指针离开标签条后移除占位并恢复布局；宽标签未压缩时保留标准关闭动画。新页面的侧栏导航应调用 `update/activate`，而不是 `add` 新 tab。
+每个 tab 持有自己的 `snapshot`；激活新 tab 前会先 `captureCurrent()`。多 Home tab 统一标题与无障碍名称为 Home，内部 ID 仅用于区分和测试。顶部标签图标由 `createRouteIcon()` 同时建立原色层与单色遮罩层；`icons.js` 的 `isNeutralIconFile()` 标记灰色中性素材，这些图标在选中/hover 时隐藏灰色原图并显示 `currentColor` 遮罩（深色纯白），彩色素材仍显示原色层。中性素材的遮罩引用 `home-assets/masks/` 不透明副本（`npm run sync:masks` 生成），避免原稿 0.7 透明度让白色高亮变灰。`layout()` 在 58–180px 内计算宽度，空间不足进入横向滚动；初始只有一个 Home 标签，不预置 Plants 占位。新增/关闭、路由文字图标淡变、关闭 X 的颜色过渡读取共享 motion token，调用方不重复写时长。关闭中的 tab 临时解除 58px 最小宽度，确保槽位与间距一起收至零。压缩或溢出时，鼠标位于标签条内关闭任意标签，会冻结剩余标签的布局宽度与 `scrollLeft`；溢出时用尾部占位维持可滚动范围，使后一个 X 落在指针下，可原位连续关闭。指针离开标签条后移除占位并恢复布局；宽标签未压缩时保留标准关闭动画。新页面的侧栏和普通页内导航应调用 `update/activate`；Plants 列表行与自动建站 `?` 提示中的 `setup` 是已确认的新标签入口，调用 `workspace.openRouteInNewTab()`；自动建站电站的 tab 标题为 `?`。`Back to Plants` 调用 `workspace.returnToPlantsList()`：激活来源列表标签后关闭详情标签；来源已不存在时在当前详情标签内返回 Plants。
 ## 卡片、搜索、头像与折叠
 
 ```js

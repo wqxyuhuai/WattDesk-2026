@@ -1,6 +1,6 @@
 # 当前状态与新对话交接
 
-更新：2026-10-28。
+更新：2026-10-29。
 
 先读 `AGENTS.md` → `DESIGN-SYSTEM.md` → 本文件。新增页面再读 `ARCHITECTURE.md`、`COMPONENTS.md`；核对既往反馈见 `USER-REQUIREMENTS.md`。用户最新明确要求优先。
 
@@ -9,6 +9,14 @@
 - `2026-10-28` **Home 路由返回布局修复（已用真实 Chrome 验证）**：此前直接打开 `/plants` 再切回 Home 时，Home 在隐藏状态下已完成首次绝对坐标测量，`hidden` 解锁后没有重新布局，快捷入口、状态卡和统计区会沿用零高度结果并重叠，刷新才恢复。现在 `renderLocation()` 在 Home 重新可见后、下一次绘制前统一重跑首页布局；快速连续切页只执行最后一帧。新增 `verify-routing` 回归：从 `/plants` 返回 Home 后，状态卡与快捷入口、统计区之间各保留 40px 间距，坐标与直接打开 `/home` 一致。`npm run check` 与完整 `npm test` 通过。
 - `2026-10-28` **Plants 长列表滚动与回弹（已用真实 Chrome 验证）**：示例数据由 26 条增至 46 条，滚动滑块因此明显变短。表体继续使用原生滚动，视觉滚动条改由页面 DOM 同步位置：默认 `6px`、`Labels/Tertiary`，hover 在固定 `10px` 轨道内增至 `8px` 并切到 `Labels/Secondary`，进入/离开使用共享 `240 / 360ms` 节奏，拖动滑块可直接改变表体滚动位置；轨道宽固定，避免 hover 改变表格列宽。轨道顶底每帧按滚动视口的实时矩形重算，严格与内容区上下边界对齐，不侵入工具栏或越过底部圆角；滑块距面板右缘固定 `10px`，1663px 与 1439px 实测位置一致。表体到顶或到底后继续向外滚动，先经过 `4px` 粘滞区，再逐步显露最高 `16px` 的主题背景空白区，不使用白色；松手用 `--wd-motion-pull-rebound` / `--wd-ease-spring` 在 `640ms` 内平缓回位，减少动态效果时直接复位。`verify-routing` 覆盖 46 行、滑块上下边界、hover 宽度/节奏、拖动、双向粘滞区与回弹；`npm run check`、`verify-motion`、`verify-routing`、完整 `npm test` 通过。
 - `2026-10-28` **Plants 宽屏列间距（已用真实 Chrome 验证）**：列宽余量在内容宽度 `1100–1500px` 间从紧凑权重平滑过渡到宽屏权重 `Plant name 0.7 / Device 0.1 / Power 0.04 / Status 0.16 / SN 0.2 / Firmware 0.08 / Last update 0.12`，避免电站名列独吞几乎全部横向余量、右侧指标挤在末端。1920px 下各列实测为 `32 / 28 / 497 / 158 / 78 / 205 / 288 / 121 / 167px`，1545px 下仍为紧凑布局。滚动条位置与列间距分开维护，跨断点不移动；深浅主题、1545×1080 与 1920×1080 实拍通过；`npm run check`、`verify-routing` 与完整 `npm test` 通过。
+- `2026-10-29` **筛选二级浮窗首项对齐**：二级浮窗上移，使第一个可选项与一级类目行同一水平线；Company 考虑搜索区使用 `100px` 偏移，Device / Connection / Running status 使用 `54px`，顶部空间不足时仍夹紧在视口边距内。实测 Connection 首项与类目行误差约 `0.4px`。
+- `2026-10-29` **共享动效与筛选细节修正**：toast 增加统一轻微下落淡入、上浮淡出，位移各 `4px`，分别复用浮层进入 `320ms` 与退出 `200ms` token；筛选条件文字按钮验证为 hover 进入 `240ms` / 离开 `360ms`，无局部时长。筛选条件状态图标与文字间距收紧为 `4px`。筛选条加号打开的主面板新增 `pinPosition`，新增 chip 导致触发点重排时保持打开瞬间的视口位置。Attention 图标不再被原稿 `fill-opacity=".3"` 削淡：掩码生成器改为归一化任意 opacity，实测图标以完整 `#FF4245` 显示。
+- `2026-10-29` **全局 toast 移至页面顶部**：共享 toast 从底部 `30px` 改为 `top:78px`，在 1508px 视口实测 toast 中心 `96.5px`、Plants 标题中心 `96px`，纵向基本完全对齐。收藏、刷新、周期和预览提示继续共用同一 Glass Surface；页面局部没有新增第二套通知层。
+- `2026-10-29` **Plants 刷新重置列表配置**：刷新按钮在原有图标旋转和防重复触发基础上，一次清空全部筛选、恢复默认列显隐（仅隐藏 Company）并恢复 `Last update` 降序排序；筛选 / 列状态蓝点同步归零。搜索词与收藏状态保留不变。回归覆盖三种非默认配置同时存在时的刷新结果。
+- `2026-10-29` **Plants Status 行内间距**：表格 Status 的状态图标与文字间距由 `6px` 收紧为 `4px`，图标与文字仍同色、垂直居中；筛选条件浮窗中的选项间距保持不变。回归断言已加入 `verify-plants-filters`。
+- `2026-10-29` **Plants 详情新标签与自动建站提示（已用真实 Chrome 验证）**：点击任一 Plants 列表行会创建并激活详情标签，原 Plants 标签保留。名称为 `?` 的电站表示设备上线时已经自动建站、只是资料未全，因此整行可进入详情；标签和详情主标题统一显示 `?`，不再使用 `Unassigned device`。`?` 提示说明自动建站与资料未全，可保持打开并在鼠标移入时取消关闭意图；提示中的 `setup.` 使用真实按钮与下划线，但不显示按钮底色/外框、留在原说明段落同一行，hover 只把文字提为主色；点击后新建并激活 `?` 详情标签。`Back to Plants` 激活来源列表标签并关闭当前详情标签；直接刷新进入且没有来源标签时在当前标签内返回 Plants。回归覆盖命名电站、自动建站行点击、`?` 标签/详情标题、提示悬停保持/离开关闭/描述清理、内联下划线、详情返回时标签关闭与标签数量。
+- `2026-10-29` **Plants 筛选与列可视性重构（已用真实 Chrome 验证）**：主筛选只保留 Company / Device / Connection / Running status 四类，主浮窗与 Company 条件浮窗为 `260px`，Device / Connection / Running status 条件浮窗统一收窄为 `208px` 且选项单行；工具栏入口右缘与列可视性浮窗右对齐，筛选条加号则在自身下方左对齐打开同一内容和交互，高度贴合内容且 hover 不位移，二级是独立 Glass Surface、以 `12px` 覆盖一级内缘。新增共享 `.wd-filter-menu` 四边 20px 内胆与 `.wd-scrollbar`。Company 置顶并支持玻璃搜索框、15 节点多级公司与三态复选；共享搜索清除按钮修正为 18px 垂直居中，根因是 `.popover button` 泛化样式误伤嵌套控件，现已限制为 `.popover > button`。名称使用 `Footnote/Medium`，可换行、无横向滚动，超高时在 70vh/520px 上限内滚动，滚动条贴近卡片右缘。选中顶层公司时只生成一个顶层公司 chip。Connection / Running status 使用 18px 不透明图标，表格 Status 的 Attention 也改用不透明遮罩并在详情返回后保持红色；Company / Device 不显示图标，所有条件不显示数量。类目 hover 使用 380ms 意图延迟，斜穿其他行不会误切浮窗。每个条件都有独立复选框，勾选即时筛选且保持浮层打开，点击条件名称则应用并关闭。条件条改用设计稿的 `Backgrounds/Tertiary Elevated` 实底、chip 使用 `Fills/Secondary`，消除透明叠色造成的偏粉观感；唯一 `Clear` 固定在右侧并垂直居中。`Plant type` 已从列菜单移除；工具栏筛选 / 列按钮使用用户最终提供的 Filter / Tuning 图标，修改状态蓝点放大为 `7px`。`verify-plants-filters` 与完整 `npm test` 12 个套件通过。
+- `2026-10-28` **Plants 宽屏列间距与右侧滚动条（已用真实 Chrome 验证）**：列宽余量在内容宽度 `1100–1500px` 间从紧凑权重平滑过渡到宽屏权重 `Plant name 0.7 / Device 0.1 / Power 0.04 / Status 0.16 / SN 0.2 / Firmware 0.08 / Last update 0.12`，避免电站名列独吞几乎全部横向余量、右侧指标挤在末端。1920px 下各列实测为 `32 / 28 / 497 / 158 / 78 / 205 / 288 / 121 / 167px`，1545px 下仍为紧凑布局。视口不小于 1600px 时滚动容器向右延伸到面板边缘，同时保留 24px 的表格内容内距；纵向滚动条可贴面板右缘，表头、行值与 `New plant` 仍处于同一条内容右边线，且无横向滚动。深浅主题、1545×1080 与 1920×1080 实拍通过；`npm run check`、`verify-routing` 与完整 `npm test` 通过。
 - `2026-10-27` **Plants 收藏置顶（已用真实 Chrome 验证）**：已收藏的电站组成列表最前面的置顶组，未收藏的电站保持原顺序在后；组内仍按当前列排序（名称 / 功率 / 状态 / 固件 / 更新时间）排序，取消收藏后立即回到原来的普通位置。收藏状态仍只保存在浏览器 `localStorage`（`wattdesk.plants.bookmarks.v1`），刷新后保持，不涉及后端或账号同步。置顶 / 取消时用共享 `--wd-motion-panel` / `--wd-ease-panel` 做 FLIP 行位移，只动画位置变化的行，不滚动列表；`prefers-reduced-motion` 下直接换位。重渲染后键盘焦点跟随同一电站的收藏按钮。回归断言在 `design-preview/tests/verify-routing.cjs`。
 - `2026-10-27` **Plants 列表改为 Linear 式信息列（已用真实 Chrome 验证；以本条为列表结构的最终值）**：列顺序为 `收藏 / 在线状态图标 / 电站名 / Device / Power / Status / SN / Software version / Last update`。收藏列在最左，与页面标题 `Plants` 同一条 x 轴线；未收藏时只保留 28px 按钮位，行 hover / focus 或已收藏时才显示图标，表头收藏格留空。在线状态紧贴电站名左侧、只显示图标不显示文字（在线 / 离线 / 部分在线 / 未绑定）；四份原稿归档在 `design-preview/design/figma/plants/`，以行内 SVG 渲染，"ink" 跟随主文字色（深色白、浅色黑），"muted" 保持 30% 透明，警示红保留 `#FF4245`。Status 只保留 `Normal / Attention / Unbound device` 的图标 + 同色文字，离线与部分在线都归为 Attention，连接细节由左侧图标区分。电站名 `Subheadline/Regular`（15 / 400、主文字色），其余内容统一 `Footnote/Regular`（13 / 400、次级或语义色），表头 `Caption1/Regular`（12 / 400）。Power 左对齐、最小列宽 60px（表头 `Power` 加排序箭头在最窄布局下也不截断）。表格最小宽度 916px（`32 + 28 + 176 + 112 + 60 + 132 + 196 + 84 + 96`）；超出最小宽度的部分按权重分给电站名 1.2 / Device 0.02 / Power 0.01 / Status 0.03 / SN 0.03 / 更新时间 0.45，软件版本固定 84px、与两个控制列一起不参与拉伸，`ResizeObserver` 在面板宽度变化时重算。软件版本列头显示 `Firmware`（完整 `Software version` 保留在 Columns 菜单与无障碍名称），最小列宽 84px，可完整显示 `V26.16.15.15`。行高 44px，hover / 键盘焦点为整行 10px 圆角的淡填充，由首末 `.plants-cell` 各自圆角拼成，不使用 `<tr>` 伪元素。实测 1368×1252 / 1545×1252 / 1920×1080、深浅主题：标题、收藏图标与信号图标同处一条身份线，收藏图标左内缩 8px，收藏 / 信号 / 名称的文字级可见间隔均为 10px，`scrollWidth === clientWidth`，无整页横滚，无表头或单元格截断，宽屏下右侧列随之展开。收藏点击不触发行跳转，整行仍进入 `/plants/:id`。
 - `2026-10-27` **Plants 第二轮微调（已用真实 Chrome 验证；覆盖上一条中的收藏与列宽细节）**：收藏按钮去掉灰色 hover / focus 底，只保留图标转主文字色与焦点描边；收藏列 32px，图标左内缩 8px、不贴表格左缘，收藏图标、信号图标与电站名三者的可见间隔统一为 10px。列宽与拉伸权重最终为 `32 / 28 / 176×1.2 / 112×0.02 / 60×0.01 / 132×0.03 / 196×0.03 / 84 固定 / 96×0.45`，表格最小宽度 916px；Device 列左内缩 20px，Power 至 Status 的间距收至约 24px，SN 与软件版本、软件版本与更新时间之间分别保持 8px / 6px。列表正文 Device / Power / SN / 软件版本改用 `Vibrant Labels/Secondary`（深色 `#8A8A8A`、浅色 `#727272`），更新时间仍为 `Labels/Tertiary`。Status 的 `Unbound device` 复用在线状态列的未绑定信号图（14px、`currentColor` 中性灰），不再使用原来的提示图标。表体去掉滚动区内的顶部 2px padding，改为滚动区外 `margin-top:2px`，滚动到任意位置表头以上都不再漏出上一行文字。`npm run check`、`npm test`（含 `verify-routing`）全部通过。
@@ -67,7 +75,7 @@
 
 ## 尚未实现
 
-没有其他页面的真实内容、登录/权限后端、账户服务、设备命令、实时统计或生产数据导出。Service ticket、Statistics 与 Device tool 等标签仍是 Coming soon 占位；Plants 有真实的列表界面并拥有可刷新的 `/plants/:id` 地址，但数据是本地示例，详情内容仍是占位，未接后端、权限或真实筛选查询。不得把演示行为写成已完成的业务能力。
+没有其他页面的真实内容、登录/权限后端、账户服务、设备命令、实时统计或生产数据导出。Service ticket、Statistics 与 Device tool 等标签仍是 Coming soon 占位；Plants 有真实的列表界面并拥有可刷新的 `/plants/:id` 地址，筛选、搜索和列可视性均在本地示例数据上真实执行，但详情内容仍是占位，未接后端、权限或服务端筛选查询。不得把演示行为写成已完成的业务能力。
 
 绝对坐标 scene 是首页过渡适配，不能作为后续页面的通用布局。未来页面采用语义布局，复用相同基础与组件。
 
@@ -80,8 +88,11 @@
 
 - `npm run check` 通过：65 个 JavaScript 文件语法有效。
 - `npm test` 通过：11 个套件，含 `verify-routing`（路由、标签历史、Plants 宽屏列宽、24px 内容右缘、贴边滚动容器，以及从 Plants 返回 Home 的布局重算）。
+- `npm run check` 通过：61 个 JavaScript 文件语法有效。
+- `npm test` 通过：12 个套件，含新增 `verify-plants-filters`（8 类目、多级公司三态、复选不关闭、名称点击关闭、筛选 chips/加号/唯一 Clear、眼睛列显隐、键盘展开、自己触发按钮关闭与浅色主题）。
 - 真实 Chrome 验证 `/home`、`/plants`、`/plants/p02` 刷新保持当前页面，且 `/plants/p02` 资源无 404；未知路径显示 not-found，不回到 Home。
-- `npm run build:site:public` 通过：`dist` 187 files / 1.32 MB；生成 `_redirects` 包含 `/home` 规范规则与 `/plants`、`/plants/*` 等 `200` 代理。
+- `npm run build:site:public` 通过：`dist` 194 files / 1.39 MB；生成 `_redirects` 包含 `/home` 规范规则与 `/plants`、`/plants/*` 等 `200` 代理。
+- `npm run audit:assets` 未通过：脚本仍把既有动态/带根前缀的 `imgBoldTimeCalendar.svg`、`/home-assets/tickle.svg`、`../../home-assets/tab-close.svg` 误判为缺失；本轮新增的 `plants/icons/*` 已全部通过该检查。未通过项不是缺失运行文件。
 - 未运行 `npm run test:visual`：旧基线对应整理前界面，仍不应以旧截图覆盖当前变化。
 
 ## 已知待校准

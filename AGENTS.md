@@ -25,7 +25,7 @@
 - 账户入口与通知按钮的旧上下文/通知浮层已按用户要求移除，等待重做；不得从旧组件、历史文档或备份恢复。按钮、玻璃和共享 hover 保留，重做后另行记录新的内容与交互。
 - 只修改需求范围内文件；规则归档或文档整理任务不得夹带功能、视觉、资源和测试变更。
 - 用户可用本地批注模式（`/home?glass=figma&annotate=1`）在具体元素上留言；最近一次批注保存在 `design-preview/annotations.json`（按页面分组，已 gitignore）。开始视觉修改前先读该文件，完成后按需清理，避免把旧批注当成新需求。
-- 当前真实页面为 Home 与 Plants 列表；`/plants/:id` 已有可刷新 URL，但详情内容仍是明确的预览占位，不虚构设备数据或控制能力。Service ticket、Statistics、Device tool 等其余路由继续使用 Coming soon。搜索、菜单、示例数据、状态卡跳转和筛选均按现有实现如实描述，不虚构权限、持久化、筛选结果或后端能力；接入真实业务时另立规则并验收。
+- 当前真实页面为 Home 与 Plants 列表；`/plants/:id` 已有可刷新 URL，但详情内容仍是明确的预览占位，不虚构设备数据或控制能力。Plants 列表行在新标签打开并激活对应详情，原列表标签保留；名称为 `?` 的行表示设备上线时已自动建站、只是资料未补全，仍然可点击进入详情，标签和详情主标题都显示 `?`，不得写成 Unassigned device。`?` 提示解释自动建站和资料未全，提示中的 `setup` 也可打开详情。`Back to Plants` 关闭当前详情标签并返回来源列表标签，直接刷新进入且没有来源标签时才在当前标签内返回。侧栏与首页快捷入口仍在当前标签内导航。Service ticket、Statistics、Device tool 等其余路由继续使用 Coming soon。搜索、菜单、示例数据、状态卡跳转和筛选均按现有实现如实描述，不虚构权限、持久化、筛选结果或后端能力；接入真实业务时另立规则并验收。
 
 ## 共享优先
 
@@ -40,8 +40,13 @@
 - 玻璃参数与分层：`design-preview/src/components/glass-material.css`；挂载和微光：`design-preview/src/components/glass-material.js`。
 - 操作按钮统一使用共享标准按钮：`design-preview/src/components/button.css` 的 `.wd-button--pill` 配 `.wd-button--neutral`（中性玻璃）或 `.wd-button--primary`（实心 Accents/Blue）；固定 36px 高、左右 16px 内距、13px / 510。面板、菜单、表单与页面不得另写按钮颜色、圆角、材质或光晕，每个视图只保留一个主按钮。
 - 文本型浮层菜单统一使用 `design-preview/src/components/menu-popover.js` 与 `popover.css` 的 `.wd-menu` 内胆：面板顶部内距 20px、左右/底部 10px，标题 Footnote/Emphasized（13px / 590、次级色、左右 14px），行高 36px、14/14 medium（14px / 510）、胶囊 hover 与固定 20px 尾随勾选槽。顶栏 `Language` / `Appearance` / `WattDesk` 等紧凑菜单统一 200px 宽、30px 圆角；历史浮窗因路由名称较长保留 280px 外壳，但内部结构相同。不得为单个菜单另写宽度、行样式、勾选样式或材质变体；选中、hover、图标和文字均走共享状态。
+- Plants 筛选主浮窗只保留 Company / Device / Connection / Running status 四类。工具栏入口打开时右缘与列菜单对齐；筛选条加号打开同一内容和交互的面板，但锚定在加号下方并以加号左缘对齐。主浮窗与 Company 条件浮窗为 `260px`；Device / Connection / Running status 的独立条件浮窗统一为更紧凑的 `208px`，保证选项单行且三项同宽。主浮窗高度随内容自适应且 hover 不位移；条件浮窗覆盖主浮窗内缘。一级、二级共用 `.wd-filter-menu` 的 20px 内距，长列表共用 `.wd-scrollbar`；Company 支持玻璃搜索框和 15 节点三态公司树，名称使用 `Footnote/Medium`、可换行、无横向滚动，滚动条贴卡片右缘；hover 有意图延迟。只有 Connection / Running status 条件显示 18px 不透明状态图标，表格 Status 同样使用不透明掩码，表格内 Status 图标与文字间距为 `4px`；Company / Device 不显示选项图标或数量。顶层公司选中后只显示一个汇总 chip。复选框只即时筛选、不关闭浮层；点击条件名称才应用并关闭。筛选条使用 `Backgrounds/Tertiary Elevated` 实底、chip 使用 `Fills/Secondary`，不得出现偏粉或偏紫的透明叠色；`Clear` 固定在右侧并跨多行垂直居中。工具栏筛选项 / 列修改蓝点为 `7px`。刷新按钮在转圈反馈的同时清除全部筛选、恢复默认列显隐与默认 `Last update` 降序排序；搜索词与收藏状态不随刷新清除。列可视性使用 Eye / Eye Closed 图标，`Plant type` 不再列出。共享搜索框嵌入浮层时清除按钮必须保持 18px 并垂直居中，外层 `.popover` 的通用按钮样式只能作用于直接子按钮。实现与回归见 `src/pages/plants/index.js` / `plants.css`、`src/components/popover.css`、`tests/verify-plants-filters.cjs`。
+- Plants 筛选条加号打开的面板会固定初始视口位置；新增条件导致加号重新排版时，主面板不得跟着移动，二级条件浮窗仍按当前类目行定位。
+- Plants 二级筛选浮窗的垂直位置以第一个可选项对齐一级类目行，而不是让二级标题与类目对齐；Company 的搜索区高度也计入偏移，顶部空间不足时按共享 12px 视口边距夹紧。
+- 状态图标掩码必须把所有导出 `fill-opacity` / `stroke-opacity` 归一为 `1`；不能只替换常见的 `.7`，`asset-64.svg` 的 `.3` 也要处理，否则 Attention 红色会被削淡。
 - 浮层开合与图表载入：`design-preview/src/foundations/motion.js`；首页装配：`design-preview/src/pages/home/home.css` / `src/pages/home/index.js`。
 - 所有浮窗默认锚定触发元素（Glass Surface + 实时跟随）：菜单、popover、日期/时间、历史、图表菜单、tooltip 等统一走 `design-preview/src/components/popover.js` 的 `registerPanel()`，打开、滚动（document 捕获阶段，覆盖嵌套滚动区）、缩放和视口变化都重新测量；调用方不得缓存坐标或另写滚动监听。触发元素一半以上离开视口时关闭。全屏搜索等真正的模态层除外。
+- 全局 toast（收藏、刷新、周期、预览操作等短反馈）统一放在工作区顶部，纵向中心与页面标题中心对齐；当前基准为 `top:78px`，不得在页面局部改回底部或另造通知浮层。toast 仍是共享只读 Glass Surface，不响应缩放；出现使用 `--wd-motion-panel` / `--wd-ease-panel` 从上方 `4px` 下落入位并淡入，消失使用 `--wd-motion-panel-exit` / `--wd-ease-hover-out` 上浮 `4px` 并淡出，减少动态效果时立即切换。
 - 全屏搜索的入场与退场互为反向：结果面先走、搜索框随后、背景遮罩最后；退场一律向下位移并淡出。遮罩的模糊必须比内容更晚收完，使用 `--wd-motion-search-veil-out` / `--wd-motion-search-veil-delay`，不能与内容共用短时长；遮罩只淡出颜色和模糊，不对元素自身做 `opacity` 退场。
 - 控件文字与图标联动使用 `design-preview/src/components/control-states.css` / `control-states.js` 的共享状态；周期选择等控件 hover / focus 时图标和文字同时变主文字色，不能只改其中一个。
 - 统计周期胶囊使用共享日期选择组件：文字与日历图标默认 Labels/Secondary，hover / 键盘 focus 同步变为 Labels/Primary；宽度随实际文字和预设/自定义范围自动调整，不能固定宽度或裁切。刷新按钮右缘与下方图表卡片右缘固定对齐，胶囊只向左增长，间距 10px。日期选择器的预设为 Today、Yesterday、Last 24 hours、Last 7 days、Last 30 days、This month、Custom range，输入 Start date / End date 并以 Apply 提交；不得恢复旧 `Custom date range…` 入口。

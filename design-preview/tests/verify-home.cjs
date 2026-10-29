@@ -1,5 +1,6 @@
 const { chromium } = require('./runtime.cjs');
 const assert = require('node:assert/strict');
+const origin = new URL(require('./runtime.cjs').previewURL).origin;
 (async () => {
   const browser = await chromium.launch({ ...require('./runtime.cjs').launchOptions, headless: true });
   const page = await browser.newPage({ viewport: { width: 1920, height: 1080 }, deviceScaleFactor: 1 });
@@ -246,7 +247,7 @@ const assert = require('node:assert/strict');
   const empty=page.locator('.wd-empty-state');
   assert.equal(await empty.isVisible(),true);
   assert.equal((await empty.locator('.wd-empty-state-label').textContent()).trim(),'Coming soon');
-  assert.equal(await empty.locator('.wd-empty-state-icon img').getAttribute('src'),'http://127.0.0.1:4173/home-assets/asset-7.svg');
+  assert.equal(await empty.locator('.wd-empty-state-icon img').getAttribute('src'),`${origin}/home-assets/asset-7.svg`);
   const emptyGeometry=await empty.evaluate(el=>{
     const panel=document.querySelector('#home-workspace-panel').getBoundingClientRect(),box=el.getBoundingClientRect();
     const icon=el.querySelector('.wd-empty-state-icon').getBoundingClientRect(),label=el.querySelector('.wd-empty-state-label').getBoundingClientRect();

@@ -1,6 +1,6 @@
 # 站点路由与 URL 规范
 
-更新：2026-10-26。开发入口见 [AGENTS.md](../AGENTS.md)，视觉与组件规则分别见 [DESIGN-SYSTEM.md](../DESIGN-SYSTEM.md) 与 [COMPONENTS.md](./COMPONENTS.md)。
+更新：2026-10-29。开发入口见 [AGENTS.md](../AGENTS.md)，视觉与组件规则分别见 [DESIGN-SYSTEM.md](../DESIGN-SYSTEM.md) 与 [COMPONENTS.md](./COMPONENTS.md)。
 
 ## 1. 当前 URL 表
 
@@ -8,7 +8,7 @@
 |---|---|---|
 | Home | `/home` | 真实首页 |
 | Plants | `/plants` | 本地示例数据列表 |
-| 电站详情 | `/plants/:id` | URL 与刷新已生效；详情视觉未立项，当前使用明确的预览占位 |
+| 电站详情 | `/plants/:id` | 从列表行或自动建站 `?` 提示中的 `setup` 在新标签打开；详情视觉未立项，当前使用明确的预览占位 |
 | Service ticket | `/service` | Coming soon |
 | Statistics | `/statistics` | Coming soon |
 | Cell balance | `/cell-balance` | Coming soon |
@@ -28,6 +28,7 @@
 
 - `design-preview/src/pages/home/routes.js` 是路由、路径与搜索索引的唯一来源：`ROUTE_CATALOG[route].path` 定义可访问路径，`routeFromPath()` 负责路径到 `{route, params}`，`pathForRoute()` 负责反向生成。
 - `workspace.js` 把**当前激活标签**的 `{route, params}` 镜像到地址栏：新导航用 `pushState`，初始规范化、标签内前进/后退用 `replaceState`，浏览器 `popstate` 时按 URL 恢复当前标签内容。
+- Plants 列表行和自动建站 `?` 提示中的 `setup` 使用 `openRouteInNewTab()` 新建并激活详情标签，原列表标签及其历史保留；自动建站电站的标签标题为 `?`。`Back to Plants` 优先激活来源列表标签并关闭当前详情标签。无来源列表标签时回退到 `openRoute("plants")`，在唯一当前标签内返回。侧栏与首页快捷入口仍使用 `openRoute()` 在当前标签内导航。
 - 切换工作区标签会更新地址栏到该标签自己的路由；每个标签仍保留自己的滚动态、搜索、周期和标签内历史。
 - 页面标题随路由更新：`WattDesk · Home`、`WattDesk · Plants`、`WattDesk · Silvio Bräuer`。未知路由为 `WattDesk · Page not found`。
 - 路由变化必须先关闭活动浮层（菜单、筛选、日期、搜索等），不把浮层带到新页面。

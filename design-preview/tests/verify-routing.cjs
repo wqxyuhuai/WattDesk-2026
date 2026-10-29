@@ -184,7 +184,9 @@ const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
   assert.equal(pathname(), '/plants');
 
   // A named plant owns /plants/:id. The detail surface is a labelled preview
-  // placeholder, but the URL, title and refresh behaviour are real.
+  // placeholder, but the URL, title and refresh behaviour are real. Opening a
+  // row creates and activates a detail tab without replacing the list tab.
+  const tabsBeforePlant = await page.locator('.workspace-tab').count();
   await page.locator('.plants-row[data-id="p02"]').click();
   await page.waitForTimeout(420);
   assert.equal(pathname(), '/plants/p02');
@@ -192,11 +194,32 @@ const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
   assert.equal(await page.locator('.plants-detail').isVisible(), true);
   assert.equal((await page.locator('.plants-detail-title').textContent()).trim(), 'Silvio Bräuer');
   assert.equal(await page.locator('.target-nav[data-route="plants"]').getAttribute('aria-current'), 'page');
+  assert.equal(await page.locator('.workspace-tab').count(), tabsBeforePlant + 1, 'opening a plant row creates one tab');
+  assert.equal((await page.locator('.workspace-tab.selected .workspace-tab-label').textContent()).trim(), 'Silvio Bräuer');
+  assert.equal(
+    (await page.locator('.workspace-tab').first().locator('.workspace-tab-label').textContent()).trim(),
+    'Plants',
+    'the source list tab remains available'
+  );
+  await page.locator('.workspace-tab').first().click();
+  await page.waitForTimeout(420);
+  assert.equal(pathname(), '/plants', 'the source list tab still owns /plants');
+  await page.locator('.workspace-tab').last().click();
+  await page.waitForTimeout(420);
+  assert.equal(pathname(), '/plants/p02', 'switching back restores the plant detail tab');
+  await page.locator('.plants-detail-back').click();
+  await page.waitForFunction(count => document.querySelectorAll('.workspace-tab').length === count, tabsBeforePlant);
+  assert.equal(await page.locator('.workspace-tab').count(), tabsBeforePlant, 'Back to Plants closes the source detail tab');
+  assert.equal(pathname(), '/plants');
   assert.equal((await page.locator('.workspace-tab.selected .workspace-tab-label').textContent()).trim(), 'Plants');
+  await page.locator('.plants-row[data-id="p02"]').click();
+  await page.waitForTimeout(420);
+  assert.equal(await page.locator('.workspace-tab').count(), tabsBeforePlant + 1);
   await page.reload({ waitUntil: 'domcontentloaded' });
   await ready();
   assert.equal(pathname(), '/plants/p02', 'refresh on a plant detail must stay on that plant');
   assert.equal((await page.locator('.plants-detail-title').textContent()).trim(), 'Silvio Bräuer');
+  assert.equal((await page.locator('.workspace-tab.selected .workspace-tab-label').textContent()).trim(), 'Silvio Bräuer');
 
   // Browser history follows the same locations.
   await page.goBack();
@@ -248,6 +271,70 @@ const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
   assert.equal((await page.locator('.plants-detail-title').textContent()).trim(), 'Plant not found');
   assert.equal(await page.title(), 'WattDesk · Plant not found');
 
+  // An unnamed plant is auto-created when its device comes online, so the row
+  // itself opens a real detail tab titled "?". The question mark still opens
+  // the explanation, whose underlined setup action is another detail entry.
+  await page.goto(`${origin}/plants`, { waitUntil: 'domcontentloaded' });
+  await ready();
+  const autoCreatedTabs = await page.locator('.workspace-tab').count();
+  await page.locator('.plants-row[data-id="p22"] .plants-unknown').click();
+  await page.waitForTimeout(420);
+  assert.equal(pathname(), '/plants/p22');
+  assert.equal((await page.locator('.workspace-tab.selected .workspace-tab-label').textContent()).trim(), '?');
+  assert.equal((await page.locator('.plants-detail-title').textContent()).trim(), '?');
+  assert.match(await page.locator('.plants-detail-note').textContent(), /created automatically/);
+  await page.locator('.plants-detail-back').click();
+  await page.waitForFunction(count => document.querySelectorAll('.workspace-tab').length === count, autoCreatedTabs);
+  const unknownTrigger = page.locator('.plants-row[data-id="p21"] .plants-unknown');
+  await unknownTrigger.hover();
+  await page.waitForTimeout(240);
+  assert.equal(await page.locator('.plants-tooltip').isVisible(), true);
+  assert.match(await page.locator('.plants-tooltip-text').textContent(), /created automatically/);
+  const tooltipBox = await page.locator('.plants-tooltip').boundingBox();
+  await page.mouse.move(tooltipBox.x + tooltipBox.width / 2, tooltipBox.y + tooltipBox.height / 2);
+  await page.waitForTimeout(420);
+  assert.equal(await page.locator('.plants-tooltip').isVisible(), true, 'moving into the tooltip must keep it open');
+  await page.mouse.move(12, 700);
+  await page.waitForFunction(() => !document.querySelector('.plants-tooltip'), null, { timeout: 2000 });
+  assert.equal(await unknownTrigger.getAttribute('aria-describedby'), null, 'a dismissed hint releases its description');
+  await unknownTrigger.hover();
+  await page.waitForTimeout(240);
+  const reopenedTooltip = await page.locator('.plants-tooltip').boundingBox();
+  await page.mouse.move(reopenedTooltip.x + reopenedTooltip.width / 2, reopenedTooltip.y + reopenedTooltip.height / 2);
+  await page.waitForTimeout(120);
+  const setupAction = page.locator('.plants-tooltip-setup');
+  assert.equal((await setupAction.textContent()).trim(), 'setup.');
+  const setupStyle = await setupAction.evaluate(action => {
+    const style = getComputedStyle(action);
+    const previous = action.previousSibling;
+    const range = document.createRange();
+    range.setStart(previous, Math.max(0, previous.length - 12));
+    range.setEnd(previous, previous.length);
+    const before = range.getBoundingClientRect();
+    const setup = action.getBoundingClientRect();
+    return {
+      display: style.display,
+      width: style.width,
+      background: style.backgroundColor,
+      decoration: style.textDecorationLine,
+      inlineOffset: Math.abs((before.top + before.height / 2) - (setup.top + setup.height / 2))
+    };
+  });
+  assert.notEqual(setupStyle.display, 'block', 'setup stays in the copy paragraph');
+  assert.ok(setupStyle.inlineOffset < 2, 'setup remains on the final copy line instead of starting a new block');
+  assert.match(setupStyle.decoration, /underline/);
+  assert.equal(setupStyle.background, 'rgba(0, 0, 0, 0)');
+  await setupAction.hover();
+  await page.waitForTimeout(280);
+  assert.match(await setupAction.evaluate(action => getComputedStyle(action).color), /255, 255, 255/);
+  assert.equal(await setupAction.evaluate(action => getComputedStyle(action).backgroundColor), 'rgba(0, 0, 0, 0)');
+  await setupAction.click();
+  await page.waitForTimeout(420);
+  assert.equal(pathname(), '/plants/p21');
+  assert.equal(await page.locator('.workspace-tab').count(), autoCreatedTabs + 1);
+  assert.equal((await page.locator('.workspace-tab.selected .workspace-tab-label').textContent()).trim(), '?');
+  assert.equal((await page.locator('.plants-detail-title').textContent()).trim(), '?');
+
   // Bookmarking pins a plant to the top of the list. The pinned group keeps the
   // active column sort, the choice survives a reload, and removing the bookmark
   // returns the row to its normal position.
@@ -261,6 +348,19 @@ const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
   const bookmark = page.locator('.plants-row[data-id="p24"] .plants-bookmark');
   await bookmark.focus();
   await page.keyboard.press('Enter');
+  await page.waitForTimeout(340);
+  const toastGeometry = await page.evaluate(() => {
+    const box = selector => document.querySelector(selector).getBoundingClientRect();
+    const toast = box('#toast');
+    const title = box('.plants-title');
+    return {
+      visible: getComputedStyle(document.querySelector('#toast')).display !== 'none',
+      toastCenter: toast.top + toast.height / 2,
+      titleCenter: title.top + title.height / 2
+    };
+  });
+  assert.equal(toastGeometry.visible, true);
+  assert.ok(Math.abs(toastGeometry.toastCenter - toastGeometry.titleCenter) < 1.5, 'toast centre aligns with the page title');
   // Wait for the FLIP reorder to settle without tying the assertion to one
   // machine's frame timing.
   await page.evaluate(() => Promise.all(document.getAnimations().map(a => a.finished.catch(() => {}))));

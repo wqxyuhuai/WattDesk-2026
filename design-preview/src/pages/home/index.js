@@ -94,11 +94,13 @@ const periodHeader=get("14561:836"),periodArea=get("14612:7602");
 const layoutCtx={get,layoutNode,homeColumn,homeCanvas,workspacePanel,statusCards,energyCards,businessCards,periodHeader,periodArea};
 const layout=createHomeLayout(layoutCtx);
 const motion=createHomeMotion({duration:motionDuration,easing:motionEasing,reducedMotion});
-const {toast,close,popover,registerPanel}=createPopoverController({overlays:document.querySelector("#overlays"),toastElement:document.querySelector("#toast"),motion,glass});
+const {toast,close,popover,registerPanel,reposition}=createPopoverController({overlays:document.querySelector("#overlays"),toastElement:document.querySelector("#toast"),motion,glass});
 // The workspace controller is created after the page modules; route calls made
 // by cards and menus resolve through this late-bound wrapper.
 let workspace;
 function openRoute(route,options){return workspace?.openRoute(route,options);}
+function openRouteInNewTab(route,options){return workspace?.openRouteInNewTab(route,options);}
+function returnToPlantsList(){return workspace?.returnToPlantsList();}
 // Menus, tooltips and toasts inherit the same reviewed surface as dialogs;
 // the shell is created before the page material, so bind it once here.
 targetChrome.workspaceTabs.setGlass(glass);
@@ -187,7 +189,7 @@ workspace=createWorkspace({
  workspacePanel,searchClose:search.closeAll,recentVisits,
  resolvePlantName:id=>{
   const plant=plantById(id);
-  return plant?.name||(plant?"Unassigned device":"");
+  return plant?.name||(plant?"?":"");
  },
  layoutHome:()=>layout.resize()
 });
@@ -197,9 +199,9 @@ workspace=createWorkspace({
 // surface down with it; the error stays visible in the console.
 try{
  const plantsPage=createPlantsPage({
-  glass,registerPanel,close,toast,
-  onOpenPlant:plant=>openRoute("plants",{params:{plantId:plant.id}}),
-  onBackToList:()=>openRoute("plants")
+   glass,registerPanel,close,reposition,toast,
+  onOpenPlant:plant=>openRouteInNewTab("plants",{params:{plantId:plant.id}}),
+  onBackToList:returnToPlantsList
  });
  workspace.registerRouteView("plants",plantsPage);
 }catch(error){

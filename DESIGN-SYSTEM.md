@@ -1,6 +1,6 @@
 # WattDesk 全站设计与交互规范
 
-更新：2026-10-20。当前首页及后续页面沿用本规范。开发入口为根目录 `AGENTS.md`；本文件记录共享资源、状态、动效与验收。参数以对应共享 CSS / JS 为准，调整时同步本文。
+更新：2026-10-29。当前首页、Plants 列表及后续页面沿用本规范。开发入口为根目录 `AGENTS.md`；本文件记录共享资源、状态、动效与验收。参数以对应共享 CSS / JS 为准，调整时同步本文。
 
 ## 1. 当前设计依据
 
@@ -96,6 +96,8 @@
 
 - 名称：**Glass Surface**（浮层玻璃材质）。来源分支 `.wd-glass--surface`；宿主同时加 `.wd-glass-popup` 表示“整面板不缩放”，与 `.wd-glass-chrome` 不是同一语义。
 - 默认范围：所有菜单、popover、tooltip、toast 和图表数据浮签等**浮层一律默认使用 Glass Surface**；已有浮层和将来新增浮层都按此执行。图表卡片、状态卡等常驻数据容器仍是普通表面，不因本条自动玻璃化。
+- toast 是全局顶部短反馈：固定在工作区顶部，水平沿用内容区中心线，纵向中心与页面标题中心对齐；当前以 `top:78px` 为基准，不用底部 toast。页面不得覆盖该位置或另建同类通知层。
+- toast 的入场/退场使用共享 motion：从 `translateY(-4px)` 下落入位并淡入，使用 `--wd-motion-panel` / `--wd-ease-panel`；退场继续上浮到 `-4px` 并淡出，使用 `--wd-motion-panel-exit` / `--wd-ease-hover-out`。连续提示不重复闪入，减少动态效果时立即显示和移除。
 - 复用方式：直接用共享 `createPopoverController({overlays,toastElement,motion,glass})`。`popover()` / `registerPanel()` 会自动加 `.wd-glass--surface wd-glass-popup` 并以 `radius:18,interactive:false` 挂载，调用方不要再手写材质。自定义面板需自行加类并调用 `glass.addSurface()`；内容放在同级容器，禁止自己写 `blur`、底色或 `box-shadow`。
 - 浮层圆角按尺度分三档，统一取 token：紧凑提示 / 数据浮签 / tooltip 用 `--wd-radius-compact`（12px），通用 popover / 图表菜单用 `--wd-radius-medium`（18px），标准浮层菜单与日期、搜索、历史等大面板用 `--wd-radius-large`（30px）。圆角只由宿主声明，玻璃各层继承；不按单个内容再发明半径，也不为“看起来更大”随意加值。图表数据浮签按此规则从原稿的 8px 提到 12px。
 - 已自带 `.wd-glass` 的弹窗（日期、历史、搜索）由控制器自动跳过，不能重复挂载第二层材质或第二个 `ResizeObserver`。tooltip、toast 与图表数据浮签属于只读表面，必须传 `interactive:false`，保留材质和指针光晕但不响应 hover / 按下缩放；它们的文案要放在独立 span 中，不能用 `textContent` 覆盖宿主，否则会删掉材质子层。
@@ -160,7 +162,7 @@
 
 日期输入是固定格式控件：`/`、`/`、空格、`:` 由控件绘制，位置固定且不可输入，分段只接受各自位数的数字，满位后自动跳到下一段。校验失败时整个玻璃框进入错误态——1px `Accents/Red` 内描边加一层淡红外环，分段、分隔符和日历图标同时变红；不能只让文字变红。说明文字位于两个时间框下方、收尾分割线上方，不能放在分割线下的 footer。错误态在定位到分段或用 Apply 提交时都必须保持，只在用户重新输入出合法范围后清除，不能因为分段获得焦点就被抹掉。
 
-搜索使用共享 `components/search-surface.js` / `.css`。侧栏 Quick search、首页内联搜索框和结果面板的键盘提示必须由同一组 `Ctrl` + `K` 键帽生成，不能从 Figma 导出复制独立文本节点，也不能各写一套颜色或背景。键帽固定为两枚独立矩形，间距 `4px`，使用 `Footnote/Regular`、SF Pro 字体族和 `--wd-control-muted` 背景、`--wd-vibrant-label-secondary` 文字；深浅主题自动继承，不按主体文字色重新着色。底部操作提示使用同一键帽外观：方向导航是一枚合并的 `↑ ↓` 键帽，不能拆成两枚；其余为 `Enter Open`、`Esc Close`。动作名保持英文，不得退回浏览器等宽字体或中文动作名。底部提示是真实可操作控件，不是装饰文字：`Navigate` 推进当前结果选中并循环，`Open` 打开当前选中项，`Close` 关闭当前搜索面板；鼠标点击后焦点仍留在输入框，键盘方向键、输入和再次激活可立即继续。首页内联搜索的键帽组以搜索框右缘内缩 `20px` 为固定锚点向左生长；不能沿用导出稿的 `35px` 单字形列宽，也不能让共享键帽溢出或压到框边。两处搜索框的可见默认文字只能来自 `components/search.js` 的 `SEARCH_FIELD_PLACEHOLDER`，全屏不得另写 `Search WattDesk` 之类文案；`aria-label` 等无障碍名称不要求与占位文案相同。
+搜索使用共享 `components/search-surface.js` / `.css`。侧栏 Quick search、首页内联搜索框和结果面板的键盘提示必须由同一组 `Ctrl` + `K` 键帽生成，不能从 Figma 导出复制独立文本节点，也不能各写一套颜色或背景。键帽固定为两枚独立矩形，间距 `4px`，使用 `Footnote/Regular`、SF Pro 字体族和 `--wd-control-muted` 背景、`--wd-vibrant-label-secondary` 文字；深浅主题自动继承，不按主体文字色重新着色。底部操作提示使用同一键帽外观：方向导航是一枚合并的 `↑ ↓` 键帽，不能拆成两枚；其余为 `Enter Open`、`Esc Close`。动作名保持英文，不得退回浏览器等宽字体或中文动作名。底部提示是真实可操作控件，不是装饰文字：`Navigate` 推进当前结果选中并循环，`Open` 打开当前选中项，`Close` 关闭当前搜索面板；鼠标点击后焦点仍留在输入框，键盘方向键、输入和再次激活可立即继续。首页内联搜索的键帽组以搜索框右缘内缩 `20px` 为固定锚点向左生长；不能沿用导出稿的 `35px` 单字形列宽，也不能让共享键帽溢出或压到框边。两处搜索框的可见默认文字只能来自 `components/search.js` 的 `SEARCH_FIELD_PLACEHOLDER`，全屏不得另写 `Search WattDesk` 之类文案；`aria-label` 等无障碍名称不要求与占位文案相同。共享清除按钮固定在输入区尾部，保持 `18px × 18px`、零内距并与字段垂直同中心；嵌入浮层时不得被外层 `.popover > button` 的菜单按钮样式命中。
 
 搜索结果每项保持 `40px` 行高。标题与分类属性显示在同一行，格式为 `Plants - Pages`：标题使用主文字色，`- Pages` 使用 Labels/Secondary；两者之间是 `4px` 视觉空格，不恢复上下两行。标题过长时省略，分类保持完整；右侧回车提示只在选中时显示。
 
@@ -209,6 +211,8 @@
 | 分类收起/展开 | 380ms | `--wd-motion-disclosure` / `--wd-ease-disclosure` |
 | 浮层展开 | 320ms | `--wd-motion-panel` / `--wd-ease-panel` |
 | 浮层收起 | 200ms | `--wd-motion-panel-exit` / `--wd-ease-hover-out` |
+| toast 淡入 | 320ms | `--wd-motion-panel` / `--wd-ease-panel` |
+| toast 淡出 | 200ms | `--wd-motion-panel-exit` / `--wd-ease-hover-out` |
 | Workspace 标签关闭 | 260ms | `--wd-motion-tab-close` / `--wd-ease-hover-out` |
 | 图表首次进入可视区 | 740ms | `--wd-motion-chart` / `--wd-ease-chart` |
 | 柱形逐项延迟 | 每项 35ms | `--wd-motion-stagger` |
@@ -272,16 +276,30 @@
 - 分类使用设计稿实心箭头，维护 `aria-expanded` / `aria-controls`；隐藏内容不可聚焦。浮层支持 Esc 和外部点击关闭，退出后不残留透明遮挡层。
 - 三点菜单的圆形 hover 背景与命中区为 30px，保持原始三点中心。标题容器允许控件溢出，不能用 18px 标题行裁切圆底；文字省略仍由文字节点自身控制，不全局取消图表或滚动区域裁切。
 - 不用全局 `transform:none` 修复 hover，它会破坏布局定位和响应式缩放。图标对齐需看真实路径的视觉中心。
-- 当前 Home 与 Plants 列表是真实页面；`/plants/:id` 已有可刷新 URL，但详情内容仍是明确的预览占位。其余路由、真实账号、设备控制及后端统计未接入。样例数据、CSV 和提示应如实说明预览范围。
+- 当前 Home 与 Plants 列表是真实页面；`/plants/:id` 已有可刷新 URL，但详情内容仍是明确的预览占位。Plants 列表行会新建并激活详情标签，原列表标签保留。名称为 `?` 的电站表示设备上线时已自动建站、资料未补全，仍属于正常电站；行可进入详情，标签与详情主标题都显示 `?`，不得显示 `Unassigned device`。其余路由、真实账号、设备控制及后端统计未接入。样例数据、CSV 和提示应如实说明预览范围。
 
 ### 路由与 URL
 
 - 规范 URL 与完整表见 [站点路由](./docs/ROUTING.md)：Home `/home`、Plants `/plants`、电站详情 `/plants/:id`，其余侧栏页面使用对应短路径。`/`、`/home.html`、`/index.html` 以 `308` 规范到 `/home`。
 - 地址栏镜像当前激活工作区标签的 `{route, params}`；切换标签、侧栏导航、页面内跳转都更新 URL，刷新和复制链接恢复同一页面，不得回到 Home。
+- Plants 列表行和自动建站 `?` 提示中的 `setup` 是明确的新标签入口，调用 `openRouteInNewTab()` 并激活详情标签；自动建站电站的标签标题为 `?`。`Back to Plants` 优先激活来源列表标签并关闭当前详情标签，无来源标签时在当前标签内返回 Plants。侧栏与首页快捷入口仍在当前标签内导航。
 - 深链接由服务端/静态资源层返回 SPA 外壳：本地 `server.js` 与线上 `_redirects` 必须同步路径；HTML 使用 `<base href="/">`，多级路径下的脚本、样式和素材仍从站点根解析。
 - 路由层是唯一可以写浏览器历史的位置：页面调用 `openRoute(route,{params})`，不直接在组件里拼 URL 或调用 `pushState`。未知路径和未知电站 ID 显示 not-found，不静默回首页。
 - 路由变化先关闭活动浮层；页面标题随路由更新。详情类 URL 使用稳定业务 ID，不按名称或数组下标生成。
 - 新增路由同时更新 `ROUTE_CATALOG`、`server.js` 的 `canonicalRoutes`、构建脚本的 `appRoutes` 与 `tests/verify-routing.cjs`。
+
+### Plants 筛选与列可视性
+
+- Plants 筛选入口使用共享锚定浮层。主面板只列 4 个类目：Company、Device、Connection、Running status，宽度 `260px`、高度贴合类目内容，不在内部预留条件区；工具栏入口的右缘与列可视性浮层右缘对齐，筛选条加号的入口则在加号下方展开并与加号左缘对齐。加号面板打开后固定初始视口位置，新增 chip 导致加号重新排版时不得带着面板移动。鼠标悬停或键盘聚焦类目后，以独立 Glass Surface 次级浮窗展示条件；Company 保持 `260px`，Device、Connection、Running status 统一使用 `208px`，保证选项单行且三项同宽。次级浮窗锚定当前类目行，优先出现在空间更充足的一侧并与主面板内缘重叠 `12px`。类目 hover 采用 `380ms` 意图延迟，鼠标斜穿其他类目前往二级浮窗时不得误切换。
+- 二级浮窗的垂直基准是**第一个可选项**：第一个选项的文字/行盒与对应一级类目行对齐，而不是让二级标题对齐类目。Company 带搜索框时使用 `100px` 顶部内容偏移，其余条件组使用 `54px`；顶部空间不足时由共享浮窗定位夹紧到 12px 视口边距。
+- Company 固定在第一项，条件区顶部提供共享玻璃搜索框；默认展示 15 个节点的多级公司树，使用 `22px` 方形命中区的连续箭头表示展开，支持父级 `checked / mixed / unchecked` 三态。公司名称使用 `Footnote/Medium`（13 / 510 / 18px），可换行，禁止出现横向滚动条；复选框中线对齐公司名第一行。条件列表向左右释放内距，滚动条贴卡片右缘并留约 `4px`；面板限制为 `70vh / 520px` 内的最大高度，超出时使用共享 `.wd-scrollbar` 滚动。选中顶层公司时，筛选条只显示顶层公司汇总 chip，不展开所有子公司。
+- Connection 与 Running status 是两个独立筛选组。Connection 使用在线、部分在线、离线、未绑定四态信号图标；Running status 使用 `Normal / Attention / Unbound device` 三种运行健康状态及其原始语义图标。筛选条件与表格 Status 图标都使用不透明掩码，不能因导出透明度或从详情页返回而发灰；生成脚本必须把所有 `fill-opacity` / `stroke-opacity` 归一到 `1`，不是只处理原稿常见的 `.7`。图标为 14–18px，与所在行文字垂直居中。筛选条件与表格 Status 的图标和文字间距均为 `4px`；Company、Device 的普通条件不加装饰图标。
+- 每条条件行由独立复选区和条件名称按钮组成。点击复选框立即筛选且两个浮层都保持打开；点击条件名称/选项主体会应用该条件并关闭筛选。复选框使用 `Accents/Blue` 选中态和更大的白色勾选遮罩。row 本体不画 hover 底，只有文字按钮区域出现一层高亮；复选框与条件之间的间距为 `4px`。条件旁不再显示数量数字。
+- 一级筛选与二级条件共用 `.wd-filter-menu` 内胆，四边 `20px`；标题、搜索框、条件区和滚动区沿同一内容线。列可视性继续沿用 `.wd-menu` 的 `20px` 顶部标准。长列表统一使用共享 `.wd-scrollbar`，页面不另写滚动条。
+- 有筛选时在工具栏下显示条件条。每个具体条件是独立小 tab，只显示条件文字，例如 `Hybrid Inverter`；tab 后面是复用完整筛选内容与交互的加号，点击后在加号下方左对齐打开主筛选面板，`Clear` 固定在条件区最右侧并始终垂直居中。条件区使用设计稿已有的 `Backgrounds/Tertiary Elevated` 实底区分表格，chip 使用 `Fills/Secondary`；不使用页面私有淡紫色或玻璃叠加。
+- Plants 的刷新是一次本地列表重置：点击后仍只让刷新图标转一圈并防重复触发，同时清空全部筛选、恢复默认列显隐和默认 `Last update` 降序排序，三者在同一轮渲染中完成。搜索词和收藏状态不被刷新清除。刷新完成提示需说明视图已重置。
+- 列可视性菜单继续使用共享 `.wd-menu` 外壳和 36px 行，但每行状态图标改为用户提供的 `Eye` / `Eye Closed`，固定在文字前；不得再放尾部对勾。显示时 Eye 为 Labels/Secondary，隐藏时 Eye Closed 与文字为 Labels/Tertiary，hover / focus 恢复主文字色。`Plant type` 不再列为可切换列。
+- 筛选与眼睛图标原稿存放在 `design-preview/design/figma/plants/icons/`，运行副本在 `design-preview/home-assets/plants/icons/`，来源索引为 `design-preview/design/figma/plants/icons-source.json`。筛选数据仍是本地样本，不宣称后端查询、权限或持久化。
 
 ## 8. 开发与验收
 
@@ -301,6 +319,7 @@ npm test
 node tests/verify-home.cjs
 node tests/verify-shortcuts.cjs
 node tests/verify-routing.cjs
+node tests/verify-plants-filters.cjs
 node tests/verify-glass.cjs
 node tests/verify-theme.cjs
 node tests/verify-foundations.cjs
@@ -311,7 +330,7 @@ npm run sync:themes
 npm run sync:type
 ```
 
-`npm test` 检查当前首页交互、快捷入口行导航、URL/刷新、响应式重排、正式玻璃、主题、字体/圆角、共享组件、共享动效与搜索控件；若旧视觉基线失败会停在对应专项。浏览器运行配置见 `design-preview/tests/runtime.cjs` 和运行 README，可通过环境变量指定 Playwright、Chrome、Python；截图输出到 `tests/output/`，固定基线在 `tests/fixtures/`。`npm run test:visual` 对比整理前四张主题/尺寸基线，`npm run audit:assets` 检查引用。更新归档来源后用 `npm run sync` 生成运行数据与样式；生成文件不手改。
+`npm test` 检查当前首页交互、快捷入口行导航、URL/刷新、Plants 筛选与可视性、响应式重排、正式玻璃、主题、字体/圆角、共享组件、共享动效与搜索控件；若旧视觉基线失败会停在对应专项。浏览器运行配置见 `design-preview/tests/runtime.cjs` 和运行 README，可通过环境变量指定 Playwright、Chrome、Python；截图输出到 `tests/output/`，固定基线在 `tests/fixtures/`。`npm run test:visual` 对比整理前四张主题/尺寸基线，`npm run audit:assets` 检查引用。更新归档来源后用 `npm run sync` 生成运行数据与样式；生成文件不手改。
 
 ## 9. 维护约定
 

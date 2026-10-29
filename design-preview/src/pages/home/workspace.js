@@ -27,6 +27,7 @@ let activeRoute="home";
 let activeParams={};
 let booting=true;
 let applyingLocation=false;
+let nextRouteTab=1;
 const homeWorkspace=get("14578:6145");
 // Real page surfaces register themselves here; a route without a registered
 // view keeps the shared "Coming soon" fallback.
@@ -46,6 +47,7 @@ const workspaceTabs=targetChrome.workspaceTabs;
 // Navigation history is local to each tab. It records location descriptors
 // (route + params), so /plants and /plants/p02 are separate entries.
 const routeHistory=new Map();
+const newTabOrigins=new Map();
 
 function ensureHistory(tab,location={route:tab?._state?.route||"home",params:tab?._state?.params||{}}){
  if(!tab)return null;
@@ -92,6 +94,13 @@ function updatePageTitle(){
   :"";
  document.title=documentTitle(activeRoute,activeParams,plantName);
 }
+function titleForLocation(location){
+ const definition=routeCatalog[location.route];
+ if(location.route==="plants"&&location.params?.plantId){
+  return resolvePlantName?.(location.params.plantId)||"Plant not found";
+ }
+ return definition?.title||"Page";
+}
 function syncUrl(mode="push"){
  if(applyingLocation)return;
  const path=pathForRoute(activeRoute,activeParams);
@@ -118,7 +127,7 @@ function updateTabLocation(tab,location){
  workspaceTabs.update(tab,{
   route:location.route,
   params:{...location.params},
-  title:definition.title,
+  title:titleForLocation(location),
   kind:location.route==="home"?"home":"route",
   iconFile:definition.icon,
   snapshot:{route:location.route,params:{...location.params},home}
@@ -204,6 +213,50 @@ function openRoute(route,{record=true,params={},historyMode="push"}={}){
  return commitLocation({route,params},{urlMode:record?historyMode:"replace",recordHistory:record});
 }
 
+function openRouteInNewTab(route,{params={}}={}){
+ const definition=routeCatalog[route];
+ if(!definition)return null;
+ close(true);
+ searchClose(true);
+ recentVisits.record(route);
+ const source=workspaceTabs.active();
+ workspaceTabs.captureCurrent();
+ const location={route,params:{...params}};
+ const id=`route-${nextRouteTab++}`;
+ const tab=workspaceTabs.add({
+  id,
+  title:titleForLocation(location),
+  kind:route==="home"?"home":"route",
+  route,
+  params:{...params},
+  iconFile:definition.icon,
+  snapshot:{route,params:{...params},home:{...defaultSnapshot,range:{...defaultSnapshot.range}}}
+ });
+ if(source)newTabOrigins.set(tab._state.id,source._state.id);
+ ensureHistory(tab,location);
+ syncHistoryControls();
+ return tab;
+}
+
+function returnToPlantsList(){
+ const current=workspaceTabs.active();
+ if(!current)return null;
+ const originId=newTabOrigins.get(current._state.id);
+ const source=originId?workspaceTabs.tabs.find(tab=>tab._state.id===originId):null;
+ const isList=tab=>tab&&tab._state.route==="plants"&&!tab._state.params?.plantId;
+ const target=isList(source)
+  ?source
+  :workspaceTabs.tabs.find(tab=>tab!==current&&isList(tab));
+ if(target&&workspaceTabs.tabs.length>1){
+  close(true);
+  searchClose(true);
+  workspaceTabs.activate(target);
+  workspaceTabs.remove(current);
+  return target;
+ }
+ return openRoute("plants");
+}
+
 function goHistory(delta){
  const state=historyFor(),tab=workspaceTabs.active();
  if(!state||!tab)return;
@@ -260,6 +313,10 @@ function addHomeTab(){
 workspaceTabs.mountTab=tab=>glass.addSurface({host:tab,radius:18});
 workspaceTabs.onUnmount=tab=>{
  routeHistory.delete(tab._state.id);
+ newTabOrigins.delete(tab._state.id);
+ for(const [tabId,originId] of newTabOrigins){
+  if(originId===tab._state.id)newTabOrigins.delete(tabId);
+ }
  glass.removeSurface(tab);
  syncHistoryControls();
 };
@@ -319,7 +376,7 @@ const initialLocation=routeFromPath(locationPathname());
 const initialDefinition=routeCatalog[initialLocation.route];
 workspaceTabs.add({
  id:"home-1",
- title:initialDefinition?.title||"Home",
+ title:initialDefinition?titleForLocation(initialLocation):"Home",
  kind:initialLocation.route==="home"?"home":"route",
  route:initialLocation.route,
  params:initialLocation.params,
@@ -364,6 +421,8 @@ for(const row of routeRows){
 
 return {
  openRoute,
+ openRouteInNewTab,
+ returnToPlantsList,
  goHistory,
  addHomeTab,
  registerRouteView,

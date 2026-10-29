@@ -5,13 +5,13 @@
 // surface is explicitly a placeholder rather than invented device controls.
 import {applyTypeStyle} from "../../foundations/typography.js";
 import {assetURL,opaqueMaskURL} from "../../components/icons.js";
-import {menuHeading,menuList,menuRow,mountMenu} from "../../components/menu-popover.js";
+import {menuHeading,menuList,mountMenu} from "../../components/menu-popover.js";
 import {prepareControlStates,prepareIconMasks} from "../../components/control-states.js";
 import {createSearchField} from "../../components/search-surface.js";
 import {motionDuration,motionEasing,reducedMotion} from "../../foundations/motion.js";
 import {
- COMPANIES,CONNECTION_META,DEVICES,HEALTH_META,PLANT_TYPES,PLANTS,STATUS_META,UNASSIGNED_TOOLTIP,
- companyLabel,deviceLabel,distributorLabel,plantById,typeLabel
+ COMPANY_TREE,CONNECTION_META,DEVICES,HEALTH_META,PLANTS,STATUS_META,AUTO_CREATED_TOOLTIP,
+ companyLabel,deviceLabel,distributorLabel,plantById
 } from "./data.js";
 
 const BOOKMARK_KEY="wattdesk.plants.bookmarks.v1";
@@ -22,7 +22,7 @@ const DEFAULT_DIR={name:"asc",power:"desc",status:"asc",firmware:"desc",updated:
 // left edge of both the table and its header, so the title "Plants" starts on
 // that same line. Connection is a compact icon immediately before the name,
 // because the two are read together as one identity block.
-const DEFAULT_HIDDEN=["company","type"];
+const DEFAULT_HIDDEN=["company"];
 const COLUMNS=[
  {id:"bookmark",label:"Bookmark",control:true,width:"32px",fixed:true,locked:true},
  // Connection has no visible header label and no text in the row.
@@ -47,9 +47,33 @@ const COLUMNS=[
  // the group sits against the table's right edge instead of expanding into a
  // wide empty strip. The reclaimed width stays with the middle columns.
  {id:"updated",label:"Last update",sortable:true,width:"112px",wideGrow:.12},
- {id:"company",label:"Company",sortable:false,width:"176px",fixed:true},
- {id:"type",label:"Plant type",sortable:false,width:"124px",fixed:true}
+ {id:"company",label:"Company",sortable:false,width:"176px",fixed:true}
 ];
+
+const FILTER_CATEGORIES=Object.freeze([
+ {id:"company",label:"Company",icon:"plants/icons/company.svg",kind:"company",search:true},
+ {id:"device",label:"Device",icon:"plants/icons/device.svg",kind:"options"},
+ {id:"connection",label:"Connection",icon:"plants/icons/company.svg",kind:"options"},
+ {id:"status",label:"Running status",icon:"plants/icons/status.svg",kind:"options"}
+]);
+
+function flattenCompanies(nodes,depth=0,parentId=null){
+ return nodes.flatMap(node=>[
+  {id:node.id,label:node.label,depth,parentId,children:node.children||[]},
+  ...flattenCompanies(node.children||[],depth+1,node.id)
+ ]);
+}
+
+const COMPANY_NODES=Object.freeze(flattenCompanies(COMPANY_TREE));
+const COMPANY_BY_ID=new Map(COMPANY_NODES.map(node=>[node.id,node]));
+const VISIBILITY_ICON=Object.freeze({
+ visible:"plants/icons/eye.svg",
+ hidden:"plants/icons/eye-closed.svg"
+});
+const FILTER_PANEL_WIDTH=260;
+const FILTER_OPTION_PANEL_WIDTH=208;
+const COLUMN_PANEL_WIDTH=220;
+const FILTER_HOVER_INTENT=380;
 
 const collator=new Intl.Collator(undefined,{numeric:true,sensitivity:"base"});
 
@@ -208,7 +232,7 @@ function healthOf(plant){
  return "attention";
 }
 
-export function createPlantsPage({glass,registerPanel,close,toast,onOpenPlant,onBackToList}){
+export function createPlantsPage({glass,registerPanel,close,reposition,toast,onOpenPlant,onBackToList}){
  const element=document.createElement("section");
  element.className="plants-view";
  element.id="plants-view";
@@ -217,10 +241,7 @@ export function createPlantsPage({glass,registerPanel,close,toast,onOpenPlant,on
 
  const state={
   query:"",
-  companies:new Set(),
-  types:new Set(),
-  devices:new Set(),
-  statuses:new Set(),
+  filters:Object.fromEntries(FILTER_CATEGORIES.map(category=>[category.id,new Set()])),
   sort:{key:"updated",dir:DEFAULT_DIR.updated},
   hidden:new Set(DEFAULT_HIDDEN),
   bookmarks:readBookmarks()
@@ -286,6 +307,11 @@ export function createPlantsPage({glass,registerPanel,close,toast,onOpenPlant,on
  columnTrigger.title="Columns";
  columnTrigger.dataset.dot="false";
  columnTrigger.append(maskedIcon(assetURL("plants/columns.svg"),"plants-icon plants-icon--16"));
+ const columnMenuRight=()=>{
+  const rect=columnTrigger.getBoundingClientRect();
+  const left=Math.max(12,Math.min(rect.left,innerWidth-COLUMN_PANEL_WIDTH-12));
+  return left+COLUMN_PANEL_WIDTH;
+ };
 
  const toolbarSpacer=text("div","plants-toolbar-spacer");
  const refresh=text("button","wd-button wd-button--pill wd-button--disc wd-button--neutral plants-icon-button");
@@ -303,6 +329,18 @@ export function createPlantsPage({glass,registerPanel,close,toast,onOpenPlant,on
  chips.hidden=true;
  chips.setAttribute("role","group");
  chips.setAttribute("aria-label","Active filters");
+ const chipList=text("div","plants-chip-list");
+ const chipAdd=text("button","plants-filter-add wd-control-state");
+ chipAdd.type="button";
+ chipAdd.setAttribute("aria-label","Add filter");
+ chipAdd.title="Add filter";
+ chipAdd.append(maskedIcon(assetURL("plants/plus.svg"),"plants-icon plants-icon--14"));
+ chipAdd.addEventListener("click",()=>filterPanel(chipAdd));
+ const chipClear=text("button","plants-clear wd-control-state");
+ chipClear.type="button";
+ chipClear.append(text("span","plants-clear-label wd-control-label","Clear","Footnote/Regular"));
+ chipClear.addEventListener("click",clearFilters);
+ chips.append(chipList,chipClear);
 
  const scrollShell=text("div","plants-table-shell");
  const pullRegion=text("div","plants-table-pull-region plants-table-pull-region--start");
@@ -588,7 +626,8 @@ export function createPlantsPage({glass,registerPanel,close,toast,onOpenPlant,on
  new ResizeObserver(syncScrollIndicator).observe(scrollShell);
 
  // ── State helpers ────────────────────────────────────────────────────────
- const activeFilterCount=()=>state.companies.size+state.types.size+state.devices.size+state.statuses.size;
+ const filtersFor=id=>state.filters[id];
+ const activeFilterCount=()=>Object.values(state.filters).reduce((sum,values)=>sum+values.size,0);
 
  function matchesQuery(plant,query){
   if(!query)return true;
@@ -600,6 +639,51 @@ export function createPlantsPage({glass,registerPanel,close,toast,onOpenPlant,on
    plant.sn||""
   ].join(" ").toLocaleLowerCase();
   return haystack.includes(query);
+ }
+
+ function companyDescendantIds(id){
+  const node=COMPANY_BY_ID.get(id);
+  if(!node)return [];
+  return [id,...node.children.flatMap(child=>companyDescendantIds(child.id))];
+ }
+
+ function companySelectionState(id){
+  const descendants=companyDescendantIds(id);
+  const selectedIds=filtersFor("company");
+  const selected=descendants.filter(item=>selectedIds.has(item)).length;
+  if(selected===descendants.length)return "checked";
+  return selected?"mixed":"unchecked";
+ }
+
+ function toggleCompany(id){
+  const values=filtersFor("company");
+  const selection=companySelectionState(id);
+  const descendants=companyDescendantIds(id);
+  for(const descendant of descendants)values.delete(descendant);
+  if(selection!=="checked")for(const descendant of descendants)values.add(descendant);
+ }
+
+ function matchesCompany(plant,values){
+  if(!values.size)return true;
+  return values.has(plant.companyId);
+ }
+
+ function matchesCondition(categoryId,plant,values){
+  if(!values.size)return true;
+  if(categoryId==="company")return matchesCompany(plant,values);
+  if(categoryId==="device")return values.has(plant.device);
+  if(categoryId==="connection")return values.has(connectionOf(plant));
+  if(categoryId==="status")return values.has(healthOf(plant));
+  return true;
+ }
+
+ function categoryOptions(categoryId){
+  if(categoryId==="device")return DEVICES.map(option=>({...option}));
+  if(categoryId==="connection")return ["online","partial","offline","unbound"]
+   .map(id=>({id,label:CONNECTION_META[id].label}));
+  if(categoryId==="status")return ["attention","unbound","normal"]
+   .map(id=>({id,label:HEALTH_META[id].label}));
+  return [];
  }
 
   function sortValue(plant,key){
@@ -635,14 +719,13 @@ function compareRows(left,right){
  return (a<b?-1:1)*sign;
 }
 
-function visibleRows(){
+function visibleRows({ignoreCategory=null}={}){
   const query=state.query.trim().toLocaleLowerCase();
   const rows=PLANTS.filter(plant=>
    matchesQuery(plant,query)&&
-   (!state.companies.size||state.companies.has(plant.companyId))&&
-   (!state.types.size||state.types.has(plant.type))&&
-   (!state.devices.size||state.devices.has(plant.device))&&
-   (!state.statuses.size||state.statuses.has(plant.status))
+   FILTER_CATEGORIES.every(category=>
+    category.id===ignoreCategory||matchesCondition(category.id,plant,filtersFor(category.id))
+   )
   );
   // Bookmarked plants form a leading group so Following stays at the top of
   // the list. The chosen column sort still decides the order inside both the
@@ -671,10 +754,16 @@ function visibleRows(){
  }
 
  function clearFilters(){
-  state.companies.clear();
-  state.types.clear();
-  state.devices.clear();
-  state.statuses.clear();
+  for(const values of Object.values(state.filters))values.clear();
+  render();
+ }
+
+ function resetListConfiguration(){
+  for(const values of Object.values(state.filters))values.clear();
+  state.hidden=new Set(DEFAULT_HIDDEN);
+  state.sort={key:"updated",dir:DEFAULT_DIR.updated};
+  renderColgroup();
+  renderHeader();
   render();
  }
 
@@ -780,7 +869,7 @@ function visibleRows(){
      alertFill:"currentColor"
     }));
    }else{
-    wrap.append(maskedIcon(assetURL(meta.icon),"plants-health-glyph plants-health-glyph--"+meta.tone+" plants-icon--14"));
+    wrap.append(maskedIcon(opaqueMaskURL(meta.icon),"plants-health-glyph plants-health-glyph--"+meta.tone+" plants-icon--14"));
    }
    wrap.append(document.createTextNode(meta.label));
    td.append(wrap);
@@ -837,7 +926,7 @@ function visibleRows(){
   button.type="button";
   const following=state.bookmarks.has(plant.id);
   button.setAttribute("aria-pressed",String(following));
-  button.setAttribute("aria-label",`Bookmark ${plant.name||"unassigned device"}`);
+  button.setAttribute("aria-label",`Bookmark ${plant.name||"auto-created plant"}`);
   button.append(bookmarkGlyph());
   button.addEventListener("click",event=>{
     event.stopPropagation();
@@ -865,7 +954,7 @@ function visibleRows(){
     ?.focus({preventScroll:true});
   }
   if(!reducedMotion())animateRowReorder(positions);
-  const label=plant.name||"this device";
+  const label=plant.name||"this plant";
   toast(following?`Following ${label}`:`Removed ${label} from Following`);
  }
 
@@ -889,38 +978,77 @@ function visibleRows(){
 
  // An auto-created plant has no name yet, so the cell shows "?" and explains
  // itself on hover or keyboard focus through the shared anchored glass tooltip.
- function unknownCell(plant){
+ function autoCreatedCell(plant){
    const td=cell("plants-col-name");
   const button=text("button","plants-unknown wd-control-state","?","Footnote/Emphasized");
   button.type="button";
-  button.setAttribute("aria-label","Unassigned device");
+  button.setAttribute("aria-label","Auto-created plant, information incomplete");
+  button.setAttribute("aria-haspopup","dialog");
   let panel=null;
-  const openTip=()=>{
-   const tip=text("div","popover plants-tooltip");
-   tip.append(text("p","plants-tooltip-text",UNASSIGNED_TOOLTIP,"Footnote/Regular"));
-   panel=registerPanel(tip,button,{label:"Unassigned device",radius:12,width:248});
-   panel.setAttribute("role","tooltip");
-   button.setAttribute("aria-describedby",panel.id);
+  let closeTimer=0;
+  const cancelClose=()=>{
+   clearTimeout(closeTimer);
+   closeTimer=0;
   };
   const closeTip=()=>{
+   cancelClose();
    if(panel?.isConnected)close();
    panel=null;
    button.removeAttribute("aria-describedby");
   };
+  const scheduleClose=()=>{
+   cancelClose();
+   closeTimer=setTimeout(closeTip,motionDuration("--wd-motion-panel-exit"));
+  };
+  const openTip=()=>{
+   cancelClose();
+   if(panel?.isConnected)return;
+   const tip=text("div","popover plants-tooltip");
+   const content=text("div","plants-tooltip-content");
+   const copy=text("p","plants-tooltip-text",undefined,"Footnote/Regular");
+   copy.append(document.createTextNode(AUTO_CREATED_TOOLTIP.replace(/setup\.$/,"")));
+   const setup=text("button","plants-tooltip-setup","setup.","Footnote/Regular");
+   setup.type="button";
+   setup.addEventListener("click",event=>{
+    event.stopPropagation();
+    closeTip();
+    onOpenPlant?.(plant);
+   });
+   copy.append(setup);
+   content.append(copy);
+   tip.append(content);
+   tip._wdFade=content;
+   tip.addEventListener("pointerenter",cancelClose);
+   tip.addEventListener("pointerleave",scheduleClose);
+   tip.addEventListener("focusin",cancelClose);
+   tip.addEventListener("focusout",event=>{
+    if(!tip.contains(event.relatedTarget))scheduleClose();
+   });
+   const mounted=registerPanel(tip,button,{label:"Plant setup",radius:12,width:248});
+   const previousClose=mounted._onClose;
+   mounted._onClose=()=>{
+    try{previousClose?.();}
+    finally{
+     button.removeAttribute("aria-describedby");
+     if(panel===mounted)panel=null;
+    }
+   };
+   panel=mounted;
+   button.setAttribute("aria-describedby",mounted.id);
+  };
   button.addEventListener("pointerenter",openTip);
-  button.addEventListener("pointerleave",closeTip);
+  button.addEventListener("pointerleave",scheduleClose);
   button.addEventListener("focus",openTip);
-  button.addEventListener("blur",closeTip);
-  button.addEventListener("click",event=>{
-   event.stopPropagation();
-   openTip();
+  button.addEventListener("blur",event=>{
+   if(panel?.contains(event.relatedTarget))cancelClose();
+   else scheduleClose();
   });
   td.append(button);
   return td;
  }
 
  function nameCell(plant){
-  if(!plant.name)return unknownCell(plant);
+  if(!plant.name)return autoCreatedCell(plant);
   const td=cell("plants-col-name");
    const value=text("span","plants-name",plant.name,"Subheadline/Regular");
   value.title=plant.name;
@@ -935,7 +1063,6 @@ function visibleRows(){
     case "connection":return connectionCell(plant);
     case "company":return plainCell(companyLabel(plant.companyId));
     case "sn":return monoCell(plant.sn);
-    case "type":return plainCell(typeLabel(plant.type));
     case "device":return plainCell(deviceLabel(plant.device));
     case "power":return powerCell(plant);
     case "status":return healthCell(plant);
@@ -958,8 +1085,8 @@ function visibleRows(){
    }
   row.addEventListener("click",()=>activatePlant(plant));
   row.addEventListener("keydown",event=>{
-   // The bookmark and the unassigned-device tooltip inside the row own their
-   // own keyboard activation; Enter there must not also open the plant.
+  // The bookmark owns its keyboard activation; Enter on the auto-created
+  // plant's "?" follows normal button click bubbling and opens the row.
    if(event.key!=="Enter"||event.target!==row)return;
    event.preventDefault();
    activatePlant(plant);
@@ -968,15 +1095,11 @@ function visibleRows(){
  }
 
  function activatePlant(plant){
-  if(!plant.name){
-   toast("This device is not linked to a plant yet");
-   return;
-  }
   if(onOpenPlant){
    onOpenPlant(plant);
    return;
   }
-  toast(`${plant.name} — the plant detail page is not part of this build`);
+  toast(`${plant.name||"This plant"} — the plant detail page is not part of this build`);
  }
 
  function renderDetail(plantId){
@@ -987,44 +1110,70 @@ function visibleRows(){
    detailNote.textContent="This plant ID is not in the preview data. Return to Plants to choose an existing plant.";
    return;
   }
-  const unassigned=!plant.name;
-  detailTitle.textContent=plant.name||"Unassigned device";
+  const autoCreated=!plant.name;
+  detailTitle.textContent=plant.name||"?";
   detailMeta.textContent=[companyLabel(plant.companyId),plant.sn].filter(Boolean).join(" · ");
-  detailNote.textContent=unassigned
-   ?"This device is not linked to a plant yet. The URL will resolve to the plant after setup."
+  detailNote.textContent=autoCreated
+   ?"This plant was created automatically when its device came online. Some plant information is still incomplete; device data and controls are not connected yet."
    :"Plant detail is a preview placeholder in this build. Device data and controls are not connected yet.";
  }
 
  // ── Chips, triggers, empty state ─────────────────────────────────────────
+ function filterValueLabel(categoryId,value){
+  if(categoryId==="company")return COMPANY_BY_ID.get(value)?.label||companyLabel(value);
+  if(categoryId==="device")return deviceLabel(value);
+  if(categoryId==="connection")return CONNECTION_META[value]?.label||value;
+  if(categoryId==="status")return HEALTH_META[value]?.label||value;
+  return value;
+ }
+
  function renderChips(){
-  chips.replaceChildren();
-  const items=[];
-  for(const id of state.companies)items.push({set:state.companies,id,label:companyLabel(id)});
-  for(const id of state.types)items.push({set:state.types,id,label:typeLabel(id)});
-  for(const id of state.devices)items.push({set:state.devices,id,label:deviceLabel(id)});
-  for(const id of state.statuses)items.push({set:state.statuses,id,label:STATUS_META[id]?.label??id});
-  for(const item of items){
+  const companyCategory=FILTER_CATEGORIES.find(category=>category.id==="company");
+  const selectedCompanies=filtersFor("company");
+  const companySummaryIds=new Set();
+  for(const id of selectedCompanies){
+   let node=COMPANY_BY_ID.get(id),summaryId=id;
+   while(node?.parentId){
+    if(selectedCompanies.has(node.parentId))summaryId=node.parentId;
+    node=COMPANY_BY_ID.get(node.parentId);
+   }
+   companySummaryIds.add(summaryId);
+  }
+  const companyItems=[...companySummaryIds].map(id=>({
+   category:companyCategory,
+   value:id,
+   removeIds:companyDescendantIds(id)
+  }));
+  const items=[
+   ...companyItems,
+   ...FILTER_CATEGORIES.filter(category=>category.id!=="company").flatMap(category=>
+    [...filtersFor(category.id)].map(value=>({category,value,removeIds:[value]}))
+   )
+  ];
+  if(!items.length){
+   chipList.replaceChildren();
+   chips.hidden=true;
+   return;
+  }
+  const rendered=[];
+  for(const {category,value,removeIds} of items){
+   const label=filterValueLabel(category.id,value);
    const chip=text("span","plants-chip");
-   chip.append(text("span","plants-chip-label",item.label,"Footnote/Regular"));
+   chip.setAttribute("aria-label",`${category.label}: ${label}`);
+   chip.append(text("span","plants-chip-label",label,"Footnote/Regular"));
    const remove=text("button","plants-chip-remove wd-control-state");
    remove.type="button";
-   remove.setAttribute("aria-label",`Remove filter ${item.label}`);
+   remove.setAttribute("aria-label",`Remove ${category.label} filter ${label}`);
    remove.append(maskedIcon(assetURL("tab-close.svg"),"plants-icon plants-icon--8"));
    remove.addEventListener("click",()=>{
-    item.set.delete(item.id);
+    for(const id of removeIds)filtersFor(category.id).delete(id);
     render();
    });
    chip.append(remove);
-   chips.append(chip);
+   rendered.push(chip);
   }
-  if(items.length){
-   const clear=text("button","plants-clear wd-control-state");
-   clear.type="button";
-   clear.append(text("span","plants-clear-label wd-control-label","Clear all","Footnote/Regular"));
-   clear.addEventListener("click",clearFilters);
-   chips.append(clear);
-  }
-  chips.hidden=items.length===0;
+  chipList.replaceChildren(...rendered,chipAdd);
+  chips.hidden=false;
  }
 
  function updateFilterTrigger(){
@@ -1044,71 +1193,303 @@ function visibleRows(){
  }
 
  // ── Panels ───────────────────────────────────────────────────────────────
- function optionRow(label,checked,onToggle){
-  const row=menuRow(label,{checked});
-  row.setAttribute("role","menuitemcheckbox");
-  row.setAttribute("aria-checked",String(checked));
-  row.addEventListener("click",()=>{
-   const next=row.getAttribute("aria-checked")!=="true";
-   row.setAttribute("aria-checked",String(next));
-   onToggle(next);
-  });
-  return row;
- }
-
- function group(title,rows){
-  const block=text("div","plants-filter-group");
-  block.append(menuHeading(title));
-  const list=menuList();
-  list.append(...rows);
-  block.append(list);
-  return block;
- }
-
- function countBy(field,value){
-  return PLANTS.filter(plant=>plant[field]===value).length;
- }
-
  function filterPanel(anchor){
   const panel=document.createElement("div");
   panel.className="popover popover--menu plants-panel plants-filter-panel";
-  const menu=mountMenu(panel,{label:"Filters",children:[
-   menuHeading("Filters"),
-   group("Company",COMPANIES.map(company=>optionRow(
-    `${company.label} (${countBy("companyId",company.id)})`,
-    state.companies.has(company.id),
-    next=>{next?state.companies.add(company.id):state.companies.delete(company.id);render();}
-   ))),
-   group("Plant type",PLANT_TYPES.map(type=>optionRow(
-    `${type.label} (${countBy("type",type.id)})`,
-    state.types.has(type.id),
-    next=>{next?state.types.add(type.id):state.types.delete(type.id);render();}
-   ))),
-   group("Device",DEVICES.map(device=>optionRow(
-    `${device.label} (${countBy("device",device.id)})`,
-    state.devices.has(device.id),
-    next=>{next?state.devices.add(device.id):state.devices.delete(device.id);render();}
-   ))),
-   group("Status",Object.entries(STATUS_META).sort((a,b)=>a[1].severity-b[1].severity).map(([id,meta])=>optionRow(
-    `${meta.label} (${countBy("status",id)})`,
-    state.statuses.has(id),
-    next=>{next?state.statuses.add(id):state.statuses.delete(id);render();}
-   ))),
-   (()=>{
-    const footer=menuList();
-    const row=menuRow("Clear all filters");
-    row.setAttribute("role","menuitem");
-    row.addEventListener("click",()=>{
-     if(!activeFilterCount())return;
-     clearFilters();
-     close();
+  panel.style.setProperty("--plants-filter-check-mask",`url("${assetURL("tickle.svg")}")`);
+  const primary=text("div","plants-filter-primary wd-filter-menu wd-scrollbar");
+  const primaryHeading=menuHeading("Filter");
+  const categoryList=text("div","plants-filter-categories");
+  categoryList.setAttribute("role","menu");
+  categoryList.setAttribute("aria-label","Filter categories");
+  const categoryButtons=new Map();
+  for(const category of FILTER_CATEGORIES){
+   const row=text("button","plants-filter-category wd-control-state");
+   row.type="button";
+   row.dataset.category=category.id;
+   row.setAttribute("role","menuitem");
+   row.setAttribute("aria-controls","plants-filter-options");
+   row.setAttribute("aria-expanded","false");
+   row.append(
+    maskedIcon(assetURL(category.icon),"plants-icon plants-icon--18 plants-filter-category-icon"),
+    text("span","plants-filter-category-label wd-control-label",category.label,"14/14 medium")
+   );
+   const count=text("span","plants-filter-category-count",undefined,"Caption2/Regular");
+   const chevron=maskedIcon(opaqueMaskURL("disclosure.svg"),"plants-icon plants-icon--10 plants-filter-category-chevron");
+   row.append(count,chevron);
+   categoryButtons.set(category.id,{row,count});
+   categoryList.append(row);
+  }
+  primary.append(primaryHeading,categoryList);
+  panel.append(primary);
+  panel._wdFade=primary;
+
+  let activeCategory=null;
+  let activeRow=null;
+  let secondaryPanel=null;
+  let secondaryTitle=null;
+  let selectionCount=null;
+  let searchField=null;
+  let secondaryBody=null;
+  let categoryHoverTimer=0;
+  const expandedCompanies=new Set(COMPANY_TREE.map(node=>node.id));
+  const descendantsWithChildren=COMPANY_NODES.filter(node=>node.children.length).map(node=>node.id);
+  for(const id of descendantsWithChildren)expandedCompanies.add(id);
+
+  function syncPrimary(){
+   for(const category of FILTER_CATEGORIES){
+    const items=categoryButtons.get(category.id);
+    const total=filtersFor(category.id).size;
+    items.count.textContent=total?String(total):"";
+    items.row.classList.toggle("is-active",category.id===activeCategory);
+    items.row.setAttribute("aria-current",category.id===activeCategory?"true":"false");
+    items.row.setAttribute("aria-expanded",String(category.id===activeCategory));
+   }
+  }
+
+  function updateSecondaryHeader(category,count){
+   secondaryTitle.textContent=category.label;
+   selectionCount.textContent=count?`${count} selected`:"";
+   searchField.field.hidden=!category.search;
+   searchField.input.placeholder=`Search ${category.label.toLocaleLowerCase()}`;
+   searchField.input.setAttribute("aria-label",`Search ${category.label}`);
+   secondaryPanel.setAttribute("aria-label",`${category.label} filter options`);
+  }
+
+  function makeCheckbox({label,checked,indeterminate=false,onChange}){
+   const input=text("input","plants-filter-checkbox");
+   input.type="checkbox";
+   input.checked=checked;
+   input.indeterminate=indeterminate;
+   input.setAttribute("aria-label",label);
+   input.addEventListener("change",()=>onChange(input.checked));
+   return input;
+  }
+
+  function optionIcon(categoryId,optionId){
+   if(categoryId==="connection"){
+    return connectionGlyph(optionId,{
+     size:16,
+     className:`plants-filter-option-glyph plants-connection-glyph--${optionId}`
     });
-    footer.append(row);
-    return footer;
-   })()
-  ]});
-  menu.classList.add("plants-filter-menu");
-  registerPanel(panel,anchor,{label:"Filters",radius:30,width:300,align:"start"});
+   }
+   if(categoryId==="status"){
+    const meta=HEALTH_META[optionId];
+    if(meta.tone==="neutral"){
+     return connectionGlyph("unbound",{
+      size:16,
+      className:"plants-filter-option-glyph plants-health-glyph--neutral",
+      alertFill:"currentColor"
+     });
+    }
+    return maskedIcon(opaqueMaskURL(meta.icon),`plants-icon plants-icon--16 plants-filter-option-glyph plants-health-glyph plants-health-glyph--${meta.tone}`);
+   }
+   const category=FILTER_CATEGORIES.find(item=>item.id===categoryId);
+   return maskedIcon(assetURL(category?.icon||"plants/icons/company.svg"),"plants-icon plants-icon--16 plants-filter-option-glyph");
+  }
+
+  function conditionRow(category,option){
+   const row=text("div","plants-filter-condition");
+   row.dataset.option=option.id;
+   const values=filtersFor(category.id);
+   const checked=values.has(option.id);
+   const checkbox=makeCheckbox({
+    label:option.label,
+    checked,
+    onChange:next=>{
+     if(next)values.add(option.id);
+     else values.delete(option.id);
+     render();
+     renderSecondary();
+     requestAnimationFrame(()=>{
+      const match=[...secondaryBody.querySelectorAll(".plants-filter-condition")].find(item=>item.dataset.option===option.id);
+      match?.querySelector(".plants-filter-checkbox")?.focus({preventScroll:true});
+     });
+    }
+   });
+   const choice=text("button","plants-filter-condition-choice wd-control-state");
+   choice.type="button";
+   if(category.id==="connection"||category.id==="status")choice.append(optionIcon(category.id,option.id));
+   choice.append(text("span","plants-filter-condition-label wd-control-label",option.label,"14/14 medium"));
+   choice.addEventListener("click",()=>{
+    values.add(option.id);
+    render();
+    close();
+   });
+   row.append(checkbox,choice);
+   return row;
+  }
+
+  function companyRow(node,{flat=false}={}){
+   const row=text("div","plants-filter-company-row");
+   row.dataset.option=node.id;
+   const depth=flat?0:COMPANY_BY_ID.get(node.id)?.depth??0;
+   row.style.setProperty("--plants-tree-indent",`${depth*14}px`);
+   const hasChildren=(node.children?.length||0)>0;
+   let disclosure=null;
+   if(hasChildren){
+    disclosure=text("button","plants-filter-company-toggle wd-control-state");
+    disclosure.type="button";
+    const isOpen=searchField.input.value.trim()?true:expandedCompanies.has(node.id);
+    disclosure.setAttribute("aria-expanded",String(isOpen));
+    disclosure.setAttribute("aria-label",`${isOpen?"Collapse":"Expand"} ${node.label}`);
+    const icon=maskedIcon(opaqueMaskURL("disclosure.svg"),"plants-icon plants-icon--10 plants-filter-company-disclosure wd-tree-disclosure-icon");
+    disclosure.append(icon);
+    disclosure.addEventListener("click",()=>{
+     if(expandedCompanies.has(node.id))expandedCompanies.delete(node.id);
+     else expandedCompanies.add(node.id);
+     renderSecondary();
+    });
+   }else{
+    disclosure=text("span","plants-filter-company-toggle-spacer");
+    disclosure.setAttribute("aria-hidden","true");
+   }
+   const selection=companySelectionState(node.id);
+   const checkbox=makeCheckbox({
+    label:node.label,
+    checked:selection==="checked",
+    indeterminate:selection==="mixed",
+    onChange:()=>{
+     toggleCompany(node.id);
+     render();
+     renderSecondary();
+     requestAnimationFrame(()=>{
+      const match=[...secondaryBody.querySelectorAll(".plants-filter-company-row")].find(item=>item.dataset.option===node.id);
+      match?.querySelector(".plants-filter-checkbox")?.focus({preventScroll:true});
+     });
+    }
+   });
+   const choice=text("button","plants-filter-condition-choice plants-filter-company-choice wd-control-state");
+   choice.type="button";
+   choice.append(text("span","plants-filter-condition-label wd-control-label",node.label,"Footnote/Medium"));
+   choice.addEventListener("click",()=>{
+    if(companySelectionState(node.id)!=="checked")toggleCompany(node.id);
+    render();
+    close();
+   });
+   row.append(disclosure,checkbox,choice);
+   return row;
+  }
+
+  function companyTree(){
+   const query=searchField.input.value.trim().toLocaleLowerCase();
+   if(query){
+    return COMPANY_NODES
+     .filter(node=>node.label.toLocaleLowerCase().includes(query))
+     .map(node=>companyRow(node,{flat:true}));
+   }
+   const rows=[];
+   function visit(nodes){
+    for(const node of nodes){
+     rows.push(companyRow(node));
+     if(node.children?.length&&expandedCompanies.has(node.id))visit(node.children);
+    }
+   }
+   visit(COMPANY_TREE);
+   return rows;
+  }
+
+  function renderSecondary(){
+   if(!activeCategory)return;
+   const category=FILTER_CATEGORIES.find(item=>item.id===activeCategory);
+   if(!category)return;
+   secondaryPanel.style.width=`${category.kind==="company"?FILTER_PANEL_WIDTH:FILTER_OPTION_PANEL_WIDTH}px`;
+   updateSecondaryHeader(category,filtersFor(category.id).size);
+   if(category.kind==="company"){
+    secondaryBody.replaceChildren(...companyTree());
+   }else{
+    const query=searchField.input.value.trim().toLocaleLowerCase();
+    const options=categoryOptions(category.id)
+     .filter(option=>!query||option.label.toLocaleLowerCase().includes(query));
+    secondaryBody.replaceChildren(...options.map(option=>conditionRow(category,option)));
+   }
+   if(!secondaryBody.children.length){
+    secondaryBody.append(text("p","plants-filter-empty","No options match this search.","Footnote/Regular"));
+   }
+   syncPrimary();
+   reposition?.();
+  }
+
+  function ensureSecondary(row){
+   if(secondaryPanel)return;
+   secondaryPanel=document.createElement("div");
+   secondaryPanel.className="popover plants-panel plants-filter-flyout";
+   secondaryPanel.style.setProperty("--plants-filter-check-mask",`url("${assetURL("tickle.svg")}")`);
+   const content=text("div","plants-filter-flyout-content wd-filter-menu");
+   const header=text("header","plants-filter-secondary-header");
+   secondaryTitle=menuHeading("Filter");
+   secondaryTitle.classList.add("plants-filter-secondary-title");
+   selectionCount=text("span","plants-filter-selection-count",undefined,"Caption2/Regular");
+   selectionCount.setAttribute("role","status");
+   header.append(secondaryTitle,selectionCount);
+   const field=createSearchField({
+    glass,
+    placeholder:"Search options",
+    label:"Search options",
+    className:"plants-filter-search-field",
+    size:"compact",
+    scalable:true
+   });
+   searchField=field;
+   searchField.input.addEventListener("input",renderSecondary);
+   secondaryBody=text("div","plants-filter-options wd-scrollbar");
+   content.append(header,searchField.field,secondaryBody);
+   secondaryPanel.append(content);
+   secondaryPanel._wdFade=content;
+   const previousClose=secondaryPanel._onClose;
+   secondaryPanel._onClose=()=>{
+    try{previousClose?.();}
+    finally{glass.removeSurface(searchField.field);}
+   };
+   registerPanel(secondaryPanel,row,{
+    label:"Filter options",
+    radius:24,
+    width:FILTER_PANEL_WIDTH,
+    keepOpen:true,
+    placement:"side",
+    sideTopOffset:()=>activeCategory==="company"?100:54,
+    id:"plants-filter-options"
+   });
+  }
+
+  function activateCategory(categoryId,row){
+   if(activeCategory===categoryId&&secondaryPanel)return;
+   ensureSecondary(row);
+   if(activeRow&&activeRow!==row)activeRow.setAttribute("aria-expanded","false");
+   activeRow=row;
+   activeCategory=categoryId;
+   searchField.input.value="";
+   secondaryPanel._anchor=row;
+   row.setAttribute("aria-expanded","true");
+   row.setAttribute("aria-controls","plants-filter-options");
+   renderSecondary();
+  }
+
+  for(const category of FILTER_CATEGORIES){
+   const {row}=categoryButtons.get(category.id);
+   row.addEventListener("pointerenter",()=>{
+    clearTimeout(categoryHoverTimer);
+    if(activeCategory===category.id&&secondaryPanel)return;
+    categoryHoverTimer=setTimeout(()=>activateCategory(category.id,row),FILTER_HOVER_INTENT);
+   });
+   row.addEventListener("pointerleave",()=>clearTimeout(categoryHoverTimer));
+   row.addEventListener("focus",()=>activateCategory(category.id,row));
+   row.addEventListener("click",()=>activateCategory(category.id,row));
+  }
+
+  syncPrimary();
+  panel._onClose=()=>clearTimeout(categoryHoverTimer);
+  const placement=anchor===chipAdd
+   ?{align:"start"}
+   :{align:"end",alignRight:columnMenuRight};
+  registerPanel(panel,anchor,{
+   label:"Filters",
+   radius:30,
+   width:FILTER_PANEL_WIDTH,
+   ...placement,
+   pinPosition:anchor===chipAdd,
+   id:"home-active-popover"
+  });
  }
 
  function columnPanel(anchor){
@@ -1117,14 +1498,25 @@ function visibleRows(){
   const list=menuList();
  for(const column of COLUMNS){
   if(column.locked)continue;
-   const row=menuRow(column.label,{checked:!state.hidden.has(column.id)});
+   const visible=!state.hidden.has(column.id);
+   const row=text("button","plants-column-row wd-control-state");
+   row.type="button";
+   row.dataset.column=column.id;
+   row.dataset.visible=String(visible);
    row.setAttribute("role","menuitemcheckbox");
-   row.setAttribute("aria-checked",String(!state.hidden.has(column.id)));
+   row.setAttribute("aria-checked",String(visible));
+   row.append(
+    maskedIcon(assetURL(visible?VISIBILITY_ICON.visible:VISIBILITY_ICON.hidden),"plants-icon plants-icon--18 plants-column-eye"),
+    text("span","plants-column-label wd-control-label",column.label,"14/14 medium")
+   );
    row.addEventListener("click",()=>{
-    const visible=row.getAttribute("aria-checked")==="true";
-    if(visible)state.hidden.add(column.id);
+    const nextVisible=row.getAttribute("aria-checked")!=="true";
+    if(!nextVisible)state.hidden.add(column.id);
     else state.hidden.delete(column.id);
-    row.setAttribute("aria-checked",String(!visible));
+    row.setAttribute("aria-checked",String(nextVisible));
+    row.dataset.visible=String(nextVisible);
+    const eye=row.querySelector(".plants-column-eye");
+    eye?.style.setProperty("--icon-mask",`url("${assetURL(nextVisible?VISIBILITY_ICON.visible:VISIBILITY_ICON.hidden)}")`);
     renderColgroup();
     renderHeader();
     render();
@@ -1132,20 +1524,28 @@ function visibleRows(){
    list.append(row);
   }
   mountMenu(panel,{label:"Columns",children:[menuHeading("Columns"),list]});
-  registerPanel(panel,anchor,{label:"Columns",radius:30,width:220,align:"start"});
+  registerPanel(panel,anchor,{label:"Columns",radius:30,width:COLUMN_PANEL_WIDTH,align:"start"});
  }
 
- filterTrigger.addEventListener("click",()=>filterPanel(filterTrigger));
- columnTrigger.addEventListener("click",()=>columnPanel(columnTrigger));
+ filterTrigger.addEventListener("click",()=>{
+  if(filterTrigger.getAttribute("aria-expanded")==="true")close();
+  else filterPanel(filterTrigger);
+ });
+ columnTrigger.addEventListener("click",()=>{
+  if(columnTrigger.getAttribute("aria-expanded")==="true")close();
+  else columnPanel(columnTrigger);
+ });
 
  // ── Refresh ──────────────────────────────────────────────────────────────
  let refreshing=false;
  refresh.addEventListener("click",()=>{
   if(refreshing)return;
   refreshing=true;
+  close(true);
+  resetListConfiguration();
   const done=()=>{
    refreshing=false;
-   toast("Plants refreshed — sample data only");
+   toast("Plants refreshed — filters and view reset");
   };
   if(reducedMotion()){
    done();
