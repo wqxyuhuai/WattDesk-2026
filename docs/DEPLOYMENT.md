@@ -18,7 +18,7 @@
 | 生产分支 | `master` |
 | 根目录 | `/design-preview` |
 | 构建命令 | `npm run build:site:public` |
-| 部署命令 | `npx wrangler deploy --assets=./dist --compatibility-date=<date>` |
+| 部署命令 | `npx wrangler@4.152.0 deploy` |
 | 自定义域名 | `wattdesk-preview.carlwang.cn` |
 
 构建产物写入 `design-preview/dist/`，**不入库**。
@@ -46,10 +46,11 @@
 
 ### 2026-10-29 发布故障复盘
 
-- 现象：`npm run build:site:public` 在 Cloudflare 内成功，但随后创建 Worker 版本失败；GitHub check 最终显示失败。
-- 根因：`_redirects` 将 `/plants` 等 SPA 路径以 `200` 重写到 `/index.html`。新版 Workers 识别到 HTML 后缀归一化可能再次触发该规则，返回错误 `100324: Infinite loop detected`。
-- 修复：深链接改用 `wrangler.jsonc` 中 `assets.not_found_handling: "single-page-application"`；`_redirects` 只保留 `/`、`/home.html`、`/index.html` 到 `/home` 的规范跳转。
-- 防回归：`tests/verify-build-config.cjs` 检查 Worker 名称、SPA 回退配置和生成后的 `_redirects`，禁止重新加入 `/index.html 200` 代理。以后遇到“Build completed 但 Deploy failed”，先查看 Deploy 日志中的错误码，不把它误判为前端构建失败。
+- 现象：`npm run build:site:public` 在 Cloudflare 内成功，但 Deploy 阶段失败；GitHub check 最终显示失败。
+- 第一处根因：`_redirects` 将 `/plants` 等 SPA 路径以 `200` 重写到 `/index.html`。新版 Workers 识别到 HTML 后缀归一化可能再次触发该规则，返回错误 `100324: Infinite loop detected`。
+- 第二处根因：重定向修复后，自动构建仍在 Deploy 阶段失败。部署命令被临时加入了 Wrangler 4.152 不支持的 `--log-level=debug`，日志报 `Unknown arguments: log-level, logLevel`。
+- 修复：深链接改用 `wrangler.jsonc` 中 `assets.not_found_handling: "single-page-application"`；`_redirects` 只保留 `/`、`/home.html`、`/index.html` 到 `/home` 的规范跳转。Deploy 命令只保留 `npx wrangler@4.152.0 deploy`，名称、兼容日期和资源目录全部从 `wrangler.jsonc` 读取。
+- 防回归：`tests/verify-build-config.cjs` 检查 Worker 名称、SPA 回退配置和生成后的 `_redirects`，禁止重新加入 `/index.html 200` 代理。部署命令不得添加未写入项目配置的临时参数，尤其是调试参数；修改后必须先核对当前固定 Wrangler 版本的命令帮助。以后遇到“Build completed 但 Deploy failed”，先查看 Deploy 日志和错误码，不把它误判为前端构建失败，也不能把“构建完成”当成发布成功。
 
 ## 产物与仓库边界
 
