@@ -15,11 +15,12 @@
 
 ### 验证
 
-- `npm run check` 通过，64 个 JavaScript 文件语法有效。
-- 完整 `npm test` 通过（13 个套件），包含筛选/可视性、工作区标签、路由、浮层、响应式、玻璃、主题、基础组件、动效与搜索。
+- `npm run check` 通过，65 个 JavaScript 文件语法有效。
+- 完整 `npm test` 通过（14 个套件），包含筛选/可视性、工作区标签、路由、构建配置、浮层、响应式、玻璃、主题、基础组件、动效与搜索。
 - `npm run build:site:public` 通过，`dist` 198 个文件、约 1.45 MB。
 - `npm run audit:assets` 通过，121 个运行资产全部可达，0 unused / 0 missing。
 - 发布前完成本地 Git 收口：删除已被 `master` 取代的旧筛选分支和无新增提交的 `test` 分支，移除冗余合并前 stash；仅保留主工作区。
+- Cloudflare 部署改由 `wrangler.jsonc` 启用 Workers Assets SPA 回退；`_redirects` 不再把业务路径重写到 `/index.html`，避免新版构建校验判定 HTML 后缀归一化循环。
 
 ### 工作区标签拖拽排序
 
@@ -27,7 +28,7 @@
 - 拖拽不激活被拖标签，不改变当前页面或 URL；同一次拖拽手势不会误触 click、关闭或切换。
 - 溢出标签条支持边缘自动滚动；键盘可用 `Ctrl/Cmd + Shift + ←/→` 等价换位，并通过 live region 公布位置。
 - 新增 `verify-workspace-tabs`，覆盖向前/向后跨多个邻居拖动、活动标签与 URL 保持、键盘换位和深浅主题截图。
-- `npm run check` 通过（64 个 JavaScript 文件）；完整 `npm test` 13 个套件通过；`npm run build:site:public` 通过。
+- `npm run check` 通过（65 个 JavaScript 文件）；完整 `npm test` 14 个套件通过；`npm run build:site:public` 通过。
 
 ### 最近访问历史
 

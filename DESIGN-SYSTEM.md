@@ -289,7 +289,7 @@
 - 规范 URL 与完整表见 [站点路由](./docs/ROUTING.md)：Home `/home`、Plants `/plants`、电站详情 `/plants/:id`，其余侧栏页面使用对应短路径。`/`、`/home.html`、`/index.html` 以 `308` 规范到 `/home`。
 - 地址栏镜像当前激活工作区标签的 `{route, params}`；切换标签、侧栏导航、页面内跳转都更新 URL，刷新和复制链接恢复同一页面，不得回到 Home。
 - Plants 列表行和自动建站 `?` 提示中的 `setup` 是明确的新标签入口，调用 `openRouteInNewTab()` 并激活详情标签；自动建站电站的标签标题为 `?`。`Back to Plants` 优先激活来源列表标签并关闭当前详情标签，无来源标签时在当前标签内返回 Plants。侧栏与首页快捷入口仍在当前标签内导航。
-- 深链接由服务端/静态资源层返回 SPA 外壳：本地 `server.js` 与线上 `_redirects` 必须同步路径；HTML 使用 `<base href="/">`，多级路径下的脚本、样式和素材仍从站点根解析。
+- 深链接由服务端/静态资源层返回 SPA 外壳：本地 `server.js` 按路径回退，线上由 `wrangler.jsonc` 的 Workers Assets `single-page-application` 模式回退；`_redirects` 只承担首页规范跳转。不得把业务路径以 `200` 重写到 `/index.html`，否则新版 Workers 会判定后缀归一化循环。HTML 使用 `<base href="/">`，多级路径下的脚本、样式和素材仍从站点根解析。
 - 路由层是唯一可以写浏览器历史的位置：页面调用 `openRoute(route,{params})`，不直接在组件里拼 URL 或调用 `pushState`。未知路径和未知电站 ID 显示 not-found，不静默回首页。
 - 路由变化先关闭活动浮层；页面标题随路由更新。详情类 URL 使用稳定业务 ID，不按名称或数组下标生成。
 - 新增路由同时更新 `ROUTE_CATALOG`、`server.js` 的 `canonicalRoutes`、构建脚本的 `appRoutes` 与 `tests/verify-routing.cjs`。

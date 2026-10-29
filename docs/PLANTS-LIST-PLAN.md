@@ -317,7 +317,7 @@ type Plant = {
 
 ## 8. 与外壳、路由的接入
 
-1. `routes.js` 已有 `plants` 条目；把 `plants` 的 Coming soon 占位替换为 `src/pages/plants/` 页面模块（`index.js` + `plants.css`）。不单独创建 `plants.html`：`/plants` 与 `/plants/:id` 都由同一 SPA 外壳和深链接回退提供，见 [ROUTING.md](./ROUTING.md)。
+1. `routes.js` 已有 `plants` 条目；把 `plants` 的 Coming soon 占位替换为 `src/pages/plants/` 页面模块（`index.js` + `plants.css`）。不单独创建 `plants.html`：`/plants` 与 `/plants/:id` 都由同一 SPA 外壳和 `wrangler.jsonc` 的 Workers Assets 深链接回退提供，见 [ROUTING.md](./ROUTING.md)。
 2. 侧栏 `Plants`、首页状态卡与快捷入口仍在当前标签内跳转 Plants；Plants 列表行和自动建站 `?` 提示中的 `setup` 则新建并激活详情标签。
 3. 工作区标签标题与图标沿用现有 `update/activate`，不写死。
 4. 搜索索引（`buildSearchIndex`）把 `plants` 页面记录保留，后续可加“电站”条目；本期不接后端搜索。
@@ -422,4 +422,4 @@ type Plant = {
 - 复选框只切换状态并立即筛选，浮层保持打开；条件名称按钮应用并关闭。每次改变都通过同一个 `state.filters` 重算表格和 chips，不另存第二份筛选状态。
 - 每个具体条件生成独立短 chip（只显示条件文字），例如 `Inverter`；chips 后只有一个复用筛选浮层的小加号，唯一 `Clear` 固定在条件区最右侧并跨多行垂直居中。条件区使用设计稿 `Backgrounds/Tertiary Elevated` 实底，chip 使用 `Fills/Secondary`，不使用偏粉或偏紫的透明叠色。
 - 列可视性使用用户提供的 `Eye` / `Eye Closed` 图标置于文字前，不再使用尾部对勾；素材来源索引为 `design-preview/design/figma/plants/icons-source.json`。
-- 新增 `tests/verify-plants-filters.cjs`；合并后的 `npm test` 现为 13 个套件。深浅主题实拍见 `design-preview/tests/output/plants-filter-*.png` 与 `plants-visibility-*.png`。
+- 新增 `tests/verify-plants-filters.cjs`；合并后的 `npm test` 现为 14 个套件。深浅主题实拍见 `design-preview/tests/output/plants-filter-*.png` 与 `plants-visibility-*.png`。

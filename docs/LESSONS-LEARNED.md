@@ -343,6 +343,13 @@
 - **修复**：把首末圆角移到 `.plants-cell:first-child` / `:last-child` 的默认样式，激活状态只改变背景色。
 - **预防**：任何在背景离场时会短暂保留的圆角表面，轮廓必须常驻；回归应在过渡中间帧同时检查背景尚未透明、四角半径仍然存在。
 
+### 35. SPA 路由重写到 index.html 触发部署循环
+
+- **现象**：Cloudflare 构建命令成功，但创建 Worker 版本时返回 `_redirects` 无限循环。
+- **根因**：新版 Workers 会识别 `/index.html` 的 HTML 后缀归一化；业务路径以 `200` 重写到该目标后，可能再次进入同一规则。
+- **修复**：使用 `wrangler.jsonc` 的 `assets.not_found_handling: "single-page-application"` 处理深链接；`_redirects` 只保留首页规范跳转。
+- **预防**：SPA 深链接由静态资源平台的 fallback 能力负责，不能自造 catch-all 重写到 HTML 文件；`verify-build-config` 检查配置与生成产物。
+
 ## 五、开工前检查清单
 
 - 先读 `AGENTS.md` → `DESIGN-SYSTEM.md` → `docs/PROJECT-STATUS.md`。

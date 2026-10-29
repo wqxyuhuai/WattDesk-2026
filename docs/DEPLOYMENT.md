@@ -43,7 +43,7 @@
 
 - `wrangler deploy --assets` 默认按 `html_handling: auto-trailing-slash` 处理 HTML：`/home.html` 会 307 到 `/home`，`/home` 直接返回 `home.html`。
 - 因此 `_redirects` **不能**写 `/home /home.html`，否则与上面的 307 形成死循环。构建脚本只生成 `/home.html /home`、`/index.html /home` 与 `/ /home` 三条规范规则。
-- `/plants`、`/plants/*` 和其余业务路径在 `_redirects` 中以 `200` 代理到 `/index.html`，刷新时返回 SPA 外壳；客户端再按路径渲染。不得改成 `/* /index.html 200`，否则会吞掉 `/src/*` 与 `/home-assets/*`。
+- 客户端路由由 `wrangler.jsonc` 的 `assets.not_found_handling: "single-page-application"` 回退到 SPA 外壳；`_redirects` 只保留 `/`、`/home.html`、`/index.html` 到 `/home` 的规范规则。不得再把业务路径以 `200` 代理到 `/index.html`，新版 Workers 会判定该目标可能再次触发 HTML 后缀归一化并形成死循环。
 - `home.html` / `index.html` 使用 `<base href="/">`，多级详情路径 `/plants/p02` 下的相对脚本与素材仍从站点根解析。
 - `_headers` 对 `/*.html`、`/src/*`、`/home-assets/*` 以及深链接路由统一使用 `max-age=0, must-revalidate`。运行资源文件名没有 hash，长缓存会在部署后造成 HTML 与 JS/CSS 版本错配。
 - `robots.txt` 由构建模式决定：`--public` 输出 `Allow: /`；不带 public 时输出 `Disallow: /` 并在 HTML 加 `noindex`。当前线上允许索引；如需隐藏预览站，改用预览构建或加 Cloudflare Access。

@@ -46,22 +46,16 @@ fs.writeFileSync(path.join(out, 'index.html'), deployHtml);
 fs.writeFileSync(path.join(out, 'home.html'), deployHtml);
 
 // `/home` is served from home.html by the static-asset layer; never map it
-// back to home.html or the automatic /home.html -> /home redirect loops.
-// Every other public route is a client-rendered deep link, so proxy it to the
-// SPA shell. `/plants/*` covers `/plants/:id` without enumerating sample IDs.
+// back to home.html or the automatic /home.html -> /home redirects loop.
+// Client-rendered deep links use Workers Assets SPA fallback configured in
+// wrangler.jsonc. A 200 rewrite to /index.html is rejected because the asset
+// layer may normalize that target again and create an infinite loop.
 const appRoutes = ['/plants','/service','/statistics','/cell-balance','/module-balance','/device-track','/organisation','/teams','/users'];
 const redirectRules = [
   '# Canonical home. Do not add a /home -> /home.html rule (redirect loop).',
   '/ /home 308',
   '/home.html /home 308',
-  '/index.html /home 308',
-  '',
-  '# Client-rendered routes return the SPA shell with a 200 proxy.',
-  '/plants /index.html 200',
-  '/plants/ /index.html 200',
-  '/plants/* /index.html 200',
-  ...appRoutes.filter(route => route !== '/plants').map(route => `${route} /index.html 200`),
-  ''
+  '/index.html /home 308'
 ];
 fs.writeFileSync(path.join(out, '_redirects'), redirectRules.join('\n'));
 

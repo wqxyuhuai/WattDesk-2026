@@ -40,7 +40,7 @@
 浏览器直接打开 `/plants/p02` 时，静态资源层必须返回 SPA 外壳，再由客户端读取路径：
 
 - 本地预览：`design-preview/server.js` 对 `/home`、`/plants`、`/plants/:id` 及上表其余路径返回 `home.html`。
-- 线上：`scripts/build-site.cjs` 生成 `_redirects`，用 `200` 代理把上表路径指向 `index.html`；`/plants/*` 覆盖所有电站详情。
+- 线上：`wrangler.jsonc` 使用 Workers Assets 的 `single-page-application` 未命中回退，把深链接返回给客户端路由；`scripts/build-site.cjs` 生成的 `_redirects` 只处理 `/`、`/home.html`、`/index.html` 到 `/home` 的规范跳转。不要恢复 `200` 代理到 `/index.html` 的规则，否则会被新版部署校验判定为循环。
 - `/home` 由 Cloudflare 静态资源层从 `home.html` 提供；不得添加 `/home /home.html` 规则，否则会与自动重定向形成循环。
 - 不使用 `/* /index.html 200` 这类全站兜底，避免把 `/src/*`、`/home-assets/*` 等真实资源也代理成 HTML。
 - HTML 使用 `<base href="/">`，保证 `/plants/p02` 这类多级路径下的相对脚本、样式和素材仍从站点根解析。

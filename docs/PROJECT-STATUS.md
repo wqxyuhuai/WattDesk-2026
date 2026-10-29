@@ -6,6 +6,8 @@
 
 ## 当前实现
 
+- `2026-10-29` **Service Ticket 页面规划（仅文档，尚未实现）**：已建立 `design-preview/src/pages/service-ticket/README.md`，记录列表、Linear 式详情属性栏、一层楼中楼、电站可见性、Ongoing / Closed 手动状态、附件和通知规则。`/service` 继续使用 Coming soon；本轮未注册详情路由、未新增页面 UI、未接权限、上传、持久化或通知后端。
+- `2026-10-29` **Cloudflare SPA 深链接发布修复（已上线验证）**：新版 Workers 拒绝把业务路径以 `200` 重写到 `/index.html`，会判定 HTML 后缀归一化循环。线上改为 `wrangler.jsonc` 的 Workers Assets `single-page-application` 回退，`_redirects` 只保留 `/`、`/home.html`、`/index.html` 到 `/home` 的规范跳转；新增 `verify-build-config` 防止回归。发布后 `/plants` 与 `/plants/p02` 均返回 200，缓存资源保持 `max-age=0, must-revalidate`。
 - `2026-10-29` **Plants 行高亮圆角离场修复（已用真实 Chrome 验证）**：行 hover / 键盘焦点的背景沿共享 `360ms` 离场，但此前首末单元格的 `10px` 圆角只在激活选择器内声明，背景尚在淡出时圆角先被撤销，形成直角残影。现在圆角常驻在首末 `.plants-cell`，状态规则只切换背景；`verify-routing` 在离开焦点后的过渡中间帧同时断言左右圆角仍为 `10px`，且背景尚未完全透明。
 - `2026-10-29` **小筛选浮窗内容内缩（已用真实 Chrome 验证）**：Device、Connection、Running status 的选项内容左移量回收为约 `20px`，复选框距浮窗左缘实测分别为 `19.89 / 20 / 20px`；选项按钮内部再保留 `8px` 文字左内距，hover 背景同步内收。浮窗宽度和底部坐标保持不变。Company 的紧凑树规则继续由 `.is-company` 独立控制，`verify-plants-filters` 同时断言两层水平内距。
 - `2026-10-29` **Plants 多设备组合与筛选并集**：电站数据由单个 `device` 改为 `devices` 集合；Device 筛选顺序固定为 `Inverter / BMS / Heater`，表格按同一顺序组合显示，例如 `Inverter/BMS/Heater`。46 条样例数据中 11 条包含三类设备，Inverter 出现 25 次、BMS 34 次、Heater 27 次。Device、Connection、Running status 的多选均采用并集：任一选中设备包含在电站中，或电站命中任一选中连接 / 运行状态，即可展示。Running status 的未绑定态统一为 `Unbound`；底层枚举值保持不变。
@@ -93,7 +95,7 @@
 
 ## 最近一次实际运行（2026-10-29）
 
-- **发布前最终结果**：`npm run check` 通过（64 个 JavaScript 文件）；`npm test` 通过（13 个套件）；`npm run build:site:public` 通过（`dist` 198 个文件 / 1.45 MB）；`npm run audit:assets` 通过（121 个运行资产，0 unused / 0 missing）。
+- **发布前最终结果**：`npm run check` 通过（65 个 JavaScript 文件）；`npm test` 通过（14 个套件）；`npm run build:site:public` 通过（`dist` 198 个文件 / 1.45 MB）；`npm run audit:assets` 通过（121 个运行资产，0 unused / 0 missing）。
 - `git diff --check` 通过，仓库内无冲突标记；合并后筛选、工作区标签、路由、响应式、玻璃、主题、基础组件、动效与搜索套件全部通过。
 - 本地 Git 收口：确认 `codex/plants-filter-visibility` 的核心改动已由 `master` 包含且旧副本缺少后续修复，因此删除该分支与本地 `test` 分支；合并前备份 stash 与当前 `master` 内容核对后已移除。当前仅保留 `master`，worktree 注册仅剩主工作区。
 - 筛选与可视性回归覆盖 4 个类目、15 节点多级公司三态、复选不关闭、名称点击关闭、短 chips / 加号 / 唯一 `Clear`、Eye 列显隐、键盘展开、刷新重置和浅色主题；路由回归覆盖详情新标签、返回来源列表、URL 刷新和从 Plants 返回 Home 的布局重算。
