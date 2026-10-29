@@ -71,6 +71,7 @@
   white-space:nowrap;
   text-decoration-line:underline;
   text-decoration-color:transparent;
+  text-decoration-skip-ink:none;
   text-underline-offset:2px;
 }
 .recent-visit-row:is(:hover,:focus-visible) .wd-history-path{

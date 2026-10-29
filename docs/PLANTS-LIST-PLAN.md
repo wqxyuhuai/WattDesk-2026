@@ -147,7 +147,7 @@
 | 固件 | Firmware version | 116 | 左 | ✓（版本号） | ✓ | 等宽数字 |
 | 更新 | Last update | 136 | 左 | ✓（时间） | ✓（时段） | 相对时间 + 悬停绝对时间 |
 
-**可选列（P1，默认隐藏）**：公司 / 安装商、设备（BMS & Battery / Heater / Hybrid Inverter）、地址、组织。
+**可选列（P1，默认隐藏）**：公司 / 安装商、设备（Inverter / BMS / Heater）、地址、组织。
 
 **行与表头**
 
@@ -219,7 +219,7 @@
 | 连接 | Online | 信号柱满格 | `Accents/Green` | 明确在线 |
 | 连接 | Partially offline | 信号柱 + 警示 | `Accents/Orange` | 部分设备离线 |
 | 连接 | Offline | 信号柱 + 断点 | `Accents/Red` | 全部离线 |
-| 连接 | Unbound device | 斜杠圆 | `Labels/Tertiary` | 未接入，不是故障 |
+| 连接 | Unbound | 斜杠圆 | `Labels/Tertiary` | 未接入，不是故障 |
 | 运行 | Normal | 圆勾 | `Accents/Green` | |
 | 运行 | Attention | 感叹 | `Accents/Orange`（画板为红，待校对） | 需处理 |
 | 运行 | Unbound | 斜杠圆 | `Labels/Tertiary` | 与连接维度的未绑定同源 |
@@ -300,7 +300,7 @@ type Plant = {
   companyName: string | null;
   sn: string | null;         // 设备序列号
   type: "heating" | "battery" | "hybrid" | null;
-  device: "bms_battery" | "heater" | "hybrid_inverter" | null;
+  devices: Array<"inverter" | "bms" | "heater">;
   powerKw: number | null;    // 绝对值
   powerSigned: boolean;      // true: 充+ 放-；false: 加热器无符号
   connectivity: "online" | "partially_offline" | "offline" | "unbound";
@@ -391,11 +391,11 @@ type Plant = {
 
 **相对第 5 节的实现差异（以 2026-10-26 需求为准）**
 
-> **2026-10-27 更新（现行实现）**：以下第 1、3、9 条已被用户最新要求取代。当前顺序为 `收藏 / 在线状态图标 / 电站名 / Device / Power / Status / SN / Software version / Last update`；收藏回到最左与标题 `Plants` 同线，在线状态挪到电站名左侧、拆为纯图标列（在线、离线、部分在线、未绑定），Status 保留 `Normal / Attention / Unbound device` 的图标 + 同色文字；Power 左对齐，最小列宽 60px；行高 44px，hover / 焦点为整行 10px 圆角淡填充。列宽不再“名称吃余量、其余固定”：表格最小宽度 916px，超出部分按权重（名称 1.2 / Device 0.02 / Power 0.01 / Status 0.03 / SN 0.03 / 更新时间 0.45）分摊，软件版本固定 84px，收藏与在线状态两个控制列固定不拉伸。软件版本列头显示 `Firmware`，完整名称保留在 Columns 菜单与无障碍标签中。收藏按钮无灰色底，只切换图标颜色；Status 的 Unbound 复用信号列的未绑定图。现行细节以 `PROJECT-STATUS.md` 与 `USER-REQUIREMENTS.md` 的 2026-10-27 条为准。
+> **2026-10-27 更新（现行实现）**：以下第 1、3、9 条已被用户最新要求取代。当前顺序为 `收藏 / 在线状态图标 / 电站名 / Device / Power / Status / SN / Software version / Last update`；收藏回到最左与标题 `Plants` 同线，在线状态挪到电站名左侧、拆为纯图标列（在线、离线、部分在线、未绑定），Device 名称固定为 `Inverter / BMS / Heater` 并可按集合组合显示，Status 保留 `Normal / Attention / Unbound` 的图标 + 同色文字；Power 左对齐，最小列宽 60px；行高 44px，hover / 焦点为整行 10px 圆角淡填充。列宽不再“名称吃余量、其余固定”：表格最小宽度 916px，超出部分按权重（名称 1.2 / Device 0.02 / Power 0.01 / Status 0.03 / SN 0.03 / 更新时间 0.45）分摊，软件版本固定 84px，收藏与在线状态两个控制列固定不拉伸。软件版本列头显示 `Firmware`，完整名称保留在 Columns 菜单与无障碍标签中。收藏按钮无灰色底，只切换图标颜色；Status 的 Unbound 复用信号列的未绑定图。现行细节以 `PROJECT-STATUS.md` 与 `USER-REQUIREMENTS.md` 的 2026-10-27 条为准。
 
 > **2026-10-27 收藏置顶**：已收藏的电站进入列表最前面的置顶组，未收藏项排在后面；当前列排序继续作用于两个组内部，取消收藏立即回到普通顺序。收藏仍只是浏览器本地状态（`localStorage`），刷新后保留，没有账号同步。置顶 / 取消用共享 `--wd-motion-panel` 做 FLIP 位移并保留键盘焦点，减少动态效果时跳过动画。
 
-1. **状态合并为一列五态**：`Normal / Attention / Partially offline / Offline / Unbound device`，彩色圆点 + 文字；不再拆 Connection 与 Running status 两列，也没有 `COM.` 列。
+1. **状态合并为一列五态**：`Normal / Attention / Partially offline / Offline / Unbound`，彩色圆点 + 文字；不再拆 Connection 与 Running status 两列，也没有 `COM.` 列。
 2. **没有复选框、行尾菜单、批量条、返回顶部**：整行是唯一主操作，书签是唯一拦截点击的行内元素。
 3. **默认可见列**：电站 / SN / 设备 / 功率 / 状态 / 固件 / 更新；`Company` 默认隐藏，`Plant type` 已从列定义和 `Columns` 菜单移除。
 4. **列头只做排序**：没有“隐藏此列 / 筛选此列”的表头菜单，隐藏列只在 `Columns` 菜单里完成，避免两套入口。
@@ -418,8 +418,8 @@ type Plant = {
 ## 14. 筛选与列可视性实现记录（2026-10-28）
 
 - `2026-10-29` 动效复查：筛选条件 hover 底色确认使用共享 `240ms` 进入 / `360ms` 离开；toast 补上共享浮层淡入/淡出。筛选条加号打开的主面板会固定初始视口位置，新增筛选导致 chip 与加号重排时不移动。二级浮窗首个选项与一级类目行对齐，Company 使用 `100px`、其余条件使用 `54px` 顶部偏移。Attention 不透明掩码修正为归一化所有导出透明度，筛选图标和表格图标均恢复完整红色。
-- 筛选入口默认显示 4 个类目，主面板 `260px`、工具栏入口右缘与列可视性浮窗对齐且高度自适应、hover 不位移；筛选条加号在自身下方左对齐打开同一面板。Company 悬停/聚焦后打开 `260px` 独立 Glass Surface 条件浮窗，Device / Connection / Running status 使用统一的 `208px` 紧凑浮窗，选项单行；条件浮窗锚定当前类目行、以 12px 覆盖一级浮窗内缘。Company 置顶，条件区顶部有共享玻璃搜索框，清除按钮保持共享的 18px 垂直居中；支持 15 个节点的多级公司树与三态父级勾选；公司名称使用 `Footnote/Medium`，换行、无横向滚动，复选框对齐首行，超高时在卡片右缘显示共享滚动条。选中顶层公司时筛选条只显示一个顶层 chip。Connection 与 Running status 分开，Company / Device 不显示条件图标，状态图标使用不透明掩码，所有条件不显示数量。类目 hover 有 380ms 意图延迟，斜穿其他项不会误切换。工具栏筛选项 / 列修改蓝点为 `7px`。
+- 筛选入口默认显示 4 个类目，主面板 `260px`、工具栏入口右缘与列可视性浮窗对齐且高度自适应、hover 不位移；筛选条加号在自身下方左对齐打开同一面板。Company 悬停/聚焦后打开 `288px` 独立 Glass Surface 条件浮窗，Device / Connection / Running status 使用统一的 `208px` 紧凑浮窗，选项单行；条件浮窗锚定当前类目行、以 12px 覆盖一级浮窗内缘。Company 置顶，条件区顶部有共享玻璃搜索框，清除按钮保持共享的 18px 垂直居中；支持 15 个节点的多级公司树与三态父级勾选；展开按钮与复选框同为 16px 方形，箭头 12px 且垂直中心对齐；公司名称使用 `Footnote/Medium`，仅超长时换行、无横向滚动，复选框对齐首行，超高时在卡片右缘显示共享滚动条。选中顶层公司时筛选条只显示一个顶层 chip。Connection 与 Running status 分开，Company / Device 不显示条件图标，状态图标使用不透明掩码，所有条件不显示数量。类目 hover 有 380ms 意图延迟，斜穿其他项不会误切换。工具栏筛选项 / 列修改蓝点为 `7px`。
 - 复选框只切换状态并立即筛选，浮层保持打开；条件名称按钮应用并关闭。每次改变都通过同一个 `state.filters` 重算表格和 chips，不另存第二份筛选状态。
-- 每个具体条件生成独立短 chip（只显示条件文字），例如 `Hybrid Inverter`；chips 后只有一个复用筛选浮层的小加号，唯一 `Clear` 固定在条件区最右侧并跨多行垂直居中。条件区使用设计稿 `Backgrounds/Tertiary Elevated` 实底，chip 使用 `Fills/Secondary`，不使用偏粉或偏紫的透明叠色。
+- 每个具体条件生成独立短 chip（只显示条件文字），例如 `Inverter`；chips 后只有一个复用筛选浮层的小加号，唯一 `Clear` 固定在条件区最右侧并跨多行垂直居中。条件区使用设计稿 `Backgrounds/Tertiary Elevated` 实底，chip 使用 `Fills/Secondary`，不使用偏粉或偏紫的透明叠色。
 - 列可视性使用用户提供的 `Eye` / `Eye Closed` 图标置于文字前，不再使用尾部对勾；素材来源索引为 `design-preview/design/figma/plants/icons-source.json`。
 - 新增 `tests/verify-plants-filters.cjs`；合并后的 `npm test` 现为 13 个套件。深浅主题实拍见 `design-preview/tests/output/plants-filter-*.png` 与 `plants-visibility-*.png`。

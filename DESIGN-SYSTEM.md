@@ -17,7 +17,7 @@
 |---|---|---|
 | 主题、语义色、字体、字号、间距、圆角、动效节奏 | `design-preview/src/foundations/tokens.css` | 引用 token，不重复定义同义值 |
 | 组件级共享动效契约 | `design-preview/src/foundations/motion.css` | `shared.css` 自动加载；组件只声明默认与激活视觉值，不写局部 transition 时长 |
-| 长列表滚动反馈 | `design-preview/src/components/scroll-feedback.js` / `.css` | 自定义滑块样式、hover / 拖动、上下越界弹性与回弹缩短；页面提供容器、内容节点和几何内距 |
+| 滚动反馈 | `design-preview/src/components/scroll-feedback.js` / `.css` | 自定义滑块样式、hover / 拖动；需要回弹的列表传入滚动内容节点并启用默认弹性，固定滚动区显式用 `elastic:false` |
 | Figma 文字样式源与生成 token | `design-preview/design/figma/figma-type-source.json` / `src/foundations/type.css` | `npm run sync:type` 生成；`typography.js` 将节点或语义组件绑定至命名 style |
 | 全局连续圆角与分隔线宽度 | `design-preview/src/foundations/geometry.css` / `geometry.js` | 保留半径、尺寸；普通圆角矩形平滑，原稿圆形和胶囊形保持 round |
 | 标准头像 | `design-preview/src/components/avatar.css` / `.wd-avatar` | 1px 同色内描边；深色中心扩散阴影，浅色无外投影。组件只负责尺寸与内容 |
@@ -253,6 +253,7 @@
 ### 其他动效边界
 
 - 普通 hover 不移动、缩放、旋转控件和文字，不改变布局。唯一位移例外是前两张可点击状态卡内部箭头向右上移动 `2px`，卡片本体不动。
+- 带圆角背景的列表行如果背景使用共享离场过渡，轮廓半径必须常驻在默认状态；状态规则只切换背景与文字色，不能让圆角先于背景消失。
 - 点击展开允许高度、透明度和轻微浮层缩放，可中断、可反向；不等待动画结束才响应输入。图表标题、数值、单位和坐标轴稳定显示，曲线从左至右揭示、柱形从底部展开，首次可见播放一次，不循环、不伪造网络进度。
 - 刷新只转图标一圈，容器不动，期间防重复触发。
 - 主题使用一次有限的整页交叉淡入：`620ms`，包含外部 SVG、渐变和玻璃；首次载入不播放，连续切换以最后一次意图为准，减少动态效果立即到最终态。新主题快照生成期间（`data-theme-snapshot`）元素过渡统一压到 `0s`，避免把旧主题的中间色冻结进快照；`transition.ready` 后立即恢复 `240 / 360ms`。禁止全页反色、`transition: all` 或残留的临时过渡。
@@ -276,7 +277,7 @@
 - 侧栏玻璃、卡片本体与文字字号不随响应式缩放；重排只改变列宽、列数和可见标签。正文与控件文字保持原设计字号，不通过缩小字体换列。
 - 首页内容画布保留最大 1000px 时，搜索下方快捷入口左右各内收 20px，等分列间距 20px；收窄后沿用 `3 → 2 → 1` 列节奏，仍不通过缩小字体实现内收。
 - 滚动区域左右各保留共享 48px 阴影空间；底部留白以最后一张图表卡片为基准，具体数值由单独的布局文档负责，本规范不另设固定 32px。Period statistics 的时区与 As-of 文案节点已永久删除，不做隐藏或恢复。调整 `overflow` 与层叠后重新检查阴影。
-- `Recently visited` 与左上角历史浮窗共用一份跨标签的访问归档；保存单位是 `{route, params}`，因此 `Plants` 列表和 `Plants / 电站名` 是两条独立记录。详情路径中父级与 `/` 使用 Labels/Secondary，最后一级电站名使用 Labels/Primary；首页行与浮窗均通过 `components/history-path.js` 渲染并展示完整路径。首页历史行在 hover / 键盘 focus 时，所有面包屑片段都显示与当前片段文字色一致的下划线，不能只给外层容器设线而漏掉 `inline-flex` 子级。顶栏后退 / 前进继续按标签独立，不读取或修改这份公共访问归档。
+- `Recently visited` 与左上角历史浮窗共用一份跨标签的访问归档；保存单位是 `{route, params}`，因此 `Plants` 列表和 `Plants / 电站名` 是两条独立记录。详情路径中父级与 `/` 使用 Labels/Secondary，最后一级电站名使用 Labels/Primary；首页行与浮窗均通过 `components/history-path.js` 渲染并展示完整路径。首页历史行在 hover / 键盘 focus 时由整个路径容器绘制一条连续 Labels/Primary 下划线，路径片段不能再各自绘制短线；内联片段之间使用带空格的 `/`，保证下划线不在分隔处断开。顶栏后退 / 前进继续按标签独立，不读取或修改这份公共访问归档。
 - 优先使用真实 button / input；提取节点需提供等效角色、Enter/Space 和可见焦点。鼠标 hover 有对应 focus 状态。
 - 分类使用设计稿实心箭头，维护 `aria-expanded` / `aria-controls`；隐藏内容不可聚焦。浮层支持 Esc 和外部点击关闭，退出后不残留透明遮挡层。
 - 三点菜单的圆形 hover 背景与命中区为 30px，保持原始三点中心。标题容器允许控件溢出，不能用 18px 标题行裁切圆底；文字省略仍由文字节点自身控制，不全局取消图表或滚动区域裁切。
@@ -295,16 +296,19 @@
 
 ### Plants 筛选与列可视性
 
-- Plants 筛选入口使用共享锚定浮层。主面板只列 4 个类目：Company、Device、Connection、Running status，宽度 `260px`、高度贴合类目内容，不在内部预留条件区；工具栏入口的右缘与列可视性浮层右缘对齐，筛选条加号的入口则在加号下方展开并与加号左缘对齐。加号面板打开后固定初始视口位置，新增 chip 导致加号重新排版时不得带着面板移动。鼠标悬停或键盘聚焦类目后，以独立 Glass Surface 次级浮窗展示条件；Company 保持 `260px`，Device、Connection、Running status 统一使用 `208px`，保证选项单行且三项同宽。次级浮窗锚定当前类目行，优先出现在空间更充足的一侧并与主面板内缘重叠 `12px`。类目 hover 采用 `380ms` 意图延迟，鼠标斜穿其他类目前往二级浮窗时不得误切换。
+- Plants 筛选入口使用共享锚定浮层。主面板只列 4 个类目：Company、Device、Connection、Running status，宽度 `260px`、高度贴合类目内容，不在内部预留条件区；工具栏入口的右缘与列可视性浮层右缘对齐，筛选条加号的入口则在加号下方展开并与加号左缘对齐。加号面板打开后固定初始视口位置，新增 chip 导致加号重新排版时不得带着面板移动。鼠标悬停或键盘聚焦类目后，以独立 Glass Surface 次级浮窗展示条件；Company 使用 `288px` 承载完整层级名称，Device、Connection、Running status 统一使用 `208px`，保证选项单行且三项同宽。次级浮窗锚定当前类目行，优先出现在空间更充足的一侧并与主面板内缘重叠 `12px`。类目 hover 采用 `380ms` 意图延迟，鼠标斜穿其他类目前往二级浮窗时不得误切换。
 - 二级浮窗的垂直基准是**第一个可选项**：第一个选项的文字/行盒与对应一级类目行对齐，而不是让二级标题对齐类目。Company 带搜索框时使用 `100px` 顶部内容偏移，其余条件组使用 `54px`；顶部空间不足时由共享浮窗定位夹紧到 12px 视口边距。
-- Company 固定在第一项，条件区顶部提供共享玻璃搜索框；默认展示 15 个节点的多级公司树，使用 `22px` 方形命中区的连续箭头表示展开，支持父级 `checked / mixed / unchecked` 三态。公司名称使用 `Footnote/Medium`（13 / 510 / 18px），可换行，禁止出现横向滚动条；复选框中线对齐公司名第一行。条件列表向左右释放内距，滚动条贴卡片右缘并留约 `4px`；面板限制为 `70vh / 520px` 内的最大高度，超出时使用共享 `.wd-scrollbar` 滚动。选中顶层公司时，筛选条只显示顶层公司汇总 chip，不展开所有子公司。
-- Connection 与 Running status 是两个独立筛选组。Connection 使用在线、部分在线、离线、未绑定四态信号图标；Running status 使用 `Normal / Attention / Unbound device` 三种运行健康状态及其原始语义图标。筛选条件与表格 Status 图标都使用不透明掩码，不能因导出透明度或从详情页返回而发灰；生成脚本必须把所有 `fill-opacity` / `stroke-opacity` 归一到 `1`，不是只处理原稿常见的 `.7`。图标为 14–18px，与所在行文字垂直居中。筛选条件与表格 Status 的图标和文字间距均为 `4px`；Company、Device 的普通条件不加装饰图标。
+- Company 固定在第一项，条件区顶部提供共享玻璃搜索框；默认展示 15 个节点的多级公司树，展开按钮与复选框同为 `16px` 方形，箭头为 `12px` 且两者垂直中心对齐，支持父级 `checked / mixed / unchecked` 三态。公司名称使用 `Footnote/Medium`（13 / 510 / 18px），仅在文本确实超长时换行，禁止出现横向滚动条；复选框中线对齐公司名第一行。Company 专用的紧凑左侧几何只作用于 `.plants-filter-options.is-company`；Device、Connection、Running status 保持标准内容缩进，不能被公司树的宽度回收规则带到浮窗边缘。Company 列表左侧只保留约 `4px` 容器内距，层级每级 `12px`；名称与默认滑块至少留约 `8px`，滚动条距卡片右缘约 `4px`。面板限制为 `70vh / 520px` 内的最大高度，超出时使用默认弹性模式的共享滚动反馈，并把公司列表节点作为 `content` 传入。标题和搜索框固定，只有列表内容参与上下越界位移；回弹空白必须透明并透出同一 Glass Surface，不能填入普通数据列表的实底色。滑块随回弹同步缩短，松手后恢复。选中顶层公司时，筛选条只显示顶层公司汇总 chip，不展开所有子公司。
+- Connection 与 Running status 是两个独立筛选组。Connection 使用 `Online / Partially online / Offline / Unbound` 四态信号图标；Running status 使用 `Attention / Unbound / Normal` 三种运行健康状态及其原始语义图标。Device 的最终名称与筛选顺序固定为 `Inverter / BMS / Heater`；电站可包含多个设备，表格按同一顺序以 `Inverter/BMS/Heater` 组合展示。Device、Connection、Running status 的多选均按并集匹配：电站含有任一选中设备，或命中任一选中连接 / 运行状态，即可展示。筛选条件与表格 Status 图标都使用不透明掩码，不能因导出透明度或从详情页返回而发灰；生成脚本必须把所有 `fill-opacity` / `stroke-opacity` 归一到 `1`，不是只处理原稿常见的 `.7`。图标为 14–18px，与所在行文字垂直居中。筛选条件与表格 Status 的图标和文字间距均为 `4px`；Company、Device 的普通条件不加装饰图标。
 - 每条条件行由独立复选区和条件名称按钮组成。点击复选框立即筛选且两个浮层都保持打开；点击条件名称/选项主体会应用该条件并关闭筛选。复选框使用 `Accents/Blue` 选中态和更大的白色勾选遮罩。row 本体不画 hover 底，只有文字按钮区域出现一层高亮；复选框与条件之间的间距为 `4px`。条件旁不再显示数量数字。
-- 一级筛选与二级条件共用 `.wd-filter-menu` 内胆，四边 `20px`；标题、搜索框、条件区和滚动区沿同一内容线。列可视性继续沿用 `.wd-menu` 的 `20px` 顶部标准。长列表统一使用共享 `.wd-scrollbar`，页面不另写滚动条。
-- 有筛选时在工具栏下显示条件条。每个具体条件是独立小 tab，只显示条件文字，例如 `Hybrid Inverter`；tab 后面是复用完整筛选内容与交互的加号，点击后在加号下方左对齐打开主筛选面板，`Clear` 固定在条件区最右侧并始终垂直居中。条件区使用设计稿已有的 `Backgrounds/Tertiary Elevated` 实底区分表格，chip 使用 `Fills/Secondary`；不使用页面私有淡紫色或玻璃叠加。
+- 一级筛选与二级条件共用 `.wd-filter-menu` 内胆，四边 `20px`；标题、搜索框、条件区和滚动区沿同一内容线。列可视性继续沿用 `.wd-menu` 的 `20px` 顶部标准。任何可见滚动条统一使用共享 `createScrollFeedback()`：需要回弹的数据列表与浮层列表都传入实际内容节点并启用默认弹性，只有无需回弹的固定滚动区才传 `elastic:false`；禁止恢复独立 `.wd-scrollbar`、页面私有滑块或原生 `::-webkit-scrollbar`。
+- 有筛选时在工具栏下显示条件条。每个具体条件是独立小 tab，只显示条件文字，例如 `Inverter`；tab 后面是复用完整筛选内容与交互的加号，点击后在加号下方左对齐打开主筛选面板，`Clear` 固定在条件区最右侧并始终垂直居中。条件区使用设计稿已有的 `Backgrounds/Tertiary Elevated` 实底区分表格，chip 使用 `Fills/Secondary`；不使用页面私有淡紫色或玻璃叠加。
 - Plants 的刷新是一次本地列表重置：点击后仍只让刷新图标转一圈并防重复触发，同时清空全部筛选、恢复默认列显隐和默认 `Last update` 降序排序，三者在同一轮渲染中完成。搜索词和收藏状态不被刷新清除。刷新完成提示需说明视图已重置。
+- Plants 行高亮由首末单元格拼成整行 `10px` 圆角。首末半径必须常驻在 `.plants-cell:first-child` / `:last-child`，状态规则只切换背景；焦点离开后的 `360ms` 淡出期间四角保持完整，不能出现直角残影。
 - 列可视性菜单继续使用共享 `.wd-menu` 外壳和 36px 行，但每行状态图标改为用户提供的 `Eye` / `Eye Closed`，固定在文字前；不得再放尾部对勾。显示时 Eye 为 Labels/Secondary，隐藏时 Eye Closed 与文字为 Labels/Tertiary，hover / focus 恢复主文字色。`Plant type` 不再列为可切换列。
 - 筛选与眼睛图标原稿存放在 `design-preview/design/figma/plants/icons/`，运行副本在 `design-preview/home-assets/plants/icons/`，来源索引为 `design-preview/design/figma/plants/icons-source.json`。筛选数据仍是本地样本，不宣称后端查询、权限或持久化。
+
+- Device、Connection、Running status 小条件浮窗的选项内容使用约 `20px` 标准左内缩；选项按钮内部再保留 `8px` 文字左内距，复选框、文字和 hover 背景都不能贴住左缘。该调整只改变水平位置，浮窗宽度、高度与底部坐标保持不变，Company 的 `.is-company` 紧凑规则不受影响。
 
 ## 8. 开发与验收
 

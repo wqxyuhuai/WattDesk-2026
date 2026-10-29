@@ -167,8 +167,6 @@
  * layout (a <tr>::before is treated as an extra cell by some engines). */
 .plants-table tbody tr{height:44px;cursor:pointer}
 .plants-table tbody tr:is(:hover,:focus-visible,:focus-within) .plants-cell{background:var(--wd-fill-quaternary)}
-.plants-table tbody tr:is(:hover,:focus-visible,:focus-within) .plants-cell:first-child{border-radius:10px 0 0 10px}
-.plants-table tbody tr:is(:hover,:focus-visible,:focus-within) .plants-cell:last-child{border-radius:0 10px 10px 0}
 .plants-table tbody tr:focus-visible{outline:2px solid var(--wd-blue);outline-offset:-2px;border-radius:10px}
 
 .plants-cell{
@@ -177,6 +175,10 @@
  color:var(--wd-label-secondary);
  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;vertical-align:middle;
 }
+/* Radius lives on the resting cells so the animated background can fade out
+ * without briefly exposing square corners. */
+.plants-cell:first-child{border-radius:10px 0 0 10px}
+.plants-cell:last-child{border-radius:0 10px 10px 0}
 
 /* The leading bookmark and connection share the table's left edge with the
  * page title. The name follows the compact connection icon without a wide
@@ -302,7 +304,11 @@
 
 .plants-filter-flyout{padding:0}
 .plants-filter-flyout-content{
+ --wd-scroll-pull-surface:transparent;
  max-height:min(70vh,520px);
+}
+.plants-filter-flyout-content>.wd-scroll-feedback{
+ --wd-scroll-feedback-right:4px;
 }
 .plants-filter-secondary-header{display:flex;align-items:center;gap:8px;min-height:24px}
 .plants-filter-secondary-title{
@@ -313,11 +319,18 @@
 .plants-filter-flyout .plants-filter-search-field{width:100%}
 .plants-filter-search-field[hidden]{display:none}
 .plants-filter-options{
+ position:relative;z-index:1;
  flex:1 1 auto;min-height:0;
  width:calc(100% + 28px);margin-left:-12px;margin-right:-16px;
- padding-left:4px;padding-right:2px;
+ padding-left:8px;padding-right:2px;
  overflow-x:hidden;overflow-y:auto;
+ scrollbar-width:none;
 }
+.plants-filter-options.is-company{
+ width:calc(100% + 32px);margin-left:-16px;
+ padding-left:0;padding-right:16px;
+}
+.plants-filter-options::-webkit-scrollbar{display:none}
 .plants-filter-condition{
  display:flex;align-items:center;gap:4px;min-height:40px;padding:0 4px;
  border-radius:10px;color:var(--wd-label-secondary);
@@ -343,7 +356,7 @@
 .plants-filter-checkbox:focus-visible{outline:2px solid var(--wd-blue);outline-offset:2px}
 .plants-filter-flyout .plants-filter-condition-choice{
  display:flex;align-items:center;gap:4px;min-width:0;flex:1 1 auto;
- width:auto;height:36px;padding:0 4px;border:0;border-radius:8px;
+ width:auto;height:36px;padding:0 4px 0 8px;border:0;border-radius:8px;
  background:none;color:var(--wd-label-secondary);text-align:left;
 }
 .plants-filter-flyout .plants-filter-condition-choice:is(:hover,:focus-visible){color:var(--wd-label-primary)}
@@ -354,24 +367,23 @@
 .plants-filter-option-glyph.plants-icon{width:18px;height:18px}
 .plants-filter-option-glyph.plants-connection-glyph{color:currentColor}
 .plants-filter-company-row{
- display:flex;align-items:flex-start;gap:4px;min-height:32px;
- padding:3px 4px 3px var(--plants-tree-indent,0px);
+ display:flex;align-items:flex-start;gap:3px;min-height:32px;
+ padding:3px 0 3px var(--plants-tree-indent,0px);
  border-radius:10px;color:var(--wd-label-secondary);
 }
 .plants-filter-company-row .plants-filter-condition-choice{
- height:auto;min-height:28px;padding:4px 4px;align-items:flex-start;
+ height:auto;min-height:28px;padding:4px 4px 4px 2px;align-items:flex-start;
 }
 .plants-filter-company-row .plants-filter-condition-label{
  overflow:visible;overflow-wrap:anywhere;white-space:normal;
  line-height:18px;
 }
 .plants-filter-company-row .plants-filter-checkbox,
-.plants-filter-company-row .plants-filter-company-toggle{margin-top:1px}
-.plants-filter-company-row .plants-filter-checkbox{margin-top:4px}
+.plants-filter-company-row .plants-filter-company-toggle{margin-top:4px}
 .plants-filter-flyout .plants-filter-company-toggle,
 .plants-filter-company-toggle-spacer{
  display:inline-flex;align-items:center;justify-content:center;
- flex:0 0 22px;width:22px;height:22px;padding:0;border:0;border-radius:6px;
+ flex:0 0 16px;width:16px;height:16px;padding:0;border:0;border-radius:4px;
  background:none;color:var(--wd-label-tertiary);
 }
 .plants-filter-flyout .plants-filter-company-toggle:is(:hover,:focus-visible){background:var(--wd-control-hover);color:var(--wd-label-primary)}
@@ -416,6 +428,7 @@
 .plants-icon--16{width:16px;height:16px}
 .plants-icon--18{width:18px;height:18px}
 .plants-icon--14{width:14px;height:14px}
+.plants-icon--12{width:12px;height:12px}
 .plants-icon--10{width:10px;height:10px}
 .plants-icon--8{width:8px;height:8px}
 

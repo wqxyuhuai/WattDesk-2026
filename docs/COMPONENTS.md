@@ -22,7 +22,7 @@
 | 日期选择 | `components/date-picker.js` / `.css` | `createDatePicker({trigger,glass,registerPanel,close,onApply,range})` → `{panel,close,getRange}`；另有 `presetRange / describeRange / parseDateInput / formatDateInput` |
 | 卡片 | `components/cards.js`、`cards.css` | `prepareCard(el,variant)` / `createCard({variant,radius,content})` |
 | 空状态 | `components/empty-state.js` / `.css` | `createEmptyState({iconFile,label})` → `{element,update,play}` |
-| 长列表滚动反馈 | `components/scroll-feedback.js` / `.css` | `createScrollFeedback({host,viewport,content,topInset,bottomInset,maxPull,deadZone})` → `{element,sync,destroy}`；负责滑块悬停、拖动、上下越界弹性与回弹缩短 |
+| 滚动反馈 | `components/scroll-feedback.js` / `.css` | `createScrollFeedback({host,viewport,content,elastic,topInset,bottomInset,maxPull,deadZone})` → `{element,sync,destroy}`；需要弹性时传实际内容节点，固定滚动区显式传 `elastic:false` |
 | 玻璃 | `components/glass-material.js` / `.css` | `createGlassMaterial({surfaces:[{host,radius,chrome,interactive}]})`，返回 `destroy()`；`interactive:false` 用于纯展示表面 |
 | 控件状态 | `components/control-states.js` / `.css` | 内容挂载后 `await prepareControlStates(container)` |
 | 历史浮窗 | `components/history-popover.js` / `.css` | `createHistoryPopover({anchor,entries,onSelect,registerPanel,close,motion})`；复用共享玻璃与 30px 浮层圆角，最多 8 行 |
@@ -173,14 +173,16 @@ hover / 按下的视觉缩放由材质与 `motion.css` 自动继承，调用方�
 
 Plants 的结构化筛选与列显隐位于 `src/pages/plants/index.js` / `plants.css`，属于该页面的业务装配，不是第二套浮层材质：
 
-- 主筛选只调用一次 `registerPanel(panel,anchor,{radius:30,width:260,...})`，高度贴合 4 个类目。工具栏入口传 `align:"end",alignRight`，右缘与列可视性菜单一致；筛选条加号传 `align:"start"`，在加号下方左对齐，并传 `pinPosition:true` 固定打开瞬间的视口位置，新增 chip 导致锚点重排时面板不移动。类目 hover / focus 时通过 `registerPanel(...,{keepOpen:true,placement:"side"})` 注册独立条件 Glass Surface：Company 为 `260px`，Device / Connection / Running status 为 `208px`，保证选项单行且三项同宽。`keepOpen` 让主面板保留，`placement:"side"` 让次级浮窗以 12px 重叠贴住一级浮窗内缘。类目 hover 有 380ms 意图延迟。
+- 主筛选只调用一次 `registerPanel(panel,anchor,{radius:30,width:260,...})`，高度贴合 4 个类目。工具栏入口传 `align:"end",alignRight`，右缘与列可视性菜单一致；筛选条加号传 `align:"start"`，在加号下方左对齐，并传 `pinPosition:true` 固定打开瞬间的视口位置，新增 chip 导致锚点重排时面板不移动。类目 hover / focus 时通过 `registerPanel(...,{keepOpen:true,placement:"side"})` 注册独立条件 Glass Surface：Company 为 `288px`，Device / Connection / Running status 为 `208px`，保证选项单行且三项同宽。`keepOpen` 让主面板保留，`placement:"side"` 让次级浮窗以 12px 重叠贴住一级浮窗内缘。类目 hover 有 380ms 意图延迟。
 - `placement:"side"` 的 `sideTopOffset` 负责把第一个选项而非二级标题对齐类目行：Company 使用 `100`，其余条件组使用 `54`。函数形式可随活动类目变化；共享定位继续负责视口顶部夹紧。
-- 一级与二级内容共用 `components/filter-menu.css` 的 `.wd-filter-menu`（四边 20px），长列表共用 `components/scrollbar.css` 的 `.wd-scrollbar`。条件面板内的公司树搜索、父级展开和复选框使用该页面的单一 `state.filters`；搜索字段直接复用 `createSearchField({size:"compact",scalable:true})`，其清除按钮保持共享的 18px 零内距并垂直居中。示例公司树有 15 个节点；名称使用 `Footnote/Medium`，允许换行、禁止横向滚动，复选框对齐第一行，滚动条贴近卡片右缘；所有条件不显示数量，Company / Device 不显示选项图标，Connection / Running status 使用 18px 不透明状态图标，图标与文字间距固定 `4px`。掩码生成必须把任意 `fill-opacity` / `stroke-opacity` 归一到 `1`，否则 `.3` 导出的 Attention 会被削淡。表格 Status 图标与文字间距固定 `4px`；顶层公司的所有后代被选中时，chips 只显示一个顶层公司项。复选框点击只应用筛选并重绘结果，不关闭任何一个浮层；条件名称按钮才调用 `close()`。
+- 一级与二级内容共用 `components/filter-menu.css` 的 `.wd-filter-menu`（四边 20px）。Company 长列表以 `content: secondaryBody` 接入共享滚动反馈的默认弹性模式，视觉、hover、拖动与 Plants 表格一致，标题和搜索框保持固定，只有公司列表在上下边界越界并回弹；浮层通过 `--wd-scroll-pull-surface: transparent` 让回弹空隙透出母玻璃，不能复制表格的实底背景。页面不得再引用独立 `.wd-scrollbar` 或自写滚动条伪元素。Company 专用的宽度与左侧几何通过 `.is-company` 限定；切换到 Device / Connection / Running status 时必须移除该状态并恢复标准内容缩进。公司树左侧保持约 `4px` 容器内距、层级每级 `12px`；展开按钮与复选框同为 `16px` 方形，箭头为 `12px` 且两者垂直中心对齐；名称与默认滑块至少留约 `8px`，轨道距卡片右缘约 `4px`。条件面板内的公司树搜索、父级展开和复选框使用该页面的单一 `state.filters`；搜索字段直接复用 `createSearchField({size:"compact",scalable:true})`，其清除按钮保持共享的 18px 零内距并垂直居中。示例公司树有 15 个节点；名称使用 `Footnote/Medium`，仅在文本确实超长时换行、禁止横向滚动，复选框对齐第一行；所有条件不显示数量，Company / Device 不显示选项图标，Connection / Running status 使用 18px 不透明状态图标，图标与文字间距固定 `4px`。掩码生成必须把任意 `fill-opacity` / `stroke-opacity` 归一到 `1`，否则 `.3` 导出的 Attention 会被削淡。表格 Status 图标与文字间距固定 `4px`；顶层公司的所有后代被选中时，chips 只显示一个顶层公司项。复选框点击只应用筛选并重绘结果，不关闭任何一个浮层；条件名称按钮才调用 `close()`。
 - 已应用条件由同一状态生成 chips，每个具体条件一个短 tab；条件条使用 `Backgrounds/Tertiary Elevated` 实底，chip 使用 `Fills/Secondary`，不得用透明叠加造成偏粉或偏紫。末尾只允许一个加号，它复用完整筛选内容和交互，并在自身下方左对齐打开；唯一 `Clear` 固定在最右侧并垂直居中。不得另存快捷筛状态或增加第二套清除入口。
 - Plants 刷新按钮继续使用共享圆钮材质和 `--wd-motion-refresh` 图标旋转。点击后同步清空全部筛选、将 `state.hidden` 恢复为 `DEFAULT_HIDDEN`、将 `state.sort` 恢复为 `{key:"updated",dir:DEFAULT_DIR.updated}`，再统一执行列、表头和行的重新渲染；搜索词和 `localStorage` 收藏状态不清除。
 - 列菜单沿用 `.wd-menu` 外壳和 36px 行高，但行结构为“Eye / Eye Closed 图标 + 文字”，不生成 `.wd-menu-check`。眼睛素材来自 `home-assets/plants/icons/`，原始副本与来源见 `design/figma/plants/`。
-- 名称为 `?` 的电站表示设备上线时已经自动建站、资料尚未补全，属于正常可进入的电站。`?` 在 hover / 键盘 focus 时显示共享锚定 Glass Surface；浮窗可以接收指针和键盘焦点，离开触发按钮后有短暂关闭意图缓冲，便于指针跨过锚点间距进入浮窗。说明文案需解释自动建站与资料未全；其中的 `setup.` 是真实按钮，加下划线但不使用按钮底色、外框或独立块级布局，始终留在原说明段落中；hover / focus 只把文字提为主文字色。点击 `?`、行内其他区域或提示中的 `setup.` 都可进入详情；标签与详情主标题显示 `?`。
-- 回归入口为 `tests/verify-plants-filters.cjs`，覆盖三态公司树、复选不关闭、名称点击关闭、筛选条、眼睛状态、键盘展开及浅色主题。
+- 名称为 `?` 的电站属于正常可进入的电站。`?` 在 hover / 键盘 focus 时显示共享锚定 Glass Surface；浮窗可以接收指针和键盘焦点，离开触发按钮后有短暂关闭意图缓冲，便于指针跨过锚点间距进入浮窗。固定文案为 `This device is not currently associated with any plant. Please proceed with the setup.`；其中的 `setup.` 是真实按钮，加下划线但不使用按钮底色、外框或独立块级布局，始终留在原说明段落中；hover / focus 只把文字提为主文字色。点击 `?`、行内其他区域或提示中的 `setup.` 都可进入详情；标签与详情主标题显示 `?`。
+- Plants 表体的整行高亮由首末 `.plants-cell` 拼成。左右外侧 `10px` 圆角定义在单元格默认状态，hover / focus 仅切换背景色；焦点离开后背景按共享节奏淡出，淡出全过程必须保持原圆角，不能出现直角残影。回归断言在 `tests/verify-routing.cjs`。
+- Device、Connection、Running status 小浮窗的选项内容保持约 `20px` 左内缩，选项按钮内的文字再保留 `8px`；复选框、文字和 hover 背景不能贴边。该几何只影响水平位置，不改变浮窗尺寸或底部锚点。Company 的 `.is-company` 紧凑规则独立保留。
+- 回归入口为 `tests/verify-plants-filters.cjs`，覆盖三态公司树、复选不关闭、名称点击关闭、筛选条、眼睛状态、键盘展开、小浮窗内容内缩及浅色主题。
 
 ## 工作区标签
 

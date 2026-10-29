@@ -4,18 +4,22 @@
 
 ### Plants 筛选、可视性、详情与反馈
 
-- 筛选重构为 Company / Device / Connection / Running status 四组，主面板与 Company 条件浮窗为 `260px`，其余条件浮窗统一为 `208px` 且单行显示；二级浮窗首个选项与对应一级类目行对齐，加号入口从自身下方打开并在条件更新时保持位置。
+- 筛选重构为 Company / Device / Connection / Running status 四组，主面板为 `260px`，Company 条件浮窗为 `288px`，其余条件浮窗统一为 `208px` 且单行显示；二级浮窗首个选项与对应一级类目行对齐，加号入口从自身下方打开并在条件更新时保持位置。
 - Company 支持玻璃搜索框、15 节点多级树和三态复选；筛选条使用设计稿语义色，唯一 `Clear` 固定右侧，最终条件短 chip、加号与 `7px` 状态点已统一。
 - 列可视性改用 Eye / Eye Closed；刷新会清空筛选、恢复默认列显隐和 `Last update` 降序排序，同时保留搜索与收藏。
-- 列表行在新标签打开详情，`Back to Plants` 关闭详情标签并恢复来源列表。自动建站但资料未全的电站以 `?` 作为列表名、标签名和详情主标题，整行仍可进入详情；`?` 提示说明自动建站与资料补全。
+- 列表行在新标签打开详情，`Back to Plants` 关闭详情标签并恢复来源列表。未关联设备的电站以 `?` 作为列表名、标签名和详情主标题，整行仍可进入详情；`?` 提示说明设备尚未关联电站并引导继续 setup。
 - 共享 toast 移至页面顶部并与标题中心对齐，增加轻微下落淡入 / 上浮淡出；筛选 hover 继续使用共享 `240ms / 360ms`，浮层开合使用 `320ms / 200ms`。
 - 修复共享搜索清除按钮被浮层按钮样式污染、Attention 掩码受 30% 导出透明度削淡等共享问题。
+- 修复 Plants 行高亮离开焦点时的直角残影：首末单元格圆角改为常驻，背景淡出过程中始终保持完整圆角。
+- Plants 的 Device 数据改为可包含多个设备的集合，筛选顺序固定为 `Inverter / BMS / Heater`；表格按同一顺序组合显示为 `Inverter/BMS/Heater`。Running status 的未绑定态统一为 `Unbound`；Device、Connection、Running status 的多选都按并集匹配。
 
 ### 验证
 
-- `npm run check` 通过，69 个 JavaScript 文件语法有效。
+- `npm run check` 通过，64 个 JavaScript 文件语法有效。
 - 完整 `npm test` 通过（13 个套件），包含筛选/可视性、工作区标签、路由、浮层、响应式、玻璃、主题、基础组件、动效与搜索。
-- `npm run build:site:public` 通过，`dist` 198 个文件、约 1.42 MB。
+- `npm run build:site:public` 通过，`dist` 198 个文件、约 1.45 MB。
+- `npm run audit:assets` 通过，121 个运行资产全部可达，0 unused / 0 missing。
+- 发布前完成本地 Git 收口：删除已被 `master` 取代的旧筛选分支和无新增提交的 `test` 分支，移除冗余合并前 stash；仅保留主工作区。
 
 ### 工作区标签拖拽排序
 
@@ -23,14 +27,24 @@
 - 拖拽不激活被拖标签，不改变当前页面或 URL；同一次拖拽手势不会误触 click、关闭或切换。
 - 溢出标签条支持边缘自动滚动；键盘可用 `Ctrl/Cmd + Shift + ←/→` 等价换位，并通过 live region 公布位置。
 - 新增 `verify-workspace-tabs`，覆盖向前/向后跨多个邻居拖动、活动标签与 URL 保持、键盘换位和深浅主题截图。
-- `npm run check` 通过（69 个 JavaScript 文件）；完整 `npm test` 13 个套件通过；`npm run build:site:public` 通过。
+- `npm run check` 通过（64 个 JavaScript 文件）；完整 `npm test` 13 个套件通过；`npm run build:site:public` 通过。
 
 ### 最近访问历史
 
 - `Recently visited` 和左上角历史浮窗改为共享同一份跨标签访问归档；条目保存 `{route, params}`，不再把电站详情并入父级 `Plants`。
 - 电站详情显示完整 `Plants / 电站名` 层级，父级和分隔符统一使用定义好的 Labels/Secondary，末级电站名使用 Labels/Primary。
 - 首页行扩展到箭头前的可用宽度，历史浮窗扩为最多 `380px`，长路径可自然换行，不截断末级名称。
-- 首页历史行在 hover / 键盘 focus 时为所有面包屑片段恢复下划线，并继承各自文字色淡入淡出。
+- 首页历史行在 hover / 键盘 focus 时使用一根覆盖完整路径的连续主色下划线，分隔符与各片段之间不再断线。
+
+### 筛选滚动条统一
+
+- Company 筛选浮窗改用 Plants 表格相同的共享滚动反馈，默认 `6px`、hover `8px`、圆角与拖动一致。
+- Company 列表传入实际滚动内容节点并使用共享默认弹性模式；顶部下拉、底部上拉都会移动列表内容并同步缩短滑块，标题与搜索框保持固定。
+- 浮层回弹空白改为透明，直接透出同一 Glass Surface，消除顶部与底部回弹时出现的明暗色块接缝。
+- 公司树左侧容器内距收紧至约 `4px`、层级缩进改为 `12px`；展开按钮与复选框统一为 `16px` 方形，箭头调整为 `12px` 且两者垂直中心对齐，Company 面板扩大到 `288px`，名称与默认滑块之间仍保留约 `12px` 可见间距。
+- Company 专用紧凑几何通过 `.is-company` 隔离；Device、Connection、Running status 恢复并保留标准内容内缩，不再被公司树的调宽规则带到浮窗边缘。
+- Device、Connection、Running status 选项内容整体右移到约 `20px` 左内缩，选项按钮内文字再保留 `8px`，浮动选项背景同步内收；浮窗宽度和底部位置保持不变。
+- 删除独立 `.wd-scrollbar` 及原生滚动条样式，并加入“需要回弹的滚动区传内容节点、无需回弹时显式关闭”的使用规则。
 
 ## 2026-10-28
 

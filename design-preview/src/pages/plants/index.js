@@ -34,7 +34,7 @@ const COLUMNS=[
  // right-hand columns still receive a share so the row keeps moving when the
  // panel grows instead of parking the spare width on the left.
  {id:"name",label:"Plant name",sortable:true,width:"176px",grow:1,wideGrow:.7,locked:true},
- {id:"device",label:"Device",sortable:false,width:"112px",grow:.035,wideGrow:.1},
+ {id:"device",label:"Device",sortable:false,width:"148px",grow:.035,wideGrow:.1},
  // The header label and its sort caret decide the minimum, not the value, so
  // "Power" never truncates to "Po…" in the narrow layout.
  {id:"power",label:"Power",sortable:true,width:"60px",grow:.015,wideGrow:.04},
@@ -72,6 +72,7 @@ const VISIBILITY_ICON=Object.freeze({
  hidden:"plants/icons/eye-closed.svg"
 });
 const FILTER_PANEL_WIDTH=260;
+const FILTER_COMPANY_PANEL_WIDTH=288;
 const FILTER_OPTION_PANEL_WIDTH=208;
 const COLUMN_PANEL_WIDTH=220;
 const FILTER_HOVER_INTENT=380;
@@ -448,12 +449,17 @@ export function createPlantsPage({glass,registerPanel,close,reposition,toast,onO
   return values.has(plant.companyId);
  }
 
+ function matchesSelected(values,candidate){
+  const candidates=Array.isArray(candidate)?candidate:[candidate];
+  return candidates.some(value=>values.has(value));
+ }
+
  function matchesCondition(categoryId,plant,values){
   if(!values.size)return true;
   if(categoryId==="company")return matchesCompany(plant,values);
-  if(categoryId==="device")return values.has(plant.device);
-  if(categoryId==="connection")return values.has(connectionOf(plant));
-  if(categoryId==="status")return values.has(healthOf(plant));
+  if(categoryId==="device")return matchesSelected(values,plant.devices);
+  if(categoryId==="connection")return matchesSelected(values,connectionOf(plant));
+  if(categoryId==="status")return matchesSelected(values,healthOf(plant));
   return true;
  }
 
@@ -843,7 +849,7 @@ function visibleRows({ignoreCategory=null}={}){
     case "connection":return connectionCell(plant);
     case "company":return plainCell(companyLabel(plant.companyId));
     case "sn":return monoCell(plant.sn);
-    case "device":return plainCell(deviceLabel(plant.device));
+    case "device":return plainCell(plant.devices.map(deviceLabel).join("/"));
     case "power":return powerCell(plant);
     case "status":return healthCell(plant);
     case "firmware":return monoCell(plant.firmware);
@@ -977,7 +983,7 @@ function visibleRows({ignoreCategory=null}={}){
   const panel=document.createElement("div");
   panel.className="popover popover--menu plants-panel plants-filter-panel";
   panel.style.setProperty("--plants-filter-check-mask",`url("${assetURL("tickle.svg")}")`);
-  const primary=text("div","plants-filter-primary wd-filter-menu wd-scrollbar");
+  const primary=text("div","plants-filter-primary wd-filter-menu");
   const primaryHeading=menuHeading("Filter");
   const categoryList=text("div","plants-filter-categories");
   categoryList.setAttribute("role","menu");
@@ -1011,6 +1017,7 @@ function visibleRows({ignoreCategory=null}={}){
   let selectionCount=null;
   let searchField=null;
   let secondaryBody=null;
+  let secondaryScrollFeedback=null;
   let categoryHoverTimer=0;
   const expandedCompanies=new Set(COMPANY_TREE.map(node=>node.id));
   const descendantsWithChildren=COMPANY_NODES.filter(node=>node.children.length).map(node=>node.id);
@@ -1104,7 +1111,7 @@ function visibleRows({ignoreCategory=null}={}){
    const row=text("div","plants-filter-company-row");
    row.dataset.option=node.id;
    const depth=flat?0:COMPANY_BY_ID.get(node.id)?.depth??0;
-   row.style.setProperty("--plants-tree-indent",`${depth*14}px`);
+   row.style.setProperty("--plants-tree-indent",`${depth*12}px`);
    const hasChildren=(node.children?.length||0)>0;
    let disclosure=null;
    if(hasChildren){
@@ -1113,7 +1120,7 @@ function visibleRows({ignoreCategory=null}={}){
     const isOpen=searchField.input.value.trim()?true:expandedCompanies.has(node.id);
     disclosure.setAttribute("aria-expanded",String(isOpen));
     disclosure.setAttribute("aria-label",`${isOpen?"Collapse":"Expand"} ${node.label}`);
-    const icon=maskedIcon(opaqueMaskURL("disclosure.svg"),"plants-icon plants-icon--10 plants-filter-company-disclosure wd-tree-disclosure-icon");
+    const icon=maskedIcon(opaqueMaskURL("disclosure.svg"),"plants-icon plants-icon--12 plants-filter-company-disclosure wd-tree-disclosure-icon");
     disclosure.append(icon);
     disclosure.addEventListener("click",()=>{
      if(expandedCompanies.has(node.id))expandedCompanies.delete(node.id);
@@ -1173,7 +1180,8 @@ function visibleRows({ignoreCategory=null}={}){
    if(!activeCategory)return;
    const category=FILTER_CATEGORIES.find(item=>item.id===activeCategory);
    if(!category)return;
-   secondaryPanel.style.width=`${category.kind==="company"?FILTER_PANEL_WIDTH:FILTER_OPTION_PANEL_WIDTH}px`;
+   secondaryPanel.style.width=`${category.kind==="company"?FILTER_COMPANY_PANEL_WIDTH:FILTER_OPTION_PANEL_WIDTH}px`;
+  secondaryBody.classList.toggle("is-company",category.kind==="company");
    updateSecondaryHeader(category,filtersFor(category.id).size);
    if(category.kind==="company"){
     secondaryBody.replaceChildren(...companyTree());
@@ -1186,6 +1194,7 @@ function visibleRows({ignoreCategory=null}={}){
    if(!secondaryBody.children.length){
     secondaryBody.append(text("p","plants-filter-empty","No options match this search.","Footnote/Regular"));
    }
+   secondaryScrollFeedback?.sync();
    syncPrimary();
    reposition?.();
   }
@@ -1212,19 +1221,30 @@ function visibleRows({ignoreCategory=null}={}){
    });
    searchField=field;
    searchField.input.addEventListener("input",renderSecondary);
-   secondaryBody=text("div","plants-filter-options wd-scrollbar");
+   secondaryBody=text("div","plants-filter-options");
    content.append(header,searchField.field,secondaryBody);
    secondaryPanel.append(content);
+   secondaryScrollFeedback=createScrollFeedback({
+    host:content,
+    viewport:secondaryBody,
+    content:secondaryBody,
+    topInset:()=>secondaryBody.offsetTop+4,
+    bottomInset:()=>content.clientHeight-secondaryBody.offsetTop-secondaryBody.clientHeight+4
+   });
    secondaryPanel._wdFade=content;
    const previousClose=secondaryPanel._onClose;
    secondaryPanel._onClose=()=>{
     try{previousClose?.();}
-    finally{glass.removeSurface(searchField.field);}
+    finally{
+     secondaryScrollFeedback?.destroy();
+     secondaryScrollFeedback=null;
+     glass.removeSurface(searchField.field);
+    }
    };
    registerPanel(secondaryPanel,row,{
     label:"Filter options",
     radius:24,
-    width:FILTER_PANEL_WIDTH,
+    width:FILTER_COMPANY_PANEL_WIDTH,
     keepOpen:true,
     placement:"side",
     sideTopOffset:()=>activeCategory==="company"?100:54,

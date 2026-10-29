@@ -22,27 +22,32 @@ function readInset(value,context){
 export function createScrollFeedback({
  host,
  viewport,
- content,
+ content=null,
+ elastic=true,
  topInset=0,
  bottomInset=0,
  maxPull=20,
  deadZone=4,
  releaseDelay=180
 }={}){
- if(!host||!viewport||!content)throw new Error("createScrollFeedback requires host, viewport and content");
+ if(!host||!viewport||(elastic&&!content)){
+  throw new Error("createScrollFeedback requires host and viewport; elastic mode also requires content");
+ }
 
  const track=element("wd-scroll-feedback");
  const thumb=element("wd-scroll-feedback__thumb");
- const startSurface=element("wd-scroll-feedback__pull wd-scroll-feedback__pull--start");
- const endSurface=element("wd-scroll-feedback__pull wd-scroll-feedback__pull--end");
+ const pullEnabled=Boolean(elastic&&content);
+ const startSurface=pullEnabled?element("wd-scroll-feedback__pull wd-scroll-feedback__pull--start"):null;
+ const endSurface=pullEnabled?element("wd-scroll-feedback__pull wd-scroll-feedback__pull--end"):null;
  track.setAttribute("aria-hidden","true");
- startSurface.setAttribute("aria-hidden","true");
- endSurface.setAttribute("aria-hidden","true");
+ startSurface?.setAttribute("aria-hidden","true");
+ endSurface?.setAttribute("aria-hidden","true");
  track.append(thumb);
  host.classList.add("wd-scroll-feedback-host");
- content.classList.add("wd-scroll-feedback-content");
- startSurface.style.top=`${viewport.offsetTop}px`;
- host.append(startSurface,endSurface,track);
+ content?.classList.add("wd-scroll-feedback-content");
+ if(startSurface)startSurface.style.top=`${viewport.offsetTop}px`;
+ if(pullEnabled)host.append(startSurface,endSurface);
+ host.append(track);
 
  let frame=0,pullFrame=0,pullDistance=0,pullTarget=0,pullReleaseTimer=0;
  let pullSide=null,touchStartY=null,settling=false,baseMetrics=null;
@@ -50,12 +55,14 @@ export function createScrollFeedback({
  let scrollDrag=null;
 
  function metrics(){
-  const hostRect=host.getBoundingClientRect();
+  // Menus may sit inside a scaling panel while opening. The rail is positioned
+  // in the host's layout coordinate space, so use the untransformed height.
+  const hostHeight=host.clientHeight;
   const viewportHeight=viewport.clientHeight;
   const contentHeight=viewport.scrollHeight;
-  const top=Math.min(hostRect.height,readInset(topInset,{host,viewport,content}));
-  const bottom=Math.min(hostRect.height-top,readInset(bottomInset,{host,viewport,content}));
-  const trackHeight=Math.max(0,hostRect.height-top-bottom);
+  const top=Math.min(hostHeight,readInset(topInset,{host,viewport,content}));
+  const bottom=Math.min(hostHeight-top,readInset(bottomInset,{host,viewport,content}));
+  const trackHeight=Math.max(0,hostHeight-top-bottom);
   const visible=!viewport.hidden&&trackHeight>=MIN_THUMB_HEIGHT&&contentHeight>viewportHeight+1;
   const thumbHeight=visible?Math.max(MIN_THUMB_HEIGHT,Math.round(trackHeight*viewportHeight/contentHeight)):0;
   const maxTop=Math.max(0,trackHeight-thumbHeight);
@@ -83,7 +90,7 @@ export function createScrollFeedback({
  function sync(){
   cancelAnimationFrame(frame);
   frame=requestAnimationFrame(()=>{
-   startSurface.style.top=`${viewport.offsetTop}px`;
+   if(startSurface)startSurface.style.top=`${viewport.offsetTop}px`;
    baseMetrics=metrics();
    track.hidden=!baseMetrics.visible;
    track.style.top=`${baseMetrics.top}px`;
@@ -100,6 +107,7 @@ export function createScrollFeedback({
  }
 
  function renderPullVisual(){
+  if(!pullEnabled)return;
   const distance=Math.max(0,pullDistance-deadZone);
   const active=distance>0&&pullSide;
   content.classList.toggle("is-pulling",Boolean(active));
@@ -133,6 +141,7 @@ export function createScrollFeedback({
  }
 
  function settlePull(){
+  if(!pullEnabled)return;
   clearTimeout(pullReleaseTimer);
   cancelAnimationFrame(pullFrame);
   pullFrame=0;
@@ -199,6 +208,7 @@ export function createScrollFeedback({
  }
 
  function handleWheel(event){
+  if(!pullEnabled)return;
   if(event.ctrlKey||event.metaKey)return;
   const maxScroll=Math.max(0,viewport.scrollHeight-viewport.clientHeight);
   const atStart=viewport.scrollTop<=0;
@@ -241,6 +251,7 @@ export function createScrollFeedback({
  }
 
  function handleTouchMove(event){
+  if(!pullEnabled)return;
   if(touchStartY===null||event.touches.length!==1)return;
   const distance=event.touches[0].clientY-touchStartY;
   const maxScroll=Math.max(0,viewport.scrollHeight-viewport.clientHeight);
@@ -297,13 +308,22 @@ export function createScrollFeedback({
   const maxScroll=Math.max(0,viewport.scrollHeight-viewport.clientHeight);
   viewport.scrollTop=Math.max(0,Math.min(1,(event.clientY-rect.top-thumbHeight/2)/maxTop))*maxScroll;
  });
- track.addEventListener("wheel",handleWheel,{passive:false});
- viewport.addEventListener("wheel",handleWheel,{passive:false});
+ track.addEventListener("wheel",event=>{
+  if(pullEnabled){
+   handleWheel(event);
+   return;
+  }
+  event.preventDefault();
+  viewport.scrollTop+=event.deltaY;
+ },{passive:false});
+ if(pullEnabled)viewport.addEventListener("wheel",handleWheel,{passive:false});
  viewport.addEventListener("scroll",handleScroll,{passive:true});
- viewport.addEventListener("touchstart",handleTouchStart,{passive:true});
- viewport.addEventListener("touchmove",handleTouchMove,{passive:false});
- viewport.addEventListener("touchend",handleTouchEnd,{passive:true});
- viewport.addEventListener("touchcancel",handleTouchEnd,{passive:true});
+ if(pullEnabled){
+  viewport.addEventListener("touchstart",handleTouchStart,{passive:true});
+  viewport.addEventListener("touchmove",handleTouchMove,{passive:false});
+  viewport.addEventListener("touchend",handleTouchEnd,{passive:true});
+  viewport.addEventListener("touchcancel",handleTouchEnd,{passive:true});
+ }
 
  const resizeObserver=new ResizeObserver(sync);
  resizeObserver.observe(host);
@@ -319,19 +339,23 @@ export function createScrollFeedback({
    clearTimeout(pullReleaseTimer);
    cancelPullAnimations();
    resizeObserver.disconnect();
-   viewport.removeEventListener("wheel",handleWheel);
    viewport.removeEventListener("scroll",handleScroll);
-   viewport.removeEventListener("touchstart",handleTouchStart);
-   viewport.removeEventListener("touchmove",handleTouchMove);
-   viewport.removeEventListener("touchend",handleTouchEnd);
-   viewport.removeEventListener("touchcancel",handleTouchEnd);
-   track.removeEventListener("wheel",handleWheel);
-   content.style.transform="";
-   content.classList.remove("wd-scroll-feedback-content","is-pulling");
+   if(pullEnabled){
+    viewport.removeEventListener("wheel",handleWheel);
+    viewport.removeEventListener("touchstart",handleTouchStart);
+    viewport.removeEventListener("touchmove",handleTouchMove);
+    viewport.removeEventListener("touchend",handleTouchEnd);
+    viewport.removeEventListener("touchcancel",handleTouchEnd);
+   }
+   // The lightweight wheel handler on the visual track is removed with the node.
+   if(content){
+    content.style.transform="";
+    content.classList.remove("wd-scroll-feedback-content","is-pulling");
+   }
    host.classList.remove("wd-scroll-feedback-host");
    track.remove();
-   startSurface.remove();
-   endSurface.remove();
+   startSurface?.remove();
+   endSurface?.remove();
   }
  };
 }

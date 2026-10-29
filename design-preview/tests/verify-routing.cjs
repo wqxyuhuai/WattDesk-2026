@@ -45,6 +45,27 @@ const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
   // The preview now carries enough rows to make the scroll indicator useful,
   // and its hover treatment follows the shared enter/leave motion contract.
   assert.equal(await page.locator('.plants-row').count(), 46);
+  const fadingRow = page.locator('.plants-row').first();
+  await fadingRow.focus();
+  await page.waitForTimeout(280);
+  await page.locator('.plants-search input').focus();
+  await page.waitForTimeout(40);
+  const fadingRowCorners = await fadingRow.evaluate(row => {
+    const first = getComputedStyle(row.firstElementChild);
+    const last = getComputedStyle(row.lastElementChild);
+    return {
+      firstLeft: first.borderTopLeftRadius,
+      firstBottomLeft: first.borderBottomLeftRadius,
+      lastRight: last.borderTopRightRadius,
+      lastBottomRight: last.borderBottomRightRadius,
+      background: first.backgroundColor
+    };
+  });
+  assert.equal(fadingRowCorners.firstLeft, '10px', 'the leaving row keeps its left radius while the fill fades');
+  assert.equal(fadingRowCorners.firstBottomLeft, '10px', 'the leaving row keeps its bottom-left radius while the fill fades');
+  assert.equal(fadingRowCorners.lastRight, '10px', 'the leaving row keeps its right radius while the fill fades');
+  assert.equal(fadingRowCorners.lastBottomRight, '10px', 'the leaving row keeps its bottom-right radius while the fill fades');
+  assert.notEqual(fadingRowCorners.background, 'rgba(0, 0, 0, 0)', 'the assertion samples during the fill fade');
   const scrollUi = await page.evaluate(() => {
     const scroll = document.querySelector('.plants-table-scroll');
     const track = document.querySelector('.wd-scroll-feedback');
@@ -305,7 +326,10 @@ const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
   await unknownTrigger.hover();
   await page.waitForTimeout(240);
   assert.equal(await page.locator('.plants-tooltip').isVisible(), true);
-  assert.match(await page.locator('.plants-tooltip-text').textContent(), /created automatically/);
+  assert.equal(
+    (await page.locator('.plants-tooltip-text').textContent()).replace(/\s+/g, ' ').trim(),
+    'This device is not currently associated with any plant. Please proceed with the setup.'
+  );
   const tooltipBox = await page.locator('.plants-tooltip').boundingBox();
   await page.mouse.move(tooltipBox.x + tooltipBox.width / 2, tooltipBox.y + tooltipBox.height / 2);
   await page.waitForTimeout(420);
@@ -444,6 +468,27 @@ const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
       columns: [...table.querySelectorAll('col')].map(column => Math.round(column.getBoundingClientRect().width))
     };
   });
+
+  await page.setViewportSize({ width: 1421, height: 1252 });
+  await page.goto(`${origin}/plants`, { waitUntil: 'domcontentloaded' });
+  await ready();
+  const deviceColumn = await page.evaluate(() => {
+    const row = document.querySelector('.plants-row[data-id="p25"]');
+    const cell = row.querySelector('.plants-col-device');
+    const value = cell.querySelector('.plants-text');
+    const range = document.createRange();
+    range.selectNodeContents(value);
+    const cellBox = cell.getBoundingClientRect();
+    const textBox = range.getBoundingClientRect();
+    return {
+      width: cellBox.width,
+      trailingGap: cellBox.right - textBox.right,
+      overflow: value.scrollWidth - value.clientWidth
+    };
+  });
+  assert.ok(deviceColumn.width <= 160, `Device column must fit the three-device label: ${deviceColumn.width}`);
+  assert.ok(deviceColumn.trailingGap <= 12, `Device column has excess trailing space: ${deviceColumn.trailingGap}`);
+  assert.ok(deviceColumn.overflow <= 1, `Device combinations must not truncate: ${deviceColumn.overflow}`);
 
   await page.setViewportSize({ width: 1545, height: 1080 });
   await page.goto(`${origin}/plants`, { waitUntil: 'domcontentloaded' });
