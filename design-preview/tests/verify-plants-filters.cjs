@@ -45,6 +45,25 @@ const settle = page => page.evaluate(() => Promise.all(document.getAnimations().
     'Unbound',
     'the table status uses the short Unbound label'
   );
+  const newPlant=page.locator('.plants-new');
+  const idleNewPlant=await newPlant.evaluate(element=>{
+    const box=element.getBoundingClientRect();
+    const icon=element.querySelector('.plants-icon');
+    return {
+      shared:element.classList.contains('wd-page-action')&&element.classList.contains('wd-control-state'),
+      glass:element.classList.contains('wd-glass'),
+      height:box.height,
+      background:getComputedStyle(element).backgroundColor,
+      boxShadow:getComputedStyle(element).boxShadow,
+      icon:[icon.getBoundingClientRect().width,icon.getBoundingClientRect().height]
+    };
+  });
+  assert.equal(idleNewPlant.shared,true,'New plant uses the shared page header action');
+  assert.equal(idleNewPlant.glass,false,'New plant no longer mounts a glass pill');
+  assert.equal(idleNewPlant.height,28);
+  assert.equal(idleNewPlant.background,'rgba(0, 0, 0, 0)');
+  assert.equal(idleNewPlant.boxShadow,'none');
+  assert.deepEqual(idleNewPlant.icon,[14,14]);
 
   const filterTrigger = page.locator('.plants-toolbar-actions .plants-icon-button').first();
   const columnTrigger = page.locator('.plants-toolbar-actions .plants-icon-button').nth(1);
@@ -56,6 +75,13 @@ const settle = page => page.evaluate(() => Promise.all(document.getAnimations().
     await page.locator('.plants-filter-category-label').allTextContents(),
     ['Company', 'Device', 'Connection', 'Running status']
   );
+  const companyIconSource=await page.locator('.plants-filter-category[data-category="company"] .plants-filter-category-icon').evaluate(icon=>{
+    const mask=getComputedStyle(icon).maskImage||getComputedStyle(icon).webkitMaskImage;
+    return mask.match(/url\("([^"]+)"\)/)?.[1]||'';
+  });
+  const organisationIconSource=await page.locator('.target-nav[data-route="org"] img').evaluate(icon=>icon.src);
+  assert.equal(new URL(companyIconSource).pathname,'/home-assets/masks/organisation.svg','Company uses the opaque copy of the Wattsonic Technology shape');
+  assert.equal(new URL(organisationIconSource).pathname,'/home-assets/organisation.svg');
   assert.equal(await page.locator('.plants-filter-flyout').count(), 0, 'the collapsed panel has no secondary surface');
   assert.equal(await page.locator('.plants-filter-shell').count(), 0, 'the secondary menu must not be an internal pane');
   assert.ok((await page.locator('.plants-filter-panel').boundingBox()).height < 300, 'the collapsed panel hugs its content');
@@ -105,6 +131,22 @@ const settle = page => page.evaluate(() => Promise.all(document.getAnimations().
   await companyCategory.hover();
   await page.waitForTimeout(430);
   await settle(page);
+  const activeCompanyIcon=await companyCategory.evaluate(row=>{
+    const icon=row.querySelector('.plants-filter-category-icon');
+    const label=row.querySelector('.plants-filter-category-label');
+    const iconStyle=getComputedStyle(icon);
+    return {
+      active:row.classList.contains('is-active'),
+      iconColor:iconStyle.color,
+      iconBackground:iconStyle.backgroundColor,
+      labelColor:getComputedStyle(label).color,
+      mask:iconStyle.maskImage
+    };
+  });
+  assert.equal(activeCompanyIcon.active,true);
+  assert.equal(activeCompanyIcon.iconBackground,activeCompanyIcon.labelColor,'the selected icon uses the same primary ink as its label');
+  assert.equal(activeCompanyIcon.iconColor,activeCompanyIcon.labelColor);
+  assert.match(activeCompanyIcon.mask,/\/home-assets\/masks\/organisation\.svg/);
   const mainBox = await page.locator('.plants-filter-panel').boundingBox();
   const flyoutBox = await page.locator('.plants-filter-flyout').boundingBox();
   assert.equal(Math.round(mainBox.width), 260);
@@ -492,12 +534,18 @@ const settle = page => page.evaluate(() => Promise.all(document.getAnimations().
     strip: getComputedStyle(box).backgroundColor,
     chip: getComputedStyle(box.querySelector('.plants-chip')).backgroundColor
   }));
-  assert.equal(chipColors.strip, 'rgb(58, 58, 60)', 'the strip uses the shared elevated tertiary surface');
+  assert.equal(chipColors.strip, 'rgb(58, 58, 60)', 'the dark applied-filter strip uses the elevated tertiary surface');
   assert.equal(chipColors.chip, 'rgba(120, 120, 128, 0.32)', 'chips use the shared secondary fill');
   assert.ok(Math.abs((clearBox.y + clearBox.height / 2) - (chipsBox.y + chipsBox.height / 2)) < 1);
   assert.ok(clearBox.x + clearBox.width <= chipsBox.x + chipsBox.width - 7, 'Clear stays anchored at the right edge');
   assert.equal(await page.locator('.plants-clear').count(), 1);
   await page.screenshot({ path: 'tests/output/plants-filter-chips-multiline.png' });
+  const darkTableChrome = await page.locator('.plants-table-header th').first().evaluate(header=>({
+    background:getComputedStyle(header).backgroundColor,
+    backdrop:getComputedStyle(header).backdropFilter
+  }));
+  assert.equal(darkTableChrome.background,'rgba(0, 0, 0, 0)','the dark table header must not add a solid background');
+  assert.equal(darkTableChrome.backdrop,'none','the dark header must not blur scrolled rows');
 
   await page.locator('.plants-clear').click();
   assert.equal(await page.locator('.plants-chips').isVisible(), false);
@@ -600,6 +648,25 @@ const settle = page => page.evaluate(() => Promise.all(document.getAnimations().
   await page.waitForTimeout(430);
   assert.equal(await page.locator('html').getAttribute('data-theme'), 'light');
   assert.equal(await page.locator('.plants-filter-condition').count(), 3);
+  const plantsBaseSurfaces = await page.evaluate(() => {
+    const color = selector => getComputedStyle(document.querySelector(selector)).backgroundColor;
+    return {
+      panel: color('#home-workspace-panel'),
+      toolbar: color('.plants-toolbar'),
+      chips: color('.plants-chips'),
+      header: color('.plants-table-header th'),
+      body: color('.plants-table tbody')
+    };
+  });
+  assert.equal(plantsBaseSurfaces.toolbar, 'rgba(0, 0, 0, 0)', 'the Plants toolbar must reveal the shared panel');
+  assert.equal(plantsBaseSurfaces.chips, 'rgb(255, 255, 255)', 'the light applied-filter strip must use a pure white surface');
+  assert.equal(plantsBaseSurfaces.header, plantsBaseSurfaces.panel, 'the sticky table header must blend into the light panel');
+  assert.equal(plantsBaseSurfaces.body, 'rgba(0, 0, 0, 0)', 'the table body must not add a second page surface');
+  const plantStacking = await page.evaluate(() => ({
+    search:Number(getComputedStyle(document.querySelector('.plants-search')).zIndex),
+    header:Number(getComputedStyle(document.querySelector('.plants-table-header')).zIndex)
+  }));
+  assert.ok(plantStacking.search > plantStacking.header, 'the search shadow must paint above the sticky table header');
   await page.screenshot({ path: 'tests/output/plants-filter-light-verify.png' });
 
   assert.deepEqual(errors, []);

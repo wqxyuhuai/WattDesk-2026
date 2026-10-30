@@ -29,7 +29,9 @@
 
 /* Non-Home tabs keep the shared panel and show the shared empty fallback. */
 .workspace-empty[hidden]{display:none}
-.workspace-empty{position:absolute;inset:0;display:grid;place-items:center;border-radius:inherit;background:transparent;pointer-events:none}
+.workspace-empty{--wd-page-inset:24px;position:absolute;inset:0;display:block;padding:var(--wd-space-1) var(--wd-page-inset) 0;border-radius:inherit;background:transparent;pointer-events:none}
+.workspace-empty-header{pointer-events:auto}
+.workspace-empty-body{position:absolute;inset:0;display:grid;place-items:center;pointer-events:none}
 .workspace-empty::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none}
 
 /* The canvas is fluid up to 1000px; the scroll viewport owns the shadow gutter. */
@@ -63,11 +65,12 @@
 .recent-visit-row [data-name="left content"]{width:calc(100% - 16px)!important;max-width:none}
 .recent-visit-row .recent-visit-copy{width:calc(100% - 26px)!important}
 .recent-visit-row .recent-visit-path{
-  width:100%!important;overflow:visible!important;text-overflow:clip!important;
+  width:100%!important;overflow:hidden!important;text-overflow:clip!important;
 }
 .recent-visit-row .wd-history-path{
-  display:block;
+  display:flex;
   width:100%;
+  overflow:hidden;
   white-space:nowrap;
   text-decoration-line:underline;
   text-decoration-color:transparent;

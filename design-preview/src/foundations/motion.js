@@ -1,6 +1,23 @@
 export function reducedMotion(){return matchMedia("(prefers-reduced-motion: reduce)").matches}
 export function motionDuration(token){const value=getComputedStyle(document.documentElement).getPropertyValue(token).trim();return parseFloat(value)*(value.endsWith('ms')?1:1000)}
 export function motionEasing(token){return getComputedStyle(document.documentElement).getPropertyValue(token).trim()}
+const contentGrowthAnimations=new WeakMap();
+export function animateContentHeight(element,height,{from=element.getBoundingClientRect().height,animate=true}={}){
+ const next=Math.max(0,Number(height)||0),previous=Math.max(0,Number(from)||0);
+ contentGrowthAnimations.get(element)?.cancel();
+ contentGrowthAnimations.delete(element);
+ element.style.height=`${next}px`;
+ if(!animate||reducedMotion()||Math.abs(next-previous)<.5)return null;
+ const animation=element.animate(
+  [{height:`${previous}px`},{height:`${next}px`}],
+  {duration:motionDuration("--wd-motion-content-grow"),easing:motionEasing("--wd-ease-content-grow")}
+ );
+ contentGrowthAnimations.set(element,animation);
+ animation.finished.catch(()=>{}).finally(()=>{
+  if(contentGrowthAnimations.get(element)===animation)contentGrowthAnimations.delete(element);
+ });
+ return animation;
+}
 // Shared, finite motion. Hover never moves a surface; data remains immediately readable.
 export function createHomeMotion({duration,easing,reducedMotion}){
  const panels=new WeakMap(),reveals=new Map();

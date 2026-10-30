@@ -13,7 +13,11 @@
  * shared neutral material, press depth, focus ring and disabled contract; only
  * the silhouette and padding change, so toolbar actions cannot invent a local
  * button material. */
-.wd-button--pill.wd-button--disc{width:36px;min-width:36px;padding:0;border-radius:50%}
+.wd-button--pill.wd-button--disc{
+  width:36px;min-width:36px;padding:0;border-radius:50%;
+  --wd-button-icon-hover-scale:1.06;--wd-button-icon-press-scale:1.12;
+}
+.wd-button[hidden]{display:none}
 .wd-button--neutral{color:var(--wd-label-secondary)}
 .wd-button--neutral:is(:hover,:focus-visible,[aria-expanded="true"]){color:var(--wd-label-primary)}
 .wd-button--primary{color:var(--wd-figma-grays-white)}

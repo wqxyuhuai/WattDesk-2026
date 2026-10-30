@@ -1,6 +1,6 @@
 # 本地运行与检查
 
-当前真实页面为 Home 与 Plants 列表，电站详情有可刷新的 `/plants/:id` 占位页。需要 Node.js 22 或更新版本，运行网页没有第三方依赖，不需要 npm install。
+当前真实页面为 Home、Plants、Service Ticket，电站详情有可刷新的 `/plants/:id` 占位页。需要 Node.js 22 或更新版本，运行网页没有第三方依赖，不需要 npm install。
 
 ```powershell
 npm run dev
@@ -53,4 +53,4 @@ npm run build:site:public   # 本地构建到 dist/，仅用于自检，不入�
 
 更新来源后运行 npm run sync，再检查引用与真实浏览器。Figma 修改不会自动同步到网页。
 
-先读根目录 [开发规则](../AGENTS.md)、[设计规范](../DESIGN-SYSTEM.md)、[当前状态](../docs/PROJECT-STATUS.md)。架构与实际 API 见 [架构](../docs/ARCHITECTURE.md)、[组件手册](../docs/COMPONENTS.md)。
+先读根目录 [开发规则](../AGENTS.md)、[项目地图](../docs/PROJECT-MAP.md)、[设计规范](../DESIGN-SYSTEM.md)、[当前状态](../docs/PROJECT-STATUS.md)。架构与实际 API 见 [架构](../docs/ARCHITECTURE.md)、[组件手册](../docs/COMPONENTS.md)。

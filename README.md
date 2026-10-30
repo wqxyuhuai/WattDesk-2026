@@ -1,6 +1,6 @@
 # WattDesk
 
-当前交付是 WattDesk 设计预览，使用原生 HTML、CSS 和 JavaScript。Home 与 Plants 列表是真实页面，电站详情拥有可刷新的 `/plants/:id` URL；深浅主题、玻璃、字体、圆角及控件反馈共用一套基础。后端、登录权限和实时数据仍未接入。
+当前交付是 WattDesk 设计预览，使用原生 HTML、CSS 和 JavaScript。Home、Plants 与 Service Ticket 是本地交互页面，电站详情和工单详情拥有可刷新 URL；深浅主题、玻璃、字体、圆角及控件反馈共用一套基础。后端、登录权限和实时数据仍未接入。
 
 线上预览：<https://wattdesk-preview.carlwang.cn/>（Cloudflare 从 `master` 构建，发布流程见 [发布与部署](./docs/DEPLOYMENT.md)）。
 
@@ -13,10 +13,11 @@ npm run dev
 
 ## 开发与新对话阅读入口
 
-先读 [AGENTS.md](./AGENTS.md) → [全站设计与交互规范](./DESIGN-SYSTEM.md) → [项目当前状态](./docs/PROJECT-STATUS.md)。这些文件包含继续开发所需的规则与边界，不依赖聊天记录。
+先读 [AGENTS.md](./AGENTS.md) → [项目地图](./docs/PROJECT-MAP.md) → [全站设计与交互规范](./DESIGN-SYSTEM.md) → [项目当前状态](./docs/PROJECT-STATUS.md)。这些文件包含继续开发所需的规则与边界，不依赖聊天记录。
 
 | 文档 | 用途 |
 |---|---|
+| [项目地图](./docs/PROJECT-MAP.md) | 总览、唯一标准入口、清理与交接流程 |
 | [架构与扩展约定](./docs/ARCHITECTURE.md) | 目录职责、数据边界、增加页面的方法 |
 | [站点路由与 URL](./docs/ROUTING.md) | 规范路径、刷新还原、深链接回退与新增路由步骤 |
 | [组件手册](./docs/COMPONENTS.md) | 实际 API、颜色、文字、玻璃、卡片等的用法 |

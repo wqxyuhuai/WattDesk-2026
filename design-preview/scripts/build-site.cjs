@@ -63,7 +63,7 @@ const routeCacheHeaders = appRoutes.flatMap(route => [
   route,
   '  Cache-Control: public, max-age=0, must-revalidate',
   '',
-  ...(route === '/plants' ? [`${route}/*`, '  Cache-Control: public, max-age=0, must-revalidate', ''] : [])
+  ...(['/plants','/service'].includes(route) ? [`${route}/*`, '  Cache-Control: public, max-age=0, must-revalidate', ''] : [])
 ]);
 fs.writeFileSync(path.join(out, '_headers'), [
   '/*',

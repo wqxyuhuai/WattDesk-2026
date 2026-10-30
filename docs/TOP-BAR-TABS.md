@@ -1,14 +1,14 @@
 # 顶栏工作区标签：功能、交互与接入
 
-更新：2026-10-29。适用入口 `/home?glass=figma`；`/home.html` 会规范到 `/home`。本文记录当前**设计预览**的真实能力与后续接入约束；交互与视觉规范以 [DESIGN-SYSTEM.md](../DESIGN-SYSTEM.md) 为准，URL 规则见 [ROUTING.md](./ROUTING.md)，组件 API 摘要见 [COMPONENTS.md](./COMPONENTS.md)。
+更新：2026-10-30。适用入口 `/home?glass=figma`；`/home.html` 会规范到 `/home`。本文记录当前**设计预览**的真实能力与后续接入约束；交互与视觉规范以 [DESIGN-SYSTEM.md](../DESIGN-SYSTEM.md) 为准，URL 规则见 [ROUTING.md](./ROUTING.md)，组件 API 摘要见 [COMPONENTS.md](./COMPONENTS.md)。
 
 ## 1. 边界
 
 - 已实现标签条本身：新增、关闭、切换、按住拖拽排序、标题截断、横向滚动、连续关闭、键盘操作、状态快照、深浅主题与减少动态效果；顶栏后退 / 前进可在各标签内恢复已访问的路由。
-- 当前 Home 与 Plants 列表有真实内容；`/plants/:id` 有可刷新的 URL 和明确占位；Service ticket、Statistics、Device tool 下的其余页面使用共享 Coming soon 占位，不当作已完成业务页面。
-- 侧栏导航、首页快捷入口和详情内返回是在**当前激活标签内**切换内容；“Add tab”、Plants 列表行和自动建站 `?` 提示中的 `setup` 可以新建标签，后者创建并激活对应详情标签。
+- 当前 Home、Plants 列表和 Service Ticket 本地预览有真实内容；`/plants/:id` 有可刷新的 URL 和明确占位；`/service/:ticketId` 有可刷新的本地示例详情；Statistics、Device tool 下的其余页面使用共享 Coming soon 占位，不当作已完成业务页面。
+- 侧栏导航、首页快捷入口和详情内返回是在**当前激活标签内**切换内容；“Add tab”、Plants 列表行、Service Ticket 卡片和自动建站 `?` 提示中的 `setup` 可以新建标签，后者创建并激活对应详情标签。
 - 标签条至少保留一个标签：只剩一个时隐藏并禁用关闭按钮，`remove()` / `closeActive()` / 键盘路径都不能把它删空。
-- URL 路由与深链接已接入：地址栏跟随当前激活标签，刷新/复制链接恢复当前页面；多标签顺序和全部标签快照仍不跨刷新持久化。后端、登录权限未接入，不得把演示数据写成生产能力。
+- URL 路由与深链接已接入：地址栏跟随当前激活标签，刷新/复制链接恢复当前页面；标签顺序、活动标签、路由参数和滚动快照在当前浏览器标签页的 `sessionStorage` 中恢复，关闭浏览器标签页后清空。后端、登录权限未接入，不得把演示数据写成生产能力。
 
 ## 2. 代码入口
 
@@ -22,6 +22,7 @@
 | `design-preview/src/pages/home/index.js` | 页面级业务装配：路由切换、快照保存/恢复、玻璃表面挂载 |
 | `design-preview/tests/verify-home.cjs` | 默认状态、宽度、图标、连续关闭、主题等回归检查 |
 | `design-preview/tests/verify-workspace-tabs.cjs` | 多标签鼠标拖拽、双向换位、活动标签/URL 保持与键盘等价操作 |
+| `design-preview/tests/verify-workspace-persistence.cjs` | 多标签刷新恢复、URL 优先、标签顺序、活动标签及 Plants / Service 滚动快照 |
 
 依赖方向仍是页面 → 外壳/组件 → 基础，组件不引用首页节点 ID。外壳通过 `workspacePanelId` 把页面面板 ID 传给标签组件；标签只在收到 `panelId` 时输出 `aria-controls`。
 
@@ -40,6 +41,7 @@ const tabs = createWorkspaceTabs({
   onUnmount,       // 标签移除前/后清理资源
   captureState,    // 为当前激活标签生成快照
   restoreState,    // 用快照恢复页面
+  onStateChange,   // 标签增删、切换、更新、排序后通知页面持久化
   onEmpty,         // 异常空标签条时的防御兜底，不是正常关闭流程
   mountTab         // 每个标签节点的挂载钩子，用于玻璃等
 });
@@ -59,6 +61,7 @@ tabs.onUnmount = tab => glass.removeSurface(tab);
 | 方法 / 属性 | 作用 |
 |---|---|
 | `add(state)` | 新建标签、插入 DOM、完成布局与入场动画，并激活 |
+| `hydrate(states, activeId)` | 刷新启动时一次恢复多个标签；跳过入场动画与逐标签页面切换，由页面层随后渲染当前 URL |
 | `find(route)` | 按 route 找标签，找不到返回 `null` |
 | `update(tab, changes)` | 合并状态并更新 route、标题、图标；文字/图标做淡出淡入 |
 | `updateTitle(tab, title)` | 只更新文本标题，仍受 28 字符上限 |
@@ -128,9 +131,20 @@ tabs.onUnmount = tab => glass.removeSurface(tab);
 - 在任意标签主体按住鼠标或触控笔水平拖动超过 `4px` 后进入排序；按在关闭 X 上仍执行关闭，不启动拖拽。
 - 指针跨过其他标签中心时立即交换位置，邻居以 FLIP 位移到新槽位；被拖标签保持在指针下方并提升层级，不能停在槽位中间或复制出第二个卡片。
 - 拖动只改变顺序，不自动激活被拖标签；当前活动标签、页面内容、URL 和快照保持原样。释放后吸收到最终槽位，并抑制同一次手势尾随产生的 click，不能误切换或误关闭。
-- 标签条溢出时，指针进入左右 `28px` 边缘区域会逐步横向滚动；释放后恢复常规自适应布局。多标签顺序仍不跨刷新持久化。
+- 标签条溢出时，指针进入左右 `28px` 边缘区域会逐步横向滚动；释放后恢复常规自适应布局。
+- 标签顺序、活动标签和标签快照变化后统一通知页面层做防抖持久化；拖拽过程中的中间顺序可以多次通知，但最终写入以最后一次顺序为准。
 - 键盘焦点在标签上时，`Ctrl/Cmd + Shift + ←/→` 将标签向左/右移动一位；焦点留在同一标签，polite live region 报出新位置。普通方向键继续只负责切换标签。
 
+### 刷新与会话级持久化
+
+- 存储键固定为 `wattdesk.workspace.v1`，使用 `sessionStorage`，并写入显式 `version: 1`。它只属于当前浏览器标签页；普通刷新、同标签同源导航会保留，关闭浏览器标签页后自动清空。
+- 保存内容为有序标签数组、`activeId` 和 Home / Route ID 计数器。每个标签只保存稳定 `id`、`route`、`params`、展示标题、图标、页面快照；不序列化 DOM、监听器、动画、浮层或 Map。
+- 快照保存当前页面已有能力：Home 滚动 / 搜索 / 周期，Plants 列表与详情滚动，Service Ticket 列表与详情滚动。滚动事件使用防抖写入；`pagehide`、`beforeunload` 和页面隐藏时再同步刷新当前标签快照。
+- 当前 URL 是刷新后的最高优先级来源。若 URL 命中已保存标签，激活该标签；若 URL 指向未保存的可恢复页面，新增对应标签并激活；若 URL 无法识别，继续显示明确的 not-found，不能静默回 Home。
+- 恢复前必须校验路由、参数和资源：未知路由、不存在的电站 ID、刷新前仅存在内存中的本地工单 ID 会被剔除。`/service/new` 不持久化草稿；当前 URL 为 `/service/new` 时可以重新创建空白编辑页。
+- 标签内前进 / 后退栈、`newTabOrigins` 的来源标签关系和未提交业务草稿不持久化。刷新后保留页面集合、顺序、活动页面和滚动快照，但顶栏前进 / 后退从头开始。
+- 标签 ID 计数在恢复后按已有最大编号校准；新增 Home 或 Route 标签不得重复 ID、跳号，也不得复用已关闭标签的身份。
+- 存储不可用、内容损坏或无法解析时直接回退到当前 URL 的单标签启动；持久化失败不能阻塞页面、路由或标签操作。
 ## 5. 标题、宽度与滚动
 
 - 标签外层高度 36px，文字使用 `14/14 medium`；标签内容左右内边距 14px。
@@ -187,7 +201,7 @@ tabs.onUnmount = tab => glass.removeSurface(tab);
 5. **生命周期**：新增时注册玻璃/图表/事件；关闭或路由销毁时在 `onUnmount`、`onClose` 清理，防止监听器和 WebGL/图表实例泄漏。
 6. **关闭策略**：关闭标签要同步清理缓存和异步请求，并让地址栏回到新的激活标签；激活标签切换用 `beforeSelect` 拦截未保存变更（如需要）。
 7. **最后一个标签**：标签条至少保留一个标签；只剩一个时关闭入口隐藏并禁用，所有关闭路径都返回且不进入动画，`onEmpty` 只在真正出现空标签条时作为防御兜底，不能被当作“关了再补一个”的正常流程。
-8. **持久化**：刷新已恢复当前激活标签的路由和页面内容；多标签顺序、全部标签快照仍未持久化，需要真实存储方案后再加，并区分隐私数据。
+8. **持久化**：按上述 `sessionStorage` 契约恢复标签集合、顺序、活动标签与安全快照。不得把权限数据、附件二进制、未提交草稿或标签内导航栈写入会话存储；接入云端工作区后再另定跨设备同步规则。
 9. **权限与后端**：设备命令、统计查询、账户权限等必须有真实 API 契约；标签层只负责导航和状态，不伪造业务结果。
 10. **回归**：保留现有 `node tests/verify-home.cjs`，并新增真实鼠标坐标的连续关闭、路由恢复、主题和键盘用例。
 
@@ -205,6 +219,7 @@ tabs.onUnmount = tab => glass.removeSurface(tab);
 - 长标题出现省略号，hover 320ms 后显示完整 tooltip。
 - 用真实指针将首个标签拖过多个邻居到末尾、再拖回首位；顺序正确，活动标签和 URL 不变化，释放后无残留 `translate` 或拖拽 class。
 - 拖动结束后同一次手势的 click 不切换标签；拖动中关闭按钮不响应为拖拽目标。
+- 多标签刷新后顺序、活动标签、URL、Plants / Service 滚动位置保持一致；新增标签 ID 连续；当前 URL 与旧活动标签冲突时 URL 优先。
 - `Ctrl/Cmd + Shift + ←/→` 可换位，焦点留在原标签，live region 更新位置。
 - 中性图标选中时为纯白（深色）/主墨色（浅色），彩色图标不变灰。
 - X hover 使用共享 hover 时长渐入渐出，无异常描边；focus 状态可见且符合主题。

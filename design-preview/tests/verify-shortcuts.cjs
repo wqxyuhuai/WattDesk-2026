@@ -45,6 +45,9 @@ const assert = require('node:assert/strict');
     assert.equal(await page.locator('[data-node-id="14578:7006"]').isVisible(), false, `${id} must leave Home visible=false`);
     if (route === 'plants') {
       assert.equal(await page.locator('.plants-view').isVisible(), true, `${id} must show the real Plants surface`);
+    } else if (route === 'service') {
+      assert.equal(await page.locator('.service-view').isVisible(), true, `${id} must show the real Service ticket surface`);
+      assert.ok(await page.locator('.service-card').count() > 0, `${id} must land on ticket cards`);
     } else {
       assert.equal(await page.locator('.wd-empty-state').isVisible(), true, `${id} must show the shared route surface`);
       assert.equal((await page.locator('.wd-empty-state-label').textContent()).trim(), 'Coming soon');

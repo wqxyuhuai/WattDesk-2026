@@ -26,7 +26,8 @@ export function createWorkspaceTabs({
   captureState = () => null,
   restoreState = () => null,
   onEmpty = null,
-  mountTab = null
+  mountTab = null,
+  onStateChange = null
 }) {
   // The page assigns its state callbacks after the shell constructs this
   // component, so keep mutable references instead of freezing constructor
@@ -40,6 +41,7 @@ export function createWorkspaceTabs({
   let restoreHandler = restoreState;
   let emptyHandler = onEmpty;
   let tabMountHandler = mountTab;
+  let stateChangeHandler = onStateChange;
   const list = document.createElement("div");
   list.className = "workspace-tab-list";
   list.setAttribute("role", "tablist");
@@ -278,6 +280,10 @@ export function createWorkspaceTabs({
     resizeFrame = requestAnimationFrame(layout);
   }
 
+  function notifyStateChange() {
+    stateChangeHandler?.();
+  }
+
   function createRouteIcon(file) {
     const icon = document.createElement("span");
     icon.className = "workspace-tab-icon";
@@ -348,6 +354,7 @@ export function createWorkspaceTabs({
     next.splice(target, 0, tab);
     if (!applyOrder(next, movedWithPointer ? tab : null)) return false;
     updateOverflow(tab);
+    notifyStateChange();
     return true;
   }
 
@@ -634,6 +641,7 @@ export function createWorkspaceTabs({
     if (restore) restoreHandler?.(tab._state.snapshot);
     selectHandler?.(tab._state, tab);
     hideTooltip();
+    notifyStateChange();
   }
 
   const entranceProperties = ["flex-basis", "width", "padding-left", "padding-right", "opacity", "translate", "margin-left"];
@@ -698,7 +706,23 @@ export function createWorkspaceTabs({
     animateIn(tab, width, siblings, prepared, gap);
     activate(tab, {restore: Boolean(state.snapshot)});
     scheduleLayout();
+    notifyStateChange();
     return tab;
+  }
+
+  // Restore a saved workspace in one pass. This skips entrance animations and
+  // page selection; the page layer renders the active URL after rebuild.
+  function hydrate(states, preferredActiveId = null) {
+    if (tabs.length || !Array.isArray(states) || !states.length) return false;
+    tabs = states.map(build);
+    for (const tab of tabs) list.insertBefore(tab, frozenSpacer);
+    layout();
+    const target = tabs.find(tab => tab._state.id === preferredActiveId) || tabs[0];
+    activeId = target._state.id;
+    syncSelected(target);
+    scheduleLayout();
+    notifyStateChange();
+    return true;
   }
 
   function closeTab(tab, {notify = true} = {}) {
@@ -742,6 +766,7 @@ export function createWorkspaceTabs({
       syncSelected(tabs.find(item => item._state.id === activeId) || null);
       if (widthsFrozen) applyFrozenLayout();
       scheduleLayout();
+      notifyStateChange();
     };
 
     // While the pointer stays in the strip, lock every remaining tab to its
@@ -828,6 +853,7 @@ export function createWorkspaceTabs({
     else tab.setAttribute("aria-label", `${next.title} tab`);
     if (contentChanged) swapTabContent(tab, next);
     scheduleLayout();
+    notifyStateChange();
   }
 
   function updateTitle(tab, title) {
@@ -839,6 +865,7 @@ export function createWorkspaceTabs({
     tab.querySelector(".workspace-tab-close").setAttribute("aria-label", `Close ${capped} tab`);
     updateOverflow(tab);
     refreshTooltip(tab);
+    notifyStateChange();
   }
 
   list.addEventListener("pointerenter", () => { pointerInsideList = true; });
@@ -856,6 +883,7 @@ export function createWorkspaceTabs({
   visualViewport?.addEventListener("scroll", onTooltipViewportChange);
   return {
     add,
+    hydrate,
     find,
     update,
     remove: tab => closeTab(tab),
@@ -876,6 +904,7 @@ export function createWorkspaceTabs({
     set onUnmount(handler) { unmountHandler = handler; },
     set captureState(handler) { captureHandler = handler ?? (() => null); },
     set restoreState(handler) { restoreHandler = handler ?? (() => null); },
+    set onStateChange(handler) { stateChangeHandler = handler; },
     set onEmpty(handler) { emptyHandler = handler; },
     set mountTab(handler) { tabMountHandler = handler; },
     destroy() {

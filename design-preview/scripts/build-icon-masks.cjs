@@ -1,7 +1,7 @@
 const fs=require("fs");
 const path=require("path");
 // Neutral icons ship with label alpha. Generate opaque copies used only by state masks.
-const files=["cell-balance.svg","module-balance.svg","device-track.svg","organisation.svg","teams.svg","user.svg","asset-27.svg","asset-35.svg","asset-64.svg","tickle.svg","disclosure.svg"];
+const files=["cell-balance.svg","module-balance.svg","device-track.svg","organisation.svg","teams.svg","user.svg","asset-14.svg","asset-27.svg","asset-35.svg","asset-64.svg","asset-70.svg","tickle.svg","disclosure.svg"];
 const root=path.join(__dirname,"..","home-assets");
 const out=path.join(root,"masks");
 fs.mkdirSync(out,{recursive:true});

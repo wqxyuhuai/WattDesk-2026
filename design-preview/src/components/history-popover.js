@@ -11,7 +11,7 @@
 // paint and needs the same opaque mask the sidebar got on load.
 import {classifyCornerProfile} from "../foundations/geometry.js";
 import {prepareIconMasks} from "./control-states.js";
-import {renderHistoryPath} from "./history-path.js";
+import {disposeHistoryPath,renderHistoryPath} from "./history-path.js";
 import {menuHeading,menuList,menuRow,mountMenu} from "./menu-popover.js";
 
 const MAX_ITEMS=8;
@@ -47,7 +47,14 @@ export function createHistoryPopover({glass,registerPanel,close,onSelect}){
   glass.addSurface({host:panel,radius:30});
   classifyCornerProfile(panel);
   const previousClose=panel._onClose;
-  panel._onClose=()=>{try{previousClose?.();}finally{glass.removeSurface(panel);}};
+  panel._onClose=()=>{
+   try{
+    previousClose?.();
+   }finally{
+    panel.querySelectorAll(".wd-menu-label").forEach(disposeHistoryPath);
+    glass.removeSurface(panel);
+   }
+  };
   registerPanel(panel,anchor,{label:"Recently visited",align:"start"});
   return panel;
  }

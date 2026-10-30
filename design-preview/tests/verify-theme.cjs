@@ -44,19 +44,20 @@ function comparePixels(a,b){
  const light=await page.evaluate(()=>{
   const node=id=>document.querySelector(`[data-node-id="${id}"]`),css=(e,pseudo)=>getComputedStyle(e,pseudo);
   const glass=document.querySelector('.wd-glass-fill');
-  return {canvas:css(document.body).backgroundColor,content:css(node('14578:6145')).backgroundImage,
+  return {canvas:css(document.body).backgroundColor,content:css(node('14578:6145')).backgroundImage,contentFill:css(node('14578:6145')).backgroundColor,
    outline:css(node('14578:6145')).boxShadow,card:css(document.querySelector('.stat-chart-card')).backgroundColor,
    cardBorder:css(document.querySelector('.stat-chart-card')).boxShadow,grid:css(node('14570:1083')).backgroundColor,
    primary:css(node('14570:1079').querySelector('span')).color,secondary:css(node('14570:1076').querySelector('span')).color,
    glass:css(glass).backgroundColor,
    line:node('14570:1090').querySelector('img').getAttribute('src'),pressed:document.querySelector('.target-theme').getAttribute('aria-pressed')};
  });
- assert.equal(light.canvas,'rgb(242, 242, 247)');assert.match(light.content,/rgb\(255, 255, 255\).*rgb\(242, 242, 247\)/);
- assert.match(light.outline,/198, 198, 200/);assert.equal(light.card,'rgb(242, 242, 247)');assert.match(light.cardBorder,/230, 230, 230/);
- assert.equal(light.grid,'rgb(198, 198, 200)');assert.equal(light.primary,'rgb(0, 0, 0)');assert.equal(light.secondary,'rgba(60, 60, 67, 0.6)');
- assert.match(light.glass,/238, 240, 243, 0.74/);assert.match(light.line,/light\/imgHourlyEnergyGeneratedLine.svg/);assert.equal(light.pressed,'true');
+ assert.equal(light.canvas,'rgb(237, 237, 237)');assert.equal(light.content,'none');assert.equal(light.contentFill,'rgb(247, 247, 247)');
+ assert.equal(light.outline,'rgba(0, 0, 0, 0.035) 0px 2px 3px 0px, rgba(0, 0, 0, 0.05) 0px 4px 9px -3px');
+ assert.equal(light.card,'rgb(255, 255, 255)');assert.match(light.cardBorder,/230, 230, 230/);
+ assert.equal(light.grid,'rgb(198, 198, 198)');assert.equal(light.primary,'rgb(0, 0, 0)');assert.equal(light.secondary,'rgba(60, 60, 60, 0.6)');
+ assert.match(light.glass,/238, 238, 238, 0.74/);assert.match(light.line,/light\/imgHourlyEnergyGeneratedLine.svg/);assert.equal(light.pressed,'true');
   const focusedTheme=await page.evaluate(()=>getComputedStyle(document.querySelector('.target-theme')).color);
-  assert.equal(focusedTheme,'rgba(60, 60, 67, 0.6)','The clicked theme button must return to idle ink while focused');
+  assert.equal(focusedTheme,'rgba(60, 60, 60, 0.6)','The clicked theme button must return to idle ink while focused');
  await page.screenshot({path:'tests/output/home-light-1545.png'});
  const period=page.getByRole('button',{name:'Select period'});if(await period.count()){
   await period.hover();await page.waitForTimeout(300);const colors=await period.locator('.wd-control-label>span').evaluateAll(es=>es.map(e=>getComputedStyle(e).color));assert.ok(colors.every(c=>c==='rgb(0, 0, 0)'));

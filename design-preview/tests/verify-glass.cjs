@@ -169,7 +169,7 @@ const assert=require('node:assert/strict');
   await page.screenshot({path:'tests/output/home-glass-figma-surface-glow.png'});
   // Nested glass must own the light. Bubbling used to hand every inner control
   // to the popover host, so fields and buttons never drew their own glow.
-  for(const [name,selector] of [['field','.wd-date-field-control'],['cancel','.wd-date-action--cancel'],['apply','.wd-date-action--apply'],['month','.wd-date-nav-button']]){
+  for(const [name,selector] of [['field','.wd-date-field-control'],['cancel','.wd-date-actions>.wd-button--neutral'],['apply','.wd-date-actions>.wd-button--primary'],['month','.wd-date-nav-button']]){
    const control=page.locator(selector).first(),box=await control.boundingBox();
    await page.mouse.move(box.x+box.width*.62,box.y+box.height*.5);
    await page.waitForFunction(sel=>getComputedStyle(document.querySelector(sel).querySelector('.wd-glass-glow')).opacity==='1',selector);

@@ -64,6 +64,7 @@ export function mountMenu(panel,{label,children}){
  content.setAttribute("role","menu");
  content.setAttribute("aria-label",label);
  content.append(...children);
+  if(!content.querySelector(".wd-menu-heading"))content.classList.add("wd-menu--no-heading");
  panel.append(content);
  panel._wdFade=content;
  return content;

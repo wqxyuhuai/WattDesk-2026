@@ -1,4 +1,4 @@
-const neutralIconFiles=new Set(["cell-balance.svg","module-balance.svg","device-track.svg","organisation.svg","teams.svg","user.svg","asset-27.svg","disclosure.svg"]);
+const neutralIconFiles=new Set(["cell-balance.svg","module-balance.svg","device-track.svg","organisation.svg","teams.svg","user.svg","asset-27.svg","asset-70.svg","disclosure.svg"]);
 export const isNeutralIconFile=file=>neutralIconFiles.has(file);
 // Semantic names retain original Figma paths. Provenance: design/figma/source-icons.json.
 export const ICONS=Object.freeze({
@@ -17,6 +17,19 @@ export function createIcon(name,tone){
 export const assetURL=file=>new URL("../../home-assets/"+file,import.meta.url).href;
 // Export assets can carry label alpha; neutral state masks must be fully opaque so primary ink stays primary.
 export const opaqueMaskURL=file=>new URL(`../../home-assets/masks/${file}`,import.meta.url).href;
+// Page-level inline icons are still colour-masked by CSS. This factory owns the
+// repeated span/aria/mask wiring while callers retain their semantic class and
+// choose whether the source is an ordinary or generated opaque mask.
+export function createMaskedIcon(url,classNameOrOptions="wd-masked-icon"){
+ const options=typeof classNameOrOptions==="string"
+  ?{className:classNameOrOptions}
+  :classNameOrOptions;
+ const icon=document.createElement("span");
+ icon.className=options.className||"wd-masked-icon";
+ if(options.ariaHidden!==false)icon.setAttribute("aria-hidden","true");
+ icon.style.setProperty("--icon-mask",`url("${url}")`);
+ return icon;
+}
 export function iconAsset(file, tone="mono", label=""){
  const icon=document.createElement("span");icon.className=`target-icon-art target-icon-art--${tone}`;
  if(neutralIconFiles.has(file)){icon.classList.add("target-icon-neutral");icon.style.setProperty("--icon-mask",`url("${assetURL(file)}")`);}

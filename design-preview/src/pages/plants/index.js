@@ -3,12 +3,15 @@
 // column visibility and bookmarks stay in this module (bookmarks persist in
 // localStorage). There is no backend or permission model, and the detail
 // surface is explicitly a placeholder rather than invented device controls.
-import {applyTypeStyle} from "../../foundations/typography.js";
-import {assetURL,opaqueMaskURL} from "../../components/icons.js";
+import {createTextElement as text} from "../../foundations/dom.js";
+import {assetURL,createMaskedIcon as maskedIcon,opaqueMaskURL} from "../../components/icons.js";
+import {createStandardButton} from "../../components/controls.js";
 import {menuHeading,menuList,mountMenu} from "../../components/menu-popover.js";
 import {prepareControlStates,prepareIconMasks} from "../../components/control-states.js";
+import {createPageHeader,createPageHeaderAction} from "../../components/page-header.js";
 import {createSearchField} from "../../components/search-surface.js";
 import {createScrollFeedback} from "../../components/scroll-feedback.js";
+import {createTimeLabel} from "../../components/time-label.js";
 import {motionDuration,motionEasing,reducedMotion} from "../../foundations/motion.js";
 import {
  COMPANY_TREE,CONNECTION_META,DEVICES,HEALTH_META,PLANTS,STATUS_META,AUTO_CREATED_TOOLTIP,
@@ -52,7 +55,7 @@ const COLUMNS=[
 ];
 
 const FILTER_CATEGORIES=Object.freeze([
- {id:"company",label:"Company",icon:"plants/icons/company.svg",kind:"company",search:true},
+ {id:"company",label:"Company",icon:"organisation.svg",kind:"company",search:true},
  {id:"device",label:"Device",icon:"plants/icons/device.svg",kind:"options"},
  {id:"connection",label:"Connection",icon:"plants/icons/company.svg",kind:"options"},
  {id:"status",label:"Running status",icon:"plants/icons/status.svg",kind:"options"}
@@ -92,22 +95,6 @@ function writeBookmarks(set){
  try{localStorage.setItem(BOOKMARK_KEY,JSON.stringify([...set]));}catch{/* session only */}
 }
 
-function maskedIcon(url,className="plants-icon"){
- const icon=document.createElement("span");
- icon.className=`plants-icon ${className}`.trim();
- icon.setAttribute("aria-hidden","true");
- icon.style.setProperty("--icon-mask",`url("${url}")`);
- return icon;
-}
-
-function text(tag,className,content,typeStyle){
- const node=document.createElement(tag);
- if(className)node.className=className;
- if(content!==undefined)node.textContent=content;
- if(typeStyle)applyTypeStyle(node,typeStyle);
- return node;
-}
-
 function versionParts(value){
  return String(value||"").replace(/^v/i,"").split(/[^0-9]+/).filter(Boolean).map(Number);
 }
@@ -128,30 +115,6 @@ function formatPower(plant){
  if(plant.powerKw>0)return `+${magnitude}`;
  if(plant.powerKw<0)return `−${magnitude}`;
  return magnitude;
-}
-
-function absoluteTime(minutes){
- const date=new Date(Date.now()-minutes*60000);
- const pad=value=>String(value).padStart(2,"0");
- return `${date.getFullYear()}/${pad(date.getMonth()+1)}/${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
-}
-
-// Older rows switch to a compact date so the column never truncates; the full
-// timestamp stays available through the cell title.
-function compactTime(minutes){
- const date=new Date(Date.now()-minutes*60000);
- const pad=value=>String(value).padStart(2,"0");
- return `${pad(date.getMonth()+1)}/${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
-}
-
-function relativeTime(minutes){
- if(minutes<1)return "Just now";
- if(minutes<60)return `${minutes} min ago`;
- if(minutes<1440){
-  const hours=Math.round(minutes/60);
-  return `${hours} hour${hours===1?"":"s"} ago`;
- }
- return compactTime(minutes);
 }
 
 // Connection icons come from the supplied 24px exports. They mix neutral ink
@@ -234,7 +197,7 @@ function healthOf(plant){
  return "attention";
 }
 
-export function createPlantsPage({glass,registerPanel,close,reposition,toast,onOpenPlant,onBackToList}){
+export function createPlantsPage({glass,registerPanel,close,reposition,toast,onOpenPlant,onBackToList,onRouteParamsChange}){
  const element=document.createElement("section");
  element.className="plants-view";
  element.id="plants-view";
@@ -252,24 +215,20 @@ export function createPlantsPage({glass,registerPanel,close,reposition,toast,onO
  // ── Shell: header, toolbar, chips, table, empty ──────────────────────────
  const inner=text("div","plants-inner");
 
- const header=text("header","plants-header");
- const heading=text("div","plants-heading");
- const title=text("h1","plants-title","Plants","Subheadline/Emphasized");
- heading.append(title);
- const actions=text("div","plants-actions");
- // Standard neutral glass pill: the same 36px geometry, material and states as
- // the Home statistics period selector. Only the plus glyph is page-specific.
- const newButton=text("button","wd-button wd-button--pill wd-button--neutral plants-new");
- newButton.type="button";
- newButton.append(
-  maskedIcon(assetURL("plants/plus.svg"),"plants-icon plants-icon--16"),
-  text("span","plants-new-label","New plant")
- );
- newButton.addEventListener("click",()=>{
-  toast("Plant creation is a preview in this build — no plant was created");
+ const {element:header,actions}=createPageHeader({
+  breadcrumb:[{label:"Plants"}],
+  className:"plants-header",
+  headingClassName:"plants-heading"
+ });
+ const newButton=createPageHeaderAction({
+  label:"New plant",
+  icon:maskedIcon(assetURL("plants/plus.svg"),"plants-icon"),
+  className:"plants-new",
+  onClick:()=>{
+   toast("Plant creation is a preview in this build — no plant was created");
+  }
  });
  actions.append(newButton);
- header.append(heading,actions);
 
  const toolbar=text("div","plants-toolbar");
  // Shared search field: glyph, clear control and glass material all come from
@@ -296,19 +255,21 @@ export function createPlantsPage({glass,registerPanel,close,reposition,toast,onO
 
  // Filters, column display and refresh use the shared 36px circular glass
  // button. Only the activity dot stays page-specific.
- const filterTrigger=text("button","wd-button wd-button--pill wd-button--disc wd-button--neutral plants-icon-button");
- filterTrigger.type="button";
- filterTrigger.setAttribute("aria-label","Filters");
- filterTrigger.title="Filters";
+ const filterTrigger=createStandardButton({
+  label:"Filters",
+  iconOnly:true,
+  className:"plants-icon-button",
+  icon:maskedIcon(assetURL("plants/filter.svg"),"plants-icon plants-icon--16")
+ });
  filterTrigger.dataset.dot="false";
- filterTrigger.append(maskedIcon(assetURL("plants/filter.svg"),"plants-icon plants-icon--16"));
 
- const columnTrigger=text("button","wd-button wd-button--pill wd-button--disc wd-button--neutral plants-icon-button");
- columnTrigger.type="button";
- columnTrigger.setAttribute("aria-label","Columns");
- columnTrigger.title="Columns";
+ const columnTrigger=createStandardButton({
+  label:"Columns",
+  iconOnly:true,
+  className:"plants-icon-button",
+  icon:maskedIcon(assetURL("plants/columns.svg"),"plants-icon plants-icon--16")
+ });
  columnTrigger.dataset.dot="false";
- columnTrigger.append(maskedIcon(assetURL("plants/columns.svg"),"plants-icon plants-icon--16"));
  const columnMenuRight=()=>{
   const rect=columnTrigger.getBoundingClientRect();
   const left=Math.max(12,Math.min(rect.left,innerWidth-COLUMN_PANEL_WIDTH-12));
@@ -316,12 +277,13 @@ export function createPlantsPage({glass,registerPanel,close,reposition,toast,onO
  };
 
  const toolbarSpacer=text("div","plants-toolbar-spacer");
- const refresh=text("button","wd-button wd-button--pill wd-button--disc wd-button--neutral plants-icon-button");
- refresh.type="button";
- refresh.setAttribute("aria-label","Refresh plants");
- refresh.title="Refresh plants";
  const refreshIcon=maskedIcon(assetURL("light/imgLinearArrowsRefresh.svg"),"plants-icon plants-icon--16");
- refresh.append(refreshIcon);
+ const refresh=createStandardButton({
+  label:"Refresh plants",
+  iconOnly:true,
+  className:"plants-icon-button",
+  icon:refreshIcon
+ });
 
  const toolbarActions=text("div","plants-toolbar-actions");
  toolbarActions.append(filterTrigger,columnTrigger,refresh);
@@ -350,26 +312,37 @@ export function createPlantsPage({glass,registerPanel,close,reposition,toast,onO
  const table=text("table","plants-table");
  const caption=text("caption","plants-caption","Plants with connection and running status, power, firmware and last update.");
  const colgroup=document.createElement("colgroup");
- const thead=document.createElement("thead");
  const tbody=document.createElement("tbody");
  tbody.id="plants-rows";
- table.append(caption,colgroup,thead,tbody);
+ table.append(caption,colgroup,tbody);
+ const tableHeader=text("div","plants-table-header");
+ const headerTable=text("table","plants-table-header-table");
+ const headerColgroup=document.createElement("colgroup");
+ const thead=document.createElement("thead");
+ headerTable.append(headerColgroup,thead);
+ tableHeader.append(headerTable);
  scroll.append(table);
- scrollShell.append(scroll);
+ scrollShell.append(tableHeader,scroll);
  const scrollFeedback=createScrollFeedback({
   host:scrollShell,
   viewport:scroll,
   content:table,
-  topInset:()=>scroll.offsetTop+scroll.clientTop+thead.offsetHeight,
+  topInset:()=>scroll.offsetTop,
   bottomInset:10
  });
+ const syncHeaderScroll=()=>{
+  headerTable.style.transform=`translateX(${-scroll.scrollLeft}px)`;
+ };
+ scroll.addEventListener("scroll",syncHeaderScroll,{passive:true});
 
  const empty=text("div","plants-empty");
  empty.hidden=true;
  const emptyTitle=text("p","plants-empty-title",undefined,"Subheadline/Emphasized");
  const emptyBody=text("p","plants-empty-body",undefined,"Footnote/Regular");
- const emptyAction=text("button","wd-button wd-button--pill wd-button--neutral plants-empty-action","Clear filters");
- emptyAction.type="button";
+ const emptyAction=createStandardButton({
+  label:"Clear filters",
+  className:"plants-empty-action"
+ });
  emptyAction.addEventListener("click",()=>{
   input.value="";
   state.query="";
@@ -383,32 +356,63 @@ export function createPlantsPage({glass,registerPanel,close,reposition,toast,onO
  const detail=text("section","plants-detail");
  detail.hidden=true;
  detail.setAttribute("aria-labelledby","plants-detail-title");
+ const detailHeaderHost=text("div","plants-detail-header-host");
+ const detailViewport=text("div","plants-detail-viewport");
+ detailViewport.tabIndex=0;
  const detailInner=text("div","plants-detail-inner");
- const backButton=text("button","wd-button wd-button--pill wd-button--neutral plants-detail-back","Back to Plants");
- backButton.type="button";
- backButton.addEventListener("click",()=>{
+ const backButton=createStandardButton({
+  label:"Back to Plants",
+  className:"plants-detail-back"
+ });
+ function leaveDetail(){
   if(onBackToList)onBackToList();
   else show();
- });
+ }
+ backButton.addEventListener("click",leaveDetail);
  const detailKicker=text("p","plants-detail-kicker","Plant","Caption1/Emphasized");
  const detailTitle=text("h1","plants-detail-title");
  detailTitle.id="plants-detail-title";
  const detailMeta=text("p","plants-detail-meta",undefined,"Footnote/Regular");
  const detailNote=text("p","plants-detail-note",undefined,"Footnote/Regular");
  detailInner.append(backButton,detailKicker,detailTitle,detailMeta,detailNote);
- detail.append(detailInner);
+ detailViewport.append(detailInner);
+ detail.append(detailHeaderHost,detailViewport);
+ const detailScrollFeedback=createScrollFeedback({
+  host:detail,
+  viewport:detailViewport,
+  content:detailInner,
+  topInset:()=>detailHeaderHost.offsetHeight,
+  bottomInset:10
+ });
 
  inner.append(header,toolbar,chips,scrollShell,empty);
  element.append(inner,detail);
 
  glass.addSurface({host:emptyAction,radius:18});
  glass.addSurface({host:backButton,radius:18});
- glass.addSurface({host:newButton,radius:18});
  for(const button of [filterTrigger,columnTrigger,refresh])glass.addSurface({host:button,radius:18});
 
  // ── State helpers ────────────────────────────────────────────────────────
  const filtersFor=id=>state.filters[id];
  const activeFilterCount=()=>Object.values(state.filters).reduce((sum,values)=>sum+values.size,0);
+
+ // Only the two Home summary presets have a URL contract today. Once another
+ // filter or query joins them, omit the preset instead of publishing a partial
+ // state that would produce a different list after refresh.
+ function routeFilterParams(){
+  if(state.query.trim())return {};
+  const unsupported=Object.entries(state.filters).some(([id,values])=>
+   id!=="connection"&&id!=="status"&&values.size
+  );
+  if(unsupported)return {};
+  const connection=[...filtersFor("connection")];
+  const status=[...filtersFor("status")];
+  if(connection.some(value=>value!=="online")||status.some(value=>value!=="attention"))return {};
+  const params={};
+  if(connection.length)params.connection=connection[0];
+  if(status.length)params.status=status[0];
+  return params;
+ }
 
  function matchesQuery(plant,query){
   if(!query)return true;
@@ -555,6 +559,7 @@ function visibleRows({ignoreCategory=null}={}){
 
   function renderColgroup(){
    colgroup.replaceChildren();
+   headerColgroup.replaceChildren();
    // The leading bookmark/connection slots are locked and never grow. Every
    // other column declares a minimum and a share of the spare width, so the
    // grid stays aligned at its minimum and breathes with a wider panel.
@@ -595,8 +600,11 @@ function visibleRows({ignoreCategory=null}={}){
     if(column.id==="bookmark")col.className="plants-col-bookmark";
     col.style.width=`${widths[index]}px`;
     colgroup.append(col);
+    headerColgroup.append(col.cloneNode());
    });
    table.style.minWidth=`${minimum}px`;
+   headerTable.style.minWidth=`${minimum}px`;
+   syncHeaderScroll();
    columnTrigger.dataset.dot=state.hidden.size===DEFAULT_HIDDEN.length&&DEFAULT_HIDDEN.every(id=>state.hidden.has(id))?"false":"true";
   }
 
@@ -686,8 +694,11 @@ function visibleRows({ignoreCategory=null}={}){
 
  function updatedCell(plant){
   const td=cell();
-  const value=text("span","plants-updated",relativeTime(plant.updatedMinutes),"Footnote/Regular");
-  value.title=absoluteTime(plant.updatedMinutes);
+  const value=createTimeLabel(plant.updatedMinutes,{
+   ageMinutes:true,
+   className:"plants-updated",
+   typeStyle:"Footnote/Regular"
+  });
   td.append(value);
   return td;
  }
@@ -890,6 +901,16 @@ function visibleRows({ignoreCategory=null}={}){
 
  function renderDetail(plantId){
   const plant=plantById(plantId);
+  const {element:detailHeader,actions}=createPageHeader({
+    breadcrumb:[
+      {label:"Plants",onClick:leaveDetail},
+      {label:plant?(plant.name||"?"):"Plant not found"}
+    ],
+    className:"plants-detail-header",
+    headingClassName:"plants-detail-heading"
+  });
+  actions.hidden=!actions.childElementCount;
+  detailHeaderHost.replaceChildren(detailHeader);
   if(!plant){
    detailTitle.textContent="Plant not found";
    detailMeta.textContent="";
@@ -997,7 +1018,10 @@ function visibleRows({ignoreCategory=null}={}){
    row.setAttribute("aria-controls","plants-filter-options");
    row.setAttribute("aria-expanded","false");
    row.append(
-    maskedIcon(assetURL(category.icon),"plants-icon plants-icon--18 plants-filter-category-icon"),
+    maskedIcon(
+     category.id==="company"?opaqueMaskURL(category.icon):assetURL(category.icon),
+     "plants-icon plants-icon--18 plants-filter-category-icon"
+    ),
     text("span","plants-filter-category-label wd-control-label",category.label,"14/14 medium")
    );
    const count=text("span","plants-filter-category-count",undefined,"Caption2/Regular");
@@ -1390,6 +1414,7 @@ function visibleRows({ignoreCategory=null}={}){
   updateFilterTrigger();
   renderChips();
   scrollFeedback.sync();
+  if(!element.hidden)onRouteParamsChange?.(routeFilterParams());
  }
 
  function show(params={}){
@@ -1400,10 +1425,16 @@ function visibleRows({ignoreCategory=null}={}){
    inner.hidden=true;
    detail.hidden=false;
    renderDetail(plantId);
+   detailScrollFeedback.sync();
    return;
   }
   detail.hidden=true;
   inner.hidden=false;
+  if(params?.connection||params?.status){
+   for(const values of Object.values(state.filters))values.clear();
+   if(params.connection)filtersFor("connection").add(params.connection);
+   if(params.status)filtersFor("status").add(params.status);
+  }
   render();
  }
 
@@ -1427,6 +1458,22 @@ function visibleRows({ignoreCategory=null}={}){
  return {
   element,
   show,
+  snapshot(){
+   return {
+    listScrollTop:scroll.scrollTop,
+    detailScrollTop:detailViewport.scrollTop
+   };
+  },
+  restore(snapshot={}){
+   const apply=()=>{
+    scroll.scrollTop=snapshot.listScrollTop??0;
+    detailViewport.scrollTop=snapshot.detailScrollTop??0;
+    scrollFeedback.sync();
+    detailScrollFeedback.sync();
+   };
+   apply();
+   requestAnimationFrame(apply);
+  },
   hide(){
    close(true);
    element.hidden=true;

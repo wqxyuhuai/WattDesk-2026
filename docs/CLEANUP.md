@@ -56,3 +56,36 @@
 - 177 个调试探针（`design-preview/tests/_*.cjs` / `_*.py`）移到 Source 外的 `Backups\local-debug-probes-20261021`，需要时可单独恢复；Git 历史中也仍可追溯。
 - 保留：10 个 `verify-*.cjs`、`run.cjs`、`runtime.cjs`、`fixtures/`、`design/figma/`、`home-assets/`、`templates/`、`dev/`（批注模式）与本地 `annotations.json`。
 - 清理后 `npm run check` 通过（52 个 JavaScript 文件）。
+
+## 2026-10-30 项目整合存档
+
+整理前以当前未提交工作树为基线建立完整恢复快照：
+
+`E:\OneDrive\Design files sync\AI\Proj. WattDesk\Backups\WattDesk-current-working-tree-20261030-151240.zip`
+
+SHA-256：
+
+`70C230037CF608AAF0963BB2D01BE6AF8BA5741A9A703A47F5C812C7DA5DCFC0`
+
+快照包含当时的源码、文档、测试、Figma 来源、运行资产和未提交改动；只排除
+日志、`node_modules`、`dist` 等可再生产物。恢复时解压到独立目录，不覆盖当前
+源码。
+
+本轮只做等价结构收口：
+
+- 新增 `src/foundations/dom.js`、`src/components/time-label.js`，并扩展
+  `controls.js` / `icons.js`，统一语义文本、时间节点、标准按钮和内联遮罩图标。
+- Plants 与 Service Ticket 改用共享工厂，删除两页各自的文本、时间和遮罩重复实现。
+- 删除日期选择器的 `.wd-date-action` 兼容类、停用 popover/toast token、无引用
+  `addMentionAction()` 与无用状态字段。
+- 新增 `docs/PROJECT-MAP.md`，合并项目阅读顺序、路由边界、标准应用、记录职责、
+  工作流与验收入口；详细视觉参数仍只保留在 `DESIGN-SYSTEM.md`。
+- 不改变任何已确认页面视觉、交互、路由、生成数据或发布流程。
+- 验证：77 个 JavaScript 文件语法与 76 个运行 JS/CSS 文件标准检查通过，完整
+  18 个浏览器套件通过；125 个运行资产全部可达；生产构建为 213 个文件 / 1.65 MB；
+  连续两次同步生成文件哈希不变。
+- 工作区清理：移除可再生的根 `tests/`（18 文件 / 2.23 MB）、
+  `design-preview/tests/output/`（948 文件 / 147.39 MB）、
+  `design-preview/output/`（214 文件 / 10.70 MB）和 `design-preview/dist/`
+  （213 文件 / 1.65 MB），共 1393 文件 / 161.97 MB。它们都被整理前快照覆盖，
+  且可由测试或构建命令重建；固定测试基线与正式测试脚本未删除。

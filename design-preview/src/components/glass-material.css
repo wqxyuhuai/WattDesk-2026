@@ -60,7 +60,7 @@
   --wd-glass-optical-light-top:rgba(255,255,255,.98);
   --wd-glass-optical-light-bottom:rgba(255,255,255,1);
   --wd-glass-optical-light-blur:15px;
-  --wd-glass-tint:rgba(238,240,243,.74);
+  --wd-glass-tint:rgba(238,238,238,.74);
   --wd-glass-reflection-top:transparent;
   --wd-glass-reflection-bottom:transparent;
   --wd-glass-reflection-mid:transparent;
@@ -135,7 +135,7 @@
    * into a flat white film; 9px keeps their edges and colour blocks legible. */
   --wd-glass-blur:var(--wd-glass-surface-blur,9px);
   --wd-glass-saturation:var(--wd-glass-surface-saturation,1.45);
-  --wd-glass-tint:var(--wd-glass-surface-tint,rgba(232,237,244,.44));
+  --wd-glass-tint:var(--wd-glass-surface-tint,rgba(234,234,234,.44));
   --wd-glass-outline:rgba(0,0,0,.16);
   --wd-glass-outline-side:rgba(0,0,0,.20);
   --wd-glass-drop:rgba(0,0,0,.16);

@@ -22,10 +22,11 @@
   padding-bottom:7px;
 }
 .wd-history-row .wd-menu-label{
+  flex:1 1 auto;
   overflow:visible;
   text-overflow:clip;
-  white-space:normal;
+  white-space:nowrap;
 }
 .wd-history-row .wd-history-path{
-  white-space:normal;
+  white-space:nowrap;
 }

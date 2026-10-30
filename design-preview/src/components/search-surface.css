@@ -449,6 +449,9 @@
   flex: 0 0 18px;
   width: 18px;
   height: 18px;
+  color: var(--wd-label-secondary);
+}
+.wd-search-field:is(:hover,:focus-within) .wd-search-field-icon {
   color: var(--wd-label-primary);
 }
 .wd-search-field-icon .target-icon-art {

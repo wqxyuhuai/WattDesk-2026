@@ -19,6 +19,7 @@ html[data-theme="light"] .popover{color:var(--wd-label-primary)}
  * same panel padding, heading inset, 36px capsule rows and 10px tail spacing;
  * only the host decides width, placement and which list it contains. */
 .wd-menu{display:flex;flex-direction:column;gap:10px;min-width:0;padding:20px 10px 10px;color:var(--wd-label-primary);font-family:var(--wd-font-family)}
+.wd-menu--no-heading{padding-top:10px}
 .wd-menu .wd-menu-heading{margin:0;padding:0 14px;overflow:hidden;font-size:var(--wd-text-footnote-emphasized-size);font-weight:var(--wd-text-footnote-emphasized-weight);line-height:var(--wd-text-footnote-emphasized-leading);letter-spacing:var(--wd-text-footnote-emphasized-tracking);color:var(--wd-label-secondary);text-overflow:ellipsis;white-space:nowrap}
 .wd-menu-list{display:flex;flex-direction:column;gap:1px;min-width:0}
 .wd-menu .wd-menu-row{display:flex;align-items:center;width:100%;min-width:0;height:36px;padding:0 14px;gap:8px;border:0;border-radius:999px;background:none;text-align:left;color:var(--wd-label-secondary);font-size:var(--wd-text-14-14-medium-size);font-weight:var(--wd-text-14-14-medium-weight);letter-spacing:var(--wd-text-14-14-medium-tracking)}
@@ -36,4 +37,4 @@ html[data-theme="light"] .popover{color:var(--wd-label-primary)}
 .wd-menu-row[aria-checked="true"] .wd-menu-check{opacity:1;color:var(--wd-label-primary)}
 /* The toast is a static Glass Surface; its silhouette stays pill-shaped while
  * the shared material supplies the tint, blur and pointer optics. */
-#toast{position:fixed;left:calc(50% + 140px);top:78px;bottom:auto;transform:translateX(-50%);font-size:13px;padding:11px 18px;border:0;border-radius:24px;z-index:110}
+#toast{position:fixed;left:calc(50% + 140px);top:70px;bottom:auto;transform:translateX(-50%);font-size:13px;padding:11px 18px;border:0;border-radius:24px;z-index:110}

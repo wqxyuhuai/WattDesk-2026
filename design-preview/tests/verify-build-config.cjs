@@ -19,10 +19,12 @@ const build = spawnSync(process.execPath, ['scripts/build-site.cjs', '--public',
 assert.equal(build.status, 0, build.stderr || build.stdout);
 
 const redirects = fs.readFileSync(path.join(out, '_redirects'), 'utf8');
+const headers = fs.readFileSync(path.join(out, '_headers'), 'utf8');
 assert.match(redirects, /^\/ \/home 308$/m);
 assert.match(redirects, /^\/home\.html \/home 308$/m);
 assert.match(redirects, /^\/index\.html \/home 308$/m);
 assert.doesNotMatch(redirects, /\s\/index\.html 200$/m, 'SPA routes must use Workers Assets fallback, not rewrite loops');
+assert.match(headers, /^\/service\/\*$/m, 'service detail HTML must revalidate like its shell');
 
 fs.rmSync(out, {recursive: true, force: true});
 console.log(JSON.stringify({ok: true, spaFallback: true, redirectRules: redirects.trim().split('\n').length}));

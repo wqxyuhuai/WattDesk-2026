@@ -199,10 +199,10 @@ export function createDatePicker(options){
  }
  startField=makeField("Start date","start");endField=makeField("End date","end");
  inputs.append(startField.field,endField.field);
- // Both actions use the shared standard button pair; the date aliases remain
- // only for existing hooks and do not carry local material.
- cancel=button("Cancel","wd-button wd-button--pill wd-button--neutral wd-date-action wd-date-action--cancel");glassHost(cancel,18);
- apply=button("Apply","wd-button wd-button--pill wd-button--primary wd-date-action wd-date-action--apply");glassHost(apply,18);
+ // Both actions use the shared standard button pair; material remains owned
+ // by the date picker's glass instance.
+ cancel=button("Cancel","wd-button wd-button--pill wd-button--neutral");glassHost(cancel,18);
+ apply=button("Apply","wd-button wd-button--pill wd-button--primary");glassHost(apply,18);
  actions.append(cancel,apply);footer.append(actions);content.append(main,ruleOne,inputs,message,ruleTwo,footer);panel.append(content);glassHost(panel,30);
 
  for(const label of PRESETS){

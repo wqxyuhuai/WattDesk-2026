@@ -26,7 +26,7 @@ function normalizePath(pathname) {
 // browser router then renders the route named by the URL.
 function isAppPath(pathname) {
   const clean = normalizePath(pathname);
-  return canonicalRoutes.has(clean) || /^\/plants\/[^/]+$/.test(clean);
+  return canonicalRoutes.has(clean) || /^\/plants\/[^/]+$/.test(clean) || /^\/service\/[^/]+$/.test(clean);
 }
 
 http.createServer(async (req, res) => {

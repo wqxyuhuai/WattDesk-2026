@@ -49,22 +49,28 @@ function loadRecentVisits(){
  return [{route:"home",params:{}}];
 }
 
-function pathParts(entry,resolvePlantName){
+function pathParts(entry,resolvePlantName,resolveServiceTicketTitle){
  if(entry.route==="plants"&&entry.params?.plantId){
   return [
    {text:ROUTE_CATALOG.plants.title,tone:"ancestor"},
    {text:resolvePlantName?.(entry.params.plantId)||"Plant not found",tone:"current"}
   ];
  }
+ if(entry.route==="service"&&entry.params?.ticketId){
+  return [
+   {text:ROUTE_CATALOG.service.title,tone:"ancestor"},
+   {text:resolveServiceTicketTitle?.(entry.params.ticketId)||"Ticket not found",tone:"current"}
+  ];
+ }
  return [{text:displayTitle(entry.route),tone:"current"}];
 }
 
-export function createRecentVisits({get,onOpen,resolvePlantName}){
+export function createRecentVisits({get,onOpen,resolvePlantName,resolveServiceTicketTitle}){
  let list=loadRecentVisits();
 
  function describe(entry){
   const params={...entry.params};
-  const parts=pathParts(entry,resolvePlantName);
+  const parts=pathParts(entry,resolvePlantName,resolveServiceTicketTitle);
   return {
    ...entry,
    params,

@@ -9,8 +9,8 @@
    * so moving across controls reads as one flow instead of a delayed fade. */
   --wd-motion-hover:240ms;--wd-motion-hover-out:360ms;
   --wd-motion-tab-in:280ms;--wd-motion-tab-out:220ms;--wd-motion-tab-close:260ms;--wd-motion-tab-swap:110ms;
-  --wd-motion-disclosure:380ms;--wd-motion-refresh:640ms;
-  --wd-motion-panel:320ms;--wd-motion-panel-exit:200ms;--wd-motion-pull-rebound:640ms;--wd-motion-chart:740ms;--wd-motion-stagger:35ms;
+  --wd-motion-disclosure:380ms;--wd-motion-refresh:640ms;--wd-motion-sheen:680ms;
+  --wd-motion-panel:320ms;--wd-motion-panel-exit:200ms;--wd-motion-content-grow:280ms;--wd-motion-pull-rebound:640ms;--wd-motion-chart:740ms;--wd-motion-stagger:35ms;
   /* Fullscreen search: field and results arrive/leave on one offset timeline.
    * The entrance is deliberately slower than a popover and uses a gentle
    * overshoot so the glass settles instead of snapping into place. */
@@ -34,13 +34,13 @@
    * activity tint without turning the page behind it into a flat sheet. */
   --wd-search-veil:var(--wd-overlay-activity);--wd-search-veil-blur-base:28px;
   --wd-search-drop-y:24px;--wd-search-drop-blur:26px;
-  --wd-ease-glass:cubic-bezier(.22,.8,.25,1);--wd-ease-glass-press:cubic-bezier(.16,.84,.28,1);--wd-ease-glass-release:cubic-bezier(.16,.84,.24,1);
+  --wd-ease-glass:cubic-bezier(.22,.8,.25,1);--wd-ease-glass-press:cubic-bezier(.16,.84,.28,1);--wd-ease-glass-release:cubic-bezier(.16,.84,.24,1);--wd-ease-sheen:cubic-bezier(.2,.7,.3,1);
   --wd-glass-hover-scale:1.025;--wd-glass-press-scale:1.065;
   --wd-glass-hover-stretch:.006;--wd-glass-press-stretch:.014;
   --wd-glass-disc-hover-scale:1.07;--wd-glass-disc-press-scale:1.18;
   --wd-glass-disc-hover-stretch:.018;--wd-glass-disc-press-stretch:.03;
   --wd-ease-hover:cubic-bezier(.16,1,.3,1);--wd-ease-hover-out:cubic-bezier(.3,0,.2,1);--wd-ease-disclosure:cubic-bezier(.4,0,.2,1);
-  --wd-ease-panel:cubic-bezier(.22,.8,.25,1);--wd-ease-chart:cubic-bezier(.16,1,.3,1);--wd-ease-spring:cubic-bezier(.18,1.12,.3,1);
+  --wd-ease-panel:cubic-bezier(.22,.8,.25,1);--wd-ease-content-grow:cubic-bezier(.22,.8,.25,1);--wd-ease-chart:cubic-bezier(.16,1,.3,1);--wd-ease-spring:cubic-bezier(.18,1.12,.3,1);
   --wd-ease-tab-in:cubic-bezier(.22,.8,.25,1);--wd-ease-tab-out:cubic-bezier(.4,0,.2,1);--wd-ease-tab-swap-out:cubic-bezier(.4,0,1,1);
   --wd-shortcut-inset:20px;--wd-shortcut-gap:20px;--wd-control-circle:rgba(255,255,255,.12);
   --wd-separator-vibrant:var(--wd-figma-separators-vibrant);
@@ -59,9 +59,8 @@
   --wd-canvas:var(--wd-bg-secondary);--wd-surface-primary:var(--wd-bg-secondary);--wd-surface-secondary:var(--wd-bg-tertiary);--wd-surface-elevated:var(--wd-bg-tertiary-elevated);
   --wd-control-fill:rgba(120,120,128,.2);--wd-control-fill-hover:rgba(120,120,128,.36);--wd-control-outline:rgba(255,255,255,.2);
   --wd-control-hover:rgba(255,255,255,.08);--wd-control-selected:#3a3a3c;--wd-control-muted:rgba(255,255,255,.08);
-  /* Dev annotation overlay only; production popovers/toasts use Glass Surface. */
-  --wd-popover-surface:rgba(44,44,46,.96);--wd-popover-outline:rgba(255,255,255,.11);--wd-popover-shadow:rgba(0,0,0,.42);
-  --wd-toast-surface:rgba(44,44,46,.93);--wd-toast-outline:rgba(255,255,255,.12);
+  /* Reserved for explicit opt-in card elevation; Service Ticket currently uses no hover shadow. */
+  --wd-card-hover-shadow:0 12px 32px -16px rgba(0,0,0,.62),0 3px 14px -8px rgba(0,0,0,.28);
   --wd-label-primary-rgb:255,255,255;--wd-label-secondary-rgb:235,235,245;--wd-label-tertiary-rgb:235,235,245;--wd-label-quaternary-rgb:235,235,245;
   --wd-label-secondary-opacity:.7;--wd-label-tertiary-opacity:.3;--wd-label-quaternary-opacity:.18;
   --wd-label-primary:var(--wd-figma-labels-primary);--wd-label-secondary:var(--wd-figma-labels-secondary);
@@ -75,14 +74,39 @@
 }
 :root[data-theme="light"]{  --wd-control-circle:rgba(0,0,0,.08);
   color-scheme:light;
-  --wd-fill-quaternary:rgba(116,116,128,.08);
-  --wd-control-fill:rgba(120,120,128,.16);--wd-control-fill-hover:rgba(120,120,128,.24);--wd-control-outline:rgba(0,0,0,.12);
-  --wd-control-hover:rgba(0,0,0,.05);--wd-control-selected:var(--wd-figma-fills-secondary);--wd-control-muted:var(--wd-figma-fills-tertiary);
-  --wd-popover-surface:rgba(255,255,255,.94);--wd-popover-outline:rgba(0,0,0,.09);--wd-popover-shadow:rgba(0,0,0,.16);
-  --wd-toast-surface:rgba(255,255,255,.95);--wd-toast-outline:rgba(0,0,0,.1);
-  --wd-label-primary-rgb:0,0,0;--wd-label-secondary-rgb:60,60,67;--wd-label-tertiary-rgb:60,60,67;--wd-label-quaternary-rgb:60,60,67;
+  /* The reviewed light UI is deliberately neutral. Keep the generated Figma
+   * bindings intact, then override only their cool neutral channels at runtime
+   * so extracted inline paint and shared components use the same grey family.
+   * Accent colours remain untouched. */
+  --wd-figma-backgrounds-secondary:rgba(237,237,237,1);
+  --wd-figma-backgrounds-grouped-primary:rgba(237,237,237,1);
+  --wd-figma-backgrounds-grouped-tertiary:rgba(237,237,237,1);
+  --wd-figma-backgrounds-secondary-elevated:rgba(237,237,237,1);
+  --wd-figma-backgrounds-grouped-primary-elevated:rgba(237,237,237,1);
+  --wd-figma-backgrounds-grouped-tertiary-elevated:rgba(237,237,237,1);
+  --wd-figma-labels-secondary:rgba(60,60,60,.6);
+  --wd-figma-labels-tertiary:rgba(60,60,60,.3);
+  --wd-figma-labels-quaternary:rgba(60,60,60,.18);
+  --wd-figma-fills-secondary:rgba(120,120,120,.16);
+  --wd-figma-fills-quaternary:rgba(116,116,116,.08);
+  --wd-figma-fills-tertiary:rgba(118,118,118,.12);
+  --wd-figma-separators-opaque:rgba(198,198,198,1);
+  --wd-figma-grays-gray:rgba(142,142,142,1);
+  --wd-figma-grays-gray-2:rgba(174,174,174,1);
+  --wd-figma-grays-gray-3:rgba(199,199,199,1);
+  --wd-figma-grays-gray-4:rgba(209,209,209,1);
+  --wd-figma-grays-gray-5:rgba(229,229,229,1);
+  --wd-figma-grays-gray-6:rgba(237,237,237,1);
+  --wd-bg-secondary:rgba(237,237,237,1);--wd-bg-secondary-elevated:rgba(237,237,237,1);
+  --wd-bg-grouped-primary:rgba(237,237,237,1);--wd-bg-grouped-tertiary:rgba(237,237,237,1);
+  --wd-fill-secondary:rgba(120,120,120,.16);--wd-fill-tertiary:rgba(118,118,118,.12);
+  --wd-fill-quaternary:rgba(116,116,116,.08);
+  --wd-control-fill:rgba(120,120,120,.16);--wd-control-fill-hover:rgba(120,120,120,.24);--wd-control-outline:rgba(0,0,0,.12);
+  --wd-control-hover:rgba(0,0,0,.05);--wd-control-selected:rgba(120,120,120,.16);--wd-control-muted:rgba(118,118,118,.12);
+  --wd-card-hover-shadow:0 10px 26px -16px rgba(0,0,0,.2),0 3px 10px -7px rgba(0,0,0,.09);
+  --wd-label-primary-rgb:0,0,0;--wd-label-secondary-rgb:60,60,60;--wd-label-tertiary-rgb:60,60,60;--wd-label-quaternary-rgb:60,60,60;
   --wd-label-secondary-opacity:.6;
-  --wd-skeleton-base:rgba(60,60,67,.14);--wd-skeleton-sheen:rgba(255,255,255,.84);--wd-skeleton-opacity:.92;
+  --wd-skeleton-base:rgba(60,60,60,.14);--wd-skeleton-sheen:rgba(255,255,255,.84);--wd-skeleton-opacity:.92;
   /* Fullscreen search keeps the page recognizable. A light veil must not turn
    * the backdrop into a flat grey sheet, so its tint and frost are search-only. */
   --wd-search-veil:rgba(0,0,0,.10);--wd-search-veil-blur-base:16px;

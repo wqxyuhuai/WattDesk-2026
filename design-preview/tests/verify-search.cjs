@@ -192,6 +192,7 @@ const assert=require('node:assert/strict');
           inlineBackground:getComputedStyle(inlineFill).backgroundColor,
           inlineBackdrop:getComputedStyle(inlineFill).backdropFilter,
         },
+        iconColor:getComputedStyle(field.querySelector('.wd-search-field-icon')).color,
         iconMask:glyph.style.getPropertyValue('--icon-mask'),
       };
     });
@@ -425,6 +426,48 @@ const assert=require('node:assert/strict');
     await page.waitForTimeout(260);
     assert.equal(await page.locator('.wd-search-panel').count(),0,'The Plants field filters in place instead of opening a result sheet');
     assert.equal(await page.locator('.plants-row').count(),1,'Typing must filter the Plants table');
+    await page.evaluate(()=>document.activeElement?.blur());
+    await page.mouse.move(0,0);
+    await page.waitForTimeout(320);
+    const searchIconTone = await page.evaluate(()=>{
+      const read=selector=>{const icon=document.querySelector(selector);return {color:getComputedStyle(icon).color,source:icon.getAttribute('class')||''};};
+      return {plants:read('.plants-search .wd-search-field-icon'),sidebar:read('.target-quick-search .target-icon-art')};
+    });
+    assert.equal(searchIconTone.plants.color,searchIconTone.sidebar.color,'The Plants magnifier must inherit the shared Secondary icon tone');
+    await page.getByRole('button',{name:'Toggle light and dark mode'}).click();
+    await page.waitForFunction(()=>!document.documentElement.dataset.themeTransition);
+    await page.mouse.move(0,0);
+    await page.waitForTimeout(320);
+    const lightSearchIconTone = await page.evaluate(()=>{
+      const read=selector=>getComputedStyle(document.querySelector(selector)).color;
+      return {plants:read('.plants-search .wd-search-field-icon'),sidebar:read('.target-quick-search .target-icon-art')};
+    });
+    assert.equal(lightSearchIconTone.plants,lightSearchIconTone.sidebar,'The shared Secondary search icon tone must hold in light mode');
+    const lightPlantsBox=await page.locator('.plants-search').boundingBox();
+    await page.mouse.move(lightPlantsBox.x+lightPlantsBox.width/2,lightPlantsBox.y+lightPlantsBox.height/2);
+    await page.waitForTimeout(320);
+    const hoverIconTone=await page.locator('.plants-search .wd-search-field-icon').evaluate(icon=>getComputedStyle(icon).color);
+    assert.equal(hoverIconTone,'rgb(0, 0, 0)','Hover must promote the shared search icon to Primary');
+    await page.mouse.move(0,0);
+
+    await page.goto(`${new URL(previewURL).origin}/service?glass=figma`,{waitUntil:'networkidle'});
+    await page.waitForFunction(()=>document.documentElement.dataset.ready==='true');
+    await page.waitForTimeout(320);
+    const serviceSearchTone=await page.evaluate(()=>{
+      const field=document.querySelector('.service-search');
+      const input=field.querySelector('.wd-search-input');
+      return {
+        input:getComputedStyle(input).color,
+        placeholder:getComputedStyle(input,'::placeholder').color,
+        icon:getComputedStyle(field.querySelector('.wd-search-field-icon')).color,
+        toolbarSecondary:getComputedStyle(document.querySelector('.service-toolbar')).getPropertyValue('--wd-label-secondary').trim(),
+        sharedSecondary:getComputedStyle(document.documentElement).getPropertyValue('--wd-label-secondary').trim()
+      };
+    });
+    assert.equal(serviceSearchTone.input,'rgb(0, 0, 0)','Service search keeps the shared primary input ink');
+    assert.equal(serviceSearchTone.icon,'rgba(60, 60, 60, 0.6)','Service search keeps the shared Secondary magnifier');
+    assert.match(serviceSearchTone.placeholder,/rgba\(60, 60, 60, 0\.6\)|color\(srgb 0\.3 0\.3 0\.3/,'Service search keeps the shared placeholder tone');
+    assert.equal(serviceSearchTone.toolbarSecondary,serviceSearchTone.sharedSecondary,'Service toolbar must not fork shared label tokens');
 
     assert.deepEqual(errors,[]);
     console.log(JSON.stringify({keycaps:'shared',inline:'fixed 46px capsule',fullscreen:'shared 816x46 field',plants:'compact 36px, shared depth',sharedGlass:true,stableOnPress:true,errors},null,2));

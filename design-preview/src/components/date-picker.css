@@ -80,7 +80,7 @@
 .wd-date-error[hidden]{display:none}
 .wd-date-picker :is(button,input){font-family:inherit}
 .wd-date-picker :is(button,input):focus-visible{outline:2px solid var(--wd-blue);outline-offset:2px}
-.wd-date-picker :is(.wd-date-preset,.wd-date-day,.wd-date-action--cancel):focus-visible{outline-offset:0}
+.wd-date-picker :is(.wd-date-preset,.wd-date-day,.wd-date-actions>.wd-button--neutral):focus-visible{outline-offset:0}
 .wd-date-picker .wd-date-segment:focus-visible{outline:0}
 
 @media (max-width:520px){

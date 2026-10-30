@@ -28,6 +28,11 @@ const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
   await ready();
   assert.equal(pathname(), '/home', 'legacy home.html must canonicalise to /home');
   assert.equal(new URL(page.url()).search, '?glass=figma', 'canonicalisation must preserve query state');
+  const routeSurface = selector => page.locator(selector).evaluate(panel => {
+    const style = getComputedStyle(panel);
+    return {background: style.backgroundColor, boxShadow: style.boxShadow, radius: style.borderRadius};
+  });
+  assert.equal(await page.locator('.wd-main-panel').count(), 1, 'the workspace owns the single shared panel surface');
 
   // Sidebar navigation writes /plants; refresh keeps the list.
   await page.locator('.target-nav[data-route="plants"]').click();
@@ -36,7 +41,41 @@ const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
   assert.equal(await page.title(), 'WattDesk · Plants');
   assert.equal(await page.locator('.plants-view').isVisible(), true);
   assert.equal(await page.locator('.plants-table').isVisible(), true);
+  const plantPullSurfaces=page.locator('.plants-table-shell > .wd-scroll-feedback__pull');
+  assert.equal(await plantPullSurfaces.count(),2);
+  assert.ok(
+    await plantPullSurfaces.evaluateAll(surfaces=>surfaces.every(surface=>getComputedStyle(surface).backgroundColor==='rgba(0, 0, 0, 0)')),
+    'Plants list pull surfaces must inherit the shared transparent default'
+  );
+  const initialPlantTheme=await page.evaluate(()=>document.documentElement.dataset.theme);
+  if(initialPlantTheme!=="light"){
+    await page.getByRole('button',{name:'Toggle light and dark mode'}).click();
+    await page.waitForTimeout(700);
+  }
+  const plantTableViewport=page.locator('.plants-table-scroll');
+  const plantTableBox=await plantTableViewport.boundingBox();
+  await plantTableViewport.evaluate(element=>{element.scrollTop=0});
+  await page.mouse.move(plantTableBox.x+8,plantTableBox.y+8);
+  await page.mouse.wheel(0,-720);
+  await page.waitForTimeout(250);
+  const activePlantPull=await page.locator('.plants-table-shell > .wd-scroll-feedback__pull--start').evaluate(surface=>({
+    background:getComputedStyle(surface).backgroundColor,
+    height:Number.parseFloat(surface.style.height)||0
+  }));
+  assert.equal(activePlantPull.background,'rgba(0, 0, 0, 0)');
+  assert.ok(activePlantPull.height>4,'the Plants list top pull must remain active');
+  await page.screenshot({path:'tests/output/plants-list-top-pull-transparent-light.png'});
+  await page.waitForTimeout(900);
+  if(initialPlantTheme!=="light"){
+    await page.getByRole('button',{name:'Toggle light and dark mode'}).click();
+    await page.waitForTimeout(700);
+  }
   assert.equal(await page.locator('.workspace-tab.selected .workspace-tab-label').textContent(), 'Plants');
+  assert.deepEqual(
+    await routeSurface('#plants-view'),
+    {background:'rgba(0, 0, 0, 0)',boxShadow:'none',radius:'10px'},
+    'Plants must let the shared workspace panel own its background and shadow'
+  );
   await page.reload({ waitUntil: 'domcontentloaded' });
   await ready();
   assert.equal(pathname(), '/plants', 'refresh on /plants must stay on Plants');
@@ -68,11 +107,11 @@ const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
   assert.notEqual(fadingRowCorners.background, 'rgba(0, 0, 0, 0)', 'the assertion samples during the fill fade');
   const scrollUi = await page.evaluate(() => {
     const scroll = document.querySelector('.plants-table-scroll');
-    const track = document.querySelector('.wd-scroll-feedback');
-    const thumb = document.querySelector('.wd-scroll-feedback__thumb');
+    const track = document.querySelector('.plants-table-shell > .wd-scroll-feedback');
+    const thumb = document.querySelector('.plants-table-shell > .wd-scroll-feedback .wd-scroll-feedback__thumb');
     return {
       shell: document.querySelector('.plants-table-shell').getBoundingClientRect().toJSON(),
-      header: document.querySelector('.plants-table thead').getBoundingClientRect().toJSON(),
+      header: document.querySelector('.plants-table-header thead').getBoundingClientRect().toJSON(),
       scroll: scroll.getBoundingClientRect().toJSON(),
       track: track.getBoundingClientRect().toJSON(),
       thumb: thumb.getBoundingClientRect().toJSON(),
@@ -84,26 +123,26 @@ const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
   assert.equal(scrollUi.track.bottom, scrollUi.shell.bottom - 10, 'the rail must leave a 10px clearance above the content bottom edge');
   assert.ok(scrollUi.thumb.height < scrollUi.track.height * .7, 'the longer sample list must shorten the scrollbar thumb');
   assert.equal(scrollUi.width, '6px');
-  await page.locator('.wd-scroll-feedback').hover();
+  await page.locator('.plants-table-shell > .wd-scroll-feedback').hover();
   await page.waitForTimeout(30);
   const scrollHover = await page.evaluate(() => {
-    const style = getComputedStyle(document.querySelector('.wd-scroll-feedback__thumb'));
+    const style = getComputedStyle(document.querySelector('.plants-table-shell > .wd-scroll-feedback .wd-scroll-feedback__thumb'));
     return { duration: style.transitionDuration, easing: style.transitionTimingFunction };
   });
   assert.equal(scrollHover.duration, '0.24s');
   assert.equal(scrollHover.easing, 'cubic-bezier(0.16, 1, 0.3, 1)');
   await page.waitForTimeout(240);
   assert.ok(
-    await page.locator('.wd-scroll-feedback__thumb').evaluate(element => Number.parseFloat(getComputedStyle(element).width)) >= 7.9
+    await page.locator('.plants-table-shell > .wd-scroll-feedback .wd-scroll-feedback__thumb').evaluate(element => Number.parseFloat(getComputedStyle(element).width)) >= 7.9
   );
   await page.mouse.move(700, 700);
   await page.waitForTimeout(30);
   assert.equal(
-    await page.locator('.wd-scroll-feedback__thumb').evaluate(element => getComputedStyle(element).transitionDuration),
+    await page.locator('.plants-table-shell > .wd-scroll-feedback .wd-scroll-feedback__thumb').evaluate(element => getComputedStyle(element).transitionDuration),
     '0.36s'
   );
 
-  const thumbBox = await page.locator('.wd-scroll-feedback__thumb').boundingBox();
+  const thumbBox = await page.locator('.plants-table-shell > .wd-scroll-feedback .wd-scroll-feedback__thumb').boundingBox();
   await page.mouse.move(thumbBox.x + thumbBox.width / 2, thumbBox.y + thumbBox.height / 2);
   await page.mouse.down();
   await page.mouse.move(thumbBox.x + thumbBox.width / 2, thumbBox.y + thumbBox.height / 2 + 100, { steps: 5 });
@@ -119,15 +158,15 @@ const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
   await pullWheel(1);
   await page.waitForTimeout(80);
   assert.ok(
-    await page.locator('.wd-scroll-feedback__pull--start').evaluate(element => Number.parseFloat(getComputedStyle(element).height)) <= 1,
+    await page.locator('.plants-table-shell > .wd-scroll-feedback__pull--start').evaluate(element => Number.parseFloat(getComputedStyle(element).height)) <= 1,
     'the first overscroll gesture must feel sticky before revealing the gap'
   );
-  const restingTopThumbHeight = await page.locator('.wd-scroll-feedback__thumb').evaluate(element => element.getBoundingClientRect().height);
+  const restingTopThumbHeight = await page.locator('.plants-table-shell > .wd-scroll-feedback .wd-scroll-feedback__thumb').evaluate(element => element.getBoundingClientRect().height);
   await pullWheel(4);
   await page.waitForTimeout(120);
   const pulled = await page.evaluate(() => {
-    const surface = document.querySelector('.wd-scroll-feedback__pull--start');
-    const thumb = document.querySelector('.wd-scroll-feedback__thumb');
+    const surface = document.querySelector('.plants-table-shell > .wd-scroll-feedback__pull--start');
+    const thumb = document.querySelector('.plants-table-shell > .wd-scroll-feedback .wd-scroll-feedback__thumb');
     return {
       height: Number.parseFloat(getComputedStyle(surface).height),
       background: getComputedStyle(surface).backgroundColor,
@@ -148,7 +187,7 @@ const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
   );
   await page.waitForTimeout(720);
   assert.equal(
-    await page.locator('.wd-scroll-feedback__pull--start').evaluate(element => getComputedStyle(element).height),
+    await page.locator('.plants-table-shell > .wd-scroll-feedback__pull--start').evaluate(element => getComputedStyle(element).height),
     '0px',
     'the elastic surface must settle back after release'
   );
@@ -156,16 +195,16 @@ const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
   await pullWheel(1, 180);
   await page.waitForTimeout(80);
   assert.ok(
-    await page.locator('.wd-scroll-feedback__pull--end').evaluate(element => Number.parseFloat(getComputedStyle(element).height)) <= 1,
+    await page.locator('.plants-table-shell > .wd-scroll-feedback__pull--end').evaluate(element => Number.parseFloat(getComputedStyle(element).height)) <= 1,
     'the bottom edge must have the same sticky entry'
   );
-  const restingBottomThumbHeight = await page.locator('.wd-scroll-feedback__thumb').evaluate(element => element.getBoundingClientRect().height);
+  const restingBottomThumbHeight = await page.locator('.plants-table-shell > .wd-scroll-feedback .wd-scroll-feedback__thumb').evaluate(element => element.getBoundingClientRect().height);
   await pullWheel(4, 180);
   await page.waitForTimeout(120);
   const pulledEnd = await page.evaluate(() => {
-    const surface = document.querySelector('.wd-scroll-feedback__pull--end');
+    const surface = document.querySelector('.plants-table-shell > .wd-scroll-feedback__pull--end');
     const table = document.querySelector('.plants-table');
-    const thumb = document.querySelector('.wd-scroll-feedback__thumb');
+    const thumb = document.querySelector('.plants-table-shell > .wd-scroll-feedback .wd-scroll-feedback__thumb');
     return {
       height: Number.parseFloat(getComputedStyle(surface).height),
       background: getComputedStyle(surface).backgroundColor,
@@ -180,14 +219,14 @@ const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
   const bottomScrollbar = await page.evaluate(() => {
     const shell = document.querySelector('.plants-table-shell').getBoundingClientRect();
     const scroll = document.querySelector('.plants-table-scroll');
-    const header = document.querySelector('.plants-table thead').getBoundingClientRect();
-    const track = document.querySelector('.wd-scroll-feedback').getBoundingClientRect();
-    const thumb = document.querySelector('.wd-scroll-feedback__thumb').getBoundingClientRect();
+    const header = document.querySelector('.plants-table-header thead').getBoundingClientRect();
+    const track = document.querySelector('.plants-table-shell > .wd-scroll-feedback').getBoundingClientRect();
+    const thumb = document.querySelector('.plants-table-shell > .wd-scroll-feedback .wd-scroll-feedback__thumb').getBoundingClientRect();
     return { shellTop: shell.top, scrollOffsetTop: scroll.offsetTop, scrollClientTop: scroll.clientTop, headerHeight: header.height, shellBottom: shell.bottom, trackTop: track.top, trackBottom: track.bottom, thumbBottom: thumb.bottom };
   });
   assert.equal(
     bottomScrollbar.trackTop,
-    bottomScrollbar.shellTop + bottomScrollbar.scrollOffsetTop + bottomScrollbar.scrollClientTop + bottomScrollbar.headerHeight,
+    bottomScrollbar.shellTop + bottomScrollbar.scrollOffsetTop + bottomScrollbar.scrollClientTop,
     JSON.stringify(bottomScrollbar)
   );
   assert.equal(bottomScrollbar.trackBottom, bottomScrollbar.shellBottom - 10);
@@ -230,6 +269,21 @@ const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
   assert.equal(await page.title(), 'WattDesk · Silvio Bräuer');
   assert.equal(await page.locator('.plants-detail').isVisible(), true);
   assert.equal((await page.locator('.plants-detail-title').textContent()).trim(), 'Silvio Bräuer');
+  const plantDetailHeader=page.locator('.plants-detail .wd-page-header');
+  assert.equal(await plantDetailHeader.count(), 1, 'the plant detail uses the shared page header');
+  assert.equal(await plantDetailHeader.evaluate(header=>getComputedStyle(header).height), '40px');
+  assert.deepEqual(
+    await plantDetailHeader.locator('.wd-page-breadcrumb-item').evaluateAll(items=>items.map(item=>item.textContent.trim())),
+    ['Plants', 'Silvio Bräuer'],
+    'the plant detail breadcrumb keeps its hierarchy'
+  );
+  assert.equal(await plantDetailHeader.locator('.wd-page-breadcrumb-link').evaluate(link=>link.tagName), 'BUTTON');
+  assert.equal(await plantDetailHeader.locator('.wd-page-breadcrumb-current').getAttribute('aria-current'), 'page');
+  assert.match(
+    await plantDetailHeader.locator('.wd-page-breadcrumb-separator .target-icon-art').evaluate(icon=>icon.style.getPropertyValue('--icon-mask')),
+    /masks\/asset-14\.svg/
+  );
+  await page.screenshot({ path: 'tests/output/plants-detail-shared-header-dark.png' });
   assert.equal(await page.locator('.target-nav[data-route="plants"]').getAttribute('aria-current'), 'page');
   assert.equal(await page.locator('.workspace-tab').count(), tabsBeforePlant + 1, 'opening a plant row creates one tab');
   assert.equal((await page.locator('.workspace-tab.selected .workspace-tab-label').textContent()).trim(), 'Silvio Bräuer');
@@ -268,17 +322,52 @@ const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
   assert.equal(pathname(), '/plants/p02');
   assert.equal(await page.locator('.plants-detail').isVisible(), true);
 
-  // Real routes without a page surface still persist their URL and Coming soon
-  // state instead of falling back to Home.
+  // Service Ticket is now a real list and detail route. The list owns /service
+  // while cards open a refresh-safe detail tab.
   await page.goto(`${origin}/service`, { waitUntil: 'domcontentloaded' });
   await ready();
   assert.equal(pathname(), '/service');
   assert.equal(await page.title(), 'WattDesk · Service ticket');
-  assert.equal(await page.locator('.wd-empty-state').isVisible(), true);
-  assert.equal((await page.locator('.wd-empty-state-label').textContent()).trim(), 'Coming soon');
+  assert.equal(await page.locator('.service-view').isVisible(), true);
+  assert.equal(await page.locator('.service-card').count(), 8);
+  assert.deepEqual(
+    await routeSurface('#service-view'),
+    {background:'rgba(0, 0, 0, 0)',boxShadow:'none',radius:'10px'},
+    'Service Ticket must let the shared workspace panel own its background and shadow'
+  );
   await page.reload({ waitUntil: 'domcontentloaded' });
   await ready();
-  assert.equal(pathname(), '/service', 'refresh on a coming-soon route must keep that route');
+  assert.equal(pathname(), '/service', 'refresh on Service Ticket must keep the list');
+  await page.goto(`${origin}/service/new`, { waitUntil: 'domcontentloaded' });
+  await ready();
+  assert.equal(pathname(), '/service/new');
+  assert.equal(await page.title(), 'WattDesk · New ticket');
+  assert.equal(await page.locator('.service-ticket-edit--new').isVisible(), true);
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await ready();
+  assert.equal(pathname(), '/service/new', 'refresh on new-ticket editor must stay in the editor');
+  assert.equal(await page.locator('.service-detail-title-input').isVisible(), true);
+  await page.goto(`${origin}/service`, { waitUntil: 'domcontentloaded' });
+  await ready();
+  const serviceTabs = await page.locator('.workspace-tab').count();
+  await page.locator('.service-card[data-ticket-id="st-25638663"]').click();
+  await page.waitForTimeout(420);
+  assert.equal(pathname(), '/service/st-25638663');
+  assert.equal(await page.title(), 'WattDesk · MPPT charge reduces to zero for no reason');
+  assert.equal(await page.locator('.service-detail').isVisible(), true);
+  assert.equal(await page.locator('.service-comment').count(), 4);
+  assert.equal(await page.locator('.workspace-tab').count(), serviceTabs + 1);
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await ready();
+  assert.equal(pathname(), '/service/st-25638663', 'refresh on a service detail must stay on that ticket');
+  await page.locator('.wd-page-breadcrumb-link').click();
+  await page.waitForFunction(count => document.querySelectorAll('.workspace-tab').length === count, serviceTabs);
+  assert.equal(pathname(), '/service', 'Back to tickets must return to the source list tab');
+  await page.goto(`${origin}/service/not-a-ticket`, { waitUntil: 'domcontentloaded' });
+  await ready();
+  assert.equal(pathname(), '/service/not-a-ticket');
+  assert.equal(await page.title(), 'WattDesk · Ticket not found');
+  assert.equal((await page.locator('.service-detail-missing-title').textContent()).trim(), 'Ticket not found');
 
   for (const [path, title] of [
     ['/statistics', 'Statistics'],
@@ -294,6 +383,13 @@ const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
     assert.equal(pathname(), path);
     assert.equal(await page.title(), `WattDesk · ${title}`);
     assert.equal(await page.locator('.wd-empty-state').isVisible(), true);
+    assert.equal(await page.locator('.workspace-empty .wd-page-header').isVisible(), true);
+    assert.equal(
+      (await page.locator('.workspace-empty .wd-page-breadcrumb-current').textContent()).trim(),
+      title,
+      `${title} must use the shared page header`
+    );
+    assert.equal(await page.locator('.workspace-empty .wd-page-header').evaluate(header => header.getBoundingClientRect().height), 40);
     assert.equal((await page.locator('.wd-empty-state-label').textContent()).trim(), 'Coming soon');
   }
 
@@ -302,10 +398,31 @@ const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
   await ready();
   assert.equal(pathname(), '/plants/p03');
   assert.equal((await page.locator('.plants-detail-title').textContent()).trim(), 'Lipovec');
+  assert.deepEqual(
+    await page.locator('.plants-detail .wd-page-breadcrumb-item').evaluateAll(items=>items.map(item=>item.textContent.trim())),
+    ['Plants', 'Lipovec'],
+    'a direct plant deep link restores the shared breadcrumb'
+  );
+  await page.goto(`${origin}/service/st-25638663`, { waitUntil: 'domcontentloaded' });
+  await ready();
+  assert.equal(
+    await page.locator('.service-detail').evaluate(element=>getComputedStyle(element).backgroundColor),
+    'rgba(0, 0, 0, 0)',
+    'the Service detail must let the shared workspace panel own its background and border'
+  );
+  assert.match(
+    await page.locator('#home-workspace-panel').evaluate(element=>getComputedStyle(element,'::after').boxShadow),
+    /inset/
+  );
   await page.goto(`${origin}/plants/not-a-plant`, { waitUntil: 'domcontentloaded' });
   await ready();
   assert.equal(pathname(), '/plants/not-a-plant');
   assert.equal((await page.locator('.plants-detail-title').textContent()).trim(), 'Plant not found');
+  assert.deepEqual(
+    await page.locator('.plants-detail .wd-page-breadcrumb-item').evaluateAll(items=>items.map(item=>item.textContent.trim())),
+    ['Plants', 'Plant not found'],
+    'an unknown plant keeps the shared header and an explicit leaf'
+  );
   assert.equal(await page.title(), 'WattDesk · Plant not found');
 
   // An unnamed plant is auto-created when its device comes online, so the row
@@ -392,7 +509,7 @@ const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
   const toastGeometry = await page.evaluate(() => {
     const box = selector => document.querySelector(selector).getBoundingClientRect();
     const toast = box('#toast');
-    const title = box('.plants-title');
+    const title = box('.plants-header .wd-page-breadcrumb-current');
     return {
       visible: getComputedStyle(document.querySelector('#toast')).display !== 'none',
       toastCenter: toast.top + toast.height / 2,

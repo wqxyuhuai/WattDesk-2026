@@ -84,5 +84,28 @@
     "light/imgDivider2.svg",
     "light/imgEllipse.svg",
     "light/imgHoverSelectedObservation.svg"
-  ]
+  ],
+  "workingTreeBackup20261030": {
+    "path": "E:/OneDrive/Design files sync/AI/Proj. WattDesk/Backups/WattDesk-current-working-tree-20261030-151240.zip",
+    "sha256": "70C230037CF608AAF0963BB2D01BE6AF8BA5741A9A703A47F5C812C7DA5DCFC0"
+  },
+  "consolidation20261030": {
+    "added": [
+      "src/foundations/dom.js",
+      "src/components/time-label.js",
+      "../docs/PROJECT-MAP.md"
+    ],
+    "sharedEntrypoints": [
+      "controls.js#createStandardButton",
+      "icons.js#createMaskedIcon",
+      "time-label.js#createTimeLabel"
+    ],
+    "removed": [
+      "WD_DATE_ACTION_COMPATIBILITY_CLASS",
+      "UNUSED_POPOVER_TOAST_TOKENS",
+      "service-ticket#addMentionAction",
+      "service-ticket#currentTicketId"
+    ],
+    "visualContract": "unchanged"
+  }
 }

@@ -1,6 +1,6 @@
 # Plants 页面功能说明
 
-更新：2026-10-29
+更新：2026-10-30
 
 适用页面：`/plants?glass=figma`
 
@@ -22,10 +22,10 @@
 
 1. 页头：标题 `Plants` 和 `New plant`。
 2. 工具栏：搜索、筛选、列显隐、刷新。
-3. 已应用筛选条：仅有筛选时显示，包含条件 chip、加号与 `Clear`。
-4. 列表：固定表头、可滚动数据行。
+3. 已应用筛选条：仅有筛选时显示，包含条件 chip、加号与 `Clear`；条带使用 `Backgrounds/Tertiary Elevated`，深色为 `#3A3A3C`、浅色为纯白，用于突出已应用条件。
+4. 列表：固定表头、可滚动数据行；表头位于数据滚动区外并与表体共享列宽/横向位置，深色透明显示父面板背景，浅色使用与工作区面板相同的底色，不使用 `backdrop-filter`。
 5. 空态：没有匹配结果或没有数据时显示。
-6. 详情占位：进入 `/plants/:id` 时替代列表区域显示。
+6. 详情占位：进入 `/plants/:id` 时替代列表区域显示；顶部固定复用共享 40px 页头，面包屑为 `Plants / 电站名`。
 
 ## 3. 按钮与可交互元素
 
@@ -33,7 +33,7 @@
 
 | 元素 | 触发 | 当前行为 |
 |---|---|---|
-| `New plant` | 点击、Enter、Space | 显示全局 toast：`Plant creation is a preview in this build — no plant was created`。不会新增行或进入新页面。 |
+| `New plant` | 点击、Enter、Space | 使用共享 28px `wd-page-action` 轻量文字动作，默认透明，hover / focus 显示浅灰胶囊。点击只显示全局 toast：`Plant creation is a preview in this build — no plant was created`，不会新增行或进入新页面。 |
 
 ### 3.2 工具栏
 
@@ -89,9 +89,11 @@
 
 ## 4. 搜索
 
-搜索使用共享紧凑玻璃搜索框，占位文案为：
+搜索使用共享紧凑玻璃搜索框 `createSearchField({size:"compact"})`，占位文案为：
 
 `Search plants, installers or SN`
+
+放大镜、清除按钮、玻璃材质和状态颜色全部来自共享字段；默认使用 `Labels/Secondary`，hover / focus 才转 `Labels/Primary`，Plants 不单独覆盖搜索图标。
 
 搜索为大小写不敏感的包含匹配，搜索范围包括：
 
@@ -156,6 +158,9 @@ Wattsonic Energy Technology
 - 主筛选浮窗宽度 `260px`，高度贴合内容。
 - 工具栏筛选入口与 Columns 菜单右对齐。
 - 筛选条加号入口在自身下方左对齐打开。
+- 已应用筛选条使用 `Backgrounds/Tertiary Elevated` 实底形成层级；深色条带为 `#3A3A3C`，整条在斜向渐变面板上都必须可见；chip、加号和 `Clear` 继续使用各自控件表面。
+- 表头使用独立表格并固定在数据滚动区外，列宽和横向滚动位置与表体同步；深色直接透出父面板背景，浅色继续使用主面板底色。滚动内容不会进入表头，也不得使用背景模糊。
+- 工具栏搜索字段提高绘制层级，使玻璃投影覆盖后续筛选条 / 固定表头，而不是在两者交界处被裁成浅边。
 - Company 二级浮窗宽 `288px`；Device、Connection、Running status 二级浮窗统一宽 `208px`。
 - 二级浮窗是独立 Glass Surface，覆盖主浮窗内缘约 `12px`。
 - 二级浮窗首项与一级类目行对齐；顶部空间不足时由共享定位限制在视口边距内。
@@ -262,11 +267,10 @@ Connection 与 Running status 是两个独立维度。Offline 和 Partially offl
 
 #### Last update
 
-- 小于 `1` 分钟：`Just now`。
-- `1–59` 分钟：`N min ago`。
-- `60–1439` 分钟：四舍五入为小时，并使用单复数 `hour/hours ago`。
-- `1440` 分钟及以上：显示 `MM/DD HH:mm`。
-- 所有行在 title 中提供 `YYYY/MM/DD HH:mm` 绝对时间。
+- 使用共享 `foundations/time.js`：`0–9` 秒为 `Just now`，`10–59` 秒为秒前，`1–59` 分钟为分钟前，`1–23` 小时为小时前，`1–6` 天为天前。
+- 达到 `7` 天后显示本地 `YYYY/MM/DD HH:mm`。
+- 排序继续使用原始 `updatedMinutes`，不受显示格式影响。
+- 所有行在 title 中提供 `YYYY/MM/DD HH:mm` 绝对时间，并使用 `<time datetime>`。
 
 #### SN 和 Firmware
 
@@ -328,7 +332,8 @@ Connection 与 Running status 是两个独立维度。Offline 和 Partially offl
 - 详情通过 `openRouteInNewTab()` 在新工作区标签中打开并立即激活。
 - 原 Plants 列表标签保留。
 - 新标签标题使用电站名称；空名称电站使用 `?`。
-- 详情占位显示电站名或 `?`、公司、SN 和说明文案。
+- 详情顶部复用 `createPageHeader()`，面包屑为 `Plants / 电站名`；父级 `Plants` 与页内 `Back to Plants` 使用同一返回逻辑，未知 ID 的末级为 `Plant not found`。
+- 页头固定，详情占位内容在下方独立滚动区显示；原有电站名或 `?`、公司、SN、`Back to Plants` 和说明文案继续保留。
 - 未知 ID 显示 `Plant not found`，不静默回到 Home。
 
 ### 返回列表
@@ -447,6 +452,7 @@ Plants 页面不新增第二套基础样式或交互，主要复用：
 - 刷新重置筛选、列和排序；
 - 默认排序、收藏置顶与跨刷新持久化；
 - 行打开详情、Back to Plants、未知 ID 和空名称电站；
+- 详情共享页头、`Plants / 电站名` 面包屑、直接深链和未知 ID 末级；
 - `?` 提示的 hover/focus、setup 跳转与不透明状态图标；
 - 深色、浅色主题；
 - 宽屏列宽、表格滚动、页面无整页横向溢出。

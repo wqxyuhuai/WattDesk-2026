@@ -18,6 +18,8 @@ import {createRecentVisits} from "./recent-visits.js";
 import {createHomeSearch} from "./search.js";
 import {createWorkspace} from "./workspace.js";
 import {createPlantsPage} from "../plants/index.js";
+import {createServiceTicketPage} from "../service-ticket/index.js";
+import {ticketById as serviceTicketById} from "../service-ticket/data.js";
 import {plantById} from "../plants/data.js";
 import {mountSkeletons} from "../../components/skeleton.js";
 import "../../foundations/geometry.js";
@@ -97,9 +99,11 @@ const {toast,close,popover,registerPanel,reposition}=createPopoverController({ov
 // The workspace controller is created after the page modules; route calls made
 // by cards and menus resolve through this late-bound wrapper.
 let workspace;
+let serviceTicketsPage;
 function openRoute(route,options){return workspace?.openRoute(route,options);}
 function openRouteInNewTab(route,options){return workspace?.openRouteInNewTab(route,options);}
 function returnToPlantsList(){return workspace?.returnToPlantsList();}
+function returnToServiceList(){return workspace?.returnToServiceList();}
 // Menus, tooltips and toasts inherit the same reviewed surface as dialogs;
 // the shell is created before the page material, so bind it once here.
 targetChrome.workspaceTabs.setGlass(glass);
@@ -109,22 +113,24 @@ const resolvePlantName=id=>{
  const plant=plantById(id);
  return plant?.name||(plant?"?":"");
 };
+const resolveServiceTicketTitle=id=>
+ serviceTicketsPage?.ticketTitle(id)||serviceTicketById(id)?.title||"";
 const historyPopover=createHistoryPopover({glass,registerPanel,close,onSelect:(route,options)=>openRoute(route,options)});
 function openHistory(){
  if(overlays.firstElementChild)close(true);
  return historyPopover.open(targetChrome.history,recentVisits.list.map(recentVisits.describe));
 }
 function action(id,label,handler){const el=get(id);if(el)enhanceControl(el,{label,onActivate:handler})}
-// Both summary cards navigate to Plants. Filtering will be connected with the
-// real Plants route; this preview only changes the current tab's surface.
-for(const [id,label] of [
- ["14537:4416","View sites online"],
- ["14537:3925","View sites needing attention"]
+// Both summary cards open the canonical Plants filter state so the destination
+// is refresh-safe and the matching chip is visible immediately.
+for(const [id,label,params] of [
+ ["14537:4416","View sites online",{connection:"online"}],
+ ["14537:3925","View sites needing attention",{status:"attention"}]
 ]){
  const card=get(id);prepareCard(card,"status");if(id==="14537:4416"||id==="14537:3925")card.dataset.skeleton="status";
  get(`I${id};14536:3833`).classList.add("status-card-arrow-disc");
  get(`I${id};14536:3833;14445:4526`).classList.add("status-card-arrow");
- action(id,label,()=>openRoute("plants"));
+ action(id,label,()=>openRoute("plants",{params}));
 }
 // All three shortcut columns share the same stationary underline interaction.
 // Workspace rows open their own routes; Following sites are an interim jump
@@ -186,11 +192,13 @@ updateThemeButton(initialTheme);
 targetChrome.theme.addEventListener("click",()=>themeController?.toggle());
 targetChrome.history.addEventListener("click",()=>openHistory());
 const homeSnapshot=()=>({scrollTop:homeColumn.scrollTop,query:search.input.value,period:period.label(),range:period.rangeSnapshot()});
-const recentVisits=createRecentVisits({get,onOpen:openRoute,resolvePlantName});
+const recentVisits=createRecentVisits({
+ get,onOpen:openRoute,resolvePlantName,resolveServiceTicketTitle
+});
 workspace=createWorkspace({
  get,glass,toast,close,homeColumn,input:search.input,period,homeSnapshot,targetChrome,
  workspacePanel,searchClose:search.closeAll,recentVisits,
- resolvePlantName,
+ resolvePlantName,resolveServiceTicketTitle,
  layoutHome:()=>layout.resize()
 });
 // The Plants list is a real surface inside the same workspace panel; the shell
@@ -201,11 +209,27 @@ try{
  const plantsPage=createPlantsPage({
    glass,registerPanel,close,reposition,toast,
   onOpenPlant:plant=>openRouteInNewTab("plants",{params:{plantId:plant.id}}),
-  onBackToList:returnToPlantsList
+  onBackToList:returnToPlantsList,
+  onRouteParamsChange:params=>workspace?.replaceActiveParams(params)
  });
  workspace.registerRouteView("plants",plantsPage);
 }catch(error){
  console.error("Plants view failed to mount",error);
+}
+// Service tickets share the same workspace and shell. Their cards open a
+// route-specific detail tab; the source list tab remains available.
+try{
+ serviceTicketsPage=createServiceTicketPage({
+  glass,registerPanel,reposition,close,toast,
+  onOpenTicket:ticket=>openRouteInNewTab("service",{params:{ticketId:ticket.id}}),
+  onOpenNewTicket:()=>openRouteInNewTab("service",{params:{newTicket:true}}),
+  onNewTicketPublished:ticket=>workspace?.replaceActiveParams({ticketId:ticket.id}),
+  onCancelNewTicket:returnToServiceList,
+  onBackToList:returnToServiceList
+ });
+ workspace.registerRouteView("service",serviceTicketsPage);
+}catch(error){
+ console.error("Service Ticket view failed to mount",error);
 }
 // Shell menus share the history panel's interior anatomy. Placeholder locales
 // are visual-only: nothing here changes the page language or persists a choice.

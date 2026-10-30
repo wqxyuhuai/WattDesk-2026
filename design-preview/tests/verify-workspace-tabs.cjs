@@ -21,6 +21,29 @@ const assert=require('node:assert/strict');
    probe.remove();
    return color;
   },token);
+  const historyFitState=locator=>locator.evaluate(row=>{
+   const path=row.querySelector('.wd-history-path'),container=path?.parentElement;
+   const computed=getComputedStyle(path);
+   const probe=document.createElement('span');
+   probe.textContent=row.getAttribute('aria-label')||'';
+   Object.assign(probe.style,{
+    position:'absolute',visibility:'hidden',pointerEvents:'none',whiteSpace:'nowrap',width:'max-content',
+    fontFamily:computed.fontFamily,fontSize:computed.fontSize,fontStyle:computed.fontStyle,
+    fontWeight:computed.fontWeight,fontStretch:computed.fontStretch,fontVariant:computed.fontVariant,
+    letterSpacing:computed.letterSpacing,wordSpacing:computed.wordSpacing
+   });
+   container.append(probe);
+   const fullWidth=probe.getBoundingClientRect().width;
+   probe.remove();
+   const usedWidth=[...path.children].reduce((sum,part)=>sum+part.getBoundingClientRect().width,0);
+   return {
+    available:container.getBoundingClientRect().width,
+    usedWidth,
+    fullWidth,
+    visibleText:path.textContent,
+    overflow:path.scrollWidth>path.clientWidth+1
+   };
+  });
 
   await page.locator('.target-nav[data-route="plants"]').click();
   await page.waitForTimeout(340);
@@ -122,6 +145,46 @@ const assert=require('node:assert/strict');
   assert.equal((await page.locator('.plants-detail-title').textContent()).trim(),'Silvio Bräuer');
   assert.equal((await page.locator('.workspace-tab.selected .workspace-tab-label').textContent()).trim(),'Silvio Bräuer');
   assert.equal(await page.locator('.workspace-tab').count(),4,'selecting an existing plant detail should activate its existing tab');
+
+  const longHistoryLabel='Service ticket / Request: export monthly fault history';
+  await page.locator('.target-nav[data-route="service"]').click();
+  await page.waitForTimeout(320);
+  await page.locator('.service-card[data-ticket-id="st-25638488"]').click();
+  await page.waitForTimeout(320);
+  await page.locator('.target-nav[data-route="home"]').click();
+  await page.waitForTimeout(320);
+  const homeLongHistory=page.locator(`[data-recent-visit="true"][aria-label="${longHistoryLabel}"]`);
+  assert.equal(await homeLongHistory.count(),1,'the long service detail must appear in Recently visited');
+  const homeLongFit=await historyFitState(homeLongHistory);
+  assert.equal(homeLongFit.overflow,false,'the Home history path must not overflow');
+  if(homeLongFit.fullWidth<=homeLongFit.available){
+   assert.equal(homeLongFit.visibleText,longHistoryLabel,'a path that fits must not be truncated');
+  }else{
+   assert.ok(
+    homeLongFit.visibleText.includes('Request: export monthly fault history')||homeLongFit.usedWidth>=homeLongFit.available-14,
+    `the Home history path must show the complete leaf when it fits or use its available width: ${JSON.stringify(homeLongFit)}`
+   );
+  }
+  await page.locator('.target-history').click();
+  await page.waitForTimeout(360);
+  const popoverLongHistory=page.locator(`.wd-history-row[aria-label="${longHistoryLabel}"]`);
+  assert.equal(await popoverLongHistory.count(),1,'the long service detail must appear in the shared history popover');
+  const popoverLongFit=await historyFitState(popoverLongHistory);
+  assert.equal(popoverLongFit.overflow,false,'the history popover path must not overflow');
+  if(popoverLongFit.fullWidth<=popoverLongFit.available){
+   assert.equal(popoverLongFit.visibleText,longHistoryLabel,'a fitting popover path must not be truncated');
+  }else{
+   assert.ok(
+    popoverLongFit.visibleText.includes('Request: export monthly fault history')||popoverLongFit.usedWidth>=popoverLongFit.available-14,
+    `the history popover path must show the complete leaf when it fits or use its available width: ${JSON.stringify(popoverLongFit)}`
+   );
+  }
+  await page.screenshot({path:'tests/output/history-path-available-width-light.png'});
+  await page.getByRole('button',{name:'Toggle light and dark mode'}).click();
+  await page.waitForTimeout(700);
+  await page.locator('.target-history').click();
+  await page.waitForTimeout(360);
+  await page.screenshot({path:'tests/output/history-path-available-width-dark.png'});
   assert.deepEqual(errors,[]);
   console.log(JSON.stringify({ok:true,order:await labels(),active:await page.locator('.workspace-tab.selected').getAttribute('data-tab-id'),errors},null,2));
  }finally{

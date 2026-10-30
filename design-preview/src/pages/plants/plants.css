@@ -10,24 +10,30 @@
  position:absolute;inset:0;
  display:flex;flex-direction:column;min-height:0;
  border-radius:inherit;overflow:hidden;
- background:var(--wd-bg-tertiary);
+ background:transparent;
  color:var(--wd-label-primary);
 }
 .plants-view[hidden]{display:none}
 
 .plants-inner{
  --plants-page-inset:24px;
+ --wd-page-inset:var(--plants-page-inset);
  display:flex;flex-direction:column;min-height:0;height:100%;
- padding:var(--wd-space-3) var(--plants-page-inset) 0;
+  padding:var(--wd-space-1) var(--plants-page-inset) 0;
 }
 .plants-inner[hidden]{display:none}
 
 /* ── /plants/:id placeholder ─────────────────────────────────────────────── */
 /* The URL is real and survives refresh; the detail design is not part of this
- * build yet, so this surface only identifies the plant and states that fact. */
-.plants-detail{position:absolute;inset:0;display:flex;align-items:flex-start;justify-content:center;overflow:auto;padding:32px 24px}
+ * build yet, so this surface only identifies the plant and states that fact.
+ * The shared page header stays fixed while the placeholder body scrolls. */
+.plants-detail{position:absolute;inset:0;display:flex;flex-direction:column;overflow:hidden}
 .plants-detail[hidden]{display:none}
-.plants-detail-inner{width:min(560px,100%);display:flex;flex-direction:column;align-items:flex-start;gap:10px;padding-top:24px}
+.plants-detail-header-host{--wd-page-inset:24px;flex:0 0 auto;padding:var(--wd-space-1) var(--wd-page-inset) 0}
+.plants-detail-header{position:relative}
+.plants-detail-heading{min-width:0}
+.plants-detail-viewport{flex:1 1 auto;min-height:0;overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;padding:24px 24px 32px}
+.plants-detail-inner{width:min(560px,100%);display:flex;flex-direction:column;align-items:flex-start;gap:10px;margin:0 auto}
 .plants-detail-back{margin-bottom:18px}
 .plants-detail-kicker{margin:0;color:var(--wd-label-tertiary);letter-spacing:.4px;text-transform:uppercase}
 .plants-detail-title{
@@ -38,19 +44,6 @@
 .plants-detail-meta{margin:0;color:var(--wd-label-secondary);font-variant-numeric:tabular-nums}
 .plants-detail-note{max-width:440px;margin:8px 0 0;color:var(--wd-label-tertiary)}
 
-/* ── Header ─────────────────────────────────────────────────────────────── */
-.plants-header{position:relative;display:flex;align-items:center;gap:12px;flex:0 0 auto;min-height:36px;padding:0 0 8px}
-/* The header rule reaches the panel edges instead of stopping at the content
- * inset, so the line reads as the top of the table rather than a text underline. */
-.plants-header::after{
- content:"";position:absolute;left:calc(-1 * var(--plants-page-inset));right:calc(-1 * var(--plants-page-inset));bottom:0;
- height:var(--wd-divider-width);background:var(--wd-separator-nonopaque);
- pointer-events:none;
-}
-.plants-heading{display:flex;align-items:baseline;gap:8px;min-width:0}
-.plants-title{margin:0;white-space:nowrap;color:var(--wd-label-primary)}
-.plants-actions{margin-left:auto;display:flex;align-items:center;gap:8px}
-
 /* ── Toolbar ─────────────────────────────────────────────────────────────── */
 /* Keep the controls clear of the header rule; the top inset matches the page's
  * 12px spacing rhythm, while the existing 8px below separates them from rows. */
@@ -60,6 +53,7 @@
 /* The shared search field owns its height, radius, glyph, clear control and
  * material; only the width is page-specific. */
 .plants-toolbar>.plants-search{flex:0 1 360px;min-width:200px;max-width:440px}
+.plants-toolbar>.plants-search{z-index:4}
 
 .plants-toolbar-actions{display:flex;align-items:center;gap:8px;flex:0 0 auto}
 /* Standard disc's shared material owns size, radius, colour and focus. Only
@@ -104,24 +98,29 @@
 
 /* ── Table ─────────────────────────────────────────────────────────────── */
 .plants-table-shell{
- --wd-scroll-pull-surface:var(--wd-bg-tertiary);
  --wd-scroll-pull-start-radius:0 0 12px 12px;
  --wd-scroll-pull-end-radius:12px 12px 0 0;
- position:relative;display:flex;flex:1 1 auto;min-height:0;
+ position:relative;display:flex;flex-direction:column;flex:1 1 auto;min-height:0;
 }
 .plants-table-shell[hidden]{display:none}
+.plants-table-header{
+ position:relative;z-index:3;flex:0 0 36px;min-width:0;height:36px;
+ margin:2px calc(-1 * (var(--plants-page-inset) - 10px)) 0 0;
+ padding-right:calc(var(--plants-page-inset) - 10px);
+ overflow:hidden;
+}
+.plants-table-header-table{
+ width:100%;border-collapse:separate;border-spacing:0;table-layout:fixed;
+ will-change:transform;
+}
 .plants-table-scroll{
  position:relative;z-index:1;
  flex:1 1 auto;min-width:0;min-height:0;overflow-x:auto;overflow-y:scroll;overscroll-behavior:contain;
  scrollbar-width:none;
- scroll-padding-top:38px;
  /* Keep the table body on the 24px page line while moving only the scrollbar
   * into the gutter. The same geometry applies at every width, so crossing a
   * responsive breakpoint cannot make the thumb jump sideways. */
  margin-right:calc(-1 * (var(--plants-page-inset) - 10px));
- /* The 2px breathing room lives outside the scrollport. Padding would leave a
- * strip above the sticky header where scrolled row text leaks through. */
- margin-top:2px;
  padding:0 calc(var(--plants-page-inset) - 10px) 14px 0;
 }
 .plants-table-scroll[hidden]{display:none}
@@ -139,14 +138,13 @@
 }
 
 /* Column headings are the quieter layer: 12px regular, secondary ink. The
- * header row is one 36px line so the table's leading bookmark aligns with the
- * start of the page title and the rows below. */
-.plants-table thead th{
- position:sticky;top:0;z-index:3;
+ * header row is one 36px line and sits outside the body scrollport. */
+.plants-table-header th{
  height:36px;padding:0 6px;
- background:var(--wd-bg-tertiary);
+ background:transparent;
  color:var(--wd-label-secondary);text-align:left;font-weight:400;white-space:nowrap;
 }
+:root[data-theme="light"] .plants-table-header th{background:var(--wd-main-panel-background)}
 .plants-th--connection .plants-th-label{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
 
 .plants-sort{

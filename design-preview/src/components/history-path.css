@@ -3,17 +3,28 @@
  * stay tertiary while the actual destination uses primary ink.
  */
 .wd-history-path{
-  display:inline;
+  display:flex;
+  align-items:baseline;
+  flex:1 1 auto;
+  min-width:0;
+  max-width:100%;
+  overflow:hidden;
+  white-space:nowrap;
 }
 
 .wd-history-path-part{
-  min-width:0;
+  flex:0 0 auto;
+  overflow:hidden;
   white-space:nowrap;
 }
 
 .wd-history-path-part--ancestor,
 .wd-history-path-part--separator{
   color:var(--wd-label-secondary);
+}
+
+.wd-history-path-part--separator{
+  padding:0 4px;
 }
 
 .wd-history-path-part--current{

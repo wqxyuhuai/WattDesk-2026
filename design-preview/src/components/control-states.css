@@ -9,6 +9,14 @@
 .wd-control-state:is(:hover,:focus-visible,:has(:focus-visible)) .wd-control-label>span{
  color:var(--wd-label-primary)!important;
 }
+/* The solid accent button keeps white ink in both themes; the generic light
+ * hover state must not turn its label or icon into the dark primary ink. */
+:root[data-theme="light"] .wd-button--primary:is(:hover,:focus-visible,:has(:focus-visible)){
+ color:var(--wd-figma-grays-white)!important;
+}
+:root[data-theme="light"] .wd-button--primary:is(:hover,:focus-visible,:has(:focus-visible)) :is(.wd-control-label,.wd-control-label>span){
+ color:var(--wd-figma-grays-white)!important;
+}
 /* Original idle SVGs remain available; state masks use the exact same paths. */
 .shared-icon-highlight{position:absolute;display:block;background:var(--wd-label-primary);mask:var(--icon-mask) center/100% 100% no-repeat;-webkit-mask:var(--icon-mask) center/100% 100% no-repeat;opacity:0;pointer-events:none;transform-origin:center;}
 .wd-glass:is(:hover,:focus-visible,:has(:focus-visible)) .shared-icon-highlight{opacity:1}

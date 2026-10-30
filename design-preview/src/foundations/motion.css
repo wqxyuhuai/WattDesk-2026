@@ -83,6 +83,16 @@
   transition-timing-function: var(--wd-hover-ease);
 }
 
+/* Placeholder text is a native pseudo-element, so it cannot inherit the
+ * transition declarations from its host input. Give it the same shared
+ * colour rhythm explicitly; callers still own only idle and active colours. */
+:where(input, textarea)::placeholder,
+.service-reply-input[data-empty="true"]::before {
+  transition-property: color;
+  transition-duration: var(--wd-hover-duration);
+  transition-timing-function: var(--wd-hover-ease);
+}
+
 /* One state switch per host, covering native controls, ARIA roles, the shared
  * control wrapper, glass surfaces (pointer glow) and workspace lanes. */
 :where(
@@ -118,6 +128,21 @@
   .wd-glass,
   .workspace-tab
 ):is(:hover, :focus-visible, :has(:focus-visible)) {
+  --wd-hover-duration: var(--wd-motion-hover);
+  --wd-hover-ease: var(--wd-ease-hover);
+}
+
+/* Hover/focus reveal containers are independent painted layers, so their
+ * opacity cannot inherit a child control's transition. The semantic host
+ * owns the visual state; this shared contract supplies the asymmetric
+ * 240ms entry / 360ms exit rhythm without page-local timing. */
+:where(.wd-hover-reveal) {
+  transition-property: opacity;
+  transition-duration: var(--wd-hover-duration);
+  transition-timing-function: var(--wd-hover-ease);
+}
+
+:where(.wd-hover-reveal-host):is(:hover, :focus-within) :where(.wd-hover-reveal) {
   --wd-hover-duration: var(--wd-motion-hover);
   --wd-hover-ease: var(--wd-ease-hover);
 }
@@ -255,6 +280,13 @@
   transition-duration: var(--wd-motion-glass-press);
   transition-timing-function: var(--wd-ease-glass);
 }
+.wd-button--disc .wd-control-icon,
+.wd-button--disc>.target-icon-art {
+  transform-origin:center;
+  transition-property:transform;
+  transition-duration:var(--wd-motion-glass-release);
+  transition-timing-function:var(--wd-ease-glass-release);
+}
 /* A tab owns both its layout/colour rhythm and its glass depth. Keep the
  * shared tab list intact instead of letting the later glass rule replace it. */
 :where(.workspace-tab.wd-glass) {
@@ -274,6 +306,12 @@
   :where(.wd-glass--disc:not(.wd-glass-chrome):not(.wd-glass--static):not(:disabled):not([aria-disabled="true"]):is(:hover,:focus-visible)) {
     transform: scale(var(--wd-glass-disc-scale-x),var(--wd-glass-disc-scale-y));
   }
+  .wd-button--disc:not(:disabled):not([aria-disabled="true"]):is(:hover,:focus-visible) .wd-control-icon,
+  .wd-button--disc:not(:disabled):not([aria-disabled="true"]):is(:hover,:focus-visible)>.target-icon-art {
+    transform:scale(var(--wd-button-icon-hover-scale,1.06));
+    transition-duration:var(--wd-motion-glass-hover);
+    transition-timing-function:var(--wd-ease-glass);
+  }
   :where(.wd-glass:not(.wd-glass-chrome):not(.wd-glass--static):not(:disabled):not([aria-disabled="true"]):active) {
     transform: scale(var(--wd-glass-press-scale-x),var(--wd-glass-press-scale-y));
     transition-duration: var(--wd-motion-glass-press);
@@ -281,6 +319,39 @@
   }
   :where(.wd-glass--disc:not(.wd-glass-chrome):not(.wd-glass--static):not(:disabled):not([aria-disabled="true"]):active) {
     transform: scale(var(--wd-glass-disc-press-scale-x),var(--wd-glass-disc-press-scale-y));
+  }
+  .wd-button--disc:not(:disabled):not([aria-disabled="true"]):active .wd-control-icon,
+  .wd-button--disc:not(:disabled):not([aria-disabled="true"]):active>.target-icon-art {
+    transform:scale(var(--wd-button-icon-press-scale,1.12));
+    transition-duration:var(--wd-motion-glass-press);
+    transition-timing-function:var(--wd-ease-glass-press);
+  }
+}
+
+/* Non-glass controls can opt into the same depth response without inheriting
+ * the glass material. Size, radius, colour and pointer hit area stay fixed. */
+:where(.wd-press-scale) {
+  transform-origin: center;
+  transition-property: transform;
+  transition-duration: var(--wd-motion-glass-release);
+  transition-timing-function: var(--wd-ease-glass-release);
+}
+@media (hover: hover) and (pointer: fine) {
+  :where(.wd-press-scale:not(:disabled):not([aria-disabled="true"]):is(:hover,:focus-visible)) {
+    transform: scale(
+      calc(var(--wd-glass-hover-scale) + var(--wd-glass-hover-stretch)),
+      calc(var(--wd-glass-hover-scale) - var(--wd-glass-hover-stretch))
+    );
+    transition-duration: var(--wd-motion-glass-hover);
+    transition-timing-function: var(--wd-ease-glass);
+  }
+  :where(.wd-press-scale:not(:disabled):not([aria-disabled="true"]):active) {
+    transform: scale(
+      calc(var(--wd-glass-press-scale) + var(--wd-glass-press-stretch)),
+      calc(var(--wd-glass-press-scale) - var(--wd-glass-press-stretch))
+    );
+    transition-duration: var(--wd-motion-glass-press);
+    transition-timing-function: var(--wd-ease-glass-press);
   }
 }
 
@@ -313,5 +384,8 @@
     animation-delay: 0ms !important;
     scroll-behavior: auto !important;
   }
-  :where(.wd-glass:not(.wd-glass-chrome)) { transform: none !important; }
+  :where(.wd-glass:not(.wd-glass-chrome)),
+  :where(.wd-press-scale),
+  .wd-button--disc .wd-control-icon,
+  .wd-button--disc>.target-icon-art { transform: none !important; }
 }

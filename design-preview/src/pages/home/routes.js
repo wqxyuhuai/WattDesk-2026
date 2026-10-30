@@ -19,6 +19,11 @@ export const ROUTE_CATALOG={
 export const SEARCH_QUICK_LINKS=["home","plants","service","track"];
 const PATH_TO_ROUTE=new Map(Object.entries(ROUTE_CATALOG).map(([route,definition])=>[definition.path,route]));
 const PLANT_DETAIL_PATH=/^\/plants\/([^/]+)$/;
+const SERVICE_DETAIL_PATH=/^\/service\/([^/]+)$/;
+const PLANT_FILTER_VALUES=Object.freeze({
+ connection:new Set(["online"]),
+ status:new Set(["attention"])
+});
 
 function normalizePath(pathname){
  const value=String(pathname||"/");
@@ -29,17 +34,36 @@ function normalizePath(pathname){
 // Translate a location into the shell's route + params. Unknown URLs stay
 // explicit (`route:null`) instead of being rewritten to Home, so a bad deep
 // link is visibly a not-found state and a refresh cannot hide it.
-export function routeFromPath(pathname){
+function plantFiltersFromSearch(search){
+ const values=new URLSearchParams(search||"");
+ const params={};
+ for(const [key,allowed] of Object.entries(PLANT_FILTER_VALUES)){
+  const value=values.get(key);
+  if(allowed.has(value))params[key]=value;
+ }
+ return params;
+}
+
+export function routeFromPath(pathname,search=""){
  const path=normalizePath(pathname);
  if(path==="/"||path==="/home"||path==="/home.html"||path==="/index.html"){
   return {route:"home",params:{}};
  }
- if(path==="/plants")return {route:"plants",params:{}};
+ if(path==="/plants")return {route:"plants",params:plantFiltersFromSearch(search)};
  const detail=path.match(PLANT_DETAIL_PATH);
  if(detail){
   let plantId;
   try{plantId=decodeURIComponent(detail[1]);}catch{/* malformed escape */ }
   if(plantId&&!plantId.includes("/"))return {route:"plants",params:{plantId}};
+  return {route:null,params:{},notFound:true};
+ }
+ if(path==="/service")return {route:"service",params:{}};
+ if(path==="/service/new")return {route:"service",params:{newTicket:true}};
+ const serviceDetail=path.match(SERVICE_DETAIL_PATH);
+ if(serviceDetail){
+  let ticketId;
+  try{ticketId=decodeURIComponent(serviceDetail[1]);}catch{/* malformed escape */ }
+  if(ticketId&&!ticketId.includes("/"))return {route:"service",params:{ticketId}};
   return {route:null,params:{},notFound:true};
  }
  const route=PATH_TO_ROUTE.get(path);
@@ -50,6 +74,16 @@ export function routeFromPath(pathname){
 // The detail URL is part of the route contract, not page-local state.
 export function pathForRoute(route,params={}){
  if(route==="plants"&&params?.plantId)return `/plants/${encodeURIComponent(String(params.plantId))}`;
+ if(route==="service"&&params?.newTicket)return "/service/new";
+ if(route==="service"&&params?.ticketId)return `/service/${encodeURIComponent(String(params.ticketId))}`;
+ if(route==="plants"){
+  const search=new URLSearchParams();
+  for(const [key,allowed] of Object.entries(PLANT_FILTER_VALUES)){
+   if(allowed.has(params?.[key]))search.set(key,params[key]);
+  }
+  const query=search.toString();
+  return query?`/plants?${query}`:"/plants";
+ }
  return ROUTE_CATALOG[route]?.path??null;
 }
 
@@ -57,9 +91,11 @@ export function displayTitle(route){
  return route==="statistics"?"Statistics (coming soon)":ROUTE_CATALOG[route]?.title||"Home";
 }
 
-export function documentTitle(route,params={},plantName=""){
+export function documentTitle(route,params={},resourceName=""){
  if(!route)return "WattDesk · Page not found";
- if(route==="plants"&&params?.plantId)return `WattDesk · ${plantName||"Plant not found"}`;
+ if(route==="plants"&&params?.plantId)return `WattDesk · ${resourceName||"Plant not found"}`;
+ if(route==="service"&&params?.newTicket)return "WattDesk · New ticket";
+ if(route==="service"&&params?.ticketId)return `WattDesk · ${resourceName||"Ticket not found"}`;
  return `WattDesk · ${displayTitle(route).replace(" (coming soon)","")}`;
 }
 

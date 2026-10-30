@@ -1,6 +1,7 @@
-/* One stylesheet entry for every current/future page. Order is deliberate. */
-@import url("./foundations/tokens.css");
+/* One stylesheet entry for every current/future page. Generated palette first,
+ * then the semantic runtime tokens that apply the reviewed theme overrides. */
 @import url("./foundations/colors.css");
+@import url("./foundations/tokens.css");
 @import url("./foundations/base.css");
 @import url("./foundations/motion.css");
 @import url("./layouts/app-shell.css");
@@ -11,6 +12,7 @@
 @import url("./components/popover.css");
 @import url("./components/filter-menu.css");
 @import url("./components/cards.css");
+@import url("./components/page-header.css");
 @import url("./components/scroll-feedback.css");
 @import url("./components/skeleton.css");
 @import url("./components/empty-state.css");

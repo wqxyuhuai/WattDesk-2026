@@ -41,7 +41,7 @@ const fs=require('node:fs');
  for(const selector of ['.target-icon-button','.target-tab','.target-nav','.target-quick-search','.target-header-actions','[data-node-id="14445:3354"]','[data-node-id="14578:6106"]']){
   for(const shape of await page.locator(selector).evaluateAll(es=>es.map(e=>getComputedStyle(e).cornerShape)))assert.match(shape,/^(round|superellipse\(1\))$/,selector+' must preserve Figma circle/capsule');
  }
- for(const [selector,radius] of [['.stat-chart-card','30px'],['.wd-main-panel','10px'],['.wd-glass[data-corner-profile="continuous"]:not(.wd-glass--surface)','30px'],['.wd-glass--surface[data-corner-profile="continuous"]','12px']]){
+ for(const [selector,radius] of [['.stat-chart-card','30px'],['.wd-main-panel','10px'],['.wd-glass[data-node-id][data-corner-profile="continuous"]:not(.wd-glass--surface)','30px'],['.wd-glass--surface[data-corner-profile="continuous"]','12px']]){
   for(const value of await page.locator(selector).evaluateAll(es=>es.map(e=>({shape:getComputedStyle(e).cornerShape,radius:getComputedStyle(e).borderRadius})))){
    assert.equal(value.shape,'superellipse(1.2)',selector+' must have a continuous curve, not ordinary round or full squircle');assert.equal(value.radius,radius);
   }
@@ -113,9 +113,38 @@ const fs=require('node:fs');
   const avatarShadow=await page.locator('.target-avatar').evaluate(e=>getComputedStyle(e).boxShadow);
   assert.match(avatarShadow,/(?:^|,\s*)rgba\([^)]+\) 0px 0px 0px 1px inset/);
   assert.ok(!/\) 0px [1-9]\d*px \d/.test(avatarShadow),'Avatar shadow must not be offset downwards');
-  if(theme==='light'){
+  if(theme==='dark'){
+   const mainPanel=await page.locator('#home-workspace-panel.wd-main-panel').evaluate(e=>{const s=getComputedStyle(e);return {backgroundImage:s.backgroundImage,backgroundColor:s.backgroundColor,boxShadow:s.boxShadow};});
+   assert.match(mainPanel.backgroundImage,/linear-gradient\(121\.946deg, rgb\(44, 44, 46\).*rgb\(28, 28, 30\)/,'Dark panel paint must remain unchanged');
+   assert.equal(mainPanel.backgroundColor,'rgba(0, 0, 0, 0)');
+   assert.match(mainPanel.boxShadow,/rgb\(0, 0, 0\) 0px 0px 4px 0px/,'Dark panel lift must remain unchanged');
+  }else{
    assert.match(avatarShadow,/rgba\(0, 0, 0, 0\) 0px 0px 0px 0px$/,'Light avatar must not cast an outer shadow');
-   assert.match(await page.locator('.wd-main-panel').evaluate(e=>getComputedStyle(e).boxShadow),/rgba\(0, 0, 0, 0.07\)/);
+    const mainPanel=await page.locator('#home-workspace-panel.wd-main-panel').evaluate(e=>{const s=getComputedStyle(e);return {backgroundColor:s.backgroundColor,backgroundImage:s.backgroundImage,boxShadow:s.boxShadow};});
+    assert.equal(mainPanel.backgroundColor,'rgb(247, 247, 247)','Light workspace panel must be a neutral light grey');
+    assert.equal(mainPanel.backgroundImage,'none','Light workspace panel must not retain the white-to-cool-grey gradient');
+    assert.doesNotMatch(mainPanel.boxShadow,/inset/,'Light workspace panel must not draw an inner stroke');
+    assert.match(mainPanel.boxShadow,/rgba\(0, 0, 0, 0\.035\) 0px 2px 3px 0px/,'Light panel contact shadow must sit just below the surface');
+    assert.match(mainPanel.boxShadow,/rgba\(0, 0, 0, 0\.05\) 0px 4px 9px -3px/,'Light panel ambient shadow must sit just below the surface');
+    const panelShadowAlphas=[...mainPanel.boxShadow.matchAll(/rgba\(0, 0, 0, ([0-9.]+)\)/g)].map(match=>Number(match[1]));
+    assert.equal(panelShadowAlphas.length,2);
+    assert.ok(Math.abs(panelShadowAlphas[0]-.035)<.003,'Light panel contact shadow must stay softened');
+    assert.ok(Math.abs(panelShadowAlphas[1]-.05)<.003,'Light panel ambient shadow must stay softened');
+    assert.equal(await page.locator('#home-workspace-panel').evaluate(e=>getComputedStyle(e,'::after').boxShadow),'none','Light workspace panel after-layer stroke must be removed');
+    const neutralSurfaces=await page.evaluate(()=>{
+      const inspect=selector=>{const e=document.querySelector(selector);if(!e)return null;const s=getComputedStyle(e);return {background:s.backgroundColor,color:s.color};};
+      return {
+        body:inspect('body'),
+        statusGlass:inspect('.status-card>.wd-glass-material>.wd-glass-fill'),
+        activeNav:inspect('.target-nav.active')
+      };
+    });
+    const channels=value=>{const match=value.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);return match?match.slice(1).map(Number):null;};
+    for(const [name,value] of Object.entries(neutralSurfaces)){
+      const rgb=channels(value.background);
+      assert.ok(rgb&&rgb.every(channel=>channel===rgb[0]),`Light ${name} surface must use neutral grey, received ${value.background}`);
+    }
+    assert.equal(await page.locator('.stat-chart-card').first().evaluate(e=>getComputedStyle(e).backgroundColor),'rgb(255, 255, 255)','Light statistic cards must use a pure white base');
   }
   for(const viewport of [{width:1545,height:1252},{width:1920,height:1080}]){
    await page.setViewportSize(viewport);await page.waitForTimeout(800);

@@ -254,11 +254,14 @@ const origin = new URL(require('./runtime.cjs').previewURL).origin;
   assert.equal((await page.locator('.workspace-tab.selected .workspace-tab-label').textContent()).trim(),'Service ticket');
   assert.equal(await page.locator('.target-nav[data-route="service"]').getAttribute('aria-current'),'page');
   assert.equal(await page.locator('[data-node-id="14578:7006"]').isVisible(),false);
-  // Empty routes share the 64px icon + 18px medium Coming soon fallback.
+  assert.equal(await page.locator('.service-view').isVisible(),true);
+  assert.equal(await page.locator('.service-card').count(),8);
+  // Remaining empty routes share the 64px icon + 18px medium Coming soon fallback.
+  await page.locator('.target-nav[data-route="statistics"]').click();await page.waitForTimeout(320);
   const empty=page.locator('.wd-empty-state');
   assert.equal(await empty.isVisible(),true);
   assert.equal((await empty.locator('.wd-empty-state-label').textContent()).trim(),'Coming soon');
-  assert.equal(await empty.locator('.wd-empty-state-icon img').getAttribute('src'),`${origin}/home-assets/asset-7.svg`);
+  assert.equal(await empty.locator('.wd-empty-state-icon img').getAttribute('src'),`${origin}/home-assets/statistics.svg`);
   const emptyGeometry=await empty.evaluate(el=>{
     const panel=document.querySelector('#home-workspace-panel').getBoundingClientRect(),box=el.getBoundingClientRect();
     const icon=el.querySelector('.wd-empty-state-icon').getBoundingClientRect(),label=el.querySelector('.wd-empty-state-label').getBoundingClientRect();
@@ -280,12 +283,38 @@ const origin = new URL(require('./runtime.cjs').previewURL).origin;
     else{assert.equal(iconState.colorOpacity,'1');assert.equal(iconState.monoOpacity,'0');}
   }
   await page.locator('.target-nav[data-route="home"]').click();await page.waitForTimeout(320);
-  // Summary cards navigate to Plants instead of opening a detail popover.
-  for(const id of ['14537:4416','14537:3925']){
+  // Summary cards open Plants with the matching filter already applied. The
+  // query lives in the URL so refresh, copied links and Back keep the result.
+  const summaryFilterCounts=await page.evaluate(async()=>{
+    const {PLANTS,STATUS_META}=await import('/src/pages/plants/data.js');
+    const health=plant=>plant.status==='unbound'?'unbound':plant.status==='normal'?'normal':'attention';
+    return {
+      online:PLANTS.filter(plant=>STATUS_META[plant.status].connection==='online').length,
+      attention:PLANTS.filter(plant=>health(plant)==='attention').length
+    };
+  });
+  for(const {id,key,value,label,count} of [
+    {id:'14537:4416',key:'connection',value:'online',label:'Online',count:summaryFilterCounts.online},
+    {id:'14537:3925',key:'status',value:'attention',label:'Attention',count:summaryFilterCounts.attention}
+  ]){
     await page.locator('[data-node-id="'+id+'"]').click();await page.waitForTimeout(320);
+    const destination=new URL(page.url());
+    assert.equal(destination.pathname,'/plants');
+    assert.equal(destination.searchParams.get(key),value);
     assert.equal(await page.locator('#home-active-popover').count(),0);
     assert.equal((await page.locator('.workspace-tab.selected .workspace-tab-label').textContent()).trim(),'Plants');
     assert.equal(await page.locator('.target-nav[data-route="plants"]').getAttribute('aria-current'),'page');
+    assert.equal(await page.locator('.plants-row').count(),count);
+    assert.deepEqual(await page.locator('.plants-chip-label').allTextContents(),[label]);
+    assert.match(await page.locator('.plants-toolbar-actions .plants-icon-button').first().getAttribute('aria-label'),/1 active/);
+    await page.reload({waitUntil:'domcontentloaded'});
+    await page.waitForFunction(()=>document.documentElement.dataset.ready==='true');
+    assert.equal(await page.locator('.plants-row').count(),count,'the summary filter must survive refresh');
+    assert.deepEqual(await page.locator('.plants-chip-label').allTextContents(),[label]);
+    await page.locator('.plants-chip-remove').click();
+    await page.waitForTimeout(120);
+    assert.equal(new URL(page.url()).searchParams.has(key),false,'clearing the chip must clear its route preset');
+    assert.equal(await page.locator('.plants-row').count(),46,'clearing the preset must restore the full list');
     await page.locator('.target-nav[data-route="home"]').click();await page.waitForTimeout(320);
   }
   await page.locator('.target-nav[data-route="home"]').click();await page.waitForTimeout(320);
@@ -704,6 +733,7 @@ const origin = new URL(require('./runtime.cjs').previewURL).origin;
   await page.locator('[data-node-id="14578:7006"]').evaluate(el => el.scrollTop = 0);
   await page.screenshot({ path: 'tests/output/home-implementation-1440.png' });
   await page.setViewportSize({width:1545,height:1252});
+  await page.addInitScript(()=>sessionStorage.removeItem('wattdesk.workspace.v1'));
   await page.reload();await page.waitForFunction(() => document.documentElement.dataset.ready === 'true');
   await page.locator('img').evaluateAll(imgs => Promise.all(imgs.map(img => img.decode())));
   await page.mouse.move(0,0);await page.locator('body').click({position:{x:1,y:1}});
@@ -751,7 +781,12 @@ const origin = new URL(require('./runtime.cjs').previewURL).origin;
   assert.equal(await page.locator('.workspace-tab').count(), overflowStrip.count - 2);
   await page.mouse.move(0,500);await page.waitForTimeout(320);
   const widthAfterLeave=await page.locator('.workspace-tab-list').evaluate(el=>getComputedStyle(el).getPropertyValue('--workspace-tab-width'));
-  assert.notEqual(widthAfterLeave,widthBeforeClose);
+  const overflowAfterLeave=await page.evaluate(()=>({
+    count:document.querySelectorAll('.workspace-tab').length,
+    overflowing:document.querySelector('.workspace-tab-list').classList.contains('is-overflowing'),
+    reordering:document.querySelector('.workspace-tab-list').classList.contains('is-reordering')
+  }));
+  assert.notEqual(widthAfterLeave,widthBeforeClose,`Width did not recover after leaving: ${JSON.stringify({widthBeforeClose,widthAfterLeave,...overflowAfterLeave})}`);
   await page.setViewportSize({width:1545,height:1252});await page.waitForTimeout(320);
   console.log(JSON.stringify({ errors, ...base, sidebarGeometry, iconAlignment, shadowGutters, hoverFade, leaveFade, bottomSpace, refreshMotion, stationaryHoverControls:hoverChecks.length, lightTheme, darkTheme, idleNavBackground, hoverNavBackground, period:pickedPeriod, custom, searchResults }, null, 2));
   await browser.close();

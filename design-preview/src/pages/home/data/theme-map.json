@@ -703,12 +703,6 @@
       ]
     },
     {
-      "id": "14561:1104",
-      "segmentColors": [
-        "var(--wd-figma-labels-secondary)"
-      ]
-    },
-    {
       "id": "14612:8369",
       "properties": {
         "background": "none",
