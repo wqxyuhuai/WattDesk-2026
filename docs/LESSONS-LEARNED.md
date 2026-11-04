@@ -420,6 +420,13 @@
 - **修复**：筛选条改用 `Backgrounds/Tertiary Elevated` 的 `#3A3A3C`。表头与数据滚动区拆成两个同步列宽的表，深色表头位于滚动区外并透明显示父面板，停止使用背景模糊；浅色仍保持纯白条带和主面板同色表头。
 - **预防**：叠在渐变母面板上的固定表面不能假设单一顶部色值能代表整条背景；用 elevated 语义或透明隔离方案保证整宽可见。修改表头时必须同时滚动验证：既不能出现额外色带，也不能让数据行文字透到表头。
 
+### 46. 共享遮罩图标工厂替换后丢失基础绘制类
+
+- **现象**：Plants 的 Status 列只剩 `Normal / Attention` 文字，没有绿色勾选和红色警示；Unbound 的内联 SVG 仍正常。
+- **根因**：页面改用共享 `createMaskedIcon()` 后，Status 调用传入尺寸、颜色和状态类，却漏掉了提供 `background-color` 与 `mask` 规则的 `.plants-icon` 基础类。DOM 中存在掩码变量和 14px 盒子，因此只看尺寸或 `--icon-mask` 会误判为正常。
+- **修复**：为 Status 遮罩节点补回 `.plants-icon`，回归同时检查实际 mask、语义背景色、14×14 尺寸和基础类。
+- **预防**：共享图标工厂迁移时，调用方仍必须提供该页面负责实际绘制的宿主类；验收以最终可见像素或 computed mask/background 为准，不能只检查 URL、颜色或盒子尺寸。
+
 ## 五、开工前检查清单
 
 - 先读 `AGENTS.md` → `DESIGN-SYSTEM.md` → `docs/PROJECT-STATUS.md`。

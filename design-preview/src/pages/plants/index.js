@@ -663,7 +663,7 @@ function visibleRows({ignoreCategory=null}={}){
      alertFill:"currentColor"
     }));
    }else{
-    wrap.append(maskedIcon(opaqueMaskURL(meta.icon),"plants-health-glyph plants-health-glyph--"+meta.tone+" plants-icon--14"));
+    wrap.append(maskedIcon(opaqueMaskURL(meta.icon),"plants-icon plants-health-glyph plants-health-glyph--"+meta.tone+" plants-icon--14"));
    }
    wrap.append(document.createTextNode(meta.label));
    td.append(wrap);

@@ -628,10 +628,18 @@ const settle = page => page.evaluate(() => Promise.all(document.getAnimations().
   assert.equal((await page.locator('.workspace-tab.selected .workspace-tab-label').textContent()).trim(), 'Plants');
   const returnedStatus = await page.locator('.plants-row[data-id="p11"] .plants-health-glyph').evaluate(glyph => ({
     color: getComputedStyle(glyph).color,
-    mask: glyph.style.getPropertyValue('--icon-mask')
+    mask: glyph.style.getPropertyValue('--icon-mask'),
+    computedMask: getComputedStyle(glyph).maskImage,
+    background: getComputedStyle(glyph).backgroundColor,
+    size: [getComputedStyle(glyph).width, getComputedStyle(glyph).height],
+    classes: [...glyph.classList]
   }));
   assert.match(returnedStatus.color, /255, 66, 69/, 'Attention stays red after returning from detail');
   assert.match(returnedStatus.mask, /masks\/asset-64\.svg/, 'Attention uses the opaque mask asset');
+  assert.match(returnedStatus.computedMask, /^url\(/, 'the Status icon mask must render');
+  assert.equal(returnedStatus.background, 'rgb(255, 66, 69)', 'the rendered Status icon inherits its semantic ink');
+  assert.deepEqual(returnedStatus.size, ['14px', '14px']);
+  assert.ok(returnedStatus.classes.includes('plants-icon'), 'Status icons use the shared page mask class');
 
   await filterTrigger.click();
   await page.locator('.plants-filter-category[data-category="device"]').focus();

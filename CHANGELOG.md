@@ -1,5 +1,12 @@
 # 更新记录
 
+## 2026-11-04
+
+### Plants 状态图标恢复
+
+- 修复 Plants Status 列中 Normal / Attention 图标消失的问题；两者重新显示为绿色勾选和红色警示，Unbound 的灰色符号保持正常。
+- 原因是共享 `createMaskedIcon()` 迁移后漏挂 `.plants-icon` 基础绘制类；已补齐并增加实际遮罩、语义背景色和 14×14 尺寸断言。
+
 ## 2026-10-30
 
 ### Plants 深色筛选条与表头

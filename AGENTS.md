@@ -71,7 +71,7 @@
 - Plants 筛选条加号打开的面板会固定初始视口位置；新增条件导致加号重新排版时，主面板不得跟着移动，二级条件浮窗仍按当前类目行定位。
 - Device / Connection / Running status 小浮窗的选项内容使用约 `20px` 标准左内缩；选项按钮内部再保留 `8px` 文字左内距，复选框、文字和 hover 背景均不得贴住左边缘。调整只改变水平内缩，保持浮窗原宽度和底部位置。
 - Plants 二级筛选浮窗的垂直位置以第一个可选项对齐一级类目行，而不是让二级标题与类目对齐；Company 的搜索区高度也计入偏移，顶部空间不足时按共享 12px 视口边距夹紧。
-- 状态图标掩码必须把所有导出 `fill-opacity` / `stroke-opacity` 归一为 `1`；不能只替换常见的 `.7`，`asset-64.svg` 的 `.3` 也要处理，否则 Attention 红色会被削淡。
+- 状态图标必须同时挂基础绘制类 `.plants-icon` 和 `--icon-mask`；只设置状态色和尺寸不会产生图标。掩码生成必须把所有导出 `fill-opacity` / `stroke-opacity` 归一为 `1`，不能只替换常见的 `.7`，`asset-64.svg` 的 `.3` 也要处理，否则 Attention 红色会被削淡。
 - 浮层开合与图表载入：`design-preview/src/foundations/motion.js`；首页装配：`design-preview/src/pages/home/home.css` / `src/pages/home/index.js`。
 - 所有浮窗默认锚定触发元素（Glass Surface + 实时跟随）：菜单、popover、日期/时间、历史、图表菜单、tooltip 等统一走 `design-preview/src/components/popover.js` 的 `registerPanel()`，打开、滚动（document 捕获阶段，覆盖嵌套滚动区）、缩放和视口变化都重新测量；调用方不得缓存坐标或另写滚动监听。触发元素一半以上离开视口时关闭。全屏搜索等真正的模态层除外。
 - 全局 toast（收藏、刷新、周期、预览操作等短反馈）统一放在工作区顶部，纵向中心与数据页共享面包屑中心对齐；当前基准为 `top:70px`，不得在页面局部改回底部或另造通知浮层。toast 仍是共享只读 Glass Surface，不响应缩放；出现使用 `--wd-motion-panel` / `--wd-ease-panel` 从上方 `4px` 下落入位并淡入，消失使用 `--wd-motion-panel-exit` / `--wd-ease-hover-out` 上浮 `4px` 并淡出，减少动态效果时立即切换。
