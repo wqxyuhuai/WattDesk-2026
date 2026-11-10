@@ -20,6 +20,7 @@
 
 说明：本节按时间倒序保留实现快照；同一主题存在多条记录时，较新的最终状态覆盖较早中间态。长期开发规则以 `AGENTS.md`、`DESIGN-SYSTEM.md`、`docs/COMPONENTS.md` 和页面 README 为准。
 
+- `2026-11-10` **Statistics 最终规则归档（仅文档）**：完成第二轮规则收口，将 `Day / Month / Year / Total` 周期、年月选择浮层玻璃箭头、Month / Year `Separate / Combined`、年 Combined 完整逐日数据、Combined 全宽与平滑路径、图表并行入场 `900ms`、History 浮窗上移、Combined 两列读数、产品字号、移除年图峰值标签等最终要求写入 `AGENTS.md`、`DESIGN-SYSTEM.md`、`USER-REQUIREMENTS.md`、`COMPONENTS.md`、Plants README 与 `LESSONS-LEARNED.md`。清理了规范中仍把 Self-powered 写成 F4、把分隔线写成 1px、把 Energy 浮窗写成 10/11px、把分段选项写成 20px 内距的冲突表述。本次未修改运行代码、UI、交互或测试。
 - `2026-11-10` **规则归档完成（仅文档）**：汇总当前任务历史、`codex/plantinfo` Git Diff、项目状态和页面规格，在 [USER-REQUIREMENTS.md](./USER-REQUIREMENTS.md) 新增今日最终规则总表，覆盖 `.wd-page-content`、标准按钮、`.wd-edit-field`、玻璃 switch、共享滚动、Site details 完整契约，以及当前工作树中的 Devices / Statistics 最终状态。修正 [SITE-DETAILS.md](./SITE-DETAILS.md) 与 [COMPONENTS.md](./COMPONENTS.md) 中旧的原生 select、54px 行高、卡片投影、Save/CreateStandardButton 和 `actionsHost` 冲突；[LESSONS-LEARNED.md](./LESSONS-LEARNED.md) 新增滚动条挤压、状态切换几何、按钮交互态、自定义下拉、开关材质、居中内容列和长标题等防回归项。明确无法访问的其他对话不做推断，并记录 Site details 超长标题上限、SettingsCard 抽离和真实后端接口等待明确项。本次不修改运行代码、视觉、交互或测试。
 - `2026-11-09` **Statistics 多周期视图与时间切换完成**：逆变器统计新增 `Day / Month / Year / Total` 共享玻璃周期控件，支持日前后移动、月/年选择器、日历月网格、12 个月和 9 年网格，以及 Total 禁用相邻导航。四种视图常驻 DOM 后按模式显隐；月视图使用 F2 Hairline Line 展示 Home use / Solar energy / From iStorage / Grid exchange 的每日序列，年视图使用同一四项的月度 Rungs，Total 展示八项累计指标、带金额的 Savings 与独立 SVG defs 的 Self-powered。切换粒度不会提前提交数据，选项确认后才更新；视图入场复用共享 motion token，减少动态效果时关闭。新增 `verify-statistics-periods.cjs`，覆盖模式提交、前后导航、Escape/外部点击、玻璃读数、Total 语义、reduced motion 和 900 / 520px 响应式。
 - `2026-11-09` **Statistics Separate / Combined 与并进入场**：月、年视图时间控件左侧新增 36px 共享玻璃布局开关，Day 与 Total 隐藏。Separate 保留四项小多图；Combined 将 Home use / Solar energy / From iStorage / Grid exchange 叠加到同一时间轴，月模式逐日、年模式展开完整年份每日数据（2026 年为 365 点）。绘图区铺满内容列，SVG 使用 `preserveAspectRatio="none"`，轴标签放入独立 HTML 层；历史和合并折线均改为平滑三次贝塞尔路径，全年密集路径对可见线使用 7 天加权平滑而 tooltip 保持原始值。主墨色、两级中性灰、橙线及实线 / 点线区分系列，悬浮读数一次显示四组 kWh。选择器内年月切换箭头改为共享中性玻璃圆钮。统计入场改为按图表分组：同一张图内部标记用 `clip-path` 从左到右、约 `3ms` 微错峰；四张小图只保留约 `28ms` 起始差，总计启动窗口不超过约 `110ms`，共享 chart duration 提高到 `900ms`。该 helper 同时用于初次滚动揭示、周期切换、布局切换和点击重播，`prefers-reduced-motion` 下关闭。
@@ -253,6 +254,8 @@
 
 - 已解决：浅色玻璃外圈黑线已按最终纵向渐变收敛为普通上下 `.09`、左右 `.38`（hover `.11/.42`），浮层 `.16/.20`，全屏搜索结果面板使用搜索专用 `.08/.10`；hover 不再弱于默认，深色保持不变。`.12/.16`、`.14/.18` 与更早的 `.23/.29` 均为历史中间值，不再作为当前规则。
 - 待代码收口：规则已确认 Devices 顶部普通技术值使用标准界面字体、不使用特殊代码字体，但当前 `devices.css` 的 `.plants-device-field-value` 仍声明 `ui-monospace` 字体栈。本次仅做规则归档，未修改运行代码；后续视觉修复时应单独立项并补充 computed `font-family` 回归。
+- 待产品确认：用户口述年 Combined 为“365 天”，当前实现按日历在平年生成 365 点、闰年生成 366 点（例如 2028 为 366）。如果要求所有年份固定 365 点，必须先定义闰日处理，不能静默丢弃 12 月 31 日。
+- 待后端定义：Statistics 的真实历史数据源、聚合时区、未来日期是否允许选择、跨月缓存和失败重试尚未确定；当前 `Day / Month / Year / Total` 与 Combined 数据均为确定性本地预览。
 - 已解决：Home 继续使用响应式最大 `1000px` 与独立阴影 gutter；Home 以外的数据表 / 设备页使用满宽内容区，不占满屏的设置、详情和资料页使用共享 `.wd-page-content` 最大 `1000px` 居中。被否决的是旧“固定画布 + 区域整体缩放”和把所有页面都套成 Home 内容列，不是共享最大宽度本身。
 
 ## 待确认 / 待实现

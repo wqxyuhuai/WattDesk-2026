@@ -46,12 +46,23 @@
 - Danger zone 只在编辑态出现，背景淡红；Delete plant 使用红玻璃白字。
 - 视图 `≤1000px` 转单列，`≤640px` 字段纵向；错误状态使用 `aria-invalid`、行内说明和汇总 alert，并聚焦首个错误。
 
-### Devices 与 Statistics（按当前工作树和文档归档）
+### Devices（按当前工作树和文档归档）
 
 - Devices 使用 `1130px` 居中内容列，设备条目为 Linear 式透明扁平行；条目无描边、无阴影，不使用讨论卡表面；相邻行以 `1px` 低对比分隔线连接并在两端渐隐。设备身份固定两行，产品图 `120×96`、`object-fit:contain`。技术字段顺序、Battery Cluster 默认收起、Battery 无 Settings、弹窗宽度和危险 Unbind hover 等细节以 `AGENTS.md`、`DESIGN-SYSTEM.md`、`COMPONENTS.md` 与页面测试为最终依据。
 - 设备弹窗全屏遮罩、Glass Surface、圆角和 motion 与首页全屏搜索共用同一组实现；窄/宽弹窗围绕视口中心按固定档位偏上，不使用固定顶部。输入框复用 `.wd-edit-field`。
-- Statistics 支持 `Day / Month / Year / Total`；月/年额外支持 `Separate / Combined`。周期选择器、平滑折线、年视图完整 365/366 日序列、12px/13px 起的产品字号、图表并行入场 `900ms` 等以当前统计页面规格、组件手册和回归测试为最终依据。
-- 这些 Devices / Statistics 细则是当前工作树中已写入的最终状态，不能因为本次归档重新推导或恢复早期参数。
+- 这些 Devices 细则是当前工作树中已写入的最终状态，不能因为本次归档重新推导或恢复早期参数。
+
+### Statistics（当前最终规则）
+
+- 逆变器 Statistics 默认 `Day / Today`，周期支持 `Day / Month / Year / Total`。标题右侧的 36px 玻璃周期控件包含前后导航和日期触发；Day 打开日历月，Month 打开 12 个月，Year 打开 9 年网格，Total 直接提交。切换周期粒度本身不刷新图表，只有确认日期、月份、年份或 Total 后才更新；Total 禁用前后导航。年月选择浮层里的左右按钮使用共享中性玻璃圆钮，并随浮层关闭释放嵌套玻璃材质。
+- Month / Year 在时间控件左侧显示 36px `Separate / Combined` 共享玻璃分段开关；Day 与 Total 隐藏。Separate 保留 `Home use / Solar energy / From iStorage / Grid exchange` 四张小多图；Combined 合并到同一时间轴，月视图使用当月逐日数据，年视图使用完整年份逐日数据。平年 365 点、闰年 366 点；当前 2028 年必须是 366 点，不能退回 12 个聚合成月点。
+- Combined 必须横向铺满 Statistics 内容列；SVG 可用 `preserveAspectRatio="none"` 拉伸几何，日期轴文字必须移入独立 HTML 层，不能随图变形。折线使用平滑三次贝塞尔路径；超过 120 点的全年序列可对可见路径做 7 天加权平滑，但 hover / focus、日期和 `aria-label` 必须继续对应原始当日值。年 Separate 的柱顶不再显示常驻峰值数字，所有精确值只通过浮窗出现。
+- Statistics 图表字号统一：浮窗标签 `12px / 16px`、数值 `13px / 17px`；History 轴标签、Combined 图例与日期轴 `12px`；Self-powered 来源名 `11px / 600`、百分比 `14px / 600`；Savings 可见金额 `12px`。不得为了塞进卡片回退到 8–10px 文本。
+- History 浮窗整体上移并尽量位于绘图区上方；Combined 四项读数使用两列摘要，浮窗底部停在绘图区上缘以上；Self-powered 浮窗跟随指针并保持不覆盖扇区、外置标签。浮窗统一复用共享静态 Glass Surface。
+- 统计图表入场统一使用左到右 `clip-path`，共享 `--wd-motion-chart` 当前为 `900ms`。同一图表内部标记约 `3ms` 递增；四张并列小图只允许约 `28ms` 起始差，整体启动窗口不超过约 `110ms`，不得按整个视图 DOM 顺序把后一张图拖到前一张播放结束。该节奏复用于首次滚动揭示、周期切换、布局切换和点击重播，减少动态效果时全部关闭。
+- Energy 继续使用 F6 Paired Rungs；Savings 使用 L3 横置 lollipop；Self-powered 使用 L10 Radial Patchwork；Current state 使用四行黑白灰状态条。Day 的宽屏列宽、组标题、Savings 轨道、Self-powered 扇区和 Current state 胶囊继续沿用下方已确认的专项规则与本页 README。
+- 响应式：Month / Year Separate 宽屏四列，`901–1450px` 为 2×2，`≤900px` 为两列，`≤560px` 单列；Combined 始终保持单图并铺满内容列。页面不得出现整页横向滚动。
+- 所有统计值和聚合均为确定性本地预览数据；没有接入后端聚合、真实历史周期或设备控制能力。
 
 ### 明确废弃或被覆盖的实现
 
@@ -72,6 +83,8 @@
 - Site details 卡片当前通过 `.wd-discussion-card` 宿主加页面材质覆盖实现“无边框无阴影”；是否需要抽成共享 SettingsCard 尚未确认。后续若调整共享讨论卡，必须重新核对本页覆盖。
 - Site details 页面标题使用标题专用输入表面，普通行字段使用 `.wd-edit-field`；二者是不同语义。若未来要求所有可编辑框（包括页面标题）统一 `.wd-edit-field`，需重新确认标题排版。
 - 本次未访问其他聊天记录；Devices / Statistics 只能确认当前代码、测试和文档记录的状态，不能确认未落盘的讨论。
+- 年 Combined 的口述要求是“365 天”，但当前实现按日历正确处理闰年：2026 为 365 点，2028 为 366 点。若产品以后要求所有年份都固定 365 点，需要另行明确“如何处理闰日”，不得静默丢弃 12 月 31 日。
+- Statistics 月 / 年历史的真实后端数据源、聚合时区、未来日期是否允许选择、跨月缓存与失败态尚未定义；当前只使用页面内确定性样例。
 
 ## 2026-10-30 项目整合要求
 

@@ -29,7 +29,7 @@
 |---|---|---|
 | `/home` | 已完成设计预览 | Home Figma 场景、搜索、周期、刷新、快捷入口、标签与历史 |
 | `/plants` | 已完成本地交互预览 | 46 条样例、筛选并集、列显隐、排序、收藏、滚动反馈 |
-| `/plants/:id` | 已完成 Overview 本地交互预览 | 默认进入第一台设备；多设备可切并同步 `?device=` |
+| `/plants/:id` | 已完成 Overview 本地交互预览 | 默认进入第一台设备；多设备可切并同步 `?device=`；Statistics 支持 `Day / Month / Year / Total` 与月/年 `Separate / Combined`，数据为确定性本地样例 |
 | `/plants/:id/devices` | 已完成本地交互预览 | Linear 式扁平设备行、命名、新增、替换、解绑和设置预览；真实后端与硬件控制未接入 |
 | `/plants/:id/site` | 已完成本地交互预览 | 电站资料查看、整页编辑、校验和会话内保存；上传、访客和后端写入未接入。规格见 [SITE-DETAILS.md](./SITE-DETAILS.md) |
 | `/plants/:id/faults|logs|tickets` | 子页占位 | Operations 三卡当前标签内进入；三层面包屑、刷新与历史可用，详细内容后续实现 |
@@ -77,6 +77,7 @@ pages  →  layouts / components  →  foundations
 | 动效 | `motion.css` / `motion.js` | 组件不写局部时长；JS 动画读取 token；减少动态效果统一处理 |
 | 圆角 | `geometry.js` / `.css` | 保留原半径，普通矩形用 `superellipse(1.2)`，圆形和胶囊保留 round |
 | 分段切换 | `components/segmented-control.js` / `.css` | `createSegmentedControl()` 统一玻璃轨道、移动选中层、键盘、尺寸观测与销毁；页面只传选项和回调 |
+| Statistics 图表 | `pages/plants/statistics-period.js`、`statistics-charts.js` / `detail.css` | 页面级周期控件与 History / Combined 图表；Day 用 F6 / L3 / L10，Month Separate 用 F2，Year Separate 用 F1，Combined 用共享逐日时间轴；共享 chart motion token |
 | 开关 | `components/toggle-switch.js` / `.css` | `createToggleSwitch()` 统一真实 switch 语义、玻璃轨道、滑块位置与状态回调；适用于二值设置，不代替分段选择 |
 | 头像 | `createAvatar()` + `avatar.css` | 尺寸由调用方提供；描边、阴影和缩写光学居中由共享层负责 |
 | 图标 | `createIcon()` / `createMaskedIcon()` | 使用原始素材；中性遮罩统一生成不透明副本 |

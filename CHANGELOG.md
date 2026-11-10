@@ -3,6 +3,7 @@
 ## 2026-11-10
 
 - 完成规则归档（仅文档）：在 `docs/USER-REQUIREMENTS.md` 建立今日最终规则总表，收口 `.wd-page-content`、`.wd-edit-field`、标准主按钮与危险按钮、真实玻璃 switch、共享滚动、Site details 完整契约，以及当前工作树中的 Devices / Statistics 最终状态；同步修正 Site details 页面规格与组件手册中的旧 select、行高、卡片材质和 API 冲突，并在 `LESSONS-LEARNED.md` 增加对应防回归项。
+- Statistics 完成第二轮规则归档（仅文档）：收口 `Day / Month / Year / Total`、年月玻璃选择箭头、`Separate / Combined`、年 Combined 完整逐日数据、Combined 全宽与平滑路径、图表并行入场 `900ms`、History / Combined 浮窗位置、`12 / 13px` 产品字号和移除年图峰值标签。同步清理 F4、1px 分隔线、10/11px 浮窗与 20px 分段内距等旧冲突，并在 `LESSONS-LEARNED.md` 增加小多图入场、SVG 非等比铺满、365/366 日序列、浮窗遮挡和 display-series 平滑五项防回归记录。
 - 本次归档不修改运行代码、页面视觉、交互逻辑或测试。
 
 ## 2026-11-09
