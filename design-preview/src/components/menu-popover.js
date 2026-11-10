@@ -22,7 +22,9 @@ export function menuList(){
 // shell (the history panel clones the sidebar glyph). Keep the tone verbatim in
 // that path: do not re-derive mono/colour from the filename, or neutral exports
 // silently lose their shared hover mask.
-export function menuRow(label,{iconFile,iconTone="mono",iconNode,checked=false,onSelect}={}){
+export function menuRow(label,{
+ iconFile,iconTone="mono",iconNode,iconPosition="start",checked=false,showCheck=true,onSelect
+}={}){
  const row=document.createElement("button");
  row.type="button";
  row.className="wd-menu-row";
@@ -30,15 +32,23 @@ export function menuRow(label,{iconFile,iconTone="mono",iconNode,checked=false,o
  applyTypeStyle(row,"14/14 medium");
  if(checked)row.setAttribute("aria-checked","true");
  row.setAttribute("role",checked?"menuitemradio":"menuitem");
- if(iconFile||iconNode)row.append(menuIcon(iconFile,iconTone,iconNode));
+ const hasIcon=Boolean(iconFile||iconNode);
+ if(hasIcon&&iconPosition==="start")row.append(menuIcon(iconFile,iconTone,iconNode));
  const text=document.createElement("span");
  text.className="wd-menu-label";
  text.textContent=label;
  row.append(text);
- const check=document.createElement("span");
- check.className="wd-menu-check";
- check.setAttribute("aria-hidden","true");
- row.append(check);
+ if(hasIcon&&iconPosition==="end"){
+  const icon=menuIcon(iconFile,iconTone,iconNode);
+  icon.classList.add("wd-menu-row-icon-end");
+  row.append(icon);
+ }
+ if(showCheck){
+  const check=document.createElement("span");
+  check.className="wd-menu-check";
+  check.setAttribute("aria-hidden","true");
+  row.append(check);
+ }
  if(onSelect)row.addEventListener("click",()=>onSelect(row));
  return row;
 }

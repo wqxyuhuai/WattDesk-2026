@@ -109,17 +109,17 @@
   --wd-glass-drop:var(--wd-glass-surface-drop,rgba(0,0,0,.34));
   --wd-glass-drop-y:16px;
   --wd-glass-drop-blur:42px;
-  --wd-glass-hover-field:linear-gradient(180deg,rgba(255,255,255,.055),rgba(255,255,255,.012) 48%,rgba(255,255,255,.032));
-  --wd-glass-hover-bottom:rgba(255,255,255,.22);
+  --wd-glass-hover-field:linear-gradient(180deg,rgba(255,255,255,.035),rgba(255,255,255,.008) 48%,rgba(255,255,255,.020));
+  --wd-glass-hover-bottom:rgba(255,255,255,.16);
   --wd-glass-state-edge:inset 0 1px 1px rgba(255,255,255,.13),inset 0 -1px 10px -4px rgba(255,255,255,.18);
   /* A full-size surface used to carry a 210px halo at .045/.15, which was
    * mathematically present but invisible next to the .055/.72 card response.
    * Keep the light local to the pointer: a wider inner wash and a brighter
    * short rim arc, never a full bright outline. */
-  --wd-glass-glow:rgba(255,255,255,.085);
-  --wd-glass-glow-edge:rgba(255,255,255,.62);
-  --wd-glass-glow-radius:180px;
-  --wd-glass-glow-edge-radius:120px;
+  --wd-glass-glow:rgba(255,255,255,.035);
+  --wd-glass-glow-edge:rgba(255,255,255,.38);
+  --wd-glass-glow-radius:140px;
+  --wd-glass-glow-edge-radius:90px;
   /* Surfaces are large, so a full-face diagonal sheen becomes a grey quadrant.
    * Give them the same top/bottom edge bands as the card instead, at a lower
    * strength, and let the pointer follow-light provide the local reflection. */
@@ -140,17 +140,17 @@
   --wd-glass-outline-side:rgba(0,0,0,.20);
   --wd-glass-drop:rgba(0,0,0,.16);
   --wd-glass-contact:rgba(0,0,0,.06);
-  --wd-glass-hover-field:linear-gradient(180deg,rgba(255,255,255,.34),rgba(255,255,255,.10) 52%,rgba(255,255,255,.24));
-  --wd-glass-hover-bottom:rgba(255,255,255,.82);
+  --wd-glass-hover-field:linear-gradient(180deg,rgba(255,255,255,.18),rgba(255,255,255,.045) 52%,rgba(255,255,255,.12));
+  --wd-glass-hover-bottom:rgba(255,255,255,.55);
   --wd-glass-state-edge:inset 0 1px 2px rgba(255,255,255,.78),inset 0 -2px 12px -4px rgba(255,255,255,.75);
   /* Light glass already sits near white, so a white rim cannot read. Pair a
    * white inner wash with a dark pointer arc, never a full bright outline. */
-  --wd-glass-glow:rgba(255,255,255,.80);
-  --wd-glass-glow-edge:rgba(0,0,0,.46);
+  --wd-glass-glow:rgba(255,255,255,.42);
+  --wd-glass-glow-edge:rgba(0,0,0,.25);
   --wd-glass-glow-edge-width:.5px;
   --wd-glass-glow-edge-inset:-.5px;
-  --wd-glass-glow-radius:140px;
-  --wd-glass-glow-edge-radius:120px;
+  --wd-glass-glow-radius:120px;
+  --wd-glass-glow-edge-radius:90px;
   --wd-glass-reflection-field:
     linear-gradient(180deg,rgba(255,255,255,.56) 0,rgba(255,255,255,.26) 2px,rgba(255,255,255,.04) 5px,rgba(255,255,255,0) 9px),
     linear-gradient(0deg,rgba(255,255,255,.46) 0,rgba(255,255,255,.34) 3px,rgba(255,255,255,.21) 6px,rgba(255,255,255,.10) 9px,rgba(255,255,255,.03) 12px,rgba(255,255,255,0) 15px);

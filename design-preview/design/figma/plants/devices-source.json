@@ -1,0 +1,29 @@
+{
+  "sourcePage": "https://www.wattdesk.com/#/plantList/1907053626963177474/device",
+  "capturedAt": "2026-11-09",
+  "purpose": "Device inventory card product imagery used by the Plants Devices tab.",
+  "assets": [
+    {
+      "deviceType": "inverter",
+      "product": "iHybrid",
+      "remoteURL": "https://cdn.wattsonic.cn/fixed-static/M11/M11_list_light.png",
+      "source": "devices/ihybrid-source.png",
+      "runtime": "../../../home-assets/plants/devices/ihybrid.png"
+    },
+    {
+      "deviceType": "bms",
+      "product": "iStorage-G3",
+      "remoteURL": "https://cdn.wattsonic.cn/fixed-static/R11/R11_app_detail_dark.png",
+      "source": "devices/istorage-source.png",
+      "runtime": "../../../home-assets/plants/devices/istorage.png"
+    },
+    {
+      "deviceType": "heater",
+      "product": "iHeater",
+      "remoteURL": "https://cdn.wattsonic.cn/fixed-static/H11/H11_list_light.png",
+      "source": "devices/iheater-source.png",
+      "runtime": "../../../home-assets/plants/devices/iheater.png"
+    }
+  ],
+  "processing": "The runtime PNGs keep the product pixels and remove only the contiguous near-white page matte from the image edge so the cards work in both light and dark themes."
+}

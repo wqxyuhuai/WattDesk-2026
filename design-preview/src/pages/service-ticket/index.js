@@ -287,12 +287,12 @@ export function createServiceTicketPage({
   headerActions.append(newButton);
 
   const toolbar=text("div","service-toolbar");
-  const scopeBar=text("div","service-scope");
+  const scopeBar=text("div","service-scope wd-scope-control");
   scopeBar.setAttribute("role","tablist");
   scopeBar.setAttribute("aria-label","Ticket scope");
   const scopeButtons=new Map();
   for(const option of SCOPE_OPTIONS){
-    const node=text("button","service-scope-button wd-control-state wd-press-scale");
+    const node=text("button","service-scope-button wd-scope-button wd-control-state wd-press-scale");
     node.type="button";
     node.dataset.scope=option.id;
     node.setAttribute("role","tab");

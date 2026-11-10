@@ -1,6 +1,6 @@
 # 发布与部署
 
-更新：2026-10-29。适用于当前设计预览。构建行为以本文件、`design-preview/wrangler.jsonc` 与 `design-preview/scripts/build-site.cjs` 为准。
+更新：2026-11-10。适用于当前设计预览。构建行为以本文件、`design-preview/wrangler.jsonc` 与 `design-preview/scripts/build-site.cjs` 为准。
 
 ## 线上入口
 
@@ -82,6 +82,6 @@ curl.exe -sSI https://wattdesk-preview.carlwang.cn/src/foundations/tokens.css | 
 
 ## 已知限制
 
-- 线上是设计预览：URL 路由与深链接已接入，但没有后端、登录权限或实时数据；统计数字为设计稿快照，Plant 详情为占位。
+- 线上是设计预览：URL 路由、深链接和本地交互已接入，但没有后端、登录权限、真实持久化或硬件控制；统计与设备数据来自本地确定性样例，不能视为生产数据。
 - Git 历史仍保留 2026-10-21 之前提交的测试截图与构建产物，取消跟踪不会让仓库体积立刻下降；如需瘦身须改写历史，风险高，暂不做。
 - 构建产物和 `_headers` / `_redirects` 由脚本生成，不手改 `dist/`。

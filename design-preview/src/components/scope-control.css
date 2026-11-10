@@ -1,0 +1,22 @@
+/* Shared solid pill scope selector used by Service Ticket and data-page tabs. */
+.wd-scope-control{display:flex;align-items:center;gap:4px;min-width:0}
+.wd-scope-button{
+  display:inline-flex;align-items:center;justify-content:center;
+  height:36px;padding:0 14px;border:0;border-radius:999px;
+  background:var(--wd-fill-quaternary);color:var(--wd-label-secondary);white-space:nowrap;
+  --wd-scope-hover-scale:1.045;--wd-scope-press-scale:1.09;
+}
+.wd-scope-button:not(:disabled):is(:hover,:focus-visible){
+  background:var(--wd-control-hover);color:var(--wd-label-primary);
+}
+.wd-scope-button.is-selected{
+  background:var(--wd-fill-primary);color:var(--wd-label-primary);
+  box-shadow:inset 0 0 0 1px var(--wd-label-quaternary);
+}
+.wd-scope-button:focus-visible{outline:2px solid var(--wd-blue);outline-offset:1px}
+.wd-scope-button:disabled{color:var(--wd-label-quaternary);cursor:default}
+@media (hover:hover) and (pointer:fine){
+  .wd-scope-button.wd-press-scale:not(:disabled):is(:hover,:focus-visible){transform:scale(var(--wd-scope-hover-scale))}
+  .wd-scope-button.wd-press-scale:not(:disabled):active{transform:scale(var(--wd-scope-press-scale))}
+  .wd-scope-button.wd-press-scale:disabled:is(:hover,:focus-visible){transform:scale(var(--wd-scope-hover-scale))}
+}

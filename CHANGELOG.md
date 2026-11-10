@@ -1,6 +1,114 @@
 # 更新记录
 
+## 2026-11-10
+
+- 完成规则归档（仅文档）：在 `docs/USER-REQUIREMENTS.md` 建立今日最终规则总表，收口 `.wd-page-content`、`.wd-edit-field`、标准主按钮与危险按钮、真实玻璃 switch、共享滚动、Site details 完整契约，以及当前工作树中的 Devices / Statistics 最终状态；同步修正 Site details 页面规格与组件手册中的旧 select、行高、卡片材质和 API 冲突，并在 `LESSONS-LEARNED.md` 增加对应防回归项。
+- 本次归档不修改运行代码、页面视觉、交互逻辑或测试。
+
+## 2026-11-09
+
+- Statistics 完成 `Day / Month / Year / Total` 多周期：新增共享玻璃周期控件、前后导航、日历月 / 12 月 / 9 年选择浮层和 `statistics-period.js`。月视图比较 F2 / L3 / F3 后使用 F2 Hairline Line 展示四项每日序列；年视图比较 F1 / F2 / F5 后使用 F1 Rung Bars 的月度聚合；Total 组合八项累计指标、带金额的 L3 Savings 和独立 defs 的 L10 Self-powered。四视图常驻并仅显示当前模式，切换时使用共享 panel/chart motion token 与减少动态效果降级；新增 `verify-statistics-periods.cjs` 覆盖提交、导航、浮层生命周期、玻璃读数、Total、reduced motion 与响应式。
+- 月、年 Statistics 增加 `Separate / Combined` 玻璃分段开关：Separate 保持四张小多图，Combined 在共享时间轴叠加 Home use、Solar energy、From iStorage、Grid exchange，并用线型、灰阶和橙色区分；月 Combined 为当月逐日，年 Combined 为完整年份每日序列，2026 年共 365 点。Combined 绘图区横向铺满内容列，SVG 几何非等比拉伸，日期轴标签使用独立 HTML 覆盖层；历史折线改为平滑三次贝塞尔路径，全年密集路径额外使用 7 天加权平滑且 tooltip 保持原始值。选择器内年月导航改为共享中性玻璃圆钮。统计图表入场统一改为按图并行、图内从左到右；标记微错峰 `3ms`，四图起始差约 `28ms`、总启动窗口不超过约 `110ms`，共享 chart duration 提高到 `900ms`。滚动首次揭示、周期与布局切换、点击重播共用同一 helper。
+- Statistics 图表字号统一提升：玻璃浮窗标签改为 `12px / 16px`、数值 `13px / 17px`；History 轴、Combined 图例与日期轴统一 `12px`；Self-powered 来源名提升到 `11px`，Savings 可见金额提升到 `12px`。年图移除柱顶常驻峰值数字，History 浮窗整体上移，Combined 四项读数改为两列摘要并停在绘图区上方。Self-powered 浮窗通过更紧凑的横向内距与更大的上移距离继续避开扇区和外置标签。
+- 新增 Plants `Site details` 本地交互预览与 `/plants/:id/site` 深链接。页面提供基础信息、电价、属主、安装商、图片和访客资料；正文顶部放置玻璃 Edit / Cancel / Save changes，桌面使用两列等宽设置页卡片，卡片无描边无阴影、行分隔低对比，告警使用真实玻璃 switch。编辑态保持卡片和右侧控件几何不变，输入 focus 改为更亮中性填充与浅中性轮廓。保存只保留在当前 Plants 页面会话，未保存修改会阻止静默离开；图片、属主、访客、删除和后端写入保持明确预览边界。新增 `docs/SITE-DETAILS.md`、共享 `createToggleSwitch()` 与 `tests/verify-site-details.cjs`。
+- Site details 模块标题提升至 `15px`，移除 Plant ID，数字输入隐藏原生步进器，五个下拉字段改用共享 Glass Surface 选项浮层；Save changes 恢复蓝色主按钮，Danger zone 使用淡红背景。详情视口隐藏原生滚动条，滚动反馈监听内容变化，编辑态不会因第二条滚动条出现而移动卡片。
+- Site details 的 Save changes 进一步对齐 Home 日期选择器 Apply：使用相同文本按钮类路径、无额外图标且始终可用，无修改时安全退出编辑。下拉箭头改用通用 `asset-14.svg`，Delete plant 增加轻微红色玻璃底，编辑态所有输入值、单位和下拉当前值统一为 14px。
+- 删除 Site details 底部 `Local preview · Changes stay in this browser tab and are not synced.` 提示及其无用样式。
+- 新增共享 `.wd-page-content` 与 `--wd-page-content-max:1000px`；Site details 宽屏改为居中有限内容列，两列卡片仍撑满该列，后续非全屏设置/详情页面可直接复用。
+- Site details 顶部标题改为电站名，编辑态在原位输入电站名；Basic information 删除重复 Plant name 行，标题行高度保持不变。
+- 删除 Site details 标题下方的页面说明文案。
+- Site details 标题编辑器改为默认高 `44px`、最宽约 `760px` 的自动增高文本区，超长电站名自然换行并向下生长；短标题进入编辑仍保持标题行整体高度稳定。
+- 共享开关轨道直接复用标准玻璃按钮材质；关闭态使用可见的共享中性控制填充，开启态替换为蓝色玻璃，保留白色滑块并避免内部白光过强。
+- Delete plant 改为复用 Save changes 的标准玻璃胶囊按钮路径，只把玻璃填充和描边替换为纯红色，文字固定白色。
+- 补充 Delete plant 的 hover / focus 红色覆盖，避免共享 primary 按钮样式把危险操作在交互时变成蓝色。
+- Plants Overview 将 Energy trend 与 Statistics 上下交换，DOM、桌面网格、2×2 和单列顺序一致。趋势模块保留标题、模式切换、Today 控件和网格线，三条数据折线通过 `is-line-hidden` 全部隐藏；回归新增模块顺序和折线不可见断言。
+- Statistics 增加图表内部材质：Self-powered 中性径向底盘加上底环/数据环共享的左上亮、右下暗中性渐变描边，`16px` Savings 轨道渐变与颗粒，Energy 双层顶点辉光，Current state 胶囊颗粒与横向扫光。Current state 去除描边和全部阴影；Savings 左端点提高到 `#a6a6a6`。玻璃浮窗保持原样并位于图表材质层上方。Statistics 外层继续透明无底板，页面下方不增加存档副本；修改前实现备份到 Source 外 `Backups/plants-statistics-pre-material-2026-11-09/`。
+- Energy 顶部点半径增大到约 `3.35` 并保持点列安全间距；浅色 Supply 点改为中性深灰 `#73726d`，其辉光降为低透明中性灰，消除发黑和脏边。
+
+## 2026-11-06
+
+- Energy 图例圆复用柱顶数据圆的动态半径，Supply / Demand 文字提高到 `12px / 600`；圆点按字体视觉基线做少量上移并与文字共用垂直中线，两组图例之间至少保留 `6px` 净空。柱顶整数改为直接舍去小数，精确值继续保留在浮窗和 `aria-label`。浮窗改为锚定整组最高柱顶数值并向上留出至少 `5px`，横向回到当前柱组并在模块边界内夹取，不能漂到其他柱组。回归覆盖实际中心误差、图例组间距、截断规则、柱组归属和顶部数值净空。
+- Statistics 宽屏改为七列 `窄 / 弹性间隙 / 宽 / 弹性间隙 / 窄 / 弹性间隙 / 宽`：窄内容 `clamp(176px,11.8vw,205px)`、宽内容 `clamp(289px,calc(27.2vw - 119px),720px)`、三条 `minmax(32px,1fr)` 间隙等宽。Energy 从内容区左缘开始，Current state 在右缘结束，首列不再残留居中空白。
+- Energy viewBox 裁为 `0 0 228 116`，Self-powered 裁为 `34 0 206 116`，标题与实际内容左缘对齐。回归新增首列贴左、两组成对等宽、三个可见间隙全相等以及超宽屏内容与间隙同步增宽断言。
+
+## 2026-11-05
+
+### Statistics 结构间距
+
+- Savings 按 Figma“统计”画板重绘为响应式胶囊轨道：标题和总额改用 `total: kr 12.48` 的次级文字层，四行标签位于框内，6px 灰轨按真实金额比例伸展，起始圆点与空心/实心末端标记形成新状态语义。固定比例 SVG 改为铺满统计组宽度的 DOM 轨道，保证四列、2×2 与窄屏下右缘和总额对齐。
+- Savings 行框描边加粗到 `2px`，标签提高到 `12px / 400`；数据轨道与右端圆点同步放大到 `15px`，左端 `11px` 状态点通过整数定位完整包在轨道内。两端改用内联 SVG circle 消除小圆锯齿，右端描边在 SVG 内部绘制且无阴影；深色轨道与空心内部统一为 `#4d4d4d`、浅色按主题派生，轨道右端平切并藏到端点下方。最短轨道保留 `24px` 宽度，端部净空和最大值右侧留空继续受控。
+- Savings 行框描边降到前景色 12% 透明度，hover 不再提亮；Savings 浮窗精简为只显示金额数字，完整标签和金额仍保留在 `aria-label`。
+- Savings 浮窗补充回 `kr` 单位，保留仅有金额的简洁表达。
+- Energy 宽屏首列收至 `0.9fr`，图例和第一组数据左对齐并保留约 `8px` 内缩；柱下横线删除，双值浮窗固定在柱组上方、保持在模块边界内，并以 `10px` 分类名和两行 `11px` 数值呈现。
+- Self-powered 底扇区在深浅主题中进一步减淡，浅色花瓣改用更清楚的三级灰阶；百分比与来源名分别回到 `14px / 10px` 两个层级，完整扇区可 hover，浮窗仅显示 kWh 并跟随鼠标。
+- Savings 深色主题左端点从 `#6b6b6b` 提亮到 `#7d7d7d`，保持与轨道的层级差并提高背景辨识度。
+- Statistics 标题行不再紧贴内容区，两者固定保留 `20px`；顶部标题行与下方内容带采用统一内部网格，取消原先按块级自然流排布造成的零间距。
+- 统计模块顶部分隔线到标题、内容带底部到 Energy trend 顶部分隔线都保留 `22px` 净空；内容带四组统一填满可用高度，图表容器与各自组底对齐。
+- `901–1450px` 的 2×2 内容改为伸缩行，不再使用固定 `139px` 组高；`≤900px` 继续回退为两列、`≤560px` 单列，并保持标题到内容 `20px`、内容底到趋势模块 `20px`。
+- 四个统计组标题统一从主文字色降到 `Labels/Secondary`，比 `Statistics` 总标题淡一档；字号、字重、布局和 Savings 总额均不变。
+- Savings 行标签提高到 `12px`；灰色底轨与白色值线、端点统一到同一 Y 中心，四行 visual pitch 增至 `28` 个 viewBox 单位，提升可读性和纵向呼吸感。
+- Savings 总额不再按标题行最右缘排布，改为与图表轨道共同的右端点精确对齐；窄桌面 2×2 下若 hover 浮签会压住总额，浮签自动翻到对应线条下方。
+- Savings 灰色底轨线宽从 `1.4px` 提升到与白色值线一致的 `2.2px`，透明度从 `.7` 降至 `.45`，保持同粗细但更轻的视觉层级。
+- Self-powered 按用户提供的 Lupi F4 Tick Donut 参考重绘：沿用 `templates/basics-gallery.html` 的 B4 骨架，100 个刻度、每 10% 内圈点、外圈来源标签与虚线引导均保留；移除环上图标，来源按占比降序着色。最终表盘半径增至 `44`、使用 `270×116` 画布使外缘贴近内容区上下边缘；圆心文字全部删除，来源标签改为句首大写并与 Savings 行标签统一为 `12px / 600`。
+- Current state 从 F1 Rung Bars 改为无图表的状态列表：四行分别显示 Battery / Grid / Home / Solar 和常驻 kW。胶囊使用黑白灰四档，最亮一档位于顶部并向下逐级变深；框内状态与功率使用 `12px / 400` 白字，列表顶部增加 `8px` 留白并与左侧统计首行中心对齐，移除图表 hover 读数。
+- Energy 按 F6 Paired Rungs 重绘为四个点阵分组：Grid、Storage 各含 Supply / Demand 双列，Solar 仅 Supply，Site 仅 Demand。每个点代表 1 kWh，Supply 为前景白、Demand 为共享橙色；顶部显示四舍五入整数，底部标签和图例改为句首大写。
+- Energy 分类、数值和顶部图例提升到清楚可读的小字档位；画布改为与内容区同高的 `270×116`，取消上下 letterbox，并把点阵纵向步距和点径重新配平，确保圆点不重叠、竖向数据条更高。
+- Self-powered 将外圈文字和百分比替换为放大的太阳、电池、电网图标，移除图标外圈和描边；来源使用三级黑白灰，刻度长度采用确定性随机噪声。每个来源 hover / focus 时以共享缓动显示略微加粗、延长的高亮覆盖层，中心玻璃浮窗显示来源名称、百分比与 kWh，并与刻度保持不重叠。
+- Self-powered 最终按参考图重作为径向花瓣扇区：每项先铺浅色全长底扇区，再叠加按绝对百分比改变半径的数据扇区，最大值也不会自动占满；两层均使用无描边的圆角路径，并通过内外同宽的 `5` 单位空隙分隔。来源名和百分比放在底盘靠外位置并使用反差文字，中心留空；hover / focus 只让对应花瓣小幅外扩，侧边玻璃浮窗显示来源、百分比和 kWh。结构采用 L10 Radial Patchwork 的扇区语法，替代此前的 Tick Donut / 外圈图标版本。
+- Self-powered 底扇区降低深度：深色主题提高到前景色 28% 的浅灰，浅色主题使用 12% 的浅灰，避免底盘与页面背景混成过深的一整块。
+- Self-powered 引导线改为清晰可见的三节点折线：先按扇区外缘斜向引出，再转到标签高度并使用水平尾段指向文字；标签继续全部外置并与扇区保持间距。
+
+### Plants Overview 信息层级精修
+
+- Energy trend 的三条横向网格线由 `1px` 收至 `0.6px`，使用非缩放描边，颜色与透明度保持不变；趋势曲线和 `2px` 模块分隔线不改。
+- 主视觉预留区彻底清空可见表面：删除画布与 Energy flow 的两层径向 / 线性渐变，并移除空舞台自身的背景、边框、圆角与阴影；区域只保留透明布局占位，Operations 高度和 Statistics 起始位置不变。
+- Statistics 的 hover / focus 读数统一挂载共享静态 Glass Surface（`.wd-glass--surface`），不再使用图表局部半透明底；读数根据当前行真实线条位置动态上移，Savings 采用单行标签 + 金额，左缘与线条起点对齐并保持 `6px` 间距，不覆盖线条、标题或右侧总额。文字放进独立内容层，避免切换读数时误删玻璃材质。
+- Savings 行标签改为句首大写、11px 字号，增加 `1px` 光学下移后与 lollipop 水平线中心对齐；四行 pitch 从 `23` 增至 `26` 个 viewBox 单位，在 1519px 视口实测约 `23px`，行底轨提高到 1.4px、70% 可见度。
+- Savings 的 L3 Barcode Lollipop 改为每条收益独立浅色底轨，移除整块纵向网格；最长条目使用实心端点，其他条目使用空心端点，四个端点统一放大。
+- Statistics 接入 `lieflat-charts`：完成 Lupi Editorial 与 Basics 候选审计后，分别采用 F6 Paired Rungs、L3 Barcode Lollipop 横置版、F4 Tick Donut、F1 Rung Bars；淘汰 L2、L14 与 F12，未使用 Glance。新增 `statistics-charts.js`，全组改为黑白灰 Mono；梯档、lollipop 与刻度加粗，Energy/Savings/Self-powered 数值默认隐藏并在 hover / focus 时显示，Current state 默认保留文字状态与 kW。
+- Statistics 四组改为严格等宽，使用统一 `20px` 标题行和正文起点；宽屏四列，`901–1450px` 改为 2×2 组网格。Energy 用 `3×2` 方向化指标表达购售电与充放关系，Savings 使用总额、四行来源收益和比例条，Self-powered 同时显示 kWh 与来源百分比，Current state 将状态与功率合并为语义胶囊。Self-powered 分项电量暂由本地家庭用电量与来源占比派生。
+- 保留 Energy flow 空舞台，作为后续内容预留区，不提前填充设备节点或示意数据。
+- 站点上下文拆为 System status 与 Site environment 两组；宽屏左右分布，`901–1450px` 两行两列，窄屏顺序展开。
+- Statistics 统一 12px 标签和 15px 数值；Savings 改为总额加 8px 比例条和来源列表，Self-powered 环图增加中心百分比，BMS / Heater 单行摘要压缩到 136px 并居中。
+- 宽屏设备轨与运维栏调整为 `152px / 284px`，列距 `20px`；Operations 三卡统一标题行与正文区，增加 Fault code 胶囊、Ticket 行 hover 和带状态点的 LIVE。
+- Energy trend 建立 2.4px 主线与 1.5px 比较线层级，并使用非缩放描边；浅色 Overview 内容辅助文字在页面范围内提高可读性。
+
+### Energy trend 切换精修
+
+- 模式开关 hover 移除第二层圆角背景，只保留文字提亮与整体缩放。
+- 分段选项改为 flex 水平、垂直居中，并对标签做 `translateY(-0.5px)` 字形光学校正，消除实际墨迹相对胶囊中心偏低的问题。选中胶囊移除内描边，上下各内缩 `4px`，左右铺满当前选项以消除相邻项之间的额外空隙；外框左右保留 `4px` 内距。占位标签改为 `All / Default / Battery / Frequency`，选项按文字内容自适应宽度，左右内距 `18px`、相邻项间距 `0px`，指示层按实际选项位置和完整宽度平滑移动。
+- 移除 Plants 专属分段开关类及两处页面级宽度覆盖；默认尺寸、间距、圆角、字形校正和响应式最大宽度统一收回共享组件 CSS 变量。
+- 趋势切换抽为共享 `createSegmentedControl()`，补齐键盘方向键、禁用项跳过、ResizeObserver、快速连续点击动画续接和销毁清理；页面只保留选项及业务回调。
+- 保留两个占位项和独立 `Today` 周期按钮，日期浮窗继续复用 Home。
+- Statistics 与 Energy trend 只在各自顶部保留一条 `1px` 横向分隔，移除四周描边、圆角外框、底部线和实底；四边内距统一为 `16px`，趋势内容改为 grid 正常流，窄屏分段控件在组件内自动收紧内距。
+- 移除 `Energy flow` 标题，仅保留右上角 `LIVE` 与空容器；移除 Energy trend 图例、纵轴刻度和底部时间范围文字，曲线与模式切换继续保持联动。
+- Operations rail 改为三卡等高均分并直接复用 `.wd-discussion-card`；Fault 移除 `Clear`，System Log 移除内部终端框，Service Tickets 的 36px 玻璃加号移动到标题行。
+- 三卡可在当前工作区标签内进入 `/plants/:id/faults`、`/logs`、`/tickets` 占位页；面包屑增加第三层，URL 支持刷新、历史与 `device` 参数。
+- Operations rail 上移并与上下文条同顶；三卡文字提升到 `12–14px`，Ticket 加号修正为正圆。
+- 多级面包屑取消父级负左边距，电站名与 Overview 对齐、hover 胶囊不再覆盖箭头，收藏按钮在子页继续显示。
+- Operations 三卡标题行统一 `36px`、标题上/左内距 `12px`、标题与内容间距 `20px`；Ticket 正圆加号固定在右上 `6px` 内距。
+- Operations 三卡左右内距由 `12px` 增至 `16px`，上下 `12px` 与其余几何保持不变。
+- 电站子页隐藏 section tabs，空白占位改为完整正文视口居中；父级面包屑保留左右对称 hover 内距，收藏以负外边距紧贴电站名且不覆盖箭头。
+- Operations 三卡标题回调为 `13px / 590`，正文与日志字号保持不变。
+- 删除 Energy flow 标题 / LIVE 行，让空舞台铺满；Plant context 移除背景与圆角，仅保留四项信息。
+- Operations 标题改为 sentence case；移除空 Ticket 的 `None`；无故障与空工单状态居中；日志改为可换行、无省略号的等宽代码排版。
+- no-fault 组保留原图标+文案排列并整体上移 `6px`，Ticket 空态同步上移 `6px`。
+- System Log 改为无固定列宽的连续代码行，长消息从下一行最左侧续排并保留三级颜色；增加占位行与共享内部滚动。
+- 下半区行间距增至 `16px`，Statistics 上下内距增至 `20px`，趋势图底部内距归零；模块分隔线改为 `2px`，折线扩展至约 94% 图表高度。
+
 ## 2026-11-04
+
+### Plants Overview 详情首版
+
+- `/plants/:id` 从占位升级为 Living Field 连续画布，默认显示设备第一项；多设备可切换并同步 `?device=`，单设备自动隐藏切换轨。
+- 页签改为导航下方胶囊并复用 Service Ticket 的共享 `.wd-scope-button`：36px 高，未选中为无描边实体填充，选中使用共享内描边；标签行复用 Service 工具栏的上 `16px` / 下 `14px` 留白；移除标签组底线。详情左右内距 32px，统计、趋势图和图例横跨整行，画布填满可用高度。
+- 三个范围页签统一 hover 状态；`Devices / Site details` 保持禁用、不可跳转，但同样提供共享颜色反馈。
+- 范围页签补齐整体缩放：hover / focus `1.045`、按压 `1.09`；Plants 禁用页签也使用同样视觉，但移除通用禁用态的透明度覆盖，静止文字与 Ticket 未选中项一致。
+- 新增横向站点状态、动态设备统计和 Power / Energy 趋势；逆变器默认显示 `Statistics / Today` 天视图，集中展示 Energy、Savings、Self-powered、Current state。站点状态恢复运行状态、通信、天气、地点与本地时间四项，并在窄桌面使用两行两列。`Energy flow` 当前按批注只保留标题与空容器，内部设备、节点、连线、读数和圆环全部移除，后续重新设计后再接入。右侧明确分为 Fault & Warning、System Log、Service Tickets，告警直接显示设备上下文和错误码，日志恢复精确时钟与可读事件列，工单标题最多两行。
+- 详情材质按交互语义收口：玻璃只用于可操作控件，Power / Energy 与 New ticket 使用共享玻璃按钮；状态条、统计面板和 Operations 内容卡使用普通实体表面。右侧 Fault & Warning、System Log、Service Tickets 拆成三张独立卡片；移除 Energy flow、运维分组、统计列和趋势区之间不必要的边框，使用留白与分组标签建立层级。设备轨、主列和运维栏改为 `160px / flex / 272px`，统计与趋势横跨整行；移动端改为单列 Flex 流，修复内容重叠和裁切。
+- `Energy trend` 改为 36px 玻璃分段开关，增加两个占位选项验证滑动效果；整体与选项均有 hover 放大和光效。`Today` 拆回独立周期按钮，复用 Home 的日期选择器、预设、Apply 和玻璃样式。
+- 页头收藏按钮与标题间距收紧为 `4px`，图标下移 `0.5px` 做光学居中；收藏不使用玻璃底缘。外层按钮保持静止，只让内部图标围绕中心放大：hover / focus `1.28`、按压 `1.38`，修复缩放时向右漂移的观感。
+- 收藏复用 Plants 列表存储；关联工单可打开已有 Service Ticket；Devices 与 Site details 保持禁用。新增 `verify-plant-detail-overview.cjs`。
 
 ### Plants 状态图标恢复
 

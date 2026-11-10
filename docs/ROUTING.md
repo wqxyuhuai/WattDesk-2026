@@ -1,6 +1,6 @@
 # 站点路由与 URL 规范
 
-更新：2026-10-30。开发入口见 [AGENTS.md](../AGENTS.md)，视觉与组件规则分别见 [DESIGN-SYSTEM.md](../DESIGN-SYSTEM.md) 与 [COMPONENTS.md](./COMPONENTS.md)。
+更新：2026-11-10。开发入口见 [AGENTS.md](../AGENTS.md)，视觉与组件规则分别见 [DESIGN-SYSTEM.md](../DESIGN-SYSTEM.md) 与 [COMPONENTS.md](./COMPONENTS.md)。
 
 ## 1. 当前 URL 表
 
@@ -8,7 +8,10 @@
 |---|---|---|
 | Home | `/home` | 真实首页 |
 | Plants | `/plants`；`/plants?connection=online`；`/plants?status=attention` | 本地示例数据列表；两个查询预设分别对应首页在线 / Attention 状态卡 |
-| 电站详情 | `/plants/:id` | 从列表行或自动建站 `?` 提示中的 `setup` 在新标签打开；详情视觉未立项，当前使用明确的预览占位 |
+| 电站详情 | `/plants/:id`；`/plants/:id?device=inverter|bms|heater` | 从列表行或自动建站 `?` 提示中的 `setup` 在新标签打开；Overview 默认显示设备顺序第一项，多设备切换同步 `device` 查询参数 |
+| 电站 Devices | `/plants/:id/devices`；可附带 `?device=` | 当前工作区标签内的设备列表；支持刷新、复制链接和浏览器历史，保留设备卡片、设置与本地增删改预览 |
+| 电站 Site details | `/plants/:id/site`；可附带 `?device=` | 当前工作区标签内的电站资料查看与整页编辑；保存、校验和资料修改只保留在当前 Plants 页面会话，刷新恢复样例 |
+| 电站子页占位 | `/plants/:id/faults`、`/plants/:id/logs`、`/plants/:id/tickets`；可附带 `?device=` | Operations 三卡在当前工作区标签内进入；面包屑为 `Plants / 电站名 / 子页名`，当前只显示明确占位 |
 | Service ticket | `/service` | 本地示例卡片列表，支持状态/范围筛选、搜索；`New ticket` 在新标签打开新建编辑页 |
 | 新建工单 | `/service/new` | 新标签中的工单详情同构编辑页；标题自动聚焦，发布后当前标签切换为 `/service/:ticketId` |
 | 工单详情 | `/service/:ticketId` | 本地示例详情；支持刷新、原位编辑、回复和状态切换 |
@@ -25,7 +28,10 @@
 - 未知路径、未知电站 ID 和未知工单 ID 分别显示 `Page not found` / `Plant not found` / `Ticket not found`，不得静默回到 Home。
 - 查询参数原样保留，例如 `/plants?glass=figma`、`/home?annotate=1`。
 - 首页 `Sites online` 与 `Needs attention` 状态卡分别使用 `connection=online`、`status=attention`。列表页必须把预设还原为对应筛选 Chip；用户清除 Chip 或改成其他组合时，通过 `replaceState` 移除该预设参数，并继续保留 `glass` 等非路由查询参数。预设 URL 必须支持直接打开与刷新。
-- 电站详情使用本地数据中的稳定 `id`（如 `p02`），不按名称或数组下标生成 URL。详情页接入真实接口后沿用同一 URL 契约，接口 ID 变化必须视为 URL 变更。
+- 电站详情使用本地数据中的稳定 `id`（如 `p02`），不按名称或数组下标生成 URL。可选 `device` 只接受 `inverter`、`bms`、`heater`；缺省时页面读取该电站设备顺序并选中第一项。刷新、复制链接和标签恢复保留当前设备。详情页接入真实接口后沿用同一 URL 契约，接口 ID 或稳定设备 ID 变化必须视为 URL 变更。
+- Devices 使用稳定 slug `devices`；与 Overview 之间切换写入当前工作区标签历史，并保留 `device` 查询参数。刷新、复制链接、标签恢复和浏览器前进/后退仍停留在对应状态。
+- Site details 使用稳定 slug `site`；与 Overview、Devices 之间切换写入当前工作区标签历史，并保留 `device` 查询参数。存在未保存编辑时，页签和父级返回先提示保存或取消。
+- Operations 子页只接受 `faults`、`logs`、`tickets` 三个稳定 slug；刷新、复制链接、标签恢复和浏览器前进/后退均保留 `device` 查询参数。未知子页不得静默回落到 Overview。
 - Service Ticket 详情使用稳定 `ticketId`（如 `st-25638663`）；可读票号只用于显示，不作为路由主键。`/service/new` 是新建编辑页的保留路径，直接刷新会重新开始空白编辑；发布成功后当前标签原地替换为稳定 `ticketId` URL。当前本地新建工单只在页面会话内存在，刷新其临时详情 URL 会显示 `Ticket not found`。
 
 ## 2. 运行时规则
@@ -47,7 +53,7 @@
 
 浏览器直接打开 `/plants/p02` 或 `/service/st-25638663` 时，静态资源层必须返回 SPA 外壳，再由客户端读取路径：
 
-- 本地预览：`design-preview/server.js` 对 `/home`、`/plants`、`/plants/:id`、`/service`、`/service/:id` 及上表其余路径返回 `home.html`。
+- 本地预览：`design-preview/server.js` 对 `/home`、`/plants`、`/plants/:id`、`/plants/:id/:section`、`/service`、`/service/:id` 及上表其余路径返回 `home.html`。
 - 线上：`wrangler.jsonc` 使用 Workers Assets 的 `single-page-application` 未命中回退，把深链接返回给客户端路由；`scripts/build-site.cjs` 生成的 `_redirects` 只处理 `/`、`/home.html`、`/index.html` 到 `/home` 的规范跳转。不要恢复 `200` 代理到 `/index.html` 的规则，否则会被新版部署校验判定为循环。
 - `/home` 由 Cloudflare 静态资源层从 `home.html` 提供；不得添加 `/home /home.html` 规则，否则会与自动重定向形成循环。
 - 不使用 `/* /index.html 200` 这类全站兜底，避免把 `/src/*`、`/home-assets/*` 等真实资源也代理成 HTML。

@@ -93,6 +93,14 @@
   transition-timing-function: var(--wd-hover-ease);
 }
 
+/* The toggle thumb owns one geometric movement; the shared control rhythm
+ * keeps it aligned with every other state transition on the page. */
+.wd-switch-thumb {
+  transition-property: transform;
+  transition-duration: var(--wd-motion-hover);
+  transition-timing-function: var(--wd-ease-hover);
+}
+
 /* One state switch per host, covering native controls, ARIA roles, the shared
  * control wrapper, glass surfaces (pointer glow) and workspace lanes. */
 :where(

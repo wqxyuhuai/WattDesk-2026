@@ -312,6 +312,23 @@ const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
   assert.equal((await page.locator('.plants-detail-title').textContent()).trim(), 'Silvio Bräuer');
   assert.equal((await page.locator('.workspace-tab.selected .workspace-tab-label').textContent()).trim(), 'Silvio Bräuer');
 
+  await page.goto(`${origin}/plants/p02/faults`, { waitUntil: 'domcontentloaded' });
+  await ready();
+  assert.equal(pathname(), '/plants/p02/faults');
+  assert.deepEqual(
+    await page.locator('.plants-detail .wd-page-breadcrumb-item').evaluateAll(items => items.map(item => item.textContent.trim())),
+    ['Plants', 'Silvio Bräuer', 'Fault & warning'],
+    'plant child deep links use the full three-level breadcrumb'
+  );
+  assert.equal(await page.locator('.plant-overview-subpage').isVisible(), true);
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await ready();
+  assert.equal(pathname(), '/plants/p02/faults', 'refresh on a plant child page must stay there');
+  await page.goBack();
+  await ready();
+  assert.equal(pathname(), '/plants/p02', 'Back from a plant child returns to its Overview');
+  assert.equal(await page.locator('.plant-overview').isVisible(), true);
+
   // Browser history follows the same locations.
   await page.goBack();
   await sleep(420);
@@ -647,6 +664,15 @@ const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
       `wide-screen column ${index} should receive additional breathing room`
     );
   }
+
+  await page.goto(`${origin}/plants/p02/devices`, { waitUntil: 'domcontentloaded' });
+  await ready();
+  assert.equal(pathname(), '/plants/p02/devices', 'Devices has a refreshable child route');
+  assert.equal(await page.locator('.plants-devices').isVisible(), true);
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await ready();
+  assert.equal(pathname(), '/plants/p02/devices', 'refresh on Devices stays on Devices');
+  assert.equal(await page.locator('.plants-detail-tab[data-section="devices"]').getAttribute('aria-current'), 'page');
 
   assert.deepEqual(errors, []);
   console.log(JSON.stringify({ ok: true, errors }, null, 2));

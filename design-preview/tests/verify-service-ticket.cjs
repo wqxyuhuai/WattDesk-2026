@@ -159,7 +159,7 @@ const png=Buffer.from(
     await page.waitForTimeout(360);
     assert.deepEqual(
       await page.locator('.service-toolbar').evaluate(element=>[...element.children].slice(0,3).map(child=>child.className)),
-      ['wd-control-state wd-button wd-button--pill wd-button--neutral service-status-filter wd-glass','service-toolbar-divider','service-scope']
+      ['wd-control-state wd-button wd-button--pill wd-button--neutral service-status-filter wd-glass','service-toolbar-divider','service-scope wd-scope-control']
     );
     assert.equal(await page.locator('.service-scope-button[data-scope="all"]').getAttribute('aria-selected'),'true');
     assert.equal(await page.locator('.service-scope-button').count(),3);

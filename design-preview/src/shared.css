@@ -6,6 +6,7 @@
 @import url("./foundations/motion.css");
 @import url("./layouts/app-shell.css");
 @import url("./components/button.css");
+@import url("./components/edit-field.css");
 @import url("./components/search.css");
 @import url("./components/search-surface.css");
 @import url("./components/input-clear.css");
@@ -21,6 +22,9 @@
 @import url("./components/history-popover.css");
 @import url("./components/history-path.css");
 @import url("./components/control-states.css");
+@import url("./components/scope-control.css");
+@import url("./components/segmented-control.css");
+@import url("./components/toggle-switch.css");
 @import url("./foundations/theme-transition.css");
 @import url("./foundations/type.css");
 @import url("./components/avatar.css");

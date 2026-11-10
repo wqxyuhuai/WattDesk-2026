@@ -4,6 +4,8 @@
 // `path` is the canonical browser URL. The workspace keeps its tab history in
 // memory, but the address bar and reloads always resolve through this table so
 // `/plants` or `/plants/p02` cannot silently fall back to Home.
+import {isPlantSection,isPlantTab} from "../plants/sections.js";
+
 export const ROUTE_CATALOG={
  home:{title:"Home",icon:null,path:"/home"},
  plants:{title:"Plants",icon:"asset-6.svg",path:"/plants"},
@@ -18,12 +20,13 @@ export const ROUTE_CATALOG={
 };
 export const SEARCH_QUICK_LINKS=["home","plants","service","track"];
 const PATH_TO_ROUTE=new Map(Object.entries(ROUTE_CATALOG).map(([route,definition])=>[definition.path,route]));
-const PLANT_DETAIL_PATH=/^\/plants\/([^/]+)$/;
+const PLANT_DETAIL_PATH=/^\/plants\/([^/]+)(?:\/([^/]+))?$/;
 const SERVICE_DETAIL_PATH=/^\/service\/([^/]+)$/;
 const PLANT_FILTER_VALUES=Object.freeze({
  connection:new Set(["online"]),
  status:new Set(["attention"])
 });
+const PLANT_DEVICE_VALUES=new Set(["inverter","bms","heater"]);
 
 function normalizePath(pathname){
  const value=String(pathname||"/");
@@ -54,7 +57,18 @@ export function routeFromPath(pathname,search=""){
  if(detail){
   let plantId;
   try{plantId=decodeURIComponent(detail[1]);}catch{/* malformed escape */ }
-  if(plantId&&!plantId.includes("/"))return {route:"plants",params:{plantId}};
+  if(plantId&&!plantId.includes("/")){
+   const values=new URLSearchParams(search||"");
+   const device=values.get("device");
+   const segment=detail[2];
+   const shared={
+    plantId,
+    ...(PLANT_DEVICE_VALUES.has(device)?{device}:{})
+   };
+   if(segment&&isPlantTab(segment))return {route:"plants",params:{...shared,tab:segment}};
+   if(segment&&!isPlantSection(segment))return {route:null,params:{},notFound:true};
+   return {route:"plants",params:{...shared,...(segment?{section:segment}:{})}};
+  }
   return {route:null,params:{},notFound:true};
  }
  if(path==="/service")return {route:"service",params:{}};
@@ -73,7 +87,13 @@ export function routeFromPath(pathname,search=""){
 
 // The detail URL is part of the route contract, not page-local state.
 export function pathForRoute(route,params={}){
- if(route==="plants"&&params?.plantId)return `/plants/${encodeURIComponent(String(params.plantId))}`;
+ if(route==="plants"&&params?.plantId){
+  const child=isPlantTab(params?.tab)
+   ?`/${params.tab}`
+   :isPlantSection(params?.section)?`/${params.section}`:"";
+  const path=`/plants/${encodeURIComponent(String(params.plantId))}${child}`;
+  return PLANT_DEVICE_VALUES.has(params?.device)?`${path}?device=${encodeURIComponent(params.device)}`:path;
+ }
  if(route==="service"&&params?.newTicket)return "/service/new";
  if(route==="service"&&params?.ticketId)return `/service/${encodeURIComponent(String(params.ticketId))}`;
  if(route==="plants"){

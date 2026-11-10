@@ -1,0 +1,35 @@
+{
+  "fileKey": "UTQpkiGtVquKh8ohi8kvfx",
+  "pageId": "20615:42945",
+  "sourceFrameId": "20922:26797",
+  "capturedAt": "2026-11-10",
+  "purpose": "Device row upgrade action and overflow-menu icons.",
+  "assets": [
+    {
+      "role": "upgrade",
+      "figmaNodeId": "20922:26808",
+      "runtime": "../../../home-assets/plants/devices/actions/device-upgrade.svg"
+    },
+    {
+      "role": "system-tests",
+      "figmaNodeId": "I20922:26850;11053:30101",
+      "runtime": "../../../home-assets/plants/devices/actions/system-tests.svg"
+    },
+    {
+      "role": "replace",
+      "figmaNodeId": "29812:138844",
+      "runtime": "../../../home-assets/plants/devices/actions/replace.svg"
+    },
+    {
+      "role": "rename",
+      "figmaNodeId": "1288:19727",
+      "runtime": "../../../home-assets/plants/devices/actions/rename.svg"
+    },
+    {
+      "role": "unbind",
+      "figmaNodeId": "I20922:26853;11053:30101",
+      "runtime": "../../../home-assets/plants/devices/actions/delete.svg"
+    }
+  ],
+  "processing": "Exact SVG exports downloaded from Figma; runtime rendering uses them as currentColor masks."
+}

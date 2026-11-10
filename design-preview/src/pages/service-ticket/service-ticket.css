@@ -22,15 +22,6 @@
 .service-toolbar{display:flex;align-items:center;gap:12px;min-width:0;flex:0 0 auto;padding:16px 0 14px}
 .service-toolbar-spacer{flex:1 1 auto;min-width:12px}
 .service-toolbar-divider{width:1px;height:30px;flex:0 0 1px;background:var(--wd-separator)}
-.service-scope{display:flex;align-items:center;gap:4px;min-width:0}
-.service-scope-button{display:inline-flex;align-items:center;height:36px;padding:0 14px;border:0;border-radius:999px;background:var(--wd-fill-quaternary);color:var(--wd-label-secondary);white-space:nowrap}
-.service-scope-button:is(:hover,:focus-visible){background:var(--wd-control-hover);color:var(--wd-label-primary)}
-.service-scope-button.is-selected{
- background:var(--wd-fill-primary);
- color:var(--wd-label-primary);
- box-shadow:inset 0 0 0 1px var(--wd-label-quaternary);
-}
-.service-scope-button:focus-visible{outline:2px solid var(--wd-blue);outline-offset:1px}
 .service-toolbar>.service-search{flex:0 1 300px;min-width:180px}
 .service-status-filter{min-width:96px;color:var(--wd-label-secondary)}
 .service-status-filter[aria-expanded="true"]{color:var(--wd-label-primary)}
@@ -254,16 +245,6 @@
 .service-thread-list{display:flex;flex-direction:column;gap:16px}
 .service-reply-editor--standalone+.service-thread-list{margin-top:16px}
 .service-thread-card{padding:18px}
-/* Light discussion surfaces share a clean white plane: no inset stroke or
- * outer shadow on the composer, reply cards or the Properties rail. */
-:root[data-theme="light"] :is(
-  .service-thread-card,
-  .service-reply-editor--standalone,
-  .service-properties
-).wd-discussion-card{
-  background:var(--wd-figma-grays-white);
-  box-shadow:none;
-}
 .service-thread-card:has(>.service-thread-reply-prompt),
 .service-thread-card:has(.service-reply-editor--inline){padding-bottom:0}
 .service-comment{position:relative;padding:0;border-radius:0;background:transparent}

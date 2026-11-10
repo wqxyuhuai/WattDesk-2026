@@ -25,7 +25,9 @@ const assert=require('node:assert/strict');
         days7:time.formatTimestamp(at(7*24*60*60000),{now}),
         days10:time.formatTimestamp(at(10*24*60*60000),{now}),
         ageMinutes:time.formatAgeMinutes(0,{now}),
-        absolute:time.formatAbsoluteTime(new Date(2026,0,2,9,5))
+        absolute:time.formatAbsoluteTime(new Date(2026,0,2,9,5)),
+        clock:time.formatClockTime(new Date(2026,9,30,14,30,7)),
+        clockMinutes:time.formatClockTime(new Date(2026,9,30,14,30,7),{seconds:false})
       };
     });
     assert.deepEqual(result,{
@@ -43,7 +45,9 @@ const assert=require('node:assert/strict');
       days7:'2026/10/23 14:30',
       days10:'2026/10/20 14:30',
       ageMinutes:'Just now',
-      absolute:'2026/01/02 09:05'
+      absolute:'2026/01/02 09:05',
+      clock:'14:30:07',
+      clockMinutes:'14:30'
     });
     console.log(JSON.stringify({ok:true,relativeWindow:'7 days',result},null,2));
   }finally{

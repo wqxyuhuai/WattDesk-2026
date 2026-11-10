@@ -23,27 +23,6 @@
 }
 .plants-inner[hidden]{display:none}
 
-/* ── /plants/:id placeholder ─────────────────────────────────────────────── */
-/* The URL is real and survives refresh; the detail design is not part of this
- * build yet, so this surface only identifies the plant and states that fact.
- * The shared page header stays fixed while the placeholder body scrolls. */
-.plants-detail{position:absolute;inset:0;display:flex;flex-direction:column;overflow:hidden}
-.plants-detail[hidden]{display:none}
-.plants-detail-header-host{--wd-page-inset:24px;flex:0 0 auto;padding:var(--wd-space-1) var(--wd-page-inset) 0}
-.plants-detail-header{position:relative}
-.plants-detail-heading{min-width:0}
-.plants-detail-viewport{flex:1 1 auto;min-height:0;overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;padding:24px 24px 32px}
-.plants-detail-inner{width:min(560px,100%);display:flex;flex-direction:column;align-items:flex-start;gap:10px;margin:0 auto}
-.plants-detail-back{margin-bottom:18px}
-.plants-detail-kicker{margin:0;color:var(--wd-label-tertiary);letter-spacing:.4px;text-transform:uppercase}
-.plants-detail-title{
- margin:0;color:var(--wd-label-primary);
- font-size:34px;font-weight:590;line-height:41px;letter-spacing:.4px;
- overflow-wrap:anywhere;
-}
-.plants-detail-meta{margin:0;color:var(--wd-label-secondary);font-variant-numeric:tabular-nums}
-.plants-detail-note{max-width:440px;margin:8px 0 0;color:var(--wd-label-tertiary)}
-
 /* ── Toolbar ─────────────────────────────────────────────────────────────── */
 /* Keep the controls clear of the header rule; the top inset matches the page's
  * 12px spacing rhythm, while the existing 8px below separates them from rows. */

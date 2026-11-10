@@ -1,0 +1,26 @@
+/* Compact settings switch. The track uses the shared Glass Surface material;
+ * the thumb owns the state position and remains legible in both themes. */
+.wd-switch{
+ position:relative;display:block;flex:0 0 42px;
+ width:42px;height:24px;min-width:42px;min-height:24px;padding:0;
+ border:0;border-radius:999px;color:var(--wd-label-primary);
+ cursor:pointer;outline:0;
+ --wd-glass-tint:var(--wd-control-fill);
+ --wd-glass-hover-tint:var(--wd-control-fill-hover);
+}
+.wd-switch[aria-checked="true"]{
+ --wd-glass-tint:color-mix(in srgb,var(--wd-blue) 72%,rgba(0,0,0,.18));
+ --wd-glass-outline:color-mix(in srgb,var(--wd-blue) 68%,rgba(0,0,0,.82));
+ --wd-glass-outline-side:color-mix(in srgb,var(--wd-blue) 72%,rgba(0,0,0,.8));
+ --wd-glass-hover-tint:color-mix(in srgb,var(--wd-blue) 76%,rgba(255,255,255,.08));
+}
+.wd-switch-thumb{
+ position:absolute;z-index:2;top:3px;left:3px;
+ width:18px;height:18px;border-radius:50%;
+ background:#fff;pointer-events:none;
+ transform:translateX(0);
+}
+.wd-switch[aria-checked="true"] .wd-switch-thumb{transform:translateX(18px)}
+.wd-switch:focus-visible{outline:2px solid var(--wd-blue);outline-offset:2px}
+.wd-switch:disabled{cursor:default;opacity:.72}
+.wd-switch:disabled .wd-switch-thumb{opacity:.88}

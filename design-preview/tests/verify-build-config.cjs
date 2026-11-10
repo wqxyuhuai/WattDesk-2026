@@ -24,6 +24,7 @@ assert.match(redirects, /^\/ \/home 308$/m);
 assert.match(redirects, /^\/home\.html \/home 308$/m);
 assert.match(redirects, /^\/index\.html \/home 308$/m);
 assert.doesNotMatch(redirects, /\s\/index\.html 200$/m, 'SPA routes must use Workers Assets fallback, not rewrite loops');
+assert.match(headers, /^\/plants\/\*$/m, 'nested plant child pages must revalidate like their shell');
 assert.match(headers, /^\/service\/\*$/m, 'service detail HTML must revalidate like its shell');
 
 fs.rmSync(out, {recursive: true, force: true});

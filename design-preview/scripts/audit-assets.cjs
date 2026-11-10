@@ -29,7 +29,7 @@ for(const file of walk(path.join(root,'src')).filter(f=>/\.(js|css)$/.test(f))){
  for(const match of text.matchAll(/opaqueMaskURL\(\s*["'`]([^"'`\s(){}]*\.svg)["'`]/g)){
   const name=match[1];if(!name.includes('${'))used.add(`masks/${assetPath(name,file)}`);
  }
- for(const match of text.matchAll(/assetURL\(\s*["'`]([^"'`\s(){}]*\.svg)["'`]/g)){
+ for(const match of text.matchAll(/assetURL\(\s*["'`]([^"'`\s(){}]*\.(?:svg|png|jpe?g|webp|gif))["'`]/gi)){
   const name=match[1];if(!name.includes('${'))used.add(assetPath(name,file));
  }
  const genericText=text

@@ -20,6 +20,13 @@ export function formatAbsoluteTime(value){
   return `${date.getFullYear()}/${pad(date.getMonth()+1)}/${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
 
+export function formatClockTime(value,{seconds=true}={}){
+  const date=asDate(value);
+  const pad=part=>String(part).padStart(2,"0");
+  const clock=`${pad(date.getHours())}:${pad(date.getMinutes())}`;
+  return seconds?`${clock}:${pad(date.getSeconds())}`:clock;
+}
+
 export function dateFromAgeMinutes(minutes,{now=Date.now()}={}){
   const value=Number(minutes);
   return new Date(Number(now)-(Number.isFinite(value)?Math.max(0,value):0)*MINUTE);

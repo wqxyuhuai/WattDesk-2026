@@ -209,6 +209,9 @@ try{
  const plantsPage=createPlantsPage({
    glass,registerPanel,close,reposition,toast,
   onOpenPlant:plant=>openRouteInNewTab("plants",{params:{plantId:plant.id}}),
+  onOpenPlantSection:params=>openRoute("plants",{params}),
+  onOpenTicket:ticket=>openRouteInNewTab("service",{params:{ticketId:ticket.id}}),
+  onOpenNewTicket:()=>openRouteInNewTab("service",{params:{newTicket:true}}),
   onBackToList:returnToPlantsList,
   onRouteParamsChange:params=>workspace?.replaceActiveParams(params)
  });

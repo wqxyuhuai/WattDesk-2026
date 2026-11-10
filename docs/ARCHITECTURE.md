@@ -1,6 +1,6 @@
 # 架构与扩展约定
 
-更新：2026-10-30。当前阶段采用原生网页，不引入新的 UI 框架、状态库或构建链。
+更新：2026-11-10。当前阶段采用原生网页，不引入新的 UI 框架、状态库或构建链。
 
 ```text
 Source/
@@ -18,7 +18,7 @@ Source/
       layouts/                  app-shell：侧栏与顶栏的组合
       pages/home/               首页装配、专用场景适配、局部 CSS
         data/                   生成的精简节点、素材绑定、主题映射、运行期排版投影
-      pages/plants/             Plants 列表、筛选与电站详情占位
+      pages/plants/             Plants 列表、Overview、Devices 与 Site details
       pages/service-ticket/     Service Ticket 卡片列表、详情、原位编辑与回复
     home-assets/                实际使用的本地 SVG / 字体
     design/figma/               完整 Figma 来源归档
@@ -40,11 +40,13 @@ Source/
 - Service Ticket：`pages/service-ticket/index.js` 装配卡片列表、详情、工单/回复的原位编辑、提及与附件本地预览；`data.js` 保存当前会话样例与访问关系，`service-ticket.css` 只声明页面布局与视觉状态。真实上传、权限和通知未接入。
 - 交互：`pages/home/index.js` 只做装配；`layout.js` 负责响应式重排，`period.js` 周期与刷新，`search.js` 内联/全屏搜索，`workspace.js` 标签、会话级持久化、标签内历史与地址栏同步，`recent-visits.js` 本地最近访问，`routes.js` 是路由路径、`params` 与搜索索引的唯一清单。新增页面照此拆模块，不把业务逻辑堆回 `index.js`。
 - URL：`routes.js` 的 `routeFromPath()` / `pathForRoute()` 负责路径与 `{route, params}` 互转，包括 `/plants/:id`、`/service/new` 与 `/service/:ticketId`；新建工单使用 `{newTicket:true}` 参数并由 `pathForRoute()` 生成规范路径。`workspace.js` 只在这里调用 `pushState` / `replaceState`，页面通过 `openRoute()` 导航。深层链接由 `server.js`（本地）与 `wrangler.jsonc` 的 Workers Assets `single-page-application` 回退（线上）返回 SPA 外壳；规则见 [ROUTING.md](./ROUTING.md)。
+- Plants Operations 子页沿用同一 `plants` route，通过 `{plantId,device?,section}` 参数生成 `/plants/:id/faults|logs|tickets`；`sections.js` 是 slug 与显示名的共享清单。`statistics-charts.js` 只装配 Inverter Statistics 的四张模板化 SVG 图，页面负责标题、周期与数据取值；四类热区共用 hover / focus 局部读数。子页在当前工作区标签内导航并支持刷新/历史，不新增独立 routeView。
+- Devices 通过 `{plantId,device?,section:"devices"}` 生成 `/plants/:id/devices`；Site details 通过 `{plantId,device?,tab:"site"}` 生成 `/plants/:id/site`。两者仍属于 `plants` routeView，由 `pages/plants/index.js` 根据 section/tab 选择 `devices.js` 或 `site-details.js`。`devices.js` 负责设备列表装配和本地操作，三类设备共用的两行身份区由 `device-identity.js` 生成；设备状态、Cluster 展开、设置草稿和本地增删改只保存在 Plants 页面会话中，不使用独立状态库或伪造后端。
 
 ## 增加页面
 
 1. 阅读规则、当前状态及本次需求，确认正确 Figma 节点和主题。
-2. 从 `templates/page.html` 复制入口，在 `src/pages/<名称>/` 写局部 CSS / JS。共享样式通过 `src/shared.css` 加载。页面外壳沿用 Plants：根视图占满右侧工作区，顶部用共享 `createPageHeader()` 固定面包屑页头，正文在其下方独立滚动；主体和主卡片容器横向铺满内容区，不使用 Home 的 `1000px` 居中画布。
+2. 从 `templates/page.html` 复制入口，在 `src/pages/<名称>/` 写局部 CSS / JS。共享样式通过 `src/shared.css` 加载。页面外壳沿用 Plants：根视图占满右侧工作区，顶部用共享 `createPageHeader()` 固定面包屑页头，正文在其下方独立滚动。密集表格和设备清单可横向铺满；设置、详情和资料页面使用共享 `.wd-page-content` 的 `--wd-page-content-max`（当前 `1000px`）内容列，并在工作区内居中，内部布局撑满该列。
 3. 复用外壳和组件 API，只在页面写内容布局及业务装配，不复制材质、字体、图标和状态体系。
 4. 已有 Figma style 必须绑定；原本写死的设计值可保留。新增共享参数需有实际复用依据。
 5. 页面状态先局部维护；多个页面确有共享数据后再建立服务/状态模块，以真实 API 契约为依据。不预建假接口、假权限和演示业务能力。

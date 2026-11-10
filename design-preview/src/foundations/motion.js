@@ -1,6 +1,17 @@
 export function reducedMotion(){return matchMedia("(prefers-reduced-motion: reduce)").matches}
 export function motionDuration(token){const value=getComputedStyle(document.documentElement).getPropertyValue(token).trim();return parseFloat(value)*(value.endsWith('ms')?1:1000)}
 export function motionEasing(token){return getComputedStyle(document.documentElement).getPropertyValue(token).trim()}
+// Fullscreen surfaces reuse the Home search timeline so removal never clips
+// either the staged content exit or the backdrop frost tail.
+export function fullscreenOverlayEnterDuration(){
+ return motionDuration("--wd-motion-search-in")+motionDuration("--wd-motion-search-stagger")+40;
+}
+export function fullscreenOverlayExitDuration(){
+ return Math.max(
+  motionDuration("--wd-motion-search-out")+motionDuration("--wd-motion-search-out-stagger"),
+  motionDuration("--wd-motion-search-veil-delay")+motionDuration("--wd-motion-search-veil-out")
+ )+16;
+}
 const contentGrowthAnimations=new WeakMap();
 export function animateContentHeight(element,height,{from=element.getBoundingClientRect().height,animate=true}={}){
  const next=Math.max(0,Number(height)||0),previous=Math.max(0,Number(from)||0);

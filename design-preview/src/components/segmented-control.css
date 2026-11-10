@@ -1,0 +1,34 @@
+/* Glass segmented control: one moving selection layer, transparent option hit areas. */
+.wd-segmented-control{
+  --wd-segmented-control-height:36px;
+  --wd-segmented-control-inset:4px;
+  --wd-segmented-control-option-padding-inline:18px;
+  --wd-segmented-control-option-radius:16px;
+  --wd-segmented-control-label-offset-y:-0.5px;
+  position:relative;display:grid;grid-auto-flow:column;grid-auto-columns:max-content;column-gap:0;flex:0 0 auto;
+  width:max-content;max-width:100%;height:var(--wd-segmented-control-height);min-height:var(--wd-segmented-control-height);max-height:var(--wd-segmented-control-height);
+  padding:0 var(--wd-segmented-control-inset);border-radius:calc(var(--wd-segmented-control-height)/2);box-sizing:border-box;
+  background:var(--wd-fill-quaternary);
+}
+.wd-segmented-control-indicator{
+  position:absolute;z-index:0;top:var(--wd-segmented-control-inset);bottom:var(--wd-segmented-control-inset);left:0;width:0;border-radius:999px;
+  background:var(--wd-fill-primary);box-shadow:none;pointer-events:none;
+}
+.wd-segmented-control-option{
+  position:relative;z-index:1;display:flex;align-items:center;justify-content:center;width:auto;height:var(--wd-segmented-control-height);
+  padding:0 var(--wd-segmented-control-option-padding-inline);border:0;border-radius:var(--wd-segmented-control-option-radius);
+  background:transparent;box-shadow:none;color:var(--wd-label-secondary);
+  white-space:nowrap;
+}
+.wd-segmented-control-option>.wd-control-label{transform:translateY(var(--wd-segmented-control-label-offset-y))}
+.wd-segmented-control-option.is-selected,
+.wd-segmented-control-option.is-selected:is(:hover,:focus-visible){
+  color:var(--wd-label-primary);background:transparent;box-shadow:none;
+}
+.wd-segmented-control-option:not(.is-selected):is(:hover,:focus-visible){
+  color:var(--wd-label-primary);background:transparent;
+}
+.wd-segmented-control-option:focus-visible{outline:2px solid var(--wd-blue);outline-offset:2px}
+@media (max-width:560px){
+  .wd-segmented-control{--wd-segmented-control-option-padding-inline:8px}
+}

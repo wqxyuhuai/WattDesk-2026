@@ -1,6 +1,6 @@
 # WattDesk 项目地图与交接索引
 
-更新：2026-10-30。
+更新：2026-11-10。
 
 本文是新对话的项目总索引，只汇总稳定边界、共享标准和维护入口，不复制
 `DESIGN-SYSTEM.md` 的完整视觉参数。需要执行具体改动时，仍以根目录
@@ -19,6 +19,9 @@
 
 历史计划放在 `docs/history/`，只用于理解背景，不能覆盖当前规范。`CHANGELOG.md`
 保留逐日过程记录；当前有效规则以本索引指向的规范文件为准。
+`docs/USER-REQUIREMENTS.md` 顶部的 **2026-11-10 今日最终规则归档（当前有效）**
+是最近一次总表；其下按日期保留的条目用于追溯，冲突时以总表、设计规范和专项
+页面规格为准。
 
 ## 当前产品边界
 
@@ -26,7 +29,10 @@
 |---|---|---|
 | `/home` | 已完成设计预览 | Home Figma 场景、搜索、周期、刷新、快捷入口、标签与历史 |
 | `/plants` | 已完成本地交互预览 | 46 条样例、筛选并集、列显隐、排序、收藏、滚动反馈 |
-| `/plants/:id` | 有真实可刷新 URL | 详情内容为明确占位，不虚构设备控制 |
+| `/plants/:id` | 已完成 Overview 本地交互预览 | 默认进入第一台设备；多设备可切并同步 `?device=` |
+| `/plants/:id/devices` | 已完成本地交互预览 | Linear 式扁平设备行、命名、新增、替换、解绑和设置预览；真实后端与硬件控制未接入 |
+| `/plants/:id/site` | 已完成本地交互预览 | 电站资料查看、整页编辑、校验和会话内保存；上传、访客和后端写入未接入。规格见 [SITE-DETAILS.md](./SITE-DETAILS.md) |
+| `/plants/:id/faults|logs|tickets` | 子页占位 | Operations 三卡当前标签内进入；三层面包屑、刷新与历史可用，详细内容后续实现 |
 | `/service` | 已完成本地交互预览 | 工单卡片、状态与范围筛选、搜索 |
 | `/service/new` | 已完成本地交互预览 | 新标签双栏编辑、Plant 搜索选择、本地发布 |
 | `/service/:ticketId` | 已完成本地交互预览 | 详情、Properties、回复、原位编辑、本地附件预览 |
@@ -63,12 +69,15 @@ pages  →  layouts / components  →  foundations
 | 页头动作 | `createPageHeaderAction()` + `page-header.css` | 28px 轻量透明动作，不套 36px 玻璃按钮 |
 | 搜索 | `createSearchField()` + `search-surface.css` | 默认 46px，数据页紧凑 36px；不另写图标、清除或玻璃 |
 | 页头/面包屑 | `createPageHeader()` + `page-header.css` | Home 以外页面共用 40px 固定页头 |
-| 卡片 | `cards.js` / `cards.css` | `panel`、`chart`、`status` 表示表面契约；讨论内容用 `.wd-discussion-card` |
+| 居中内容列 | `foundations/base.css` `.wd-page-content` + `tokens.css` | 非全屏设置/详情页最大 `1000px` 并居中；表格与设备清单仍可使用满宽布局 |
+| 卡片 | `cards.js` / `cards.css` | `panel`、`chart`、`status` 表示表面契约；讨论与 Operations 卡统一用 `.wd-discussion-card`，浅色纯白无投影 |
 | 浮层 | `popover.js` + `menu-popover.js` | 统一 Glass Surface、实时锚定、无标题菜单对称内距 |
 | 滚动 | `createScrollFeedback()` | 列表默认弹性；固定编辑器显式 `elastic:false`；页面不写原生滚动条 |
 | 时间 | `time.js` + `createTimeLabel()` | 格式化与 `<time datetime>` / `title` 共用；排序继续用原值 |
 | 动效 | `motion.css` / `motion.js` | 组件不写局部时长；JS 动画读取 token；减少动态效果统一处理 |
 | 圆角 | `geometry.js` / `.css` | 保留原半径，普通矩形用 `superellipse(1.2)`，圆形和胶囊保留 round |
+| 分段切换 | `components/segmented-control.js` / `.css` | `createSegmentedControl()` 统一玻璃轨道、移动选中层、键盘、尺寸观测与销毁；页面只传选项和回调 |
+| 开关 | `components/toggle-switch.js` / `.css` | `createToggleSwitch()` 统一真实 switch 语义、玻璃轨道、滑块位置与状态回调；适用于二值设置，不代替分段选择 |
 | 头像 | `createAvatar()` + `avatar.css` | 尺寸由调用方提供；描边、阴影和缩写光学居中由共享层负责 |
 | 图标 | `createIcon()` / `createMaskedIcon()` | 使用原始素材；中性遮罩统一生成不透明副本 |
 

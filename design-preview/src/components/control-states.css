@@ -24,6 +24,10 @@
 /* Available icons use Secondary; actual unavailability always wins over hover. */
 .wd-control-state:is(:disabled,[aria-disabled="true"]){color:var(--wd-label-quaternary)!important;cursor:default}
 .wd-control-state:is(:disabled,[aria-disabled="true"]) :is(.target-icon-art,.wd-control-label,.wd-control-label>span){color:var(--wd-label-quaternary)!important}
+.wd-button--primary:is(:disabled,[aria-disabled="true"]),
+.wd-button--primary:is(:disabled,[aria-disabled="true"]) :is(.wd-control-label,.wd-control-label>span){
+ color:var(--wd-figma-grays-white)!important;
+}
 .wd-control-state:is(:disabled,[aria-disabled="true"]) .target-icon-neutral::after{opacity:0!important}
 .wd-control-state:is(:disabled,[aria-disabled="true"]) .target-icon-neutral img{opacity:1!important}
 .wd-control-state:is(:disabled,[aria-disabled="true"]) :is(.wd-glass-state,.wd-glass-glow,.shared-icon-highlight){opacity:0!important}

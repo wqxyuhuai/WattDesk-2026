@@ -396,7 +396,7 @@ Properties 的吸顶位置由标题顶部相对详情滚动视口的实际距离
 - 独立新回复编辑器不再重复显示姓名标题行。桌面空态高度约 `100px`，内距为 `14px / 16px`，正文使用无四边框的 `contenteditable` 文本盒，单行起步并随内容纵向增长至 `180px`；右下只保留 `36px` 中性玻璃回形针和发送圆钮。占位文字在卡片 hover 或 focus 时转为主文字色，进入 / 离开使用共享 `240 / 360ms`。
 - 一级讨论卡内的 `Leave a reply…` 内联编辑器，hover / focus 只提升占位文字到主文字色；左侧 28px 当前用户头像的填充、缩写颜色、描边和阴影保持静止。
 - 两类回复框的自动增高统一调用 `animateContentHeight()`，使用 `--wd-motion-content-grow` / `--wd-ease-content-grow`（当前 `280ms`）。连续输入会取消上一轮高度动画并从当前可见高度继续；首次渲染和减少动态效果不做生长动画。
-- 顶部评论框、全部一级回复卡和右侧 Properties 共用 `wd-discussion-card` 表面。深色主题保留 1px `Separators/Non-opaque` 内描边、贴边高浓度且外侧快速衰减的零位移双层阴影；浅色主题下三者统一使用纯白 `Backgrounds/Primary` 背景，并移除内描边和全部外侧投影。三者继续共用 `18px` 连续曲率圆角，由共享 `geometry.js` 识别并应用 `superellipse(1.2)`，不能退回普通 `round`。
+- 顶部评论框、全部一级回复卡和右侧 Properties 共用 `wd-discussion-card` 表面；该类是全站共享材质，Plants Operations 也直接复用。深色主题保留 1px `Separators/Non-opaque` 内描边、贴边高浓度且外侧快速衰减的零位移双层阴影；浅色主题统一使用纯白 `Backgrounds/Primary` 背景，并移除内描边和全部外侧投影。各使用方继续共用 `18px` 连续曲率圆角，由共享 `geometry.js` 识别并应用 `superellipse(1.2)`，不能退回普通 `round`。
 - 输入框的占位文字和编辑文字绑定 `Subheadline/Regular`，明确使用 SF Pro、15px / 400 / 20px / -0.23px，与讨论卡正文一致。Enter 创建段落，Shift + Enter 创建段内换行；相邻段落额外增加 `6px` 上距，因此段间距大于 20px 行距。发送后的正文使用相同的段落间距。
 - 输入超过 `180px` 后，独立回复框和楼内编辑器都通过 `.service-reply-input-host` 调用共享 `createScrollFeedback({elastic:false})`：原生滚动条隐藏，右侧显示共享 `10px` 轨道与 `6px` 圆角滑块。滚轮位于输入框内时优先滚动文本，到达上下边界后才释放给外层页面；输入文本滚动时上方固定回复框不发生位移。
 - 回复输入的滚动滑块颜色显式映射全局 `--wd-figma-labels-tertiary` / `--wd-figma-labels-secondary`，不继承内容区为提高正文可读性而加深的 Labels 值；默认和 hover 颜色必须与详情页主滚动条一致。

@@ -41,6 +41,7 @@
 }
 .wd-page-breadcrumb-current{color:var(--wd-label-primary);font-variant-numeric:tabular-nums}
 .wd-page-breadcrumb-separator+.wd-page-breadcrumb-item>.wd-page-breadcrumb-current{padding-left:8px}
+.wd-page-breadcrumb-separator+.wd-page-breadcrumb-item>.wd-page-breadcrumb-link{margin-left:0}
 .wd-page-actions{margin-left:auto;display:flex;align-items:center;height:36px;gap:8px}
 
 /* Compact text action used by page headers. It intentionally does not mount

@@ -13,6 +13,10 @@ import {createSearchField} from "../../components/search-surface.js";
 import {createScrollFeedback} from "../../components/scroll-feedback.js";
 import {createTimeLabel} from "../../components/time-label.js";
 import {motionDuration,motionEasing,reducedMotion} from "../../foundations/motion.js";
+import {createPlantDetailTabs,createPlantOverview,createPlantSectionPlaceholder} from "./detail.js";
+import {createPlantDevices} from "./devices.js";
+import {createPlantSiteDetails,defaultSiteDetails} from "./site-details.js";
+import {PLANT_SECTIONS} from "./sections.js";
 import {
  COMPANY_TREE,CONNECTION_META,DEVICES,HEALTH_META,PLANTS,STATUS_META,AUTO_CREATED_TOOLTIP,
  companyLabel,deviceLabel,distributorLabel,plantById
@@ -197,7 +201,10 @@ function healthOf(plant){
  return "attention";
 }
 
-export function createPlantsPage({glass,registerPanel,close,reposition,toast,onOpenPlant,onBackToList,onRouteParamsChange}){
+export function createPlantsPage({
+ glass,registerPanel,close,reposition,toast,onOpenPlant,onBackToList,onRouteParamsChange,
+ onOpenTicket,onOpenNewTicket,onOpenPlantSection
+}){
  const element=document.createElement("section");
  element.className="plants-view";
  element.id="plants-view";
@@ -357,39 +364,45 @@ export function createPlantsPage({glass,registerPanel,close,reposition,toast,onO
  detail.hidden=true;
  detail.setAttribute("aria-labelledby","plants-detail-title");
  const detailHeaderHost=text("div","plants-detail-header-host");
+ const detailTabsHost=text("div","plants-detail-tabs-host");
  const detailViewport=text("div","plants-detail-viewport");
  detailViewport.tabIndex=0;
  const detailInner=text("div","plants-detail-inner");
- const backButton=createStandardButton({
-  label:"Back to Plants",
-  className:"plants-detail-back"
- });
  function leaveDetail(){
+  if(activeSiteDetailsController?.hasUnsavedChanges()){
+   toast("Save or cancel the Site details changes before leaving");
+   return;
+  }
   if(onBackToList)onBackToList();
   else show();
  }
- backButton.addEventListener("click",leaveDetail);
+ const detailA11y=text("div","plants-detail-a11y");
  const detailKicker=text("p","plants-detail-kicker","Plant","Caption1/Emphasized");
  const detailTitle=text("h1","plants-detail-title");
  detailTitle.id="plants-detail-title";
  const detailMeta=text("p","plants-detail-meta",undefined,"Footnote/Regular");
  const detailNote=text("p","plants-detail-note",undefined,"Footnote/Regular");
- detailInner.append(backButton,detailKicker,detailTitle,detailMeta,detailNote);
+ detailA11y.append(detailKicker,detailTitle,detailMeta,detailNote);
+ detailInner.append(detailA11y);
  detailViewport.append(detailInner);
- detail.append(detailHeaderHost,detailViewport);
+ detail.append(detailHeaderHost,detailTabsHost,detailViewport);
  const detailScrollFeedback=createScrollFeedback({
   host:detail,
   viewport:detailViewport,
   content:detailInner,
-  topInset:()=>detailHeaderHost.offsetHeight,
+  topInset:()=>detailHeaderHost.offsetHeight+detailTabsHost.offsetHeight,
   bottomInset:10
  });
+ let activeOverviewController=null;
+ let activeDevicesController=null;
+ let activeSiteDetailsController=null;
+ let currentDetailDevice=null;
+ const siteDetailsByPlant=new Map();
 
  inner.append(header,toolbar,chips,scrollShell,empty);
  element.append(inner,detail);
 
  glass.addSurface({host:emptyAction,radius:18});
- glass.addSurface({host:backButton,radius:18});
  for(const button of [filterTrigger,columnTrigger,refresh])glass.addSurface({host:button,radius:18});
 
  // ── State helpers ────────────────────────────────────────────────────────
@@ -899,30 +912,147 @@ function visibleRows({ignoreCategory=null}={}){
   toast(`${plant.name||"This plant"} — the plant detail page is not part of this build`);
  }
 
- function renderDetail(plantId){
+function renderDetail(plantId,requestedDevice,requestedSection,requestedTab){
+  activeOverviewController?.destroy();
+  activeOverviewController=null;
+  activeDevicesController?.destroy();
+  activeDevicesController=null;
+  activeSiteDetailsController?.destroy();
+  activeSiteDetailsController=null;
   const plant=plantById(plantId);
-  const {element:detailHeader,actions}=createPageHeader({
+  const isDevices=requestedSection==="devices";
+  const isSite=!requestedSection&&requestedTab==="site";
+  const sectionMeta=requestedSection&&!isDevices?PLANT_SECTIONS[requestedSection]:null;
+  currentDetailDevice=plant?(plant.devices.includes(requestedDevice)?requestedDevice:plant.devices[0]):null;
+  const {element:detailHeader,heading,actions}=createPageHeader({
     breadcrumb:[
       {label:"Plants",onClick:leaveDetail},
-      {label:plant?(plant.name||"?"):"Plant not found"}
+      {label:plant?(plant.name||"?"):"Plant not found",onClick:sectionMeta?()=>onOpenPlantSection?.({plantId,device:currentDetailDevice,section:null}):undefined},
+      ...(sectionMeta?[{label:sectionMeta.label}]:[])
     ],
     className:"plants-detail-header",
     headingClassName:"plants-detail-heading"
   });
+  detailHeader.querySelector(".wd-page-breadcrumb-link")?.classList.add("plants-detail-back");
+  const favorite=text("button","plants-detail-favorite wd-control-state");
+  favorite.type="button";
+  const favoriteGlyph=text("span","plants-detail-favorite-glyph-frame wd-press-scale");
+  favoriteGlyph.append(bookmarkGlyph());
+  favorite.append(favoriteGlyph);
+  if(plant){
+   const syncFavorite=()=>{
+    const active=state.bookmarks.has(plant.id);
+    favorite.setAttribute("aria-pressed",String(active));
+    favorite.classList.toggle("selected",active);
+    favorite.setAttribute("aria-label",active?`Remove ${plant.name||"plant"} from bookmarks`:`Bookmark ${plant.name||"plant"}`);
+   };
+   syncFavorite();
+   favorite.addEventListener("click",()=>{
+    const active=state.bookmarks.has(plant.id);
+    if(active)state.bookmarks.delete(plant.id);
+    else state.bookmarks.add(plant.id);
+    writeBookmarks(state.bookmarks);
+    syncFavorite();
+    toast(active?`Removed ${plant.name||"plant"} from Following`:`Following ${plant.name||"plant"}`);
+   });
+   const breadcrumbItems=heading.querySelectorAll(".wd-page-breadcrumb-item");
+   const plantBreadcrumb=breadcrumbItems[sectionMeta?1:breadcrumbItems.length-1];
+   plantBreadcrumb?.append(favorite);
+  }
   actions.hidden=!actions.childElementCount;
   detailHeaderHost.replaceChildren(detailHeader);
+  detailTabsHost.hidden=Boolean(sectionMeta);
+  detailTabsHost.replaceChildren(...(sectionMeta?[]:[createPlantDetailTabs({
+   current:isSite?"site":isDevices?"devices":"overview",
+   onSelect:view=>{
+    if(activeSiteDetailsController?.hasUnsavedChanges()){
+     toast("Save or cancel the Site details changes before leaving");
+     return;
+    }
+    const params={
+     plantId,
+     device:currentDetailDevice,
+     ...(view==="devices"?{section:"devices"}:{}),
+     ...(view==="site"?{tab:"site"}:{})
+    };
+    onOpenPlantSection?.(params);
+   }
+  })]));
   if(!plant){
    detailTitle.textContent="Plant not found";
    detailMeta.textContent="";
    detailNote.textContent="This plant ID is not in the preview data. Return to Plants to choose an existing plant.";
+   const missing=text("div","plant-overview-missing");
+   missing.append(
+    text("h2","plant-overview-missing-title","Plant not found","Title2/Emphasized"),
+    text("p","plant-overview-missing-copy","This plant is not available in the local preview.","Footnote/Regular")
+   );
+   detailInner.replaceChildren(detailA11y,missing);
    return;
   }
   const autoCreated=!plant.name;
-  detailTitle.textContent=plant.name||"?";
+  detailTitle.textContent=sectionMeta
+   ?`${plant.name||"?"} — ${sectionMeta.label}`
+   :isSite
+    ?`${plant.name||"?"} — Site details`
+   :isDevices
+    ?`${plant.name||"?"} — Devices`
+    :plant.name||"?";
   detailMeta.textContent=[companyLabel(plant.companyId),plant.sn].filter(Boolean).join(" · ");
   detailNote.textContent=autoCreated
-   ?"This plant was created automatically when its device came online. Some plant information is still incomplete; device data and controls are not connected yet."
-   :"Plant detail is a preview placeholder in this build. Device data and controls are not connected yet.";
+   ?"This plant was created automatically when its device came online. Some plant information is still incomplete."
+   :"";
+  if(sectionMeta){
+   detailInner.replaceChildren(detailA11y,createPlantSectionPlaceholder(requestedSection));
+   detailViewport.scrollTop=0;
+   return;
+  }
+  if(isDevices){
+   activeDevicesController=createPlantDevices({
+    plant,
+    glass,
+    registerPanel,
+    close,
+    toast
+   });
+   detailInner.replaceChildren(detailA11y,activeDevicesController.element);
+   detailViewport.scrollTop=0;
+   return;
+  }
+  if(isSite){
+   const details=siteDetailsByPlant.get(plant.id)??defaultSiteDetails(plant);
+   siteDetailsByPlant.set(plant.id,details);
+   activeSiteDetailsController=createPlantSiteDetails({
+    plant,
+    details,
+    glass,
+    registerPanel,
+    close,
+    toast,
+    onSave:next=>siteDetailsByPlant.set(plant.id,next)
+   });
+   actions.hidden=true;
+   detailInner.replaceChildren(detailA11y,activeSiteDetailsController.element);
+   detailViewport.scrollTop=0;
+   return;
+  }
+  activeOverviewController=createPlantOverview({
+    plant,
+    requestedDevice,
+    glass,
+    registerPanel,
+    close,
+    toast,
+    onOpenTicket,
+    onOpenNewTicket,
+    onOpenSection:(section,device)=>onOpenPlantSection?.({plantId,device:device||currentDetailDevice,section}),
+    onDeviceChange:device=>{
+     currentDetailDevice=device;
+     onRouteParamsChange?.({plantId,device});
+    }
+  });
+  detailInner.replaceChildren(detailA11y,activeOverviewController.element);
+  detailViewport.scrollTop=0;
  }
 
  // ── Chips, triggers, empty state ─────────────────────────────────────────
@@ -1424,7 +1554,7 @@ function visibleRows({ignoreCategory=null}={}){
   if(plantId){
    inner.hidden=true;
    detail.hidden=false;
-   renderDetail(plantId);
+   renderDetail(plantId,params?.device,params?.section,params?.tab);
    detailScrollFeedback.sync();
    return;
   }

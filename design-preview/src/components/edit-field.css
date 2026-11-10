@@ -1,0 +1,22 @@
+/* Shared editable field surface. Layout and alignment stay with the page;
+ * border, fill, hover and focus belong here so site settings and dialogs agree. */
+.wd-edit-field{
+ box-sizing:border-box;border:0;outline:0;box-shadow:none;
+ border-radius:10px;
+ background:color-mix(in srgb,var(--wd-label-primary) 8%,transparent);
+ color:var(--wd-label-primary);
+}
+.wd-edit-field:hover{background:color-mix(in srgb,var(--wd-label-primary) 11%,transparent)}
+.wd-edit-field:is(:focus,:focus-within){
+ background:color-mix(in srgb,var(--wd-label-primary) 13%,transparent);
+ outline:1px solid color-mix(in srgb,var(--wd-label-primary) 24%,transparent);
+ outline-offset:0;
+}
+.wd-edit-field :is(input,textarea,select):focus-visible{outline:0;box-shadow:none}
+.wd-edit-field:is(:disabled,[aria-disabled="true"]){color:var(--wd-label-secondary);cursor:default;opacity:.72}
+.wd-edit-field[aria-invalid="true"],
+.wd-edit-field:has([aria-invalid="true"]){outline:1px solid var(--wd-accent-red);outline-offset:0}
+.wd-edit-field::placeholder{color:var(--wd-label-tertiary)}
+:root[data-theme="light"] .wd-edit-field{background:var(--wd-fill-quaternary)}
+:root[data-theme="light"] .wd-edit-field:hover{background:var(--wd-fill-tertiary)}
+:root[data-theme="light"] .wd-edit-field:is(:focus,:focus-within){background:var(--wd-fill-tertiary)}

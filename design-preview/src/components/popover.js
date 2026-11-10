@@ -191,7 +191,7 @@ export function createPopoverController({overlays,toastElement,motion,glass}){
   // close its own panel instead of dismissing on pointerdown and immediately
   // reopening it when the click arrives.
   const belongsToOpenAnchor=[...openPanels].some(panel=>panel._anchor===e.target||panel._anchor?.contains(e.target));
-  if(overlays.children.length&&!belongsToOpenAnchor&&!e.target.closest(".popover,.wd-date-picker,.wd-history-popover,.wd-search-panel,.wd-search-fullscreen"))close();
+   if(overlays.children.length&&!belongsToOpenAnchor&&!e.target.closest(".popover,.wd-date-picker,.wd-history-popover,.wd-search-panel,.wd-search-fullscreen,.plant-statistics-period-picker"))close();
  };
  const key=e=>{if(e.key==="Escape")close()};
  const onViewportChange=()=>reposition();

@@ -50,3 +50,4 @@
   --wd-glass-drop:rgba(0,0,0,.20);
 }
 .wd-button--pill:is(:disabled,[aria-disabled="true"]){opacity:.55;cursor:default}
+.wd-button--pill.wd-button--primary:is(:disabled,[aria-disabled="true"]){opacity:.68}

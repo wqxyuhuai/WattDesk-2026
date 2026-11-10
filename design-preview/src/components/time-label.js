@@ -2,6 +2,7 @@ import {createTextElement} from "../foundations/dom.js";
 import {
   dateFromAgeMinutes,
   formatAbsoluteTime,
+  formatClockTime,
   formatTimestamp
 } from "../foundations/time.js";
 
@@ -12,10 +13,12 @@ export function createTimeLabel(value,{
   ageMinutes=false,
   className="",
   typeStyle,
+  clock=false,
   now=Date.now()
 }={}){
   const date=ageMinutes?dateFromAgeMinutes(value,{now}):value instanceof Date?value:new Date(value);
-  const node=createTextElement("time",className,formatTimestamp(date,{now}),typeStyle);
+  const label=clock?formatClockTime(date):formatTimestamp(date,{now});
+  const node=createTextElement("time",className,label,typeStyle);
   node.dateTime=date.toISOString();
   node.title=formatAbsoluteTime(date);
   return node;

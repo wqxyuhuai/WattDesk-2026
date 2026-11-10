@@ -328,6 +328,9 @@ export function createScrollFeedback({
  const resizeObserver=new ResizeObserver(sync);
  resizeObserver.observe(host);
  resizeObserver.observe(viewport);
+ if(content)resizeObserver.observe(content);
+ const mutationObserver=new MutationObserver(sync);
+ mutationObserver.observe(viewport,{childList:true,subtree:true});
  sync();
 
  return {
@@ -339,6 +342,7 @@ export function createScrollFeedback({
    clearTimeout(pullReleaseTimer);
    cancelPullAnimations();
    resizeObserver.disconnect();
+   mutationObserver.disconnect();
    viewport.removeEventListener("scroll",handleScroll);
    if(pullEnabled){
     viewport.removeEventListener("wheel",handleWheel);

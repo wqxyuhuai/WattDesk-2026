@@ -10,7 +10,7 @@
   --wd-motion-hover:240ms;--wd-motion-hover-out:360ms;
   --wd-motion-tab-in:280ms;--wd-motion-tab-out:220ms;--wd-motion-tab-close:260ms;--wd-motion-tab-swap:110ms;
   --wd-motion-disclosure:380ms;--wd-motion-refresh:640ms;--wd-motion-sheen:680ms;
-  --wd-motion-panel:320ms;--wd-motion-panel-exit:200ms;--wd-motion-content-grow:280ms;--wd-motion-pull-rebound:640ms;--wd-motion-chart:740ms;--wd-motion-stagger:35ms;
+  --wd-motion-panel:320ms;--wd-motion-panel-exit:200ms;--wd-motion-content-grow:280ms;--wd-motion-pull-rebound:640ms;--wd-motion-chart:900ms;--wd-motion-stagger:35ms;
   /* Fullscreen search: field and results arrive/leave on one offset timeline.
    * The entrance is deliberately slower than a popover and uses a gentle
    * overshoot so the glass settles instead of snapping into place. */
@@ -45,6 +45,9 @@
   --wd-shortcut-inset:20px;--wd-shortcut-gap:20px;--wd-control-circle:rgba(255,255,255,.12);
   --wd-separator-vibrant:var(--wd-figma-separators-vibrant);
   --wd-content-shadow-gutter:48px;--wd-content-bottom-space:32px;
+  /* Shared centered column for settings/details pages that do not need the
+   * full workspace width. Dense tables and device inventories may stay fluid. */
+  --wd-page-content-max:1000px;
   color-scheme:dark;
   --wd-accent-red:var(--wd-figma-accents-red);--wd-accent-orange:var(--wd-figma-accents-orange);--wd-accent-yellow:var(--wd-figma-accents-yellow);--wd-accent-green:var(--wd-figma-accents-green);
   --wd-accent-mint:var(--wd-figma-accents-mint);--wd-accent-teal:var(--wd-figma-accents-teal);--wd-accent-cyan:var(--wd-figma-accents-cyan);--wd-accent-blue:var(--wd-figma-accents-blue);

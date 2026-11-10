@@ -3,7 +3,7 @@
 import {createSearchInput,SEARCH_FIELD_PLACEHOLDER} from "../../components/search.js";
 import {createInputClear,syncInputClear} from "../../components/input-clear.js";
 import {createSearchModel,createInlineSearchPanel,createFullscreenSearch,createShortcutKeycaps} from "../../components/search-surface.js";
-import {reducedMotion,motionDuration} from "../../foundations/motion.js";
+import {reducedMotion,fullscreenOverlayEnterDuration,fullscreenOverlayExitDuration} from "../../foundations/motion.js";
 import {ROUTE_CATALOG as routeCatalog,buildSearchIndex} from "./routes.js";
 
 export function createHomeSearch({get,glass,motion,overlays,toast,close,homeColumn,targetChrome,navigate}){
@@ -221,7 +221,7 @@ function openFullscreenSearch(){
   created.root.dataset.entering="";
   // The result panel starts one stagger step after the field; keep the entry
   // classes until the last surface has finished so no frame snaps to idle.
-  setTimeout(()=>created.root?.removeAttribute("data-entering"),motionDuration("--wd-motion-search-in")+motionDuration("--wd-motion-search-stagger")+40);
+  setTimeout(()=>created.root?.removeAttribute("data-entering"),fullscreenOverlayEnterDuration());
  }
  created.input.value=input.value;
  created.update(input.value);
@@ -253,10 +253,7 @@ function closeFullscreenSearch(immediate=false){
  entry.root.dataset.closing="true";
   // The veil intentionally outlives the content; keep the dialog mounted for
   // the longest tail, otherwise removing it cuts the frost mid-fade.
-  const exit=Math.max(
-   motionDuration("--wd-motion-search-out")+motionDuration("--wd-motion-search-out-stagger"),
-   motionDuration("--wd-motion-search-veil-delay")+motionDuration("--wd-motion-search-veil-out")
-  )+16;
+  const exit=fullscreenOverlayExitDuration();
   // Never animate the dialog root here. Any opacity animation on the root
   // forces the whole dialog into its own composited layer, and a
   // backdrop-filter inside that layer samples an empty backdrop: the veil

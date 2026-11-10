@@ -7,10 +7,10 @@ const assert=require('node:assert/strict');
   page.on('pageerror',e=>errors.push(e.message));page.on('response',r=>{if(r.status()>=400)errors.push(`${r.status()} ${r.url()}`)});
   await page.goto(new URL('/templates/page.html',previewURL).href);
   const initial=await page.evaluate(async()=>{
-   const [{button,enhanceControl,createStandardButton},{createIcon,createMaskedIcon},{createAvatar},{createCard},{createSearchInput},{createGlassMaterial},{prepareControlStates},{applyTypeStyle},{createScrollFeedback},{createTimeLabel}]=await Promise.all([
+   const [{button,enhanceControl,createStandardButton},{createIcon,createMaskedIcon},{createAvatar},{createCard},{createSearchInput},{createGlassMaterial},{prepareControlStates},{applyTypeStyle},{createScrollFeedback},{createTimeLabel},{createSegmentedControl}]=await Promise.all([
     import('/src/components/controls.js'),import('/src/components/icons.js'),import('/src/components/avatar.js'),import('/src/components/cards.js'),
     import('/src/components/search.js'),import('/src/components/glass-material.js'),import('/src/components/control-states.js'),import('/src/foundations/typography.js'),
-    import('/src/components/scroll-feedback.js'),import('/src/components/time-label.js')
+    import('/src/components/scroll-feedback.js'),import('/src/components/time-label.js'),import('/src/components/segmented-control.js')
    ]);
    const root=document.querySelector('#page');root.style.cssText='display:flex;align-items:flex-start;gap:24px;padding:40px';
    document.documentElement.dataset.theme='dark';
@@ -37,6 +37,12 @@ const assert=require('node:assert/strict');
    scrollViewport.append(scrollContent);scrollHost.append(scrollViewport);
    root.append(control,primary,primaryDisc,standard,standardDisc,timeLabel,card,avatar,compactAvatar,smallAvatar,field,equivalent,scrollHost);
    window.componentMaterial=createGlassMaterial({surfaces:[{host:control,radius:18},{host:primary,radius:18},{host:primaryDisc,radius:18},{host:standard,radius:18},{host:standardDisc,radius:18}]});
+   window.segmentedControl=createSegmentedControl({
+    items:[{id:'first',label:'First'},{id:'second',label:'Second'},{id:'third',label:'Third'}],
+    value:'first',label:'Reusable segmented view',glass:window.componentMaterial
+   });
+   window.segmentedControl.element.id='reusable-segmented';
+   const segmentedHost=document.createElement('div');segmentedHost.id='segmented-fixture';segmentedHost.style.cssText='position:fixed;left:40px;bottom:40px';document.body.append(segmentedHost);segmentedHost.append(window.segmentedControl.element);
    window.scrollFeedback=createScrollFeedback({host:scrollHost,viewport:scrollViewport,content:scrollContent,bottomInset:10});
    await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
    let duplicateRejected=false;try{createGlassMaterial({surfaces:[{host:control,radius:18}]})}catch{duplicateRejected=true}
@@ -47,7 +53,8 @@ const assert=require('node:assert/strict');
    const thumb=scrollHost.querySelector('.wd-scroll-feedback__thumb').getBoundingClientRect();
    const avatarLabel=avatar.querySelector('.wd-avatar-label');
    const profile=node=>{const label=node.querySelector('.wd-avatar-label'),style=getComputedStyle(label);return {size:node.dataset.avatarSize,font:style.fontSize,lineHeight:style.lineHeight,transform:style.transform}};
-   return {duplicateRejected,weight:cs.fontWeight,size:cs.fontSize,round:cs.cornerShape,avatar:[as.width,as.height,as.cornerShape],avatarLabel:{text:avatarLabel?.textContent,transform:avatarLabel?getComputedStyle(avatarLabel).transform:''},avatarProfiles:{regular:profile(avatar),compact:profile(compactAvatar),small:profile(smallAvatar)},standard:{label:standard.querySelector('.wd-control-label')?.textContent,disc:standardDisc.classList.contains('wd-button--disc'),icon:standardDisc.querySelector('.reusable-mask-icon')?.getAttribute('aria-hidden')},time:{tag:timeLabel.tagName,text:timeLabel.textContent,dateTimeValid:/^\d{4}-\d{2}-\d{2}T/.test(timeLabel.dateTime),title:timeLabel.title,type:getComputedStyle(timeLabel).fontSize},cardGlass:card.classList.contains('wd-glass'),cardRadius:getComputedStyle(card).borderRadius,scroll:[track.top-hostRect.top,hostRect.bottom-track.bottom,thumb.height]};
+   const segmentedRect=window.segmentedControl.element.getBoundingClientRect(),segmentedIndicator=window.segmentedControl.element.querySelector('.wd-segmented-control-indicator').getBoundingClientRect(),segmentedSelected=window.segmentedControl.element.querySelector('.is-selected'),segmentedSelectedRect=segmentedSelected.getBoundingClientRect(),segmentedLabelRect=segmentedSelected.querySelector('.wd-control-label').getBoundingClientRect();
+   return {duplicateRejected,weight:cs.fontWeight,size:cs.fontSize,round:cs.cornerShape,avatar:[as.width,as.height,as.cornerShape],avatarLabel:{text:avatarLabel?.textContent,transform:avatarLabel?getComputedStyle(avatarLabel).transform:''},avatarProfiles:{regular:profile(avatar),compact:profile(compactAvatar),small:profile(smallAvatar)},standard:{label:standard.querySelector('.wd-control-label')?.textContent,disc:standardDisc.classList.contains('wd-button--disc'),icon:standardDisc.querySelector('.reusable-mask-icon')?.getAttribute('aria-hidden')},time:{tag:timeLabel.tagName,text:timeLabel.textContent,dateTimeValid:/^\d{4}-\d{2}-\d{2}T/.test(timeLabel.dateTime),title:timeLabel.title,type:getComputedStyle(timeLabel).fontSize},cardGlass:card.classList.contains('wd-glass'),cardRadius:getComputedStyle(card).borderRadius,scroll:[track.top-hostRect.top,hostRect.bottom-track.bottom,thumb.height],segmented:{height:segmentedRect.height,maxWidth:getComputedStyle(window.segmentedControl.element).maxWidth,top:segmentedIndicator.top-segmentedRect.top,bottom:segmentedRect.bottom-segmentedIndicator.bottom,labelOffset:(segmentedLabelRect.top+segmentedLabelRect.height/2)-(segmentedSelectedRect.top+segmentedSelectedRect.height/2),labelTransform:getComputedStyle(segmentedSelected.querySelector('.wd-control-label')).transform}};
   });
   assert.equal(initial.duplicateRejected,true);assert.equal(initial.weight,'510');assert.equal(initial.size,'14px');assert.match(initial.round,/^(round|superellipse\(1\))$/);
   assert.deepEqual(initial.avatar.slice(0,2),['36px','36px']);assert.match(initial.avatar[2],/^(round|superellipse\(1\))$/);
@@ -61,6 +68,11 @@ const assert=require('node:assert/strict');
   assert.deepEqual(initial.time,{tag:'TIME',text:'5 minutes ago',dateTimeValid:true,title:'2026/10/30 14:25',type:'13px'});
   assert.equal(initial.cardGlass,false);assert.equal(initial.cardRadius,'30px');
   assert.equal(initial.scroll[0],0);assert.equal(initial.scroll[1],10);assert.ok(initial.scroll[2]>=24);
+  assert.equal(initial.segmented.height,36);
+  assert.equal(initial.segmented.maxWidth,'100%');
+  assert.ok(Math.abs(initial.segmented.top-4)<1&&Math.abs(initial.segmented.bottom-4)<1);
+  assert.ok(Math.abs(initial.segmented.labelOffset+0.5)<0.1,'segmented labels receive a 0.5px optical lift after flex centering');
+  assert.equal(initial.segmented.labelTransform,'matrix(1, 0, 0, 1, 0, -0.5)');
   const control=page.locator('#reusable-control'),before=await control.boundingBox();
   const primary=page.locator('#reusable-primary');
   const primaryDisc=page.locator('#reusable-primary-disc');
@@ -95,7 +107,21 @@ const assert=require('node:assert/strict');
   await equivalent.evaluate(e=>e.click());await equivalent.focus();await page.keyboard.press('Enter');await page.keyboard.press('Space');assert.equal(await page.evaluate(()=>componentActivations),0);
   await equivalent.evaluate(e=>e.setAttribute('aria-disabled','false'));await page.keyboard.press('Enter');assert.equal(await page.evaluate(()=>componentActivations),1);
   await page.getByRole('textbox',{name:'Reusable search'}).fill('WattDesk');assert.equal(await page.getByRole('textbox',{name:'Reusable search'}).inputValue(),'WattDesk');
-  await page.evaluate(()=>{componentMaterial.destroy();scrollFeedback.destroy()});assert.equal(await page.locator('.wd-glass-material').count(),0);assert.equal(await page.locator('.wd-scroll-feedback').count(),0);
+  const segmented=page.getByRole('tablist',{name:'Reusable segmented view'});
+  await segmented.getByRole('tab',{name:'Second'}).click();
+  const segmentedAnimation=await page.locator('#reusable-segmented .wd-segmented-control-indicator').evaluate(indicator=>indicator.getAnimations().some(animation=>animation.effect?.getComputedTiming()?.duration===320));
+  assert.equal(segmentedAnimation,true);
+  await page.waitForTimeout(360);
+  assert.equal(await segmented.getByRole('tab',{name:'Second'}).getAttribute('aria-selected'),'true');
+  await segmented.getByRole('tab',{name:'Second'}).focus();
+  await page.keyboard.press('ArrowRight');
+  assert.equal(await segmented.getByRole('tab',{name:'Third'}).getAttribute('aria-selected'),'true');
+  await page.waitForTimeout(50);
+  await segmented.getByRole('tab',{name:'First'}).click();
+  await page.waitForTimeout(360);
+  assert.equal(await segmented.getByRole('tab',{name:'First'}).getAttribute('aria-selected'),'true');
+  assert.equal(await page.locator('#reusable-segmented .wd-segmented-control-indicator').evaluate(indicator=>getComputedStyle(indicator).width !== '0px'),true);
+  await page.evaluate(()=>{segmentedControl.destroy();componentMaterial.destroy();scrollFeedback.destroy()});assert.equal(await page.locator('.wd-glass-material').count(),0);assert.equal(await page.locator('.wd-scroll-feedback').count(),0);
   assert.deepEqual(errors,[]);console.log(JSON.stringify({standaloneComponents:true,sharedType:true,sharedGlass:true,sharedScrollFeedback:true,themeHover:true,stationary:true,disabledKeyboard:true,dispose:true,errors},null,2));
  }finally{await browser.close()}
 })().catch(e=>{console.error(e);process.exit(1)});
