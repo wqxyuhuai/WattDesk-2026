@@ -11,5 +11,5 @@ export function isPlantSection(value){
 }
 
 export function isPlantTab(value){
- return value==="site";
+ return value==="site"||value==="site-v2";
 }

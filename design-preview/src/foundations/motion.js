@@ -12,6 +12,16 @@ export function fullscreenOverlayExitDuration(){
   motionDuration("--wd-motion-search-veil-delay")+motionDuration("--wd-motion-search-veil-out")
  )+16;
 }
+export function modalOverlayEnterDuration(){
+ return Math.max(
+  motionDuration("--wd-motion-modal-in"),
+  motionDuration("--wd-motion-modal-content-in"),
+  motionDuration("--wd-motion-modal-backdrop-in")
+ )+16;
+}
+export function modalOverlayExitDuration(){
+ return motionDuration("--wd-motion-modal-out")+16;
+}
 const contentGrowthAnimations=new WeakMap();
 export function animateContentHeight(element,height,{from=element.getBoundingClientRect().height,animate=true}={}){
  const next=Math.max(0,Number(height)||0),previous=Math.max(0,Number(from)||0);

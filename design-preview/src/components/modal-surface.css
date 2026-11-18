@@ -1,0 +1,207 @@
+/* Depth Reveal (景深浮现): shared page-level modal motion. The backdrop
+ * reuses the search frost level, while the dialog settles from a slightly
+ * enlarged Z position and resolves its content from blur to sharp. */
+.wd-modal-fullscreen {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: grid;
+  place-items: center;
+  padding: 24px 16px;
+  pointer-events: auto;
+  color: var(--wd-label-primary);
+  font-family: var(--wd-font-family);
+  isolation: isolate;
+  perspective: 1400px;
+  perspective-origin: 50% 50%;
+}
+
+@property --wd-modal-veil-blur {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
+
+.wd-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  --wd-modal-veil-color: color-mix(in srgb, var(--wd-search-veil) 100%, transparent);
+  --wd-modal-veil-blur: var(--wd-search-veil-blur-base, 28px);
+  background-color: var(--wd-modal-veil-color);
+  backdrop-filter: blur(var(--wd-modal-veil-blur)) saturate(1.05);
+  -webkit-backdrop-filter: blur(var(--wd-modal-veil-blur)) saturate(1.05);
+  will-change: backdrop-filter, background-color;
+}
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .wd-modal-backdrop {
+    background: color-mix(in srgb, var(--wd-canvas) 84%, transparent);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+}
+
+.wd-modal-panel {
+  --wd-modal-entry-z: 64px;
+  --wd-modal-exit-z: 42px;
+  --wd-modal-frame-blur: 16px;
+  position: relative;
+  z-index: 1;
+  max-width: calc(100vw - 32px);
+  max-height: calc(100vh - 48px);
+  transform-origin: 50% 50%;
+  transform-style: preserve-3d;
+}
+
+.wd-modal-panel-frame {
+  position: relative;
+  transform-origin: 50% 50%;
+}
+
+.wd-modal-fullscreen[data-entering] .wd-modal-backdrop {
+  animation: wd-modal-backdrop-in var(--wd-motion-modal-backdrop-in) var(--wd-ease-modal-blur-in) both;
+}
+
+.wd-modal-fullscreen[data-entering] .wd-modal-panel {
+  animation: wd-modal-panel-in var(--wd-motion-modal-in) var(--wd-ease-modal-in) both;
+}
+
+.wd-modal-fullscreen[data-entering] .wd-modal-panel-frame {
+  animation: wd-modal-panel-frame-in var(--wd-motion-modal-content-in) var(--wd-ease-modal-content-in) both;
+}
+
+.wd-modal-fullscreen[data-entering] :is(.wd-modal-panel, .wd-modal-panel-frame) {
+  will-change: transform, opacity, filter;
+}
+
+.wd-modal-fullscreen[data-closing] .wd-modal-backdrop {
+  animation: wd-modal-backdrop-out var(--wd-motion-modal-out) var(--wd-ease-modal-blur-out) both;
+}
+
+.wd-modal-fullscreen[data-closing] .wd-modal-panel {
+  animation: wd-modal-panel-out var(--wd-motion-modal-out) var(--wd-ease-modal-out) both;
+}
+
+.wd-modal-fullscreen[data-closing] .wd-modal-panel-frame {
+  animation: wd-modal-panel-frame-out var(--wd-motion-modal-out) var(--wd-ease-modal-out) both;
+}
+
+@keyframes wd-modal-backdrop-in {
+  from {
+    --wd-modal-veil-blur: 0px;
+    background-color: transparent;
+  }
+  to {
+    --wd-modal-veil-blur: var(--wd-search-veil-blur-base, 28px);
+    background-color: var(--wd-modal-veil-color);
+  }
+}
+
+@keyframes wd-modal-panel-in {
+  from {
+    transform: translate3d(0, 0, var(--wd-modal-entry-z));
+  }
+  to {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+@keyframes wd-modal-panel-frame-in {
+  from {
+    opacity: .22;
+    filter: blur(var(--wd-modal-frame-blur));
+    transform: scale(.988);
+  }
+  10% {
+    opacity: .62;
+    filter: blur(10.5px);
+    transform: scale(.991);
+  }
+  26% {
+    opacity: .9;
+    filter: blur(6.5px);
+    transform: scale(.995);
+  }
+  50% {
+    opacity: 1;
+    filter: blur(3.8px);
+    transform: scale(.999);
+  }
+  70% {
+    opacity: 1;
+    filter: blur(2px);
+    transform: scale(1);
+  }
+  85% {
+    opacity: 1;
+    filter: blur(.8px);
+    transform: scale(1);
+  }
+  95% {
+    opacity: 1;
+    filter: blur(.15px);
+    transform: scale(1);
+  }
+  100% {
+    opacity: 1;
+    filter: blur(0px);
+    transform: scale(1);
+  }
+}
+
+@keyframes wd-modal-panel-out {
+  from {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translate3d(0, 0, var(--wd-modal-exit-z)) scale(.985);
+  }
+}
+
+@keyframes wd-modal-panel-frame-out {
+  from {
+    opacity: 1;
+    filter: blur(0);
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    filter: blur(8px);
+    transform: scale(.99);
+  }
+}
+
+@keyframes wd-modal-backdrop-out {
+  /* Start clearing on the same frame as the panel. The first half removes most
+   * of the frost; the remaining tail continues in smaller steps so the final
+   * frame never reads as a sudden disappearance. */
+  from {
+    --wd-modal-veil-blur: var(--wd-search-veil-blur-base, 28px);
+    background-color: var(--wd-modal-veil-color);
+  }
+  22% {
+    --wd-modal-veil-blur: calc(var(--wd-search-veil-blur-base, 28px) * .64);
+    background-color: color-mix(in srgb, var(--wd-search-veil) 64%, transparent);
+  }
+  50% {
+    --wd-modal-veil-blur: calc(var(--wd-search-veil-blur-base, 28px) * .27);
+    background-color: color-mix(in srgb, var(--wd-search-veil) 27%, transparent);
+  }
+  78% {
+    --wd-modal-veil-blur: calc(var(--wd-search-veil-blur-base, 28px) * .08);
+    background-color: color-mix(in srgb, var(--wd-search-veil) 8%, transparent);
+  }
+  to {
+    --wd-modal-veil-blur: 0px;
+    background-color: transparent;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wd-modal-fullscreen[data-entering] :is(.wd-modal-backdrop, .wd-modal-panel, .wd-modal-panel-frame),
+  .wd-modal-fullscreen[data-closing] :is(.wd-modal-backdrop, .wd-modal-panel, .wd-modal-panel-frame) {
+    animation: none !important;
+  }
+}

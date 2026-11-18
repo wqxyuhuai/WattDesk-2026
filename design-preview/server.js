@@ -1,8 +1,10 @@
 const http = require('node:http');
 const fs = require('node:fs');
 const path = require('node:path');
+const {envValue} = require('./scripts/env.cjs');
 const root = __dirname;
 const port = Number(process.env.WATTDESK_PREVIEW_PORT || 4173);
+const mapboxToken = envValue('WATTDESK_MAPBOX_TOKEN');
 const annotationsFile = path.join(root, 'annotations.json');
 const types = { '.html':'text/html; charset=utf-8','.css':'text/css; charset=utf-8','.js':'text/javascript; charset=utf-8','.svg':'image/svg+xml','.woff2':'font/woff2','.woff':'font/woff','.ttf':'font/ttf','.json':'application/json' };
 const canonicalRoutes = new Set([
@@ -12,6 +14,10 @@ const canonicalRoutes = new Set([
 
 // 本地批注层：只在 ?annotate=1 时注入，正式页面与截图基线不受影响。
 const annotateTags = '<link rel="stylesheet" href="./dev/annotate.css"><script src="./dev/annotate.js" defer></script>';
+const escapeAttribute = value => value.replaceAll('&','&amp;').replaceAll('"','&quot;').replaceAll('<','&lt;').replaceAll('>','&gt;');
+const injectMapboxToken = html => mapboxToken
+  ? html.replace(/<meta name="mapbox-access-token" content="[^"]*">/, `<meta name="mapbox-access-token" content="${escapeAttribute(mapboxToken)}">`)
+  : html;
 const send = (res, status, body, type = 'text/plain; charset=utf-8') => {
   res.writeHead(status, { 'Content-Type': type, 'Cache-Control': 'no-cache' });
   res.end(body);
@@ -75,8 +81,10 @@ http.createServer(async (req, res) => {
   fs.readFile(file, (err, content) => {
     if (err) return send(res, 404, 'Not found');
     let body = content;
-    if (path.extname(file) === '.html' && url.searchParams.get('annotate') === '1') {
-      body = Buffer.from(content.toString('utf8').replace('</body>', `${annotateTags}</body>`));
+    if (path.extname(file) === '.html') {
+      let html = injectMapboxToken(content.toString('utf8'));
+      if (url.searchParams.get('annotate') === '1') html = html.replace('</body>', `${annotateTags}</body>`);
+      body = Buffer.from(html);
     }
     res.writeHead(200, { 'Content-Type': types[path.extname(file)] || 'application/octet-stream', 'Cache-Control': 'no-cache' });
     res.end(body);

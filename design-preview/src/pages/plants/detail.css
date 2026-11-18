@@ -33,7 +33,12 @@
 }
 .plants-detail-tabs-host[hidden]{display:none}
 .plants-detail-tabs{height:36px}
-.plants-detail-tab-list{height:100%}
+.plants-detail-tab-list{
+ height:calc(100% + 16px);overflow-x:auto;overflow-y:hidden;overscroll-behavior-inline:contain;
+ position:relative;top:-8px;scrollbar-width:none;scroll-snap-type:x proximity;padding:8px;margin:0 -8px;
+}
+.plants-detail-tab-list::-webkit-scrollbar{display:none}
+.plants-detail-tab{scroll-snap-align:start}
 .plants-detail-tabs .plants-detail-tab:disabled{color:var(--wd-label-secondary);cursor:default}
 .plants-detail-tabs .plants-detail-tab:disabled .wd-control-label{color:inherit}
 .plants-detail-tabs .plants-detail-tab:disabled:is(:hover,:focus-visible){

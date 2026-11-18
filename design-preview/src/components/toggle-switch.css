@@ -14,6 +14,27 @@
  --wd-glass-outline-side:color-mix(in srgb,var(--wd-blue) 72%,rgba(0,0,0,.8));
  --wd-glass-hover-tint:color-mix(in srgb,var(--wd-blue) 76%,rgba(255,255,255,.08));
 }
+/* A 24px track cannot carry the full-size glass light shelf: at this scale the
+ * .92 top return and .78 bottom shelf read as a white ring. Keep only a short,
+ * subdued edge response while retaining the shared blue ON tint and silhouette. */
+:root[data-theme="light"] .wd-switch>.wd-glass-material{
+ --wd-glass-reflection-field:
+  linear-gradient(180deg,rgba(255,255,255,.18),rgba(255,255,255,.04) 2px,transparent 6px),
+  linear-gradient(0deg,rgba(255,255,255,.08),transparent 5px);
+ --wd-glass-rim-top:rgba(255,255,255,.48);
+ --wd-glass-rim-bottom:rgba(255,255,255,.24);
+ --wd-glass-inner-top:rgba(255,255,255,.16);
+ --wd-glass-inner-bottom:rgba(255,255,255,.08);
+ --wd-glass-hover-field:linear-gradient(180deg,rgba(255,255,255,.12),rgba(255,255,255,.035) 58%,rgba(255,255,255,.08));
+ --wd-glass-hover-bottom:rgba(255,255,255,.18);
+ --wd-glass-state-edge:inset 0 1px 1px rgba(255,255,255,.22),inset 0 -1px 4px -3px rgba(255,255,255,.18);
+}
+:root[data-theme="light"] .wd-switch[aria-checked="true"]{
+ --wd-glass-tint:color-mix(in srgb,var(--wd-blue) 92%,white 8%);
+ --wd-glass-outline:color-mix(in srgb,var(--wd-blue) 80%,rgba(0,0,0,.42));
+ --wd-glass-outline-side:color-mix(in srgb,var(--wd-blue) 84%,rgba(0,0,0,.36));
+ --wd-glass-hover-tint:color-mix(in srgb,var(--wd-blue) 96%,white 4%);
+}
 .wd-switch-thumb{
  position:absolute;z-index:2;top:3px;left:3px;
  width:18px;height:18px;border-radius:50%;

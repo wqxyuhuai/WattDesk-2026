@@ -2,12 +2,16 @@ const {chromium, launchOptions, previewURL} = require('./runtime.cjs');
 const assert = require('node:assert/strict');
 
 const origin = new URL(previewURL).origin;
-const settle = page => page.evaluate(() => Promise.all(document.getAnimations().map(animation => animation.finished.catch(() => {}))));
+const settle = page => page.evaluate(() => Promise.all(
+  document.getAnimations()
+    .filter(animation => animation.effect?.getTiming().iterations !== Infinity)
+    .map(animation => animation.finished.catch(() => {}))
+));
 
-async function ready(page, url) {
+async function ready(page, url, {settleAnimations=true}={}) {
   await page.goto(url, {waitUntil:'domcontentloaded'});
   await page.waitForFunction(() => document.documentElement.dataset.ready === 'true');
-  await settle(page);
+  if(settleAnimations)await settle(page);
 }
 
 (async () => {
@@ -21,7 +25,34 @@ async function ready(page, url) {
 
   await page.goto(`${origin}/plants/p25/devices?glass=figma`, {waitUntil:'domcontentloaded'});
   await page.evaluate(() => localStorage.setItem('wattdesk-home-theme', 'dark'));
-  await ready(page, `${origin}/plants/p25/devices?glass=figma`);
+  await ready(page, `${origin}/plants/p25/devices?glass=figma`, {settleAnimations:false});
+
+  await page.waitForTimeout(40);
+  const connectionMotion=await page.locator('.plants-device-connection-glyph').evaluateAll(icons => icons.map(icon => ({
+    state:icon.dataset.connectionMotion,
+    timings:[...icon.querySelectorAll('path')].map(path => path.getAnimations().map(animation => ({
+      duration:animation.effect.getTiming().duration,
+      delay:animation.effect.getTiming().delay,
+      infinite:animation.effect.getTiming().iterations===Infinity
+    })))
+  })));
+  assert.deepEqual(connectionMotion.map(item => item.state), ['online','offline','online']);
+  assert.deepEqual(connectionMotion[0].timings.map(item => item[0]?.delay), [0,180,360,540], 'online signal bars grow from left to right');
+  assert.deepEqual(connectionMotion[1].timings.slice(0,4).map(item => item[0]?.delay), [0,180,360,540], 'offline signal bars preserve the same staggered cadence');
+  assert.deepEqual(connectionMotion[1].timings[4][0], {duration:3200,delay:760,infinite:true}, 'offline alert rotates after the muted signal bars');
+  assert.ok(connectionMotion.every(icon => icon.timings.flat().every(animation => animation.duration===3200&&animation.infinite)), 'connection icon motion loops continuously at an unhurried cadence');
+  await settle(page);
+  const reducedMotionPage=await browser.newPage({viewport:{width:1545,height:1252}});
+  await reducedMotionPage.emulateMedia({reducedMotion:'reduce'});
+  await reducedMotionPage.goto(`${origin}/plants/p25/devices?glass=figma`,{waitUntil:'domcontentloaded'});
+  await reducedMotionPage.waitForFunction(() => document.documentElement.dataset.ready === 'true');
+  await reducedMotionPage.waitForTimeout(40);
+  assert.equal(
+    await reducedMotionPage.locator('.plants-device-connection-glyph path').evaluateAll(paths => paths.reduce((total,path)=>total+path.getAnimations().length,0)),
+    0,
+    'connection signal motion is disabled when reduced motion is requested'
+  );
+  await reducedMotionPage.close();
 
   assert.equal(new URL(page.url()).pathname, '/plants/p25/devices', 'Devices tab has a refreshable URL');
   assert.equal(await page.locator('.plants-devices').count(), 1, 'the real Devices page replaces the disabled placeholder');
@@ -60,6 +91,28 @@ async function ready(page, url) {
     true,
     'online status is the first item in the second line'
   );
+  assert.equal(await page.locator('.plants-device-status-dot').count(), 0, 'device status no longer uses the bespoke dot');
+  assert.equal(await page.locator('.plants-device-status-icon').count(), 0, 'device status does not reuse the separate health-check icon');
+  assert.equal(await page.locator('.plants-device-connection-glyph').count(), 3, 'every device status uses the Plants-list connection glyph');
+  const deviceStatusGlyphs=await page.locator('.plants-device-status').evaluateAll(statuses => statuses.map(status => {
+   const icon=status.querySelector('.plants-device-connection-glyph');
+   return {
+    label:status.querySelector('.plants-device-status-label').textContent,
+    tag:icon.tagName.toLowerCase(),
+    width:icon.getAttribute('width'),
+    height:icon.getAttribute('height'),
+    gap:getComputedStyle(status).gap,
+    translateY:getComputedStyle(icon).transform,
+    paths:icon.querySelectorAll('path').length,
+    mutedOpacity:icon.querySelectorAll('path[fill-opacity="0.55"]').length,
+    alertPaths:icon.querySelectorAll('path[fill="#FF4245"]').length
+   };
+  }));
+  assert.deepEqual(deviceStatusGlyphs, [
+   {label:'Online',tag:'svg',width:'16',height:'16',gap:'4px',translateY:'matrix(1, 0, 0, 1, 0, -1)',paths:4,mutedOpacity:0,alertPaths:0},
+   {label:'Offline',tag:'svg',width:'16',height:'16',gap:'4px',translateY:'matrix(1, 0, 0, 1, 0, -1)',paths:5,mutedOpacity:4,alertPaths:1},
+   {label:'Online',tag:'svg',width:'16',height:'16',gap:'4px',translateY:'matrix(1, 0, 0, 1, 0, -1)',paths:4,mutedOpacity:0,alertPaths:0}
+  ], 'device status uses compact, optically aligned online and offline connection signals');
   assert.deepEqual(
     await page.locator('.plants-detail-tab').evaluateAll(tabs => tabs.map(tab => ({
       label:tab.textContent.trim(),
@@ -71,7 +124,7 @@ async function ready(page, url) {
       {label:'Devices',current:'page',disabled:false},
       {label:'Site details',current:null,disabled:false}
     ],
-    'Devices is active while both detail tabs remain available'
+    'Devices is active while the sole Site details tab remains available'
   );
   assert.equal(await page.locator('.plants-device-card.wd-discussion-card').count(), 0, 'device cards do not reuse the bordered discussion surface');
   assert.equal(
@@ -84,6 +137,15 @@ async function ready(page, url) {
   );
   assert.equal(await page.locator('.plants-device-media img').count(), 3);
   assert.ok(await page.locator('.plants-device-media img').evaluateAll(images => images.every(image => image.complete && image.naturalWidth > 0)), 'product images load locally');
+  assert.equal(
+    await page.locator('.plants-device-card').nth(1).locator('.plants-device-media img').evaluate(image => ({
+      file:new URL(image.src).pathname.split('/').pop(),
+      width:image.naturalWidth,
+      height:image.naturalHeight
+    })).then(value => `${value.file}/${value.width}x${value.height}`),
+    'istorage-r13.png/600x600',
+    'Battery uses the supplied transparent R13 product archive image'
+  );
   const cardGeometry = await page.locator('.plants-device-card').first().evaluate(card => {
     const media = card.querySelector('.plants-device-media').getBoundingClientRect();
     const main = card.querySelector('.plants-device-main').getBoundingClientRect();
@@ -234,10 +296,49 @@ async function ready(page, url) {
   const firstCluster = firstClusterGroup.locator('.plants-device-cluster-toggle');
   assert.equal(await firstCluster.getAttribute('aria-expanded'), 'false');
   assert.equal(await page.locator('.plants-device-cluster-detail').first().isVisible(), false);
+  assert.deepEqual(
+    await page.locator('.plants-device-cluster-summary').allTextContents(),
+    ['6 modules','6 modules','6 modules','6 modules'],
+    'every collapsed cluster exposes its battery module count'
+  );
+  assert.equal(
+    await firstClusterGroup.locator('.plants-device-cluster-summary').evaluate(summary=>{
+      const chevron=summary.parentElement.querySelector('.plants-device-cluster-chevron');
+      return summary.nextElementSibling===chevron;
+    }),
+    true,
+    'the module count sits immediately before the disclosure chevron'
+  );
+  assert.equal(
+    await firstClusterGroup.locator('.plants-device-cluster-summary').evaluate(summary=>getComputedStyle(summary).color),
+    await page.evaluate(()=>{
+      const probe=document.createElement('span');
+      probe.style.color='var(--wd-label-tertiary)';
+      document.body.append(probe);
+      const color=getComputedStyle(probe).color;
+      probe.remove();
+      return color;
+    }),
+    'the module count uses the quiet tertiary label tone'
+  );
   const chevronDefaultColor=await firstClusterGroup.locator('.plants-device-cluster-chevron').evaluate(node => getComputedStyle(node).backgroundColor);
   await firstCluster.click();
   assert.equal(await firstCluster.getAttribute('aria-expanded'), 'true');
+  const clusterOpenMotion=await page.locator('.plants-device-cluster-detail').first().evaluate(detail => ({
+    animations:detail.getAnimations().map(animation=>animation.effect.getTiming().duration),
+    clipping:detail.classList.contains('is-disclosing'),
+    targetHeight:parseFloat(detail.getAnimations()[0]?.effect.getKeyframes().at(-1)?.height||'0')
+  }));
+  assert.ok(clusterOpenMotion.animations.includes(380), 'cluster expansion uses the shared disclosure duration');
+  assert.equal(clusterOpenMotion.clipping, true, 'cluster content is clipped only while its height animates');
+  assert.ok(clusterOpenMotion.targetHeight>0, 'cluster content has a real animated target height instead of snapping open');
+  await settle(page);
   assert.equal(await page.locator('.plants-device-cluster-detail').first().isVisible(), true);
+  assert.equal(
+    await page.locator('.plants-device-cluster-detail').first().evaluate(detail => detail.classList.contains('is-disclosing')),
+    false,
+    'cluster clipping is removed after the expansion settles'
+  );
   const expandedClusterAlignment=await page.locator('.plants-device-card').nth(1).evaluate(card => ({
     label:card.querySelector('.plants-device-cluster-label').getBoundingClientRect().left,
     detail:card.querySelector('.plants-device-cluster-detail .plants-device-cluster-section').getBoundingClientRect().left
@@ -397,10 +498,61 @@ async function ready(page, url) {
   assert.equal(await firstCluster.getAttribute('aria-expanded'), 'true', 'copying SN does not collapse the cluster');
   assert.equal(await page.locator('.plants-device-cluster-detail').first().isVisible(), true, 'cluster content stays open after copying SN');
   await page.mouse.move(0, 0);
+  await page.locator('.plants-device-card').nth(1).evaluate(card => {
+    window.__clusterLayoutStyleMutations=0;
+    window.__clusterLayoutMutationObserver?.disconnect();
+    window.__clusterLayoutMutationObserver=new MutationObserver(records => {
+      window.__clusterLayoutStyleMutations+=records.length;
+    });
+    window.__clusterLayoutMutationObserver.observe(card,{attributes:true,attributeFilter:['style']});
+  });
   await firstClusterGroup.locator('.plants-device-cluster-section-title').first().click();
   assert.equal(await firstCluster.getAttribute('aria-expanded'), 'false');
+  assert.ok(
+    await page.locator('.plants-device-cluster-detail').first().evaluate(detail => detail.getAnimations().some(animation => animation.effect.getTiming().duration===380)),
+    'clicking anywhere in the expanded cluster animates its collapse'
+  );
+  assert.deepEqual(
+    await page.locator('.plants-device-cluster-detail').first().evaluate(detail => {
+      const keyframes=detail.getAnimations()[0].effect.getKeyframes();
+      const last=keyframes.at(-1);
+      return [last.paddingTop,last.paddingBottom];
+    }),
+    ['0px','0px'],
+    'collapse removes the detail padding so its height can reach zero continuously'
+  );
+  await settle(page);
   assert.equal(await page.locator('.plants-device-cluster-detail').first().isVisible(), false);
+  assert.equal(
+    await page.evaluate(() => {
+      window.__clusterLayoutMutationObserver?.disconnect();
+      return window.__clusterLayoutStyleMutations;
+    }),
+    0,
+    'height-only disclosure motion does not rewrite card alignment styles every frame'
+  );
+  await page.emulateMedia({reducedMotion:'reduce'});
   await firstCluster.click();
+  assert.equal(await page.locator('.plants-device-cluster-detail').first().isVisible(), true);
+  assert.equal(
+    await page.locator('.plants-device-cluster-detail').first().evaluate(detail => detail.getAnimations().length),
+    0,
+    'reduced motion opens the cluster immediately'
+  );
+  await firstCluster.click();
+  assert.equal(await page.locator('.plants-device-cluster-detail').first().isVisible(), false);
+  await page.emulateMedia({reducedMotion:'no-preference'});
+  await firstCluster.click();
+  await settle(page);
+  await firstCluster.click();
+  await settle(page);
+  await page.mouse.move(0,0);
+  await page.waitForTimeout(400);
+  assert.equal(
+    await firstClusterGroup.locator('.plants-device-cluster-hover').evaluate(surface => Number(getComputedStyle(surface).opacity)),
+    0,
+    'pointer focus left by closing a cluster does not keep the hover surface visible'
+  );
 
   await page.locator('.plants-device-card').first().getByRole('button', {name:'Open iHybrid settings'}).click();
   assert.equal(await page.getByRole('heading', {name:'iHybrid settings'}).count(), 1);
@@ -453,8 +605,19 @@ async function ready(page, url) {
   assert.equal(await page.getByRole('button', {name:'Save changes'}).isEnabled(), true, 'Heater uses the same dirty-state save logic');
   await page.getByRole('button', {name:'Cancel'}).click();
 
-  await page.getByRole('button', {name:'More actions for iHybrid'}).click();
+  const hybridMore=page.getByRole('button', {name:'More actions for iHybrid'});
+  await hybridMore.click();
+  await page.waitForTimeout(320);
+  assert.equal(await page.locator('.plants-device-actions-menu').count(),1,'device actions open from the more trigger');
+  await hybridMore.click();
+  await page.waitForTimeout(260);
+  assert.equal(await page.locator('.plants-device-actions-menu').count(),0,'device actions close from the same more trigger');
+  assert.equal(await hybridMore.getAttribute('aria-expanded'),'false','the device more trigger exposes its closed state');
+  await hybridMore.click();
+  await page.waitForTimeout(320);
   const actionMenuRows=page.locator('.plants-device-actions-menu .wd-menu-row');
+  await page.mouse.move(0,0);
+  await page.waitForTimeout(320);
   const actionMenuGeometry=await page.locator('.plants-device-actions-menu').evaluate(panel => {
     const panelBox=panel.getBoundingClientRect();
     const anchor=document.querySelector('.plants-device-actions button[aria-expanded="true"]').getBoundingClientRect();
@@ -579,15 +742,20 @@ async function ready(page, url) {
 
   await page.getByRole('button', {name:'More actions for North inverter'}).click();
   await page.getByRole('menuitem', {name:'Replace device'}).click();
+  await settle(page);
   assert.equal(await page.locator('.plants-device-dialog-title-icon').count(), 1, 'Replace exposes a title icon');
   assert.equal(await page.locator('.plants-device-dialog-description').count(), 0, 'Replace has no explanatory subtitle');
   assert.equal(
-    await page.locator('.plants-device-dialog--wide').evaluate(dialog => ({
-      width:dialog.offsetWidth,
-      columns:getComputedStyle(dialog.querySelector('.plants-device-replace-columns')).gridTemplateColumns.split(' ').length
-    })).then(result => `${result.width}/${result.columns}`),
-    '1160/2',
-    'Replace uses the wide dialog and two-column form'
+    await page.locator('.plants-device-dialog--replace').evaluate(dialog => {
+      const box=dialog.getBoundingClientRect();
+      return {
+        width:dialog.offsetWidth,
+        centerOffset:(innerHeight/2)-(box.top+box.height/2),
+        columns:getComputedStyle(dialog.querySelector('.plants-device-replace-columns')).gridTemplateColumns.split(' ').length
+      };
+    }).then(result => `${result.width}/${result.columns}/${Math.round(result.centerOffset)}`),
+    '640/1/80',
+    'Replace uses the narrow single-flow dialog with the standard narrow modal offset'
   );
   await page.locator('.plants-device-dialog-actions').getByRole('button', {name:'Cancel'}).click();
   await page.waitForFunction(() => !document.querySelector('.plants-device-modal'));
@@ -596,25 +764,32 @@ async function ready(page, url) {
   assert.equal(await page.getByRole('heading', {name:'Add device'}).count(), 1);
   const dialogMaterial=await page.locator('.plants-device-dialog').evaluate(dialog => {
     const modal=dialog.closest('.plants-device-modal');
-    const backdrop=modal.querySelector(':scope>.wd-search-backdrop');
-    const probe=document.createElement('span');
-    probe.style.backgroundColor='var(--wd-search-veil)';
-    document.body.append(probe);
-    const expectedVeil=getComputedStyle(probe).backgroundColor;
-    probe.remove();
+    const backdrop=modal.querySelector(':scope>.wd-modal-backdrop');
+    const frame=dialog.querySelector('.wd-modal-panel-frame');
+    const animations=[...dialog.getAnimations({subtree:true}),...backdrop.getAnimations()];
     return {
       width:dialog.offsetWidth,
-      veil:getComputedStyle(backdrop).backgroundColor,
-      expectedVeil,
-      blur:getComputedStyle(backdrop).backdropFilter,
       radius:getComputedStyle(dialog).borderRadius,
       glass:dialog.classList.contains('wd-glass'),
       chrome:dialog.classList.contains('wd-glass-chrome'),
       static:dialog.classList.contains('wd-glass--static'),
-      fullscreenClass:modal.classList.contains('wd-search-fullscreen'),
-      panelClass:dialog.classList.contains('wd-search-panel--fullscreen'),
+      modalClass:modal.classList.contains('wd-modal-fullscreen'),
+      panelClass:dialog.classList.contains('wd-modal-panel'),
+      frameClass:frame.classList.contains('wd-modal-panel-frame'),
+      searchClass:modal.classList.contains('wd-search-fullscreen'),
+      searchPanelClass:dialog.classList.contains('wd-search-panel'),
       entering:modal.hasAttribute('data-entering'),
-      animations:dialog.getAnimations().length+backdrop.getAnimations().length,
+      animationNames:animations.map(animation=>animation.animationName).filter(Boolean),
+      backdropDuration:backdrop.getAnimations().find(animation=>animation.animationName==='wd-modal-backdrop-in')?.effect.getTiming().duration,
+      backdropKeyframes:backdrop.getAnimations().find(animation=>animation.animationName==='wd-modal-backdrop-in')?.effect.getKeyframes()
+        .map(keyframe=>({offset:keyframe.offset,easing:keyframe.easing})),
+      panelKeyframes:dialog.getAnimations().find(animation=>animation.animationName==='wd-modal-panel-in')?.effect.getKeyframes(),
+      panelDepths:dialog.getAnimations().find(animation=>animation.animationName==='wd-modal-panel-in')?.effect.getKeyframes()
+        .map(keyframe=>new DOMMatrixReadOnly(keyframe.transform||'none').m43),
+      frameKeyframes:frame.getAnimations().find(animation=>animation.animationName==='wd-modal-panel-frame-in')?.effect.getKeyframes(),
+      frameBlurValues:frame.getAnimations().find(animation=>animation.animationName==='wd-modal-panel-frame-in')?.effect.getKeyframes()
+        .map(keyframe=>parseFloat(keyframe.filter.match(/blur\(([\d.]+)px\)/)?.[1]||'0')),
+      frameDuration:frame.getAnimations().find(animation=>animation.animationName==='wd-modal-panel-frame-in')?.effect.getTiming().duration,
       titleIcons:dialog.querySelectorAll('.plants-device-dialog-title-icon').length,
       descriptions:dialog.querySelectorAll('.plants-device-dialog-description').length
     };
@@ -622,17 +797,71 @@ async function ready(page, url) {
   assert.equal(dialogMaterial.width, 640, 'Add device uses the narrow dialog width');
   assert.equal(dialogMaterial.titleIcons, 1, 'Add device exposes a title icon');
   assert.equal(dialogMaterial.descriptions, 0, 'Add device has no explanatory subtitle');
-  assert.equal(dialogMaterial.veil, dialogMaterial.expectedVeil, 'device dialogs use the Home search veil');
-  assert.match(dialogMaterial.blur, /blur\(28px\) saturate\(1\.05\)/, 'device dialogs use the Home search backdrop blur');
   assert.equal(dialogMaterial.radius, '30px', 'device dialogs use the standard floating-surface radius');
   assert.equal(dialogMaterial.glass, true, 'device dialogs use the shared Glass Surface');
   assert.equal(dialogMaterial.chrome, false, 'device dialogs use the standard Home glass branch');
   assert.equal(dialogMaterial.static, false, 'device dialogs use the interactive Home glass branch');
-  assert.equal(dialogMaterial.fullscreenClass, true, 'device dialogs reuse the Home fullscreen overlay class');
-  assert.equal(dialogMaterial.panelClass, true, 'device dialogs reuse the Home fullscreen panel class');
-  assert.equal(dialogMaterial.entering, true, 'device dialogs enter with the shared Home search animation');
-  assert.ok(dialogMaterial.animations>0, 'device dialogs animate the shared overlay and glass shell');
+  assert.equal(dialogMaterial.modalClass, true, 'device dialogs use the shared modal overlay class');
+  assert.equal(dialogMaterial.panelClass, true, 'device dialogs use the shared modal panel class');
+  assert.equal(dialogMaterial.frameClass, true, 'device dialogs use the shared modal content frame');
+  assert.equal(dialogMaterial.searchClass, false, 'device dialogs no longer reuse the Home search overlay');
+  assert.equal(dialogMaterial.searchPanelClass, false, 'device dialogs no longer reuse the Home search panel');
+  assert.equal(dialogMaterial.entering, true, 'device dialogs enter with the dedicated modal animation');
+  assert.ok(dialogMaterial.animationNames.includes('wd-modal-backdrop-in'), 'modal backdrop frost enters on its own layer');
+  assert.equal(dialogMaterial.backdropDuration, 520, 'modal backdrop blur stays synchronized with the window for its full entrance');
+  assert.deepEqual(
+    dialogMaterial.backdropKeyframes,
+    [
+      {offset:0,easing:'cubic-bezier(0.32, 0.08, 0.2, 1)'},
+      {offset:1,easing:'cubic-bezier(0.32, 0.08, 0.2, 1)'}
+    ],
+    'modal backdrop uses one continuous eased blur segment instead of subdivided keyframes'
+  );
+  assert.ok(dialogMaterial.animationNames.includes('wd-modal-panel-in'), 'modal panel approaches on the Z axis');
+  assert.ok(dialogMaterial.animationNames.includes('wd-modal-panel-frame-in'), 'modal content resolves from blur to sharp');
+  assert.match(dialogMaterial.panelKeyframes?.[0]?.transform||'', /translate3d.*64px/, 'modal panel starts slightly closer than its settled plane');
+  assert.ok(dialogMaterial.panelDepths?.every(depth => depth>=0), 'modal panel only recedes toward the settled plane during entry');
+  assert.equal(dialogMaterial.panelDepths?.at(-1), 0, 'modal panel settles at the screen plane without overshoot');
+  assert.equal(dialogMaterial.frameKeyframes?.[0]?.filter, 'blur(16px)', 'modal content starts visibly blurred at the larger entry size');
+  assert.equal(dialogMaterial.frameKeyframes?.[0]?.opacity, '0.22', 'the distant modal remains softly visible instead of appearing from nothing');
+  assert.equal(dialogMaterial.frameKeyframes?.at(-1)?.filter, 'blur(0px)', 'modal content resolves fully sharp');
+  assert.ok(
+    dialogMaterial.frameBlurValues?.every((value,index,values) => index===0||value<=values[index-1]),
+    'modal content blur decreases monotonically without a late snap'
+  );
+  assert.equal(dialogMaterial.frameDuration, 520, 'modal content resolves blur within the unified entrance duration');
   await settle(page);
+  await page.waitForFunction(() => document.querySelector('.plants-device-modal')?.hasAttribute('data-entered'));
+  assert.deepEqual(
+    await page.locator('.plants-device-modal').evaluate(modal => {
+      const backdrop=modal.querySelector(':scope>.wd-modal-backdrop');
+      const probe=document.createElement('span');
+      probe.style.backgroundColor='var(--wd-search-veil)';
+      document.body.append(probe);
+      const expectedVeil=getComputedStyle(probe).backgroundColor;
+      probe.remove();
+      const sample=color=>{
+        const canvas=document.createElement('canvas');
+        canvas.width=1;
+        canvas.height=1;
+        const context=canvas.getContext('2d');
+        context.clearRect(0,0,1,1);
+        context.fillStyle=color;
+        context.fillRect(0,0,1,1);
+        return [...context.getImageData(0,0,1,1).data];
+      };
+      return {
+        veil:sample(getComputedStyle(backdrop).backgroundColor),
+        expectedVeil:sample(expectedVeil),
+        blur:getComputedStyle(backdrop).backdropFilter,
+        willChange:getComputedStyle(backdrop).willChange,
+        entering:modal.hasAttribute('data-entering'),
+        entered:modal.hasAttribute('data-entered')
+      };
+    }),
+    {veil:[0,0,0,74],expectedVeil:[0,0,0,74],blur:'blur(28px) saturate(1.05)',willChange:'backdrop-filter, background-color',entering:true,entered:true},
+    'settled modal backdrop keeps its Home search veil, frost and compositor layer'
+  );
   assert.ok(
     await page.locator('.plants-device-dialog').evaluate(dialog => {
       const box=dialog.getBoundingClientRect();
@@ -642,6 +871,16 @@ async function ready(page, url) {
   );
   await page.locator('.plants-device-dialog-actions').getByRole('button', {name:'Cancel'}).click();
   await page.waitForFunction(() => document.querySelector('.plants-device-modal')?.dataset.closing === 'true');
+  const modalExitMotion=await page.locator('.plants-device-modal').evaluate(modal => Object.fromEntries(
+    modal.getAnimations({subtree:true})
+      .filter(animation=>animation.animationName?.startsWith('wd-modal-'))
+      .map(animation=>[animation.animationName,animation.effect.getTiming()])
+  ));
+  assert.equal(modalExitMotion['wd-modal-backdrop-out']?.duration,420,'modal backdrop exits with the unified duration');
+  assert.equal(modalExitMotion['wd-modal-backdrop-out']?.delay,0,'modal backdrop starts with the window instead of trailing it');
+  assert.equal(modalExitMotion['wd-modal-panel-out']?.duration,420,'modal window exits over the same duration as its backdrop');
+  assert.equal(modalExitMotion['wd-modal-panel-out']?.delay,0,'modal window starts its exit immediately');
+  assert.equal(modalExitMotion['wd-modal-panel-frame-out']?.duration,420,'modal content shares the unified exit timeline');
   await page.waitForFunction(() => !document.querySelector('.plants-device-modal'));
   await page.getByRole('button', {name:'Add device'}).click();
   await page.getByLabel('Device SN', {exact:false}).fill('WMT-PREVIEW-99');

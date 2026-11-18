@@ -774,7 +774,7 @@ function animateChartSet(charts){
  return charts.flatMap((chart,groupIndex)=>animateChartMarks(chart,{groupIndex}));
 }
 
-function createInverterStatistics(data,{glass,registerPanel,close}={}){
+function createInverterStatistics(data,{glass,registerPanel,close,toggle}={}){
  const section=text("section","plant-overview-stats plant-overview-day-statistics");
  const head=text("div","plant-overview-stats-head");
  const title=text("h2","plant-overview-stats-title","Statistics","Subheadline/Emphasized");
@@ -877,6 +877,7 @@ function createInverterStatistics(data,{glass,registerPanel,close}={}){
   glass,
   registerPanel,
   close,
+  toggle,
   state:periodState,
   onChange:nextPeriod=>applyPeriod(nextPeriod)
  });
@@ -974,6 +975,7 @@ export function createPlantOverview({
  glass,
  registerPanel,
  close,
+ toggle,
  toast
 }){
  const devices=devicesFor(plant);
@@ -1006,7 +1008,7 @@ export function createPlantOverview({
   const context=createContext(plant);
   const isInverter=activeId==="inverter";
   const stats=isInverter
-   ?createInverterStatistics(data,{glass,registerPanel,close})
+   ?createInverterStatistics(data,{glass,registerPanel,close,toggle})
    :{element:createStats(plant,activeId,data),controls:[]};
   const canvas=text("div","plant-overview-canvas");
   canvas.classList.toggle("is-single-device",devices.length<=1);
@@ -1098,7 +1100,7 @@ export function createPlantDetailTabs({current="overview",onSelect=null}={}){
  const definitions=[
   {id:"overview",label:"Overview"},
   {id:"devices",label:"Devices"},
-  {id:"site",label:"Site details"}
+  {id:"site-v2",label:"Site details"}
  ];
  for(const definition of definitions){
   const selected=definition.id===current;

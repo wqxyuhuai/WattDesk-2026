@@ -26,7 +26,7 @@ export function statisticsPeriodLabel(state){
  return "Total";
 }
 
-export function createStatisticsPeriodControl({glass,registerPanel,close,state,onChange}){
+export function createStatisticsPeriodControl({glass,registerPanel,close,toggle,state,onChange}){
  const control=text("div","plant-statistics-period-control");
  const previous=text("button","plant-statistics-period-nav wd-control-state");
  previous.type="button";
@@ -195,7 +195,7 @@ export function createStatisticsPeriodControl({glass,registerPanel,close,state,o
 
  previous.addEventListener("click",()=>shift(-1));
  next.addEventListener("click",()=>shift(1));
- trigger.addEventListener("click",openPicker);
+ trigger.addEventListener("click",()=>toggle(trigger,openPicker));
  update();
  return {
   element:control,

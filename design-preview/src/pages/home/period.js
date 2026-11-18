@@ -3,7 +3,7 @@
 import {createDatePicker,describeRange,presetRange} from "../../components/date-picker.js";
 import {reducedMotion,motionDuration,motionEasing} from "../../foundations/motion.js";
 
-export function createPeriodControl({get,action,glass,registerPanel,close,toast}){
+export function createPeriodControl({get,action,glass,registerPanel,close,toggle,toast}){
  const periodLabel=get("I14578:6106;14420:2221;14420:2195");
  // The capsule grows with its content instead of clipping a changed period.
  // The refresh button stays on the card's right edge; the capsule grows left.
@@ -36,13 +36,13 @@ export function createPeriodControl({get,action,glass,registerPanel,close,toast}
  }
  setPeriod(describeRange(activeRange));
  action("14578:6106","Select statistics period",()=>{
-  createDatePicker({
-   trigger:periodControl,glass,registerPanel,close,range:activeRange,
-   onApply(range){
-    activeRange=range;setPeriod(describeRange(range));
-    toast("Period selected · Preview data");
-   }
-  });
+  toggle(periodControl,()=>createDatePicker({
+    trigger:periodControl,glass,registerPanel,close,range:activeRange,
+    onApply(range){
+     activeRange=range;setPeriod(describeRange(range));
+     toast("Period selected · Preview data");
+    }
+   }));
  });
  action("14612:8453","Refresh statistics",async()=>{
   if(refreshControl.getAttribute("aria-busy")==="true")return;

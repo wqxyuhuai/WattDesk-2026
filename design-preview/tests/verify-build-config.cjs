@@ -14,6 +14,7 @@ assert.equal(wrangler.assets?.not_found_handling, 'single-page-application');
 fs.rmSync(out, {recursive: true, force: true});
 const build = spawnSync(process.execPath, ['scripts/build-site.cjs', '--public', `--out=${out}`], {
   cwd: root,
+  env: {...process.env, WATTDESK_MAPBOX_TOKEN: ''},
   encoding: 'utf8'
 });
 assert.equal(build.status, 0, build.stderr || build.stdout);
@@ -26,6 +27,19 @@ assert.match(redirects, /^\/index\.html \/home 308$/m);
 assert.doesNotMatch(redirects, /\s\/index\.html 200$/m, 'SPA routes must use Workers Assets fallback, not rewrite loops');
 assert.match(headers, /^\/plants\/\*$/m, 'nested plant child pages must revalidate like their shell');
 assert.match(headers, /^\/service\/\*$/m, 'service detail HTML must revalidate like its shell');
+const defaultHtml = fs.readFileSync(path.join(out, 'index.html'), 'utf8');
+assert.match(defaultHtml, /<meta name="mapbox-access-token" content="">/, 'a missing public token stays on the preview fallback');
 
 fs.rmSync(out, {recursive: true, force: true});
-console.log(JSON.stringify({ok: true, spaFallback: true, redirectRules: redirects.trim().split('\n').length}));
+const configuredOut = path.join(root, '.test-build-mapbox');
+fs.rmSync(configuredOut, {recursive: true, force: true});
+const configuredBuild = spawnSync(process.execPath, ['scripts/build-site.cjs', '--public', `--out=${configuredOut}`], {
+  cwd: root,
+  env: {...process.env, WATTDESK_MAPBOX_TOKEN: 'pk.test-build-token'},
+  encoding: 'utf8'
+});
+assert.equal(configuredBuild.status, 0, configuredBuild.stderr || configuredBuild.stdout);
+const configuredHtml = fs.readFileSync(path.join(configuredOut, 'index.html'), 'utf8');
+assert.match(configuredHtml, /<meta name="mapbox-access-token" content="pk\.test-build-token">/, 'the public Mapbox token is injected at build time');
+fs.rmSync(configuredOut, {recursive: true, force: true});
+console.log(JSON.stringify({ok: true, spaFallback: true, mapboxTokenInjection: true, redirectRules: redirects.trim().split('\n').length}));

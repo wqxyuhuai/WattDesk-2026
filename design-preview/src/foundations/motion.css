@@ -207,6 +207,18 @@
   transition-timing-function: var(--wd-ease-disclosure);
 }
 
+/* Mask-based disclosure glyphs rotate in place without animating their hit target. */
+:where(.wd-disclosure-glyph) {
+  transition-property: transform;
+  transition-duration: var(--wd-motion-disclosure);
+  transition-timing-function: var(--wd-ease-disclosure);
+}
+
+/* Height animation needs clipping only while a disclosure is visibly moving. */
+:where(.wd-disclosure-content.is-disclosing) {
+  overflow: clip;
+}
+
 /* Tree disclosures reuse the category-disclosure rhythm while rotating the
  * visible mask inside a fixed 22px hit target. */
 :where(.wd-tree-disclosure-icon) {
@@ -376,6 +388,17 @@
   transition-duration: var(--wd-motion-skeleton-in);
   transition-timing-function: var(--wd-ease-skeleton-in);
   transition-delay: calc(var(--wd-motion-stagger) * var(--wd-skeleton-order, 0));
+}
+
+/* Theme-specific map images crossfade as one complete bank. The incoming
+ * theme owns the same timing as the page-level theme transition. */
+:where(.site-v2-map-bank) {
+  transition-property: opacity;
+  transition-duration: var(--wd-motion-theme);
+  transition-timing-function: var(--wd-ease-theme);
+}
+:where(.site-v2-map-bank.is-instant) {
+  transition-property: none;
 }
 
 @media (prefers-reduced-motion: reduce) {

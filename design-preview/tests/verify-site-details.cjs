@@ -9,6 +9,24 @@ async function openSite(page,query="?device=inverter"){
  await page.goto(`${origin}/plants/p25/site${query}`,{waitUntil:"domcontentloaded"});
  await page.waitForFunction(()=>document.documentElement.dataset.ready==="true");
  await settle(page);
+ const currentSection=page.locator('.plants-detail-tab').last();
+ await currentSection.hover();
+ await page.waitForTimeout(320);
+ const tabHoverBounds=await page.evaluate(()=>{
+  const list=document.querySelector(".plants-detail-tab-list").getBoundingClientRect();
+  const tab=[...document.querySelectorAll('.plants-detail-tab')].at(-1).getBoundingClientRect();
+  const style=getComputedStyle(document.querySelector(".plants-detail-tab-list"));
+  return{
+   top:tab.top-list.top,
+   bottom:list.bottom-tab.bottom,
+   paddingTop:style.paddingTop,
+   paddingBottom:style.paddingBottom
+  };
+ });
+ assert.ok(tabHoverBounds.top>=3&&tabHoverBounds.bottom>=3,"hover scaling and focus outlines stay inside the tab scroller");
+ assert.deepEqual([tabHoverBounds.paddingTop,tabHoverBounds.paddingBottom],["8px","8px"],"tab scroller reserves vertical room for control growth");
+ await currentSection.screenshot({path:"tests/output/plant-detail-tab-hover.png"});
+ await page.mouse.move(0,0);
 }
 
 (async()=>{
@@ -41,12 +59,20 @@ async function openSite(page,query="?device=inverter"){
  });
  assert.equal(wideColumn.width,1000,"wide Site details content fills the shared 1000px column");
  assert.ok(Math.abs(wideColumn.leftGap-wideColumn.rightGap)<=1,"the shared content column is centered in the workspace");
- assert.equal(await page.locator(".plants-detail-tab").nth(2).getAttribute("aria-current"),"page");
+ assert.equal(await page.locator(".plants-detail-tab[aria-current='page']").count(),0,"the hidden legacy Site details route has no public tab selection");
  assert.equal(await page.locator(".plants-detail-tab").nth(1).isDisabled(),false);
  assert.equal(await page.locator(".plants-detail-tab").nth(2).isDisabled(),false);
  assert.deepEqual(
   await page.locator(".site-details-section-title").allTextContents(),
-  ["Basic information","Electricity price","Owner information","Installer contact","Plant picture","Visitor management"]
+  ["Basic information","Electricity price","Installer contact","Owner information","Visitor management","Plant picture"]
+ );
+ assert.deepEqual(
+  await page.locator(".site-details-column").evaluateAll(columns=>columns.map(column=>[...column.querySelectorAll(".site-details-section-title")].map(title=>title.textContent))),
+  [
+   ["Basic information","Electricity price","Installer contact"],
+   ["Owner information","Visitor management","Plant picture"]
+  ],
+  "installer details live on the left while owner, visitor and picture details share the right column"
  );
  assert.equal(await page.locator(".site-details-section-title").first().evaluate(title=>getComputedStyle(title).fontSize),"15px","module headings use the larger settings title scale");
  assert.equal(await page.locator(".site-details-section-card.wd-discussion-card").count(),6,"every information group reuses the shared card surface");
@@ -88,6 +114,15 @@ async function openSite(page,query="?device=inverter"){
  );
  assert.match(await page.locator("#site-installer-contact").innerText(),/Alarm email notification/);
  assert.match(await page.locator("#site-visitor-management").innerText(),/No visitors/);
+ assert.ok(
+  await page.locator("#site-visitor-management .site-details-visitor").evaluate(empty=>empty.getBoundingClientRect().height<=92),
+  "the empty visitor card is compact instead of reserving a large blank panel"
+ );
+ assert.equal(
+  await page.locator(".site-details-visitor-note").isVisible(),
+  true,
+  "the local development preview explains that visitor invitations are not connected"
+ );
 
  assert.equal(await page.locator(".site-details-page-title").innerText(),"Wärmeverbund Nord","the page heading is the plant name");
  assert.equal(await page.getByText("Manage plant profile, pricing, ownership and service contacts.",{exact:true}).count(),0,"the page description copy is removed");
@@ -160,8 +195,34 @@ async function openSite(page,query="?device=inverter"){
  assert.equal(await page.locator(".site-details-save.wd-button--primary.wd-glass").count(),1,"Save changes uses the shared blue glass primary button");
  assert.equal(await page.locator(".site-details-save .target-icon-art,.site-details-save [class*='icon']").count(),0,"Save changes matches the text-only date Apply button anatomy");
  assert.equal(await page.locator(".site-details-save").evaluate(button=>button.classList.contains("wd-control-state")),false,"Save changes uses the exact date Apply button class path");
+ const sharedSelectMaterials=await page.locator(".site-details-select-trigger").evaluateAll(nodes=>nodes.map(node=>({
+  glass:node.classList.contains("wd-glass"),
+  materials:node.querySelectorAll(":scope>.wd-glass-material").length,
+  blur:getComputedStyle(node).backdropFilter,
+  background:getComputedStyle(node).backgroundColor,
+  shadow:getComputedStyle(node).boxShadow
+ })));
+ assert.equal(sharedSelectMaterials.length,5,"all Site details select fields share the same blurred surface");
+ assert.equal(sharedSelectMaterials.every(item=>!item.glass&&item.materials===0),true,"select fields avoid the full glass highlight material");
+ assert.equal(sharedSelectMaterials.every(item=>/blur\(14px\)/i.test(item.blur)),true,"select fields use the shared Gaussian-blurred grey surface");
+ assert.equal(sharedSelectMaterials.every(item=>item.background!=="rgba(0, 0, 0, 0)"),true,"select fields retain a shallow grey fill");
+ assert.equal(sharedSelectMaterials.every(item=>item.shadow==="none"),true,"select fields add no glow or shadow");
  assert.equal(await page.locator(".site-details-danger").count(),1,"Delete plant only appears in edit mode");
  assert.notEqual(await page.locator(".site-details-danger").evaluate(section=>getComputedStyle(section).backgroundColor),"rgba(0, 0, 0, 0)","the danger zone carries a pale red surface");
+ assert.equal(
+  await page.locator(".site-details-danger").evaluate((danger,gridSelector)=>{
+   const grid=danger.closest(gridSelector);
+   const dangerBox=danger.getBoundingClientRect(),gridBox=grid.getBoundingClientRect();
+   return Math.abs(dangerBox.left-gridBox.left)<=1&&Math.abs(dangerBox.width-gridBox.width)<=1;
+  },".site-details-grid"),
+  true,
+  "Danger zone spans the full content grid beneath both columns"
+ );
+ assert.equal(await page.locator(".site-details-row--wide").count(),4,"long address and contact fields use the wide value column");
+ assert.ok(
+  await page.locator("#site-details-installerCompany").evaluate(input=>input.getBoundingClientRect().width>=260),
+  "the installer company field is wide enough to show the full company name"
+ );
  assert.deepEqual(
   await page.locator(".site-details-delete").evaluate(button=>({
    primary:button.classList.contains("wd-button--primary"),
@@ -185,6 +246,25 @@ async function openSite(page,query="?device=inverter"){
  const deleteHoverFill=await deleteButton.locator(".wd-glass-fill").evaluate(surface=>getComputedStyle(surface).backgroundColor);
  assert.notEqual(deleteHoverFill,deleteIdleFill,"Delete plant changes brightness on hover");
  assert.doesNotMatch(deleteHoverFill,/0,\s*145,\s*255|0 0\.569 1/,"Delete plant hover remains in the red family");
+ await deleteButton.click();
+ await settle(page);
+ assert.equal(await page.locator(".plants-device-dialog--confirm").count(),1,"Delete plant opens the shared centered confirmation dialog");
+ assert.equal(
+  await page.locator(".plants-device-dialog--confirm").evaluate(dialog=>dialog.offsetWidth),
+  480,
+  "Delete plant uses the shared compact confirmation width"
+ );
+ assert.match(await page.locator(".plants-device-confirm-title").textContent(),/^Delete .+\?$/,"Delete confirmation names the plant");
+ assert.match(await page.locator(".plants-device-confirm-description").textContent(),/cannot be undone/i,"Delete confirmation explains the consequence");
+ assert.equal(await page.locator(".plants-device-confirm-mark .plants-device-action-icon").count(),1,"Delete confirmation uses the shared danger icon plate");
+ assert.equal(await page.locator(".plants-device-confirm-actions .wd-button").count(),2,"Delete confirmation exposes exactly two actions");
+ await page.locator(".plants-device-confirm-actions").getByRole("button",{name:"Cancel"}).click();
+ await page.waitForFunction(()=>!document.querySelector(".plants-device-modal"));
+ await deleteButton.click();
+ await settle(page);
+ await page.locator(".plants-device-confirm-actions").getByRole("button",{name:"Delete plant"}).click();
+ await page.waitForFunction(()=>!document.querySelector(".plants-device-modal"));
+ assert.match(await page.locator("#toast").textContent(),/not connected/i,"Delete confirmation keeps the local preview boundary");
  assert.equal(await page.locator("#site-details-pvCapacity").evaluate(input=>getComputedStyle(input).appearance),"textfield","number inputs hide native steppers");
  assert.deepEqual(
   await page.locator(".site-details-input,.site-details-unit,.site-details-select-value").evaluateAll(nodes=>[...new Set(nodes.map(node=>getComputedStyle(node).fontSize))]),
@@ -196,14 +276,39 @@ async function openSite(page,query="?device=inverter"){
   /asset-14\.svg/,
   "select arrows reuse the shared forward arrow asset"
  );
+ assert.deepEqual(
+  await page.locator(".site-details-select-chevron").first().evaluate(icon=>[getComputedStyle(icon).width,getComputedStyle(icon).height]),
+  ["14px","14px"],
+  "shared select arrows use the enlarged 14px glyph box"
+ );
  assert.equal(await page.locator("select").count(),0,"site selects do not use native option popups");
- await page.getByRole("button",{name:"Plant type",exact:true}).click();
+ const plantTypeTrigger=page.getByRole("button",{name:"Plant type",exact:true});
+ await plantTypeTrigger.click();
  assert.equal(await page.locator(".site-details-select-popover.wd-glass--surface").count(),1,"select options reuse the shared Glass Surface");
+ await plantTypeTrigger.click();
+ await page.waitForTimeout(260);
+ assert.equal(await page.locator(".site-details-select-popover").count(),0,"the select closes from the same trigger");
+ assert.equal(await plantTypeTrigger.getAttribute("aria-expanded"),"false","the select trigger exposes its closed state");
+ await plantTypeTrigger.click();
+ await page.waitForTimeout(300);
  assert.deepEqual(await page.locator('.site-details-select-popover [role="option"]').allTextContents(),["Heating system","Battery system","Hybrid system"]);
  await page.locator('.site-details-select-popover [role="option"][data-value="Battery system"]').click();
  assert.equal(await page.getByRole("button",{name:"Plant type",exact:true}).getAttribute("data-value"),"Battery system");
  await page.getByRole("button",{name:"Plant type",exact:true}).click();
  await page.locator('.site-details-select-popover [role="option"][data-value="Hybrid system"]').click();
+ const ownerMenuTrigger=page.locator(".site-details-owner-menu-trigger").first();
+ await ownerMenuTrigger.click();
+ await page.waitForTimeout(300);
+ assert.equal(await page.locator(".site-details-owner-menu").count(),1,"owner actions open from the owner trigger");
+ await ownerMenuTrigger.click();
+ await page.waitForTimeout(260);
+ assert.equal(await page.locator(".site-details-owner-menu").count(),0,"owner actions close from the same trigger");
+ assert.equal(await ownerMenuTrigger.getAttribute("aria-expanded"),"false","the owner trigger exposes its closed state");
+ await ownerMenuTrigger.click();
+ await page.waitForTimeout(300);
+ assert.equal(await page.locator(".site-details-owner-menu").count(),1,"owner actions open again after toggling closed");
+ await page.keyboard.press("Escape");
+ await page.waitForTimeout(260);
  const alarmSwitch=page.getByRole("switch",{name:"Alarm email notification"});
  assert.equal(await alarmSwitch.count(),1,"Alarm notification uses a real switch");
  assert.equal(await page.locator(".site-details-alarm-switch.wd-glass").count(),1,"the alarm switch uses the shared glass material");
@@ -229,7 +334,8 @@ async function openSite(page,query="?device=inverter"){
  await page.locator('.plants-detail-tab[data-section="overview"]').click();
  await settle(page);
  assert.equal(pathname(page),"/plants/p25");
- await page.locator('.plants-detail-tab[data-section="site"]').click();
+ await page.goBack({waitUntil:"domcontentloaded"});
+ await page.waitForFunction(()=>document.documentElement.dataset.ready==="true");
  await settle(page);
  assert.equal(pathname(page),"/plants/p25/site");
  assert.equal(await page.locator(".site-details-page-title").innerText(),"Wärmeverbund Nord Updated","saved local values survive an in-session tab switch");
@@ -244,13 +350,15 @@ async function openSite(page,query="?device=inverter"){
 
  await page.locator("#site-details-contactEmail").fill("service@installer.example");
  await page.locator("#site-details-plantName").fill("Unsaved draft");
- await page.locator('.plants-detail-tab[data-section="overview"]').click();
+ await page.locator('.plants-detail-tab[data-section="site-v2"]').click();
  await settle(page);
  assert.equal(pathname(page),"/plants/p25/site","unsaved changes block tab navigation");
  assert.equal(await page.getByText("Save or cancel the Site details changes before leaving",{exact:true}).count(),1);
 
- page.once("dialog",dialog=>dialog.accept());
  await page.getByRole("button",{name:"Cancel",exact:true}).click();
+ await settle(page);
+ assert.equal(await page.locator(".plants-device-dialog--confirm").count(),1,"discard confirmation uses the shared dialog");
+ await page.locator(".plants-device-confirm-actions").getByRole("button",{name:"Discard changes"}).click();
  await settle(page);
  assert.equal(await page.getByRole("button",{name:"Edit",exact:true}).count(),1);
  assert.equal(await page.locator(".site-details-page-title").innerText(),"Wärmeverbund Nord Updated");

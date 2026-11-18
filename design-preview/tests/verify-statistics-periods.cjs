@@ -43,8 +43,16 @@ const settle=page=>page.evaluate(()=>Promise.all(document.getAnimations().map(an
  await settle(page);
  assert.equal((await page.locator('.plant-statistics-period-label').textContent()).trim(),'Today','next navigation returns to the current day');
 
- await page.locator('.plant-statistics-period-trigger').click();
+ const statisticsPeriodTrigger=page.locator('.plant-statistics-period-trigger');
+ await statisticsPeriodTrigger.click();
  assert.equal(await page.locator('.plant-statistics-period-picker').isVisible(),true,'the picker opens from the period trigger');
+ await statisticsPeriodTrigger.click();
+ await page.waitForTimeout(260);
+ assert.equal(await page.locator('.plant-statistics-period-picker').count(),0,'the picker closes from the same period trigger');
+ assert.equal(await statisticsPeriodTrigger.getAttribute('aria-expanded'),'false','the period trigger exposes its closed state');
+ await statisticsPeriodTrigger.click();
+ await page.waitForTimeout(320);
+ assert.equal(await page.locator('.plant-statistics-period-picker').isVisible(),true,'the picker opens again after toggling closed');
  assert.equal(await page.locator('.plant-statistics-period-panel-nav.wd-glass').count(),2,'the picker arrows use shared glass buttons');
  assert.deepEqual(
   await page.locator('.plant-statistics-period-picker').getByRole('tab').allTextContents(),

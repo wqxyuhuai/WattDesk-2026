@@ -182,6 +182,7 @@ const assert=require('node:assert/strict');
    assert.equal(nested.outer,false,`${name} must not hand the glow to the popover`);
   }
   await page.screenshot({path:'tests/output/home-glass-figma-nested-glow.png'});
+  await page.keyboard.press('Escape');await page.waitForTimeout(300);
   // Light glass cannot borrow the dark white rim: a white arc on a near-white
   // face disappears. Assert the lighter frost, the stronger border, and a dark
   // pointer arc instead of a white one.

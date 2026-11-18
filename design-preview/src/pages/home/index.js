@@ -95,7 +95,7 @@ const periodHeader=get("14561:836"),periodArea=get("14612:7602");
 const layoutCtx={get,layoutNode,homeColumn,homeCanvas,workspacePanel,statusCards,energyCards,businessCards,periodHeader,periodArea};
 const layout=createHomeLayout(layoutCtx);
 const motion=createHomeMotion({duration:motionDuration,easing:motionEasing,reducedMotion});
-const {toast,close,popover,registerPanel,reposition}=createPopoverController({overlays:document.querySelector("#overlays"),toastElement:document.querySelector("#toast"),motion,glass});
+const {toast,close,toggle,popover,registerPanel,reposition}=createPopoverController({overlays:document.querySelector("#overlays"),toastElement:document.querySelector("#toast"),motion,glass});
 // The workspace controller is created after the page modules; route calls made
 // by cards and menus resolve through this late-bound wrapper.
 let workspace;
@@ -164,18 +164,20 @@ const search=createHomeSearch({
  get,glass,motion,overlays:document.querySelector("#overlays"),toast,close,homeColumn,targetChrome,
  navigate:(route,options)=>openRoute(route,options)
 });
-const period=createPeriodControl({get,action,glass,registerPanel,close,toast});
+const period=createPeriodControl({get,action,glass,registerPanel,close,toggle,toast});
 layoutCtx.period=period;
 for(const n of scene.filter(n=>/Menu Dots/.test(n.name))){
- action(n.id,"Chart options",()=>{
-  const panel=popover(get(n.id),'<h2>Chart options</h2><button data-export>Download preview CSV</button>',220);
+ const trigger=get(n.id);
+ action(n.id,"Chart options",()=>toggle(trigger,()=>{
+  const panel=popover(trigger,'<h2>Chart options</h2><button data-export>Download preview CSV</button>',220);
   panel.querySelector("[data-export]").onclick=()=>{
    const csv="Period,Energy generated (MWh),Energy consumed (MWh)\nLast 7 days,76.7,52.4\n";
    const url=URL.createObjectURL(new Blob([csv],{type:"text/csv"})),a=document.createElement("a");a.href=url;a.download="wattdesk-home-preview.csv";a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);close()
-  }
- });
+  };
+  return panel;
+ }));
  // Keep the glyph centre, expand its circular hit target to 30px.
- const trigger=get(n.id);trigger.classList.add("chart-menu");trigger.style.setProperty("--icon-mask",`url("${assetURL(assets[n.id])}")`);
+ trigger.classList.add("chart-menu");trigger.style.setProperty("--icon-mask",`url("${assetURL(assets[n.id])}")`);
  // The exported heading is only 18px tall; the 30px control must paint outside it.
  trigger.parentElement.classList.add("chart-card-heading");
  Object.assign(trigger.style,{pointerEvents:"auto",left:(n.x-6)+"px",top:(n.y-6)+"px",width:"30px",height:"30px"});
@@ -190,7 +192,7 @@ function updateThemeButton(mode){
 }
 updateThemeButton(initialTheme);
 targetChrome.theme.addEventListener("click",()=>themeController?.toggle());
-targetChrome.history.addEventListener("click",()=>openHistory());
+targetChrome.history.addEventListener("click",()=>toggle(targetChrome.history,openHistory));
 const homeSnapshot=()=>({scrollTop:homeColumn.scrollTop,query:search.input.value,period:period.label(),range:period.rangeSnapshot()});
 const recentVisits=createRecentVisits({
  get,onOpen:openRoute,resolvePlantName,resolveServiceTicketTitle
@@ -207,7 +209,7 @@ workspace=createWorkspace({
 // surface down with it; the error stays visible in the console.
 try{
  const plantsPage=createPlantsPage({
-   glass,registerPanel,close,reposition,toast,
+   glass,registerPanel,close,toggle,reposition,toast,
   onOpenPlant:plant=>openRouteInNewTab("plants",{params:{plantId:plant.id}}),
   onOpenPlantSection:params=>openRoute("plants",{params}),
   onOpenTicket:ticket=>openRouteInNewTab("service",{params:{ticketId:ticket.id}}),
@@ -223,7 +225,7 @@ try{
 // route-specific detail tab; the source list tab remains available.
 try{
  serviceTicketsPage=createServiceTicketPage({
-  glass,registerPanel,reposition,close,toast,
+  glass,registerPanel,reposition,close,toggle,toast,
   onOpenTicket:ticket=>openRouteInNewTab("service",{params:{ticketId:ticket.id}}),
   onOpenNewTicket:()=>openRouteInNewTab("service",{params:{newTicket:true}}),
   onNewTicketPublished:ticket=>workspace?.replaceActiveParams({ticketId:ticket.id}),
@@ -243,25 +245,30 @@ function openMenu(anchor,label,children){
  return registerPanel(panel,anchor,{label,radius:30});
 }
 targetChrome.language.addEventListener("click",()=>{
- const list=menuList();
- [["English",true],["简体中文",false],["Deutsch",false],["Čeština",false]].forEach(([name,checked])=>{
-  const row=menuRow(name,{checked});
-  row.addEventListener("click",()=>{
-   for(const item of list.children)item.setAttribute("aria-checked",String(item===row));
-   close();
+ toggle(targetChrome.language,()=>{
+  const list=menuList();
+  [["English",true],["简体中文",false],["Deutsch",false],["Čeština",false]].forEach(([name,checked])=>{
+   const row=menuRow(name,{checked});
+   row.addEventListener("click",()=>{
+    for(const item of list.children)item.setAttribute("aria-checked",String(item===row));
+    close();
+   });
+   list.append(row);
   });
-  list.append(row);
+  return openMenu(targetChrome.language,"Language",[list]);
  });
- openMenu(targetChrome.language,"Language",[list]);
 });
 targetChrome.settings.addEventListener("click",()=>{
- const panel=openMenu(targetChrome.settings,"Appearance",[menuList()]);
- const list=panel.querySelector(".wd-menu-list");
- const row=menuRow("Light / dark mode");
- row.addEventListener("click",()=>{close();themeController?.toggle();});
- list.append(row);
+ toggle(targetChrome.settings,()=>{
+  const panel=openMenu(targetChrome.settings,"Appearance",[menuList()]);
+  const list=panel.querySelector(".wd-menu-list");
+  const row=menuRow("Light / dark mode");
+  row.addEventListener("click",()=>{close();themeController?.toggle();});
+  list.append(row);
+  return panel;
+ });
 });
-targetChrome.support.addEventListener("click",()=>openMenu(targetChrome.support,"WattDesk",[menuNote("Home visual preview")]));
+targetChrome.support.addEventListener("click",()=>toggle(targetChrome.support,()=>openMenu(targetChrome.support,"WattDesk",[menuNote("Home visual preview")])));
 // Keep the single annotated observation from Figma visible for visual review.
 // Live chart sampling will be connected when the real time-series API exists.
 // The shell and Home surface are assembled. Measure once, arm only the marked

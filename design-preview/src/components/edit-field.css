@@ -5,6 +5,8 @@
  border-radius:10px;
  background:color-mix(in srgb,var(--wd-label-primary) 8%,transparent);
  color:var(--wd-label-primary);
+ -webkit-backdrop-filter:blur(14px) saturate(1.14);
+ backdrop-filter:blur(14px) saturate(1.14);
 }
 .wd-edit-field:hover{background:color-mix(in srgb,var(--wd-label-primary) 11%,transparent)}
 .wd-edit-field:is(:focus,:focus-within){
@@ -18,5 +20,9 @@
 .wd-edit-field:has([aria-invalid="true"]){outline:1px solid var(--wd-accent-red);outline-offset:0}
 .wd-edit-field::placeholder{color:var(--wd-label-tertiary)}
 :root[data-theme="light"] .wd-edit-field{background:var(--wd-fill-quaternary)}
+:root[data-theme="light"] .wd-edit-field{
+ -webkit-backdrop-filter:blur(16px) saturate(1.20);
+ backdrop-filter:blur(16px) saturate(1.20);
+}
 :root[data-theme="light"] .wd-edit-field:hover{background:var(--wd-fill-tertiary)}
 :root[data-theme="light"] .wd-edit-field:is(:focus,:focus-within){background:var(--wd-fill-tertiary)}

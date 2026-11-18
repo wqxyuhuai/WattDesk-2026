@@ -10,7 +10,8 @@
 | Plants | `/plants`；`/plants?connection=online`；`/plants?status=attention` | 本地示例数据列表；两个查询预设分别对应首页在线 / Attention 状态卡 |
 | 电站详情 | `/plants/:id`；`/plants/:id?device=inverter|bms|heater` | 从列表行或自动建站 `?` 提示中的 `setup` 在新标签打开；Overview 默认显示设备顺序第一项，多设备切换同步 `device` 查询参数 |
 | 电站 Devices | `/plants/:id/devices`；可附带 `?device=` | 当前工作区标签内的设备列表；支持刷新、复制链接和浏览器历史，保留设备卡片、设置与本地增删改预览 |
-| 电站 Site details | `/plants/:id/site`；可附带 `?device=` | 当前工作区标签内的电站资料查看与整页编辑；保存、校验和资料修改只保留在当前 Plants 页面会话，刷新恢复样例 |
+| 隐藏兼容站资料 | `/plants/:id/site`；可附带 `?device=` | 旧资料页直达兼容路由，不在详情页签中显示；会话内保存与刷新恢复样例的边界不变 |
+| 电站 Site details | `/plants/:id/site-v2`；可附带 `?device=` | 当前可见的站点资料页；旧 `/site` 仅保留为隐藏兼容路由。地图通过 Mapbox Static Images API 加载 |
 | 电站子页占位 | `/plants/:id/faults`、`/plants/:id/logs`、`/plants/:id/tickets`；可附带 `?device=` | Operations 三卡在当前工作区标签内进入；面包屑为 `Plants / 电站名 / 子页名`，当前只显示明确占位 |
 | Service ticket | `/service` | 本地示例卡片列表，支持状态/范围筛选、搜索；`New ticket` 在新标签打开新建编辑页 |
 | 新建工单 | `/service/new` | 新标签中的工单详情同构编辑页；标题自动聚焦，发布后当前标签切换为 `/service/:ticketId` |
@@ -31,6 +32,7 @@
 - 电站详情使用本地数据中的稳定 `id`（如 `p02`），不按名称或数组下标生成 URL。可选 `device` 只接受 `inverter`、`bms`、`heater`；缺省时页面读取该电站设备顺序并选中第一项。刷新、复制链接和标签恢复保留当前设备。详情页接入真实接口后沿用同一 URL 契约，接口 ID 或稳定设备 ID 变化必须视为 URL 变更。
 - Devices 使用稳定 slug `devices`；与 Overview 之间切换写入当前工作区标签历史，并保留 `device` 查询参数。刷新、复制链接、标签恢复和浏览器前进/后退仍停留在对应状态。
 - Site details 使用稳定 slug `site`；与 Overview、Devices 之间切换写入当前工作区标签历史，并保留 `device` 查询参数。存在未保存编辑时，页签和父级返回先提示保存或取消。
+- 可见的 Site details 使用稳定 slug `site-v2`，详情导航固定为 `Overview / Devices / Site details`；旧 `site` 隐藏且不显示页签。该页读取当前会话的 Site details 数据；刷新、复制链接与浏览器历史均保持 `device` 参数。
 - Operations 子页只接受 `faults`、`logs`、`tickets` 三个稳定 slug；刷新、复制链接、标签恢复和浏览器前进/后退均保留 `device` 查询参数。未知子页不得静默回落到 Overview。
 - Service Ticket 详情使用稳定 `ticketId`（如 `st-25638663`）；可读票号只用于显示，不作为路由主键。`/service/new` 是新建编辑页的保留路径，直接刷新会重新开始空白编辑；发布成功后当前标签原地替换为稳定 `ticketId` URL。当前本地新建工单只在页面会话内存在，刷新其临时详情 URL 会显示 `Ticket not found`。
 

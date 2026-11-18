@@ -2,11 +2,13 @@
 // Only runtime files are copied; design archives, screenshots and tests stay local.
 const fs = require('node:fs');
 const path = require('node:path');
+const {envValue} = require('./env.cjs');
 
 const root = path.resolve(__dirname, '..');
 const publicSite = process.argv.includes('--public');
 const outArg = process.argv.find(argument => argument.startsWith('--out='));
 const out = path.resolve(root, outArg ? outArg.slice('--out='.length) : 'dist');
+const mapboxToken = envValue('WATTDESK_MAPBOX_TOKEN');
 
 const required = [
   'home.html',
@@ -39,7 +41,11 @@ const copy = (from, to = from) => {
 copy('src');
 copy('home-assets');
 
-const html = fs.readFileSync(path.join(root, 'home.html'), 'utf8');
+const escapeAttribute = value => value.replaceAll('&','&amp;').replaceAll('"','&quot;').replaceAll('<','&lt;').replaceAll('>','&gt;');
+const injectMapboxToken = html => mapboxToken
+  ? html.replace(/<meta name="mapbox-access-token" content="[^"]*">/, `<meta name="mapbox-access-token" content="${escapeAttribute(mapboxToken)}">`)
+  : html;
+const html = injectMapboxToken(fs.readFileSync(path.join(root, 'home.html'), 'utf8'));
 const robots = publicSite ? '' : '<meta name="robots" content="noindex, nofollow">';
 const deployHtml = robots ? html.replace('<head>', `<head>${robots}`) : html;
 fs.writeFileSync(path.join(out, 'index.html'), deployHtml);

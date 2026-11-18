@@ -15,7 +15,15 @@ const png=Buffer.from(
     page.on('pageerror',error=>errors.push(error.message));
     page.on('console',message=>{if(message.type()==='error')errors.push(message.text())});
     page.on('response',response=>{if(response.status()>=400)errors.push(`${response.status()} ${response.url()}`)});
-    page.on('dialog',dialog=>dialog.accept());
+    page.on('dialog',dialog=>{
+      errors.push(`native dialog: ${dialog.message()}`);
+      dialog.dismiss();
+    });
+    const settle=target=>target.evaluate(()=>Promise.all(
+      document.getAnimations()
+        .filter(animation=>animation.effect?.getTiming().iterations!==Infinity)
+        .map(animation=>animation.finished.catch(()=>{}))
+    ));
 
     const ready=()=>page.waitForFunction(()=>document.documentElement.dataset.ready==='true');
     await page.goto(`${origin}/service`,{waitUntil:'domcontentloaded'});
@@ -372,8 +380,15 @@ const png=Buffer.from(
     await page.locator('.service-scope-button[data-scope="mentioned"]').click();
     assert.equal(await page.locator('.service-card').count(),2);
     await page.locator('.service-scope-button[data-scope="all"]').click();
-    await page.locator('.service-status-filter').click();
+    const serviceStatusTrigger=page.locator('.service-status-filter');
+    await serviceStatusTrigger.click();
     assert.deepEqual(await page.locator('.service-status-menu .wd-menu-row').allTextContents(),['All status','Ongoing','Closed']);
+    await serviceStatusTrigger.click();
+    await page.waitForTimeout(260);
+    assert.equal(await page.locator('.service-status-menu').count(),0,'the status filter closes from the same trigger');
+    assert.equal(await serviceStatusTrigger.getAttribute('aria-expanded'),'false','the status filter exposes its closed state');
+    await serviceStatusTrigger.click();
+    await page.waitForTimeout(300);
     await page.locator('.service-status-menu .wd-menu-row[data-status="closed"]').click();
     assert.equal(await page.locator('.service-card').count(),3);
     assert.equal((await page.locator('.service-status-filter').innerText()).trim(),'Closed');
@@ -446,9 +461,17 @@ const png=Buffer.from(
     assert.equal(wrappedTitleEditor.whiteSpace,'pre-wrap');
     assert.equal(wrappedTitleEditor.overflowWrap,'anywhere');
     assert.equal(wrappedTitleEditor.overflowY,'hidden');
-    await page.locator('.service-property-plant-trigger').click();
+    const servicePlantTrigger=page.locator('.service-property-plant-trigger');
+    await servicePlantTrigger.click();
     await page.waitForTimeout(120);
     assert.equal(await page.locator('.service-plant-picker').count(),1);
+    await servicePlantTrigger.click();
+    await page.waitForTimeout(260);
+    assert.equal(await page.locator('.service-plant-picker').count(),0,'the plant picker closes from the same trigger');
+    assert.equal(await servicePlantTrigger.getAttribute('aria-expanded'),'false','the plant trigger exposes its closed state');
+    await servicePlantTrigger.click();
+    await page.waitForTimeout(300);
+    assert.equal(await page.locator('.service-plant-picker').count(),1,'the plant picker opens again after toggling closed');
     assert.equal(await page.locator('.service-plant-picker .plants-filter-flyout-content').count(),1);
     assert.equal(await page.locator('.service-plant-picker .plants-filter-search-field').count(),1);
     assert.equal(await page.locator('.service-plant-picker .service-plant-option').count(),46);
@@ -1115,8 +1138,15 @@ const png=Buffer.from(
     assert.equal(await ownActions.evaluate(element=>getComputedStyle(element).opacity),'0');
     await ownReply.hover();
     await page.waitForTimeout(260);
-    await ownReply.getByRole('button',{name:'Reply actions'}).click();
+    const ownReplyActions=ownReply.getByRole('button',{name:'Reply actions'});
+    await ownReplyActions.click();
     assert.equal(await page.locator('.service-comment-menu').getByRole('menuitem',{name:'Edit'}).count(),1);
+    await ownReplyActions.click();
+    await page.waitForTimeout(260);
+    assert.equal(await page.locator('.service-comment-menu').count(),0,'reply actions close from the same trigger');
+    assert.equal(await ownReplyActions.getAttribute('aria-expanded'),'false','reply actions expose their closed state');
+    await ownReplyActions.click();
+    await page.waitForTimeout(300);
     assert.equal(await page.locator('.service-comment-menu').getByRole('menuitem',{name:'Delete'}).count(),1);
     assert.deepEqual(
       await page.locator('.service-comment-menu .wd-menu').evaluate(element=>({
@@ -1219,10 +1249,17 @@ const png=Buffer.from(
     await page.waitForTimeout(260);
     await page.locator('#c-663-3').getByRole('button',{name:'Reply actions'}).click();
     await page.locator('.service-comment-menu').getByRole('menuitem',{name:'Delete'}).click();
-    await page.waitForTimeout(120);
+    await settle(page);
+    assert.equal(await page.locator('.plants-device-dialog--confirm').count(),1,'reply deletion uses the shared confirmation dialog');
+    await page.locator('.plants-device-confirm-actions').getByRole('button',{name:'Delete reply'}).click();
+    await settle(page);
     assert.equal(await page.locator('#c-663-3').count(),0);
 
     await page.getByRole('button',{name:'Mark as closed'}).click();
+    await settle(page);
+    assert.equal(await page.locator('.plants-device-dialog--confirm').count(),1,'status changes use the shared confirmation dialog');
+    await page.locator('.plants-device-confirm-actions').getByRole('button',{name:'Mark as closed'}).click();
+    await settle(page);
     assert.equal(await page.locator('.service-closed-note').count(),1);
     assert.equal(await page.locator('.service-reply-editor').count(),0);
 
@@ -1267,7 +1304,15 @@ const png=Buffer.from(
         threadTop:document.querySelector('.service-thread').getBoundingClientRect().top
       };
     });
-    await page.locator('.service-more-button').click();
+    const serviceMoreTrigger=page.locator('.service-more-button');
+    await serviceMoreTrigger.click();
+    assert.equal(await page.locator('.service-more-menu').count(),1,'ticket actions open from the more trigger');
+    await serviceMoreTrigger.click();
+    await page.waitForTimeout(260);
+    assert.equal(await page.locator('.service-more-menu').count(),0,'ticket actions close from the same trigger');
+    assert.equal(await serviceMoreTrigger.getAttribute('aria-expanded'),'false','ticket actions expose their closed state');
+    await serviceMoreTrigger.click();
+    await page.waitForTimeout(300);
     const ticketMenu=page.locator('.service-more-menu .wd-menu');
     assert.equal(await ticketMenu.getByRole('heading').count(),0,'Ticket actions menu must not render a visible heading');
     assert.deepEqual(

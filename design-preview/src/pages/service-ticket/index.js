@@ -9,6 +9,7 @@ import {createTextElement as text} from "../../foundations/dom.js";
 import {assetURL,createMaskedIcon,opaqueMaskURL} from "../../components/icons.js";
 import {createAvatar} from "../../components/avatar.js";
 import {createStandardButton} from "../../components/controls.js";
+import {createConfirmDialog} from "../../components/confirm-dialog.js";
 import {createSearchField} from "../../components/search-surface.js";
 import {createScrollFeedback} from "../../components/scroll-feedback.js";
 import {createPageHeader,createPageHeaderAction} from "../../components/page-header.js";
@@ -191,6 +192,7 @@ export function createServiceTicketPage({
   registerPanel,
   reposition,
   close,
+  toggle,
   toast,
   onOpenTicket,
   onOpenNewTicket,
@@ -204,6 +206,7 @@ export function createServiceTicketPage({
   const cardEffectCleanups=new Set();
   const replyScrollFeedbacks=new Set();
   let detailAlignmentObserver=null;
+  let activeConfirmation=null;
   const state={
     query:"",
     scope:"all",
@@ -240,6 +243,19 @@ export function createServiceTicketPage({
     glass.addSurface({host:node,radius:18});
     dynamicSurfaces.add(node);
     return node;
+  }
+
+  function openConfirmation(options){
+    activeConfirmation?.close({immediate:true,restoreFocus:false});
+    activeConfirmation=createConfirmDialog({
+      glass,
+      ...options,
+      onClose:()=>{
+        activeConfirmation=null;
+        options.onClose?.();
+      }
+    });
+    return activeConfirmation;
   }
 
   function sweepDynamicSurfaces(){
@@ -401,10 +417,7 @@ export function createServiceTicketPage({
     registerPanel(panel,statusTrigger,{label:"Status",radius:30,width:200,align:"start"});
   }
 
-  statusTrigger.addEventListener("click",()=>{
-    if(statusTrigger.getAttribute("aria-expanded")==="true")close();
-    else openStatusMenu();
-  });
+  statusTrigger.addEventListener("click",()=>toggle(statusTrigger,openStatusMenu));
 
   function visibleTickets(){
     const query=state.query.trim().toLocaleLowerCase();
@@ -996,10 +1009,7 @@ export function createServiceTicketPage({
       plantTrigger.setAttribute("aria-label",plant?`Related plant: ${plant.name}`:"Select a related plant");
     };
     syncPlant();
-    plantTrigger.addEventListener("click",()=>{
-      if(plantTrigger.getAttribute("aria-expanded")==="true")close();
-      else openPlantPicker(plantTrigger,draft,syncPlant);
-    });
+    plantTrigger.addEventListener("click",()=>toggle(plantTrigger,()=>openPlantPicker(plantTrigger,draft,syncPlant)));
     const plantItem=text("div","service-meta-item service-meta-item--plant");
     plantItem.append(
       text("span","service-meta-label","Plant","Caption1/Regular"),
@@ -1176,11 +1186,19 @@ export function createServiceTicketPage({
       const remove=menuRow("Delete ticket");
       remove.addEventListener("click",()=>{
         close(true);
-        if(!confirm("Delete this ticket from the local preview?"))return;
-        const index=tickets.findIndex(item=>item.id===ticket.id);
-        if(index>=0)tickets.splice(index,1);
-        toast("Ticket deleted from this local preview");
-        onBackToList?.();
+        openConfirmation({
+          title:"Delete ticket?",
+          description:"Delete this ticket from the local preview? This does not erase any external ticket history.",
+          confirmLabel:"Delete ticket",
+          confirmClassName:"plants-device-danger-button",
+          icon:createMaskedIcon(assetURL("plants/devices/actions/delete.svg"),"plants-device-action-icon"),
+          onConfirm:()=>{
+            const index=tickets.findIndex(item=>item.id===ticket.id);
+            if(index>=0)tickets.splice(index,1);
+            toast("Ticket deleted from this local preview");
+            onBackToList?.();
+          }
+        });
       });
       list.append(remove);
     }
@@ -1210,15 +1228,23 @@ export function createServiceTicketPage({
     const remove=menuRow("Delete");
     remove.addEventListener("click",()=>{
       close(true);
-      if(!confirm("Delete this reply from the local preview?"))return;
-      const index=ticket.comments.findIndex(item=>item.id===comment.id);
-      if(index>=0)ticket.comments.splice(index,1);
-      for(const item of ticket.comments){
-        if(item.replyToId===comment.id)item.replyToId=null;
-      }
-      ticket.updatedMinutes=0;
-      toast("Reply deleted from this local preview");
-      renderDetail(ticket.id,{keepScroll:true});
+      openConfirmation({
+        title:"Delete reply?",
+        description:"Delete this reply from the local preview? This action removes it from the current ticket session.",
+        confirmLabel:"Delete reply",
+        confirmClassName:"plants-device-danger-button",
+        icon:createMaskedIcon(assetURL("plants/devices/actions/delete.svg"),"plants-device-action-icon"),
+        onConfirm:()=>{
+          const index=ticket.comments.findIndex(item=>item.id===comment.id);
+          if(index>=0)ticket.comments.splice(index,1);
+          for(const item of ticket.comments){
+            if(item.replyToId===comment.id)item.replyToId=null;
+          }
+          ticket.updatedMinutes=0;
+          toast("Reply deleted from this local preview");
+          renderDetail(ticket.id,{keepScroll:true});
+        }
+      });
     });
     list.append(edit,remove);
     mountMenu(panel,{label:"Reply actions",children:[list]});
@@ -1371,10 +1397,7 @@ export function createServiceTicketPage({
       for(const item of more.querySelectorAll(":scope>.wd-control-label"))item.remove();
       more.prepend(maskedMore());
       more.setAttribute("aria-haspopup","menu");
-      more.addEventListener("click",()=>{
-        if(more.getAttribute("aria-expanded")==="true")close(true);
-        else renderCommentMoreMenu(more,ticket,comment,actions);
-      });
+      more.addEventListener("click",()=>toggle(more,()=>renderCommentMoreMenu(more,ticket,comment,actions)));
       actions.append(more);
     }
     const commentTime=createTimeLabel(comment.createdMinutes,{ageMinutes:true,className:"service-comment-time",typeStyle:"Caption1/Regular"});
@@ -1647,10 +1670,7 @@ export function createServiceTicketPage({
         for(const label of more.querySelectorAll(":scope>.wd-control-label"))label.remove();
         more.prepend(maskedMore());
         more.setAttribute("aria-haspopup","menu");
-        more.addEventListener("click",()=>{
-          if(more.getAttribute("aria-expanded")==="true")close();
-          else renderMoreMenu(more,ticket);
-        });
+        more.addEventListener("click",()=>toggle(more,()=>renderMoreMenu(more,ticket)));
         titleRow.append(more);
       }
       main.append(titleRow);
@@ -1690,18 +1710,28 @@ export function createServiceTicketPage({
     if((CURRENT_USER.role==="service"||ticket.authorId===CURRENT_USER.id)&&!state.editingTicket){
       const toggle=standardButton(ticket.status==="ongoing"?"Mark as closed":"Reopen ticket","neutral","service-status-toggle");
       toggle.addEventListener("click",()=>{
-        if(!confirm(ticket.status==="ongoing"?"Mark this ticket as closed?":"Reopen this ticket?"))return;
-        ticket.status=ticket.status==="ongoing"?"closed":"ongoing";
-        ticket.updatedMinutes=0;
-        if(ticket.status==="closed"){
-          state.replyTargetId=null;
-          state.replyDraft=null;
-          state.commentDraft=null;
-        }
-        state.editingCommentId=null;
-        state.commentEdit=null;
-        toast(`Ticket ${ticket.status==="closed"?"closed":"reopened"} in this local preview`);
-        renderDetail(ticket.id,{keepScroll:true});
+        const closing=ticket.status==="ongoing";
+        openConfirmation({
+          title:closing?"Mark ticket as closed?":"Reopen ticket?",
+          description:closing
+            ?"Closed tickets stop accepting new replies in this local preview."
+            :"Reopening allows new replies and continues the local preview session.",
+          confirmLabel:closing?"Mark as closed":"Reopen ticket",
+          danger:false,
+          onConfirm:()=>{
+            ticket.status=closing?"closed":"ongoing";
+            ticket.updatedMinutes=0;
+            if(ticket.status==="closed"){
+              state.replyTargetId=null;
+              state.replyDraft=null;
+              state.commentDraft=null;
+            }
+            state.editingCommentId=null;
+            state.commentEdit=null;
+            toast(`Ticket ${ticket.status==="closed"?"closed":"reopened"} in this local preview`);
+            renderDetail(ticket.id,{keepScroll:true});
+          }
+        });
       });
       aside.append(toggle);
     }
@@ -1778,6 +1808,8 @@ export function createServiceTicketPage({
     },
     hide(){
       close(true);
+      activeConfirmation?.close({immediate:true,restoreFocus:false});
+      activeConfirmation=null;
       detailAlignmentObserver?.disconnect();
       detailAlignmentObserver=null;
       element.hidden=true;

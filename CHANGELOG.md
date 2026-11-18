@@ -1,5 +1,14 @@
 # 更新记录
 
+## 2026-11-18
+
+- Site details 最终入口收口为 `Overview / Devices / Site details`。可见 Site details 使用稳定 `/plants/:id/site-v2`，标签与页面隐藏标题删除数字 `2`；旧 `/plants/:id/site` 仅保留隐藏兼容路由。
+- Hero 地图卡增加 `1px var(--wd-separator-nonopaque)` 浅描边且不加投影。圆角只由 `border-radius + overflow:hidden` 裁切，移除会削掉四角描边的 `clip-path`；地图宽度按 Hero padding-box 内容区计算。
+- Mapbox 最终使用一张 `dark-v11 / light-v11` 响应，同时渲染清晰底层与 `blur(10px)` 上层；`28deg` 蒙版在 `42%–78%` 从 0 渐进到 10px，模糊层 overscan `10px`。深浅主题各用独立预加载 map bank，以共享 620ms 主题动效交叉淡变。
+- 地图入场只在当前文档首次真正显示时播放；同文档切换页签返回立即显示，整页刷新后重新播放。减少动态效果时按共享规则近似即时切换。
+- Site details 标题编辑器改为块级 textarea，承托层与输入框同为 44px；查看/编辑态 X、顶部基线和长标题行为一致，不再因 inline line box 上浮或出现额外灰条。
+- 本轮同步 `AGENTS.md`、`DESIGN-SYSTEM.md`、`docs/USER-REQUIREMENTS.md`、`docs/SITE-DETAILS.md`、`docs/COMPONENTS.md`、`docs/ARCHITECTURE.md`、`docs/PROJECT-STATUS.md`、`docs/PROJECT-MAP.md`、`docs/ROUTING.md`、`docs/LESSONS-LEARNED.md` 与 Plants README。只归档最终有效规则，旧的第四页签、双层地图、`Site details 2` 命名、整图统一模糊和 `clip-path` 裁边不再作为现行实现。
+
 ## 2026-11-10
 
 - 完成规则归档（仅文档）：在 `docs/USER-REQUIREMENTS.md` 建立今日最终规则总表，收口 `.wd-page-content`、`.wd-edit-field`、标准主按钮与危险按钮、真实玻璃 switch、共享滚动、Site details 完整契约，以及当前工作树中的 Devices / Statistics 最终状态；同步修正 Site details 页面规格与组件手册中的旧 select、行高、卡片材质和 API 冲突，并在 `LESSONS-LEARNED.md` 增加对应防回归项。

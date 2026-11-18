@@ -1,6 +1,6 @@
 # Service Ticket 页面说明
 
-更新：2026-10-30
+更新：2026-11-13
 
 状态：**P0 本地交互预览已实现**。`/service` 提供卡片列表，`/service/:ticketId` 可直接打开和刷新。筛选、搜索、新建、编辑、回复、提及、附件本地预览和状态切换均在当前会话内真实执行；仍未接入后端、登录权限、上传、持久化或通知服务。
 
@@ -297,7 +297,7 @@ Properties 的吸顶位置由标题顶部相对详情滚动视口的实际距离
 
 | 属性 | 交互 |
 |---|---|
-| Status | 显示当前状态；有权限时点击打开共享 `.wd-menu`，执行关闭或重开 |
+| Status | 显示当前状态；有权限时点击使用共享 `toggle()` 打开共享 `.wd-menu`，再次点击收起，菜单内执行关闭或重开 |
 | Plant | 显示关联电站；是否允许跳转 `/plants/:id` 待电站详情完成后决定 |
 | Author | 共享头像和名称 |
 | Created | 使用全站共享时间规则：7 天内相对时间，之后显示本地 `YYYY/MM/DD HH:mm` |
@@ -314,7 +314,8 @@ Properties 的吸顶位置由标题顶部相对详情滚动视口的实际距离
 - `Delete ticket`
 - `Close ticket / Reopen ticket`，也可只保留在属性栏，避免重复入口
 
-菜单必须复用共享菜单浮层、Glass Surface、行高和勾选槽规则；不能另造一套页面菜单。菜单不显示可见标题，只以 `aria-label="Ticket actions"` 保留无障碍名称，并由共享 `mountMenu()` 自动使用 `.wd-menu--no-heading` 的上下各 `10px` 内距。
+菜单必须复用共享菜单浮层、Glass Surface、行高和勾选槽规则；不能另造一套页面菜单。Ticket actions 与 Reply actions 必须通过共享 `toggle()` 由同一触发器开合，不能先无条件关闭再重开。菜单不显示可见标题，只以 `aria-label="Ticket actions"` 保留无障碍名称，并由共享 `mountMenu()` 自动使用 `.wd-menu--no-heading` 的上下各 `10px` 内距。
+- `Delete ticket` 与属性栏的关闭 / 重开动作必须使用共享 `createConfirmDialog()`，不得调用浏览器原生 `confirm()`；危险删除使用红色确认按钮，普通状态变更使用中性确认按钮。
 
 ## 9. 回复与讨论
 
@@ -327,7 +328,7 @@ Properties 的吸顶位置由标题顶部相对详情滚动视口的实际距离
 - 楼层底部常驻回复入口；不再在楼层头部显示独立 `Reply` 按钮。
 - 自己的楼层在 hover / 键盘 focus 时显示 36px 三点玻璃圆钮，菜单仅包含编辑和删除。
 
-有权限时，自己的回复三点操作入口在 hover / 键盘 focus 时渐显；触摸设备不能依赖 hover，需要始终有可见入口。操作容器使用共享 `.wd-hover-reveal-host` / `.wd-hover-reveal`，透明度进入 `240ms`、离开 `360ms`，不能只依赖内部按钮自身的 hover transition。点击圆钮使用共享菜单浮层显示 `Edit` / `Delete`，编辑原位切换，删除使用确认弹窗，指针离开且菜单关闭后圆钮渐隐。
+有权限时，自己的回复三点操作入口在 hover / 键盘 focus 时渐显；触摸设备不能依赖 hover，需要始终有可见入口。操作容器使用共享 `.wd-hover-reveal-host` / `.wd-hover-reveal`，透明度进入 `240ms`、离开 `360ms`，不能只依赖内部按钮自身的 hover transition。点击圆钮使用共享菜单浮层显示 `Edit` / `Delete`，编辑原位切换；`Delete` 必须使用共享 `createConfirmDialog()`，指针离开且菜单关闭后圆钮渐隐。
 
 无需标题的 `Edit / Delete` 菜单由共享 `mountMenu()` 自动添加 `.wd-menu--no-heading`，顶部、左右和底部内距均为 `10px`，不得在页面局部另写菜单内距。
 
@@ -371,7 +372,7 @@ Properties 的吸顶位置由标题顶部相对详情滚动视口的实际距离
 
 - 点击 `New ticket` 时，在新工作区标签打开 `/service/new`，原列表标签保留；不插入草稿卡。
 - 新页面使用与详情一致的“左编辑区 + 右 Properties”双栏。左列标题、正文和附件右缘对齐，Cancel / Publish 按钮组右缘与同一内容列一致；右列 Properties 与标题顶部对齐。
-- `Plant` 必填，放在 Properties 的 Plant 行；点击后打开 288px 浮窗，沿用 Plants 公司筛选二级浮窗的 `wd-filter-menu` 内胆、玻璃搜索框、32px 行、选中标记与共享滚动反馈。支持按电站名称或 SN 搜索，单选后在 Properties 回显名称。
+- `Plant` 必填，放在 Properties 的 Plant 行；点击后使用共享 `toggle()` 打开 288px 浮窗，再次点击同一行收起，沿用 Plants 公司筛选二级浮窗的 `wd-filter-menu` 内胆、玻璃搜索框、32px 行、选中标记与共享滚动反馈。支持按电站名称或 SN 搜索，单选后在 Properties 回显名称。
 - `Title`、`Description` 必填；`Attachments` 可选。
 - 初始状态固定为 `Ongoing`，不在卡片内提供状态选择。
 - 主按钮 `Publish ticket`，次按钮 `Cancel`；每个草稿卡只保留一个主按钮。

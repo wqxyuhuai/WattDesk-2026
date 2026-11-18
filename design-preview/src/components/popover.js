@@ -90,6 +90,17 @@ export function createPopoverController({overlays,toastElement,motion,glass}){
   }
   if(!openPanels.size&&repositionFrame){cancelAnimationFrame(repositionFrame);repositionFrame=0;}
  }
+ // A trigger owns one panel. Reusing the active trigger closes it instead of
+ // rebuilding the same panel, which otherwise makes the required second click
+ // look like a no-op. Other triggers continue through `open` and inherit the
+ // controller's normal single-panel replacement behaviour.
+ function toggle(anchor,open){
+  if([...openPanels].some(panel=>panel.isConnected&&panel._anchor===anchor)){
+   close();
+   return null;
+  }
+  return open();
+ }
  // A glass trigger scales around its physical centre. Use its layout box for
  // placement so moving the pointer into the panel cannot shift the open panel
  // when the trigger returns from its 1.07 hover scale to 1.
@@ -203,7 +214,7 @@ export function createPopoverController({overlays,toastElement,motion,glass}){
  addEventListener("resize",onViewportChange);
  visualViewport?.addEventListener("resize",onViewportChange);
  visualViewport?.addEventListener("scroll",onViewportChange);
- return {toast,close,popover,registerPanel,prepareStaticSurface,reposition,
+ return {toast,close,toggle,popover,registerPanel,prepareStaticSurface,reposition,
   destroy(){close(true);cancelAnimationFrame(repositionFrame);repositionFrame=0;clearTimeout(toastHideTimer);toastEnterAnimation?.cancel();toastExitAnimation?.cancel();openPanels.clear();
    document.removeEventListener("pointerdown",pointer);document.removeEventListener("keydown",key);
    document.removeEventListener("scroll",onViewportChange,scrollOptions);removeEventListener("resize",onViewportChange);

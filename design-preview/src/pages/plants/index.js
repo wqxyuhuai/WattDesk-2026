@@ -15,7 +15,9 @@ import {createTimeLabel} from "../../components/time-label.js";
 import {motionDuration,motionEasing,reducedMotion} from "../../foundations/motion.js";
 import {createPlantDetailTabs,createPlantOverview,createPlantSectionPlaceholder} from "./detail.js";
 import {createPlantDevices} from "./devices.js";
+import {createConnectionGlyph as connectionGlyph} from "./connection-icon.js";
 import {createPlantSiteDetails,defaultSiteDetails} from "./site-details.js";
+import {createPlantSiteDetailsV2} from "./site-details-v2.js";
 import {PLANT_SECTIONS} from "./sections.js";
 import {
  COMPANY_TREE,CONNECTION_META,DEVICES,HEALTH_META,PLANTS,STATUS_META,AUTO_CREATED_TOOLTIP,
@@ -121,36 +123,8 @@ function formatPower(plant){
  return magnitude;
 }
 
-// Connection icons come from the supplied 24px exports. They mix neutral ink
-// with a semantic red, so they are inlined instead of used as a monochrome CSS
-// mask: "ink" and "muted" bars follow the theme's primary label colour (white
-// in dark, black in light), while "alert" keeps the artwork's native red.
+// The bookmark glyph shares the supplied 24px export geometry.
 const ICON_NS="http://www.w3.org/2000/svg";
-const CONNECTION_PATHS=Object.freeze({
- online:[
-  ["ink","M1.5 12.24C1.5 11.6021 2.01301 11.085 2.64583 11.085H3.79167C4.42449 11.085 4.9375 11.6021 4.9375 12.24V19.17C4.9375 19.8079 4.42449 20.325 3.79167 20.325H2.64583C2.01301 20.325 1.5 19.8079 1.5 19.17V12.24Z"],
-  ["ink","M7.22917 9.93C7.22917 9.29211 7.74217 8.775 8.375 8.775H9.52083C10.1537 8.775 10.6667 9.29211 10.6667 9.93V19.17C10.6667 19.8079 10.1537 20.325 9.52083 20.325H8.375C7.74217 20.325 7.22917 19.8079 7.22917 19.17V9.93Z"],
-  ["ink","M12.9583 7.62C12.9583 6.98211 13.4713 6.465 14.1042 6.465H15.25C15.8828 6.465 16.3958 6.98211 16.3958 7.62V19.17C16.3958 19.8079 15.8828 20.325 15.25 20.325H14.1042C13.4713 20.325 12.9583 19.8079 12.9583 19.17V7.62Z"],
-  ["ink","M18.6875 4.155C18.6875 3.51711 19.2005 3 19.8333 3H20.9792C21.612 3 22.125 3.51711 22.125 4.155V19.17C22.125 19.8079 21.612 20.325 20.9792 20.325H19.8333C19.2005 20.325 18.6875 19.8079 18.6875 19.17V4.155Z"]
- ],
- partial:[
-  ["ink","M19.8333 3C19.2005 3 18.6875 3.51711 18.6875 4.155V19.17C18.6875 19.8079 19.2005 20.325 19.8333 20.325H20.9792C21.612 20.325 22.125 19.8079 22.125 19.17V4.155C22.125 3.51711 21.612 3 20.9792 3H19.8333Z"],
-  ["ink","M12.9583 7.62C12.9583 6.98211 13.4713 6.465 14.1042 6.465H15.25C15.8828 6.465 16.3958 6.98211 16.3958 7.62V19.17C16.3958 19.8079 15.8828 20.325 15.25 20.325H14.1042C13.4713 20.325 12.9583 19.8079 12.9583 19.17V7.62Z"],
-  ["muted","M2.64583 15.705C2.01301 15.705 1.5 16.2221 1.5 16.86V19.17C1.5 19.8079 2.01301 20.325 2.64583 20.325H3.79167C4.42449 20.325 4.9375 19.8079 4.9375 19.17V16.86C4.9375 16.2221 4.42449 15.705 3.79167 15.705H2.64583Z"],
-  ["muted","M8.375 15.705C7.74217 15.705 7.22917 16.2221 7.22917 16.86V19.17C7.22917 19.8079 7.74217 20.325 8.375 20.325H9.52083C10.1537 20.325 10.6667 19.8079 10.6667 19.17V16.86C10.6667 16.2221 10.1537 15.705 9.52083 15.705H8.375Z"],
-  ["alert","M8.90437 12.7736C9.24485 12.4304 9.24485 11.874 8.90437 11.5308L7.28401 9.89745L8.90437 8.26413C9.24485 7.92093 9.24485 7.3645 8.90437 7.0213C8.5639 6.6781 8.01188 6.6781 7.6714 7.0213L6.05105 8.65462L4.43069 7.0213C4.09021 6.6781 3.53819 6.6781 3.19772 7.0213C2.85724 7.3645 2.85725 7.92093 3.19772 8.26413L4.81808 9.89745L3.19772 11.5308C2.85724 11.874 2.85724 12.4304 3.19772 12.7736C3.53819 13.1168 4.09021 13.1168 4.43069 12.7736L6.05105 11.1403L7.67141 12.7736C8.01188 13.1168 8.5639 13.1168 8.90437 12.7736Z"]
- ],
- offline:[
-  ["muted","M19.8333 3C19.2005 3 18.6875 3.51711 18.6875 4.155V19.17C18.6875 19.8079 19.2005 20.325 19.8333 20.325H20.9792C21.612 20.325 22.125 19.8079 22.125 19.17V4.155C22.125 3.51711 21.612 3 20.9792 3H19.8333Z"],
-  ["muted","M12.9583 7.62C12.9583 6.98211 13.4713 6.465 14.1042 6.465H15.25C15.8828 6.465 16.3958 6.98211 16.3958 7.62V19.17C16.3958 19.8079 15.8828 20.325 15.25 20.325H14.1042C13.4713 20.325 12.9583 19.8079 12.9583 19.17V7.62Z"],
-  ["muted","M2.64583 15.705C2.01301 15.705 1.5 16.2221 1.5 16.86V19.17C1.5 19.8079 2.01301 20.325 2.64583 20.325H3.79167C4.42449 20.325 4.9375 19.8079 4.9375 19.17V16.86C4.9375 16.2221 4.42449 15.705 3.79167 15.705H2.64583Z"],
-  ["muted","M8.375 15.705C7.74217 15.705 7.22917 16.2221 7.22917 16.86V19.17C7.22917 19.8079 7.74217 20.325 8.375 20.325H9.52083C10.1537 20.325 10.6667 19.8079 10.6667 19.17V16.86C10.6667 16.2221 10.1537 15.705 9.52083 15.705H8.375Z"],
-  ["alert","M8.90437 12.7736C9.24485 12.4304 9.24485 11.874 8.90437 11.5308L7.28401 9.89745L8.90437 8.26413C9.24485 7.92093 9.24485 7.3645 8.90437 7.0213C8.5639 6.6781 8.01188 6.6781 7.6714 7.0213L6.05105 8.65462L4.43069 7.0213C4.09021 6.6781 3.53819 6.6781 3.19772 7.0213C2.85724 7.3645 2.85725 7.92093 3.19772 8.26413L4.81808 9.89745L3.19772 11.5308C2.85724 11.874 2.85724 12.4304 3.19772 12.7736C3.53819 13.1168 4.09021 13.1168 4.43069 12.7736L6.05105 11.1403L7.67141 12.7736C8.01188 13.1168 8.5639 13.1168 8.90437 12.7736Z"]
- ],
- unbound:[
-  ["alert","M12 1.5C17.799 1.5 22.5 6.20101 22.5 12C22.5 17.799 17.799 22.5 12 22.5C6.20101 22.5 1.5 17.799 1.5 12C1.5 6.20101 6.20101 1.5 12 1.5ZM6.51562 10.7998C5.81664 10.7998 5.25 11.3373 5.25 12C5.25 12.6627 5.81664 13.2002 6.51562 13.2002H17.4844C18.1834 13.2002 18.75 12.6627 18.75 12C18.75 11.3373 18.1834 10.7998 17.4844 10.7998H6.51562Z"]
- ]
-});
 const BOOKMARK_PATH="M21 11.0975V16.0909C21 19.1875 21 20.7358 20.2659 21.4123C19.9158 21.735 19.4739 21.9377 19.0031 21.9915C18.016 22.1045 16.8633 21.0849 14.5578 19.0458C13.5388 18.1445 13.0292 17.6938 12.4397 17.5751C12.1494 17.5166 11.8506 17.5166 11.5603 17.5751C10.9708 17.6938 10.4612 18.1445 9.44216 19.0458C7.13673 21.0849 5.98402 22.1045 4.99692 21.9915C4.52615 21.9377 4.08421 21.735 3.73411 21.4123C3 20.7358 3 19.1875 3 16.0909V11.0975C3 6.80891 3 4.6646 4.31802 3.3323C5.63604 2 7.75736 2 12 2C16.2426 2 18.364 2 19.682 3.3323C21 4.6646 21 6.80891 21 11.0975ZM8.25 6C8.25 5.58579 8.58579 5.25 9 5.25H15C15.4142 5.25 15.75 5.58579 15.75 6C15.75 6.41421 15.4142 6.75 15 6.75H9C8.58579 6.75 8.25 6.41421 8.25 6Z";
 
 function svgIcon(className,size){
@@ -162,21 +136,6 @@ function svgIcon(className,size){
  svg.setAttribute("aria-hidden","true");
  svg.setAttribute("focusable","false");
  for(const token of className.split(/\s+/).filter(Boolean))svg.classList.add(token);
- return svg;
-}
-
-// `alertFill` lets the same supplied artwork run in a semantic colour instead
-// of the export's own red; the Status column reuses the unbound signal glyph
-// in its neutral ink.
-function connectionGlyph(connection,{size=18,className="plants-connection-glyph",alertFill="#FF4245"}={}){
- const svg=svgIcon(className,size);
- for(const [tone,d] of CONNECTION_PATHS[connection]){
-  const path=document.createElementNS(ICON_NS,"path");
-  path.setAttribute("d",d);
-  path.setAttribute("fill",tone==="alert"?alertFill:"currentColor");
-  if(tone==="muted")path.setAttribute("fill-opacity","0.3");
-  svg.append(path);
- }
  return svg;
 }
 
@@ -202,7 +161,7 @@ function healthOf(plant){
 }
 
 export function createPlantsPage({
- glass,registerPanel,close,reposition,toast,onOpenPlant,onBackToList,onRouteParamsChange,
+ glass,registerPanel,close,toggle,reposition,toast,onOpenPlant,onBackToList,onRouteParamsChange,
  onOpenTicket,onOpenNewTicket,onOpenPlantSection
 }){
  const element=document.createElement("section");
@@ -306,7 +265,7 @@ export function createPlantsPage({
  chipAdd.setAttribute("aria-label","Add filter");
  chipAdd.title="Add filter";
  chipAdd.append(maskedIcon(assetURL("plants/plus.svg"),"plants-icon plants-icon--14"));
- chipAdd.addEventListener("click",()=>filterPanel(chipAdd));
+ chipAdd.addEventListener("click",()=>toggle(chipAdd,()=>filterPanel(chipAdd)));
  const chipClear=text("button","plants-clear wd-control-state");
  chipClear.type="button";
  chipClear.append(text("span","plants-clear-label wd-control-label","Clear","Footnote/Regular"));
@@ -396,6 +355,7 @@ export function createPlantsPage({
  let activeOverviewController=null;
  let activeDevicesController=null;
  let activeSiteDetailsController=null;
+ let activeSiteV2Controller=null;
  let currentDetailDevice=null;
  const siteDetailsByPlant=new Map();
 
@@ -919,9 +879,12 @@ function renderDetail(plantId,requestedDevice,requestedSection,requestedTab){
   activeDevicesController=null;
   activeSiteDetailsController?.destroy();
   activeSiteDetailsController=null;
+ activeSiteV2Controller?.destroy();
+ activeSiteV2Controller=null;
   const plant=plantById(plantId);
   const isDevices=requestedSection==="devices";
   const isSite=!requestedSection&&requestedTab==="site";
+ const isSiteV2=!requestedSection&&requestedTab==="site-v2";
   const sectionMeta=requestedSection&&!isDevices?PLANT_SECTIONS[requestedSection]:null;
   currentDetailDevice=plant?(plant.devices.includes(requestedDevice)?requestedDevice:plant.devices[0]):null;
   const {element:detailHeader,heading,actions}=createPageHeader({
@@ -963,9 +926,9 @@ function renderDetail(plantId,requestedDevice,requestedSection,requestedTab){
   detailHeaderHost.replaceChildren(detailHeader);
   detailTabsHost.hidden=Boolean(sectionMeta);
   detailTabsHost.replaceChildren(...(sectionMeta?[]:[createPlantDetailTabs({
-   current:isSite?"site":isDevices?"devices":"overview",
+   current:isSite?"site":isSiteV2?"site-v2":isDevices?"devices":"overview",
    onSelect:view=>{
-    if(activeSiteDetailsController?.hasUnsavedChanges()){
+    if(activeSiteDetailsController?.hasUnsavedChanges()||activeSiteV2Controller?.hasUnsavedChanges()){
      toast("Save or cancel the Site details changes before leaving");
      return;
     }
@@ -973,7 +936,8 @@ function renderDetail(plantId,requestedDevice,requestedSection,requestedTab){
      plantId,
      device:currentDetailDevice,
      ...(view==="devices"?{section:"devices"}:{}),
-     ...(view==="site"?{tab:"site"}:{})
+     ...(view==="site"?{tab:"site"}:{}),
+     ...(view==="site-v2"?{tab:"site-v2"}:{})
     };
     onOpenPlantSection?.(params);
    }
@@ -995,6 +959,8 @@ function renderDetail(plantId,requestedDevice,requestedSection,requestedTab){
    ?`${plant.name||"?"} — ${sectionMeta.label}`
    :isSite
     ?`${plant.name||"?"} — Site details`
+   :isSiteV2
+    ?`${plant.name||"?"} — Site details`
    :isDevices
     ?`${plant.name||"?"} — Devices`
     :plant.name||"?";
@@ -1013,7 +979,9 @@ function renderDetail(plantId,requestedDevice,requestedSection,requestedTab){
     glass,
     registerPanel,
     close,
-    toast
+    toggle,
+   toast,
+   onSave:next=>siteDetailsByPlant.set(plant.id,next)
    });
    detailInner.replaceChildren(detailA11y,activeDevicesController.element);
    detailViewport.scrollTop=0;
@@ -1028,11 +996,28 @@ function renderDetail(plantId,requestedDevice,requestedSection,requestedTab){
     glass,
     registerPanel,
     close,
+    toggle,
     toast,
     onSave:next=>siteDetailsByPlant.set(plant.id,next)
    });
    actions.hidden=true;
    detailInner.replaceChildren(detailA11y,activeSiteDetailsController.element);
+   detailViewport.scrollTop=0;
+   return;
+  }
+  if(isSiteV2){
+   const details=siteDetailsByPlant.get(plant.id)??defaultSiteDetails(plant);
+   activeSiteV2Controller=createPlantSiteDetailsV2({
+    plant,
+    details,
+    glass,
+   registerPanel,
+   close,
+   toggle,
+    toast
+   });
+   actions.hidden=true;
+   detailInner.replaceChildren(detailA11y,activeSiteV2Controller.element);
    detailViewport.scrollTop=0;
    return;
   }
@@ -1042,6 +1027,7 @@ function renderDetail(plantId,requestedDevice,requestedSection,requestedTab){
     glass,
     registerPanel,
     close,
+    toggle,
     toast,
     onOpenTicket,
     onOpenNewTicket,
@@ -1481,14 +1467,8 @@ function renderDetail(plantId,requestedDevice,requestedSection,requestedTab){
   registerPanel(panel,anchor,{label:"Columns",radius:30,width:COLUMN_PANEL_WIDTH,align:"start"});
  }
 
- filterTrigger.addEventListener("click",()=>{
-  if(filterTrigger.getAttribute("aria-expanded")==="true")close();
-  else filterPanel(filterTrigger);
- });
- columnTrigger.addEventListener("click",()=>{
-  if(columnTrigger.getAttribute("aria-expanded")==="true")close();
-  else columnPanel(columnTrigger);
- });
+ filterTrigger.addEventListener("click",()=>toggle(filterTrigger,()=>filterPanel(filterTrigger)));
+ columnTrigger.addEventListener("click",()=>toggle(columnTrigger,()=>columnPanel(columnTrigger)));
 
  // ── Refresh ──────────────────────────────────────────────────────────────
  let refreshing=false;
@@ -1606,6 +1586,8 @@ function renderDetail(plantId,requestedDevice,requestedSection,requestedTab){
   },
   hide(){
    close(true);
+   activeSiteV2Controller?.destroy();
+   activeSiteV2Controller=null;
    element.hidden=true;
   }
  };

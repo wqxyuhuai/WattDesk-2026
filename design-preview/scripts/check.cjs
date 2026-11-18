@@ -9,6 +9,7 @@ for(const file of runtime){
  const value=fs.readFileSync(file,'utf8'),relative=path.relative(root,file);
  if(/\.(js)$/.test(file)&&/(?:^|\n)\s*(?:async\s+)?function\s+text\s*\(/.test(value))failures.push(`${relative}: use foundations/dom.js instead of a local text() factory`);
  if(/\.(js)$/.test(file)&&/(?:^|\n)\s*(?:async\s+)?function\s+(?:relativeTime|absoluteTime|timeAgo)\s*\(/.test(value))failures.push(`${relative}: use foundations/time.js instead of local time formatting`);
+ if(/\.(js)$/.test(file)&&/(?:^|[^\w.])(?:window\.)?(?:confirm|alert|prompt)\s*\(/.test(value))failures.push(`${relative}: use the shared modal/confirm/toast system instead of native browser dialogs`);
  if(/\.wd-date-action(?!s)/.test(value))failures.push(`${relative}: obsolete .wd-date-action compatibility class`);
  const sharedMotion=path.dirname(relative)===path.join('src','foundations');
  if(/\.(css)$/.test(file)&&!sharedMotion&&/\btransition(?:-duration|-delay)?\s*:/.test(value))failures.push(`${relative}: local transition belongs in foundations/motion.css`);

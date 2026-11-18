@@ -24,12 +24,33 @@ const assert=require('node:assert/strict');
   assert.match(state.background,/blur\(/);assert.equal(state.border,'0px');
   return state;
  }
- for(const [label,open,close] of [
-  ['Chart options',()=>page.locator('.chart-menu').first().click(),()=>page.keyboard.press('Escape')],
-  ['Language',()=>page.getByRole('button',{name:'Language',exact:true}).click(),()=>page.keyboard.press('Escape')],
-  ['Appearance',()=>page.getByRole('button',{name:'Settings',exact:true}).click(),()=>page.keyboard.press('Escape')],
-  ['WattDesk',()=>page.getByRole('button',{name:'Support',exact:true}).click(),()=>page.keyboard.press('Escape')]
- ]){await surface(label,open);await close();await page.waitForTimeout(320);assert.equal(await page.locator('#home-active-popover').count(),0,`${label} did not close`);}
+ for(const [label,trigger] of [
+  ['Chart options',page.locator('.chart-menu').first()],
+  ['Language',page.getByRole('button',{name:'Language',exact:true})],
+  ['Appearance',page.getByRole('button',{name:'Settings',exact:true})],
+  ['WattDesk',page.getByRole('button',{name:'Support',exact:true})]
+ ]){
+  await surface(label,()=>trigger.click());
+  assert.equal(await trigger.getAttribute('aria-expanded'),'true',`${label} exposes its open state`);
+  await trigger.click();await page.waitForTimeout(320);
+  assert.equal(await page.locator('#home-active-popover').count(),0,`${label} did not close on the same trigger`);
+  assert.equal(await trigger.getAttribute('aria-expanded'),'false',`${label} restores its collapsed state`);
+  await trigger.click();await page.waitForTimeout(360);
+  assert.equal(await page.locator('#home-active-popover').count(),1,`${label} opens again after toggling closed`);
+  await page.keyboard.press('Escape');await page.waitForTimeout(320);
+ }
+
+ // The date chooser owns the same trigger-toggle contract even though it
+ // mounts its own glass surface outside the generic popover host.
+ const periodTrigger=page.getByRole('button',{name:'Select statistics period'});
+ await periodTrigger.click();await page.waitForTimeout(360);
+ assert.equal(await page.locator('.wd-date-picker').count(),1,'the period picker opens from its trigger');
+ await periodTrigger.click();await page.waitForTimeout(320);
+ assert.equal(await page.locator('.wd-date-picker').count(),0,'the period picker closes from the same trigger');
+ assert.equal(await periodTrigger.getAttribute('aria-expanded'),'false','the period trigger exposes its closed state');
+ await periodTrigger.click();await page.waitForTimeout(360);
+ assert.equal(await page.locator('.wd-date-picker').count(),1,'the period picker opens again after toggling closed');
+ await page.keyboard.press('Escape');await page.waitForTimeout(320);
 
  // A tab tooltip is a display-only surface: the material is mounted but the
  // host must not lift while the pointer rests on its tab.

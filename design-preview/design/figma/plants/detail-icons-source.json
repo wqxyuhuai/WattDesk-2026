@@ -21,6 +21,26 @@
       "sourceFile": "map-pin",
       "runtimeFile": "home-assets/plants/detail/location.svg",
       "usage": "Plant location and local time in the Overview context strip"
+    },
+    {
+      "sourceFile": "map-pin-filled",
+      "runtimeFile": "home-assets/plants/detail/location-solid.svg",
+      "usage": "Filled location badge beside the address on Site details 2"
+    },
+    {
+      "sourceFile": "info2.svg",
+      "runtimeFile": "home-assets/plants/detail/info2.svg",
+      "usage": "Alarm email information control on Site details 2; user-provided shape, rendered as a theme-colored mask"
+    },
+    {
+      "sourceFile": "solar-panel",
+      "runtimeFile": "home-assets/masks/solar-panel.svg",
+      "usage": "PV capacity metric on Site details 2"
+    },
+    {
+      "sourceFile": "battery-storage",
+      "runtimeFile": "home-assets/masks/battery-storage.svg",
+      "usage": "Battery storage metric on Site details 2"
     }
   ]
 }

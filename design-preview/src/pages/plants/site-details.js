@@ -3,6 +3,7 @@ import {applyTypeStyle} from "../../foundations/typography.js";
 import {animateContentHeight} from "../../foundations/motion.js";
 import {assetURL,createMaskedIcon,opaqueMaskURL} from "../../components/icons.js";
 import {createStandardButton} from "../../components/controls.js";
+import {createConfirmDialog} from "../../components/confirm-dialog.js";
 import {createAvatar} from "../../components/avatar.js";
 import {menuList,mountMenu,menuRow} from "../../components/menu-popover.js";
 import {createToggleSwitch} from "../../components/toggle-switch.js";
@@ -17,11 +18,12 @@ const TIMEZONE_BY_COUNTRY=Object.freeze({
  Austria:{timezone:"Europe/Vienna",area:"AT",currency:"EUR",phone:+43}
 });
 
-const COUNTRY_OPTIONS=Object.freeze(Object.keys(TIMEZONE_BY_COUNTRY));
-const TIMEZONE_OPTIONS=Object.freeze(["Europe/Berlin","Europe/Stockholm","Europe/Amsterdam","Europe/Vienna"]);
-const AREA_OPTIONS=Object.freeze(["DE-LU","SE1","SE2","SE3","SE4","NL","AT"]);
-const CURRENCY_OPTIONS=Object.freeze(["EUR","SEK"]);
+export const COUNTRY_OPTIONS=Object.freeze(Object.keys(TIMEZONE_BY_COUNTRY));
+export const TIMEZONE_OPTIONS=Object.freeze(["Europe/Berlin","Europe/Stockholm","Europe/Amsterdam","Europe/Vienna"]);
+export const AREA_OPTIONS=Object.freeze(["DE-LU","SE1","SE2","SE3","SE4","NL","AT"]);
+export const CURRENCY_OPTIONS=Object.freeze(["EUR","SEK"]);
 const TYPE_OPTIONS=Object.freeze(PLANT_TYPES.map(type=>type.label));
+const IS_DEVELOPMENT_PREVIEW=Object.freeze(["localhost","127.0.0.1","::1"].includes(window.location.hostname));
 
 function hash(value){
  return [...String(value)].reduce((total,char)=>((total*31)+char.charCodeAt(0))>>>0,7);
@@ -120,6 +122,7 @@ function valueNode(value,{mono=false,multiline=false}={}){
 
 function viewRow(label,value,options={}){
  const row=text("div","site-details-row");
+ if(options.wide)row.classList.add("site-details-row--wide");
  row.append(text("span","site-details-label",label,"14/14 medium"),value instanceof Node?value:valueNode(value,options));
  return row;
 }
@@ -132,7 +135,8 @@ function selectField({
  dirty,
  options,
  registerPanel,
- close
+ close,
+ toggle
 }){
  const field=text("button","site-details-input site-details-select-trigger wd-control-state wd-edit-field");
  field.type="button";
@@ -154,33 +158,31 @@ function selectField({
  field.dataset.value=draft[key]??options[0];
  field.addEventListener("click",()=>{
   if(!registerPanel)return;
-  if(field.getAttribute("aria-expanded")==="true"){
-   close?.(true);
-   return;
-  }
-  const panel=document.createElement("div");
-  panel.className="popover popover--menu site-details-select-popover";
-  const list=menuList();
-  list.setAttribute("role","listbox");
-  for(const option of options){
-   const row=menuRow(option,{checked:option===draft[key]});
-   row.setAttribute("role","option");
-   row.setAttribute("aria-selected",String(option===draft[key]));
-   row.dataset.value=option;
-   row.addEventListener("click",()=>{
-    update(option);
-    close?.(true);
-    requestAnimationFrame(()=>field.focus({preventScroll:true}));
+  toggle?.(field,()=>{
+   const panel=document.createElement("div");
+   panel.className="popover popover--menu site-details-select-popover";
+   const list=menuList();
+   list.setAttribute("role","listbox");
+   for(const option of options){
+    const row=menuRow(option,{checked:option===draft[key]});
+    row.setAttribute("role","option");
+    row.setAttribute("aria-selected",String(option===draft[key]));
+    row.dataset.value=option;
+    row.addEventListener("click",()=>{
+     update(option);
+     close?.(true);
+     requestAnimationFrame(()=>field.focus({preventScroll:true}));
+    });
+    list.append(row);
+   }
+   mountMenu(panel,{label:`Choose ${label}`,children:[list]});
+   return registerPanel(panel,field,{
+    label:`Choose ${label}`,
+    radius:24,
+    width:Math.max(200,Math.min(280,field.offsetWidth||220)),
+    align:"end",
+    id:`site-details-select-${key}`
    });
-   list.append(row);
-  }
-  mountMenu(panel,{label:`Choose ${label}`,children:[list]});
-  registerPanel(panel,field,{
-   label:`Choose ${label}`,
-   radius:24,
-   width:Math.max(200,Math.min(280,field.offsetWidth||220)),
-   align:"end",
-   id:`site-details-select-${key}`
   });
  });
  return field;
@@ -197,10 +199,13 @@ function fieldRow({
  readOnly=false,
  inputMode="",
  placeholder="",
+ wide=false,
  registerPanel=null,
- close=null
+ close=null,
+ toggle=null
 }){
  const row=text("div","site-details-row site-details-row--field");
+ if(wide)row.classList.add("site-details-row--wide");
  row.dataset.field=key;
  const labelNode=text("label","site-details-label",label,"14/14 medium");
  const id=`site-details-${key}`;
@@ -209,7 +214,7 @@ function fieldRow({
  const line=text("span","site-details-field-line");
  let input;
  if(options){
-  input=selectField({id,label,key,draft,dirty,options,registerPanel,close});
+  input=selectField({id,label,key,draft,dirty,options,registerPanel,close,toggle});
  }else{
   input=document.createElement("input");
   input.className="site-details-input wd-edit-field";
@@ -237,11 +242,11 @@ function fieldRow({
  return row;
 }
 
-function createBasicSection(draft,editing,dirty,{registerPanel,close}){
+function createBasicSection(draft,editing,dirty,{registerPanel,close,toggle}){
  const body=text("div","site-details-rows");
  body.append(
   editing
-   ?fieldRow({label:"Plant type",key:"plantType",draft,dirty,options:TYPE_OPTIONS,registerPanel,close})
+   ?fieldRow({label:"Plant type",key:"plantType",draft,dirty,options:TYPE_OPTIONS,registerPanel,close,toggle})
    :viewRow("Plant type",draft.plantType),
   editing
    ?fieldRow({label:"PV capacity",key:"pvCapacity",draft,dirty,type:"number",unit:"kWp",inputMode:"decimal"})
@@ -251,26 +256,26 @@ function createBasicSection(draft,editing,dirty,{registerPanel,close}){
    :viewRow("Battery installation capacity",draft.batteryCapacity?`${draft.batteryCapacity} kWh`:"Not installed",{mono:true}),
   viewRow("Creation time",draft.createdAt,{mono:true}),
   editing
-   ?fieldRow({label:"Timezone",key:"timezone",draft,dirty,options:TIMEZONE_OPTIONS,registerPanel,close})
+   ?fieldRow({label:"Timezone",key:"timezone",draft,dirty,options:TIMEZONE_OPTIONS,registerPanel,close,toggle})
    :viewRow("Timezone",`Local · ${draft.timezone}`,{mono:true}),
   editing
-   ?fieldRow({label:"Country",key:"country",draft,dirty,options:COUNTRY_OPTIONS,registerPanel,close})
+   ?fieldRow({label:"Country",key:"country",draft,dirty,options:COUNTRY_OPTIONS,registerPanel,close,toggle})
    :viewRow("Country",draft.country),
   editing
-   ?fieldRow({label:"Price area",key:"area",draft,dirty,options:AREA_OPTIONS,registerPanel,close})
+   ?fieldRow({label:"Price area",key:"area",draft,dirty,options:AREA_OPTIONS,registerPanel,close,toggle})
    :viewRow("Price area",draft.area,{mono:true}),
   editing
-   ?fieldRow({label:"Address",key:"address",draft,dirty,placeholder:"Street, postcode, city, country"})
-   :viewRow("Address",draft.address,{multiline:true})
+   ?fieldRow({label:"Address",key:"address",draft,dirty,placeholder:"Street, postcode, city, country",wide:true})
+   :viewRow("Address",draft.address,{multiline:true,wide:true})
  );
  return section("Basic information",body,{id:"site-basic-information"}).root;
 }
 
-function createPriceSection(draft,editing,dirty,{registerPanel,close}){
+function createPriceSection(draft,editing,dirty,{registerPanel,close,toggle}){
  const body=text("div","site-details-rows");
  body.append(
   editing
-   ?fieldRow({label:"Currency",key:"currency",draft,dirty,options:CURRENCY_OPTIONS,registerPanel,close})
+   ?fieldRow({label:"Currency",key:"currency",draft,dirty,options:CURRENCY_OPTIONS,registerPanel,close,toggle})
    :viewRow("Currency",draft.currency,{mono:true}),
   editing
    ?fieldRow({label:"Grid price/kWh",key:"gridPrice",draft,dirty,type:"number",unit:draft.currency,inputMode:"decimal"})
@@ -337,14 +342,14 @@ function createInstallerSection({
  const body=text("div","site-details-rows");
  body.append(
   editing
-   ?fieldRow({label:"Installer company",key:"installerCompany",draft,dirty})
-   :viewRow("Installer company",draft.installerCompany),
+   ?fieldRow({label:"Installer company",key:"installerCompany",draft,dirty,wide:true})
+   :viewRow("Installer company",draft.installerCompany,{wide:true}),
   editing
    ?fieldRow({label:"Contact person",key:"contactPerson",draft,dirty})
    :viewRow("Contact person",draft.contactPerson),
   editing
-   ?fieldRow({label:"Contact email",key:"contactEmail",draft,dirty,type:"email",inputMode:"email"})
-   :viewRow("Contact email",draft.contactEmail,{mono:true,multiline:true}),
+   ?fieldRow({label:"Contact email",key:"contactEmail",draft,dirty,type:"email",inputMode:"email",wide:true})
+   :viewRow("Contact email",draft.contactEmail,{mono:true,multiline:true,wide:true}),
   editing
    ?fieldRow({label:"Contact phone",key:"contactPhone",draft,dirty,type:"tel",inputMode:"tel"})
    :viewRow("Contact phone",draft.contactPhone,{mono:true})
@@ -369,8 +374,8 @@ function createInstallerSection({
  alarmRow.append(alarmHost);
  body.append(alarmRow);
  body.append(editing
-  ?fieldRow({label:"Alarm email recipient",key:"alarmEmailRecipient",draft,dirty,type:"email",inputMode:"email"})
-  :viewRow("Alarm email recipient",draft.alarmEmailRecipient,{multiline:true}));
+  ?fieldRow({label:"Alarm email recipient",key:"alarmEmailRecipient",draft,dirty,type:"email",inputMode:"email",wide:true})
+  :viewRow("Alarm email recipient",draft.alarmEmailRecipient,{multiline:true,wide:true}));
  return section("Installer contact",body,{id:"site-installer-contact"}).root;
 }
 
@@ -405,10 +410,10 @@ function createVisitorSection(draft){
   }
   body.append(list);
  }else{
-  body.append(
-   text("p","site-details-visitor-empty","No visitors","Footnote/Medium"),
-   text("p","site-details-visitor-note","Visitor invitations are not connected in this preview.","Caption1/Regular")
-  );
+  body.append(text("p","site-details-visitor-empty","No visitors","Footnote/Medium"));
+  if(IS_DEVELOPMENT_PREVIEW){
+   body.append(text("p","site-details-visitor-note","Visitor invitations are not connected in this preview.","Caption1/Regular"));
+  }
  }
  return section("Visitor management",body,{id:"site-visitor-management"}).root;
 }
@@ -463,6 +468,7 @@ export function createPlantSiteDetails({
  glass,
  registerPanel,
  close,
+ toggle,
  toast,
  onSave
 }){
@@ -471,6 +477,7 @@ export function createPlantSiteDetails({
  let editing=false;
  let dirty=false;
  let errorSummary=null;
+ let activeConfirmation=null;
  const buttonSurfaces=[];
  const toggleControls=[];
  const root=text("div","plant-site-details wd-page-content");
@@ -493,6 +500,18 @@ export function createPlantSiteDetails({
 
  function mountToggle(control){
   toggleControls.push(control);
+ }
+ function openConfirmation(options){
+  activeConfirmation?.close({immediate:true,restoreFocus:false});
+  activeConfirmation=createConfirmDialog({
+   glass,
+   ...options,
+   onClose:()=>{
+    activeConfirmation=null;
+    options.onClose?.();
+   }
+  });
+  return activeConfirmation;
  }
 
  function markDirty(){
@@ -631,7 +650,20 @@ export function createPlantSiteDetails({
  }
 
  function cancelEditing(){
-  if(dirty&&!confirm("Discard the unsaved site details changes?"))return;
+  if(dirty){
+   openConfirmation({
+    title:"Discard unsaved changes?",
+    description:"Your unsaved site details changes will be lost. This action cannot be undone.",
+    confirmLabel:"Discard changes",
+    icon:createMaskedIcon(opaqueMaskURL("asset-64.svg"),"plants-device-action-icon"),
+    onConfirm:finishCancelEditing
+   });
+   return;
+  }
+  finishCancelEditing();
+ }
+
+ function finishCancelEditing(){
   editing=false;
   dirty=false;
   draft=cloneDetails(savedDetails);
@@ -659,22 +691,24 @@ export function createPlantSiteDetails({
    toast?.("Owner actions are not connected in this preview");
    return;
   }
-  const panel=document.createElement("div");
-  panel.className="popover popover--menu site-details-owner-menu";
-  const list=menuList();
-  const editOwner=menuRow("Edit owner");
-  editOwner.addEventListener("click",()=>{
-   close?.(true);
-   toast?.("Owner editing is not connected in this preview");
+  toggle?.(anchor,()=>{
+   const panel=document.createElement("div");
+   panel.className="popover popover--menu site-details-owner-menu";
+   const list=menuList();
+   const editOwner=menuRow("Edit owner");
+   editOwner.addEventListener("click",()=>{
+    close?.(true);
+    toast?.("Owner editing is not connected in this preview");
+   });
+   const manageAccess=menuRow("Manage access");
+   manageAccess.addEventListener("click",()=>{
+    close?.(true);
+    toast?.("Owner access is not connected in this preview");
+   });
+   list.append(editOwner,manageAccess);
+   mountMenu(panel,{label:"Owner actions",children:[list]});
+   return registerPanel(panel,anchor,{label:"Owner actions",radius:24,width:200,align:"end"});
   });
-  const manageAccess=menuRow("Manage access");
-  manageAccess.addEventListener("click",()=>{
-   close?.(true);
-   toast?.("Owner access is not connected in this preview");
-  });
-  list.append(editOwner,manageAccess);
-  mountMenu(panel,{label:"Owner actions",children:[list]});
-  registerPanel(panel,anchor,{label:"Owner actions",radius:24,width:200,align:"end"});
  }
 
  function render(){
@@ -684,29 +718,30 @@ export function createPlantSiteDetails({
   const columns=text("div","site-details-grid");
   const primary=text("div","site-details-column site-details-column--primary");
   const secondary=text("div","site-details-column site-details-column--secondary");
-  const selectOptions={registerPanel,close};
+  const selectOptions={registerPanel,close,toggle};
   primary.append(
    createBasicSection(draft,editing,markDirty,selectOptions),
    createPriceSection(draft,editing,markDirty,selectOptions),
+   createInstallerSection({draft,editing,dirty:markDirty,glass,mountToggle})
+  );
+  secondary.append(
    createOwnerSection({
     draft,
     onOwnerMenu:openOwnerMenu,
     onNewOwner:()=>toast?.("New owner is not connected in this preview"),
     mountButton
-   })
-  );
-  secondary.append(
-   createInstallerSection({draft,editing,dirty:markDirty,glass,mountToggle}),
+   }),
+   createVisitorSection(draft),
    createPictureSection({
     draft,
     mountButton,
     onAddPicture:()=>toast?.("Plant picture upload is not connected in this preview")
-   }),
-   createVisitorSection(draft)
+   })
   );
 
+  let danger=null;
   if(editing){
-   const danger=text("section","site-details-danger");
+   danger=text("section","site-details-danger");
    const dangerCopy=text("div","site-details-danger-copy");
    dangerCopy.append(
     text("h2","site-details-danger-title","Danger zone","Footnote/Emphasized"),
@@ -718,15 +753,20 @@ export function createPlantSiteDetails({
    deleteButton.className="wd-button wd-button--pill wd-button--primary site-details-delete";
    deleteButton.textContent="Delete plant";
    deleteButton.addEventListener("click",()=>{
-    if(!confirm("Delete this plant from the local preview? This action is not connected to a backend."))return;
-    toast?.("Plant deletion is not connected in this preview");
+    openConfirmation({
+     title:`Delete ${plant.name||"this plant"}?`,
+     description:"Deleting a plant requires a connected account and cannot be undone. This local preview will not delete data.",
+     confirmLabel:"Delete plant",
+     confirmClassName:"plants-device-danger-button",
+     icon:createMaskedIcon(assetURL("plants/devices/actions/delete.svg"),"plants-device-action-icon"),
+     onConfirm:()=>toast?.("Plant deletion is not connected in this preview")
+    });
    });
    mountButton(deleteButton);
    danger.append(deleteButton);
-   primary.append(danger);
   }
 
-  columns.append(primary,secondary);
+  columns.append(primary,secondary,...(danger?[danger]:[]));
   errorSummary=text("p","site-details-error-summary");
   errorSummary.setAttribute("role","alert");
   errorSummary.hidden=true;
@@ -742,6 +782,8 @@ export function createPlantSiteDetails({
   },
   hasUnsavedChanges:()=>editing&&dirty,
   destroy(){
+   activeConfirmation?.close({immediate:true,restoreFocus:false});
+   activeConfirmation=null;
    releaseToggleControls();
    releaseButtonSurfaces();
   }

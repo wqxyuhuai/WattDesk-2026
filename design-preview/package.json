@@ -12,6 +12,7 @@
     "sync": "npm run sync:home && npm run sync:themes && npm run sync:type && npm run sync:masks",
     "sync:masks": "node scripts/build-icon-masks.cjs",
     "check": "node scripts/check.cjs",
+    "test:file": "node",
     "test": "node tests/run.cjs",
     "audit:assets": "node scripts/audit-assets.cjs",
     "test:visual": "node tests/verify-refactor.cjs",

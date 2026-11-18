@@ -1,10 +1,10 @@
 # Plants 页面功能说明
 
-更新：2026-11-10
+更新：2026-11-18
 
-适用页面：`/plants?glass=figma`、`/plants/:id`、`/plants/:id/devices`、`/plants/:id/site` 与 `/plants/:id/faults|logs|tickets`
+适用页面：`/plants?glass=figma`、`/plants/:id`、`/plants/:id/devices`、`/plants/:id/site`、`/plants/:id/site-v2` 与 `/plants/:id/faults|logs|tickets`
 
-实现入口：`index.js`、`plants.css`、`detail.js`、`detail.css`、`devices.js`、`device-identity.js`、`devices.css`、`data.js`
+实现入口：`index.js`、`plants.css`、`detail.js`、`detail.css`、`devices.js`、`device-identity.js`、`connection-icon.js`、`devices.css`、`site-details.js`、`site-details-v2.js`、`data.js`
 
 本文记录 Plants 页面当前**已实现**的功能、按钮行为、筛选规则、列表列、数据语义、路由与键盘交互。后续修改功能时，应同步更新本文和相关回归测试。
 
@@ -12,7 +12,7 @@
 
 - Plants 是当前设计预览中的真实列表页，搜索、筛选、排序、列显隐和书签均在前端对本地样例数据实际执行。
 - 数据来自 `data.js` 的 46 条示例电站，不代表真实账号、权限、后端查询或生产数据。
-- `/plants/:id` 是真实、可刷新、可进入浏览器历史的 URL；Overview、Devices 与 Site details 均已完成本地交互预览。Devices 提供设备列表、命名、新增、替换、解绑和设置预览；Site details 提供电站资料查看、编辑、校验和会话内保存。真实后端、权限、文件上传、访客邀请、设备固件更新与硬件控制尚未接入。
+- `/plants/:id` 是真实、可刷新、可进入浏览器历史的 URL；详情导航固定为 `Overview / Devices / Site details`。Devices 提供设备列表、命名、新增、替换、解绑和设置预览；可见的 Site details 使用 `/plants/:id/site-v2`，以 Hero + 全出血 Mapbox + 两列等高资料卡展示并编辑当前会话资料。旧 `/plants/:id/site` 仅保留为隐藏兼容路由，不再显示页签。真实后端、权限、文件上传、访客邀请、设备固件更新与硬件控制尚未接入。
 - 侧栏、顶部工作区标签、主题按钮属于共享 App Shell；本文只记录它们与 Plants 页面的衔接行为。
 - `New plant` 当前只显示预览提示，不会创建电站，也不会打开创建表单。
 
@@ -41,8 +41,8 @@
 |---|---|---|
 | 搜索框 | 输入文字 | 立即按关键词过滤列表，不打开搜索结果浮层，不需要 Apply。 |
 | 搜索清除按钮 | 输入框内有内容时点击 | 清空关键词并恢复受搜索影响的列表结果；这是共享搜索字段的清除按钮。 |
-| `Filters` | 点击 | 打开筛选主浮窗；再次点击同一按钮关闭。有筛选时按钮右上显示 `7px` 蓝点。 |
-| `Columns` | 点击 | 打开列显隐菜单；再次点击同一按钮关闭。当前列配置与默认配置不同时显示 `7px` 蓝点。 |
+| `Filters` | 点击 | 使用共享 `toggle()` 打开筛选主浮窗；再次点击同一按钮关闭，第三次重新打开。有筛选时按钮右上显示 `7px` 蓝点。 |
+| `Columns` | 点击 | 使用共享 `toggle()` 打开列显隐菜单；再次点击同一按钮关闭，第三次重新打开。当前列配置与默认配置不同时显示 `7px` 蓝点。 |
 | `Refresh plants` | 点击 | 刷新当前本地列表配置；动画期间阻止重复触发。完整重置规则见第 7 节。 |
 
 工具栏中的筛选、列显隐和刷新均使用共享 `36px` 圆形中性玻璃按钮。
@@ -53,7 +53,7 @@
 |---|---|---|
 | 条件 chip | 点击主体 | 当前没有额外动作；具体操作入口是 chip 尾部的关闭按钮。 |
 | chip 关闭按钮 `×` | 点击 | 移除该条件并立即重新计算结果。公司父级 chip 会一次移除该父级及其所有后代条件。 |
-| `Add filter` 加号 | 点击 | 在加号下方左对齐打开完整筛选面板，内容与交互复用工具栏筛选面板。面板打开后固定在初始视口位置；新增条件导致 chip 换行或加号移动时，面板不跟着漂移。 |
+| `Add filter` 加号 | 点击 | 使用共享 `toggle()` 在加号下方左对齐打开完整筛选面板，再次点击关闭；内容与交互复用工具栏筛选面板。面板打开后固定在初始视口位置；新增条件导致 chip 换行或加号移动时，面板不跟着漂移。 |
 | `Clear` | 点击 | 清除全部筛选条件，但不清除搜索词、排序、列显隐或书签。筛选条在最后一个条件移除后隐藏。 |
 
 筛选 chip 只显示条件文字，不显示“类别：值”的长前缀。公司父级已选中时，只生成一个父级汇总 chip，不列出全部子公司。
@@ -336,7 +336,8 @@ Connection 与 Running status 是两个独立维度。Offline 和 Partially offl
 - 新标签标题使用电站名称；空名称电站使用 `?`。
 - 详情顶部复用 `createPageHeader()`，面包屑为 `Plants / 电站名`；父级 `Plants` 同时承担返回逻辑，未知 ID 的末级为 `Plant not found`。电站名旁的书签与列表共用 `wattdesk.plants.bookmarks.v1`。
 - 收藏按钮紧跟电站标题，视觉间距约 `4px`，图标与标题垂直居中；按钮不挂玻璃材质。外层按钮保持静止，只让内部图标以中心放大：hover / focus `1.28`、按压 `1.38`，使用共享动效节奏且不能横向位移。
-- 页头固定，下一行使用复用共享 `.wd-scope-control` / `.wd-scope-button` 的 `Overview / Devices / Site details` 页签；36px 胶囊、13px / 510 标签、4px 间距，未选中为无描边实体填充，选中使用共享内描边；标签行复用 Service 工具栏的上 `16px` / `14px` 留白且无底部分隔线。三个页签 hover `1.045`、按压 `1.09`；Devices 使用 `/plants/:id/devices`，Overview 与 Site details 各自回到对应页面状态。
+- 页头固定，下一行使用复用共享 `.wd-scope-control` / `.wd-scope-button` 的 `Overview / Devices / Site details` 页签；36px 胶囊、13px / 510 标签、4px 间距，未选中为无描边实体填充，选中使用共享内描边；标签行复用 Service 工具栏的上 `16px` / `14px` 留白且无底部分隔线。页签 hover `1.045`、按压 `1.09`；Devices 使用 `/plants/:id/devices`，可见的 Site details 使用 `/site-v2`；旧 `/site` 不显示入口。窄屏页签允许横向滚动。
+- 范围页签的横向滚动容器为 hover / focus 预留上下各 `8px`：总高 `calc(100% + 16px)`、`padding:8px`，并用 `top:-8px` 与左右 `margin:0 -8px` 抵消；页签原位置、行高和横向滚动起点不变，上下描边不得被裁切。
 - Overview 使用一张连续画布，水平内距 `32px` 并填满可用高度。只有一台设备时隐藏设备轨；多台设备按 `data.js` 当前设备顺序显示，默认选中第一项。切换后统计、日志、趋势和 `?device=` URL 同步更新。玻璃只用于可操作控件；状态条使用普通实体表面，Operations 三卡直接复用共享 `wd-discussion-card`。Statistics 和 Energy trend 不再使用卡片底或四周边框，只在各自顶部保留一条 `2px` 横向分隔，不画底部线。
 - 运行状态、通信、天气、地点与本地时间组成横向上下文条；四项使用图标 + 值显示，完整字段名写入 `aria-label`。容器背景透明且无圆角面板。该条只占中间主列并停在 Operations rail 左侧。Operations rail 从状态条顶边开始，跨越上下文与 Energy flow 两行。下半区行间距 `16px`；Energy trend 位于 Statistics 上方，桌面、`901–1450px` 的 2×2 与 `≤900px` 单列顺序一致。Statistics 行高 `224px`、标题行高 `32px`，标题行与内容区之间为 `20px`。内容网格填满剩余高度，图表容器与组底对齐。Energy trend 顶部内距 `20px`、底部 `0`。模块顶部分隔线为 `2px`，图表网格为 `0.6px` 非缩放描边，全部数据折线由 `.is-line-hidden` 默认隐藏。`901–1450px` 使用两行两列，`≤900px` 改为单列 Flex 流，不能截断或重叠信息。
 - `Energy flow` 删除标题和 `LIVE` 整行，只保留从容器顶边铺满的透明空舞台；内部设备、PV / Battery / Grid / Home 节点、连接线、读数和圆环均已移除，画布与舞台的渐变、背景、边框、圆角和阴影也全部删除，后续新设计确认后再接入。
@@ -375,7 +376,8 @@ Connection 与 Running status 是两个独立维度。Offline 和 Partially offl
 - 列表：`/plants`
 - 详情：`/plants/:id`；选中设备后可带 `?device=inverter|bms|heater`
 - Devices：`/plants/:id/devices`，可继续带 `?device=`；直接打开和刷新仍显示 Devices
-- Site details：`/plants/:id/site`，可继续带 `?device=`；直接打开和刷新仍显示 Site details
+- 隐藏兼容 Site details：`/plants/:id/site`，可继续带 `?device=`；仅保留旧链接和回归兼容，不显示页签
+- 当前 Site details：`/plants/:id/site-v2`，可继续带 `?device=`；直接打开和刷新显示当前资料页
 - Operations 子页：`/plants/:id/faults`、`/plants/:id/logs`、`/plants/:id/tickets`；可继续带 `?device=`，当前均为明确占位页
 - 刷新详情 URL 后仍停留在对应详情。
 - 缺少 `device` 时读取该电站设备顺序并选中第一项；刷新、复制链接和标签恢复保留当前设备。
@@ -386,45 +388,97 @@ Connection 与 Running status 是两个独立维度。Offline 和 Partially offl
 
 参考页研究结论：典型设备页按设备类型展示身份、连接状态、技术字段和专属操作。设备设置、固件检查、重命名、替换、系统测试与解绑都属于设备级操作，不应提升为页面级全局按钮。WattDesk 本地实现参考 Linear 的紧凑产品工作流，不照搬参考页的悬浮卡片，也不继续使用大圆角色块，而使用连续、无边框的扁平设备行。
 
-- Devices 页沿用 Plants 详情外壳：固定页头、共享胶囊页签和独立滚动正文；设备内容列最大宽度 `1130px` 并在可用工作区中水平居中，不再横向铺满，也不套用 Home 的 `1000px` 居中画布。
+- Devices 页沿用 Plants 详情外壳：固定页头、共享胶囊页签和独立滚动正文；设备内容列最大宽度 `1130px` 并在可用工作区中水平居中，不再横向铺满，也不套用 Home 的 `1000px` 居中画布。设备身份第二行开头的连接状态只允许 `Online / Offline` 两态，并复用 Plants 列表 Connection 列的内联信号图标，在设备行收至 `16px` 并上移 `1px` 做文字光学对齐：Online 显示四根主墨色信号柱，Offline 显示 55% 不透明信号柱和红色 X；动画只改变整体 opacity，不能再次乘低静音柱的填充透明度。图形与文字间距 `4px`。设备页图标持续循环展示：一轮 `3200ms`，四根柱以 `180ms` 错峰从左到右弹性生长、停留后柔和淡出归零；Offline 的红色 X 在信号柱后从 `-55°` 旋转归位，并在本轮末尾淡出后进入下一轮。Plants 列表内的大量连接图标保持静态，避免重复动效干扰扫读；`prefers-reduced-motion` 时取消循环并直接显示静态终态。`p25` 的 BMS 示例设备固定为 Offline，用于同时展示两种图标。不得使用 Status 列的 `tickle.svg` 勾选图标、Warning 状态或自定义圆点。
 - 页面顶部不再显示设备数量与在线/离线分布摘要，只保留右对齐的 `Add device`；不增加页面级预览说明行。本地会话与未接后端的事实继续通过对话框文案和操作后的 toast 表达。
 - 设备行不再复用 `.wd-discussion-card`：常态 `background:transparent`、四边 `border:0`、`box-shadow:none`；操作按钮或行内控件 hover / focus 只改变控件自身，不再给整行或整组绘制背景高亮。桌面左侧产品图区域使用 `120px` 宽、`96px` 高，产品图通过 `object-fit:contain` 完整显示且不得裁切，再以 `16px` 间距接连续内容列，默认不形成独立卡片表面；平板和移动端继续按现有断点收窄。相邻设备之间由行顶部 `1px` `Separators/Non-opaque` 分隔线隔开，设备间分隔线左右延伸到工作区两侧，并在两端各用 `64px` 透明渐变融入背景，不是卡片描边。
 - 设备身份区统一由 `device-identity.js` 的 `createDeviceIdentity()` 生成，Inverter / Battery / Heater 共用。固定两行：第一行只放设备名，第二行以在线状态开头，随后是类型、产品名和运行摘要；两行间距 `10px`。设备名使用 `16px / 590`，第二行使用 `13px`。技术字段统一使用六列网格，Battery 的 Installation capacity 必须与 Inverter 的 Hardware version 同列；字段标签为 `12px`，深色使用 `Labels/Tertiary`，浅色提升到可读的 `Labels/Secondary`。技术值保持 `Footnote/Medium` 类型绑定并使用标准界面字体，SN 复制按钮继承该字段样式。
 - Inverter / Heater 行操作固定为固件检查、设置和更多菜单；Battery 不提供设置入口，仅保留固件检查与更多菜单。所有行操作使用 `36px` 共享中性玻璃圆钮，按钮组使用共享 `8px` 间距。顶部 `Add device` 同样使用共享中性玻璃胶囊。固件检查改用 Figma `ICON/update` 原始升级图标，并通过遮罩缩放收在按钮内芯。更多菜单提供 `Run system test / Replace device / Rename / Unbind device`，四项均使用 Figma 导出图标，统一视觉高度并放在文字左侧。操作菜单复用标准 `30px` 浮层圆角，右缘与更多按钮对齐，不得被视口边距夹到最右侧。`Unbind device` 的默认、hover 与 `focus-visible` 图标和文字都保持纯红，hover 背景使用红色 `11%` 淡透明层，不能被普通菜单的中性 hover 覆盖。Rename 与 Settings 的 Primary 保存按钮统一采用“无真实修改即禁用”逻辑：回到初始值时重新禁用；Add / Replace 继续按必填字段有效性控制。
 - Inverter 行展示运行模式、运行状态与系统系列，字段顺序为 Model、Hardware version、Firmware version、Boot version、SN、Check code。相关 Inverter Settings 分类为 Running mode、Battery management、Professional settings、Safety-locked parameters、Networking、Shadow scan、Operation control、Other settings；Running mode 可在本地选择并保存。
 - Inverter 与 Heater 的设置弹窗共用同一 `openSettingsDialog()` 和保存状态逻辑：打开时 `Save changes` 原生禁用；任一字段产生真实修改且草稿不同于初始值后启用；修改后又恢复为初始值时重新禁用。Primary 按钮沿用共享蓝色玻璃与白字，禁用态只降低透明度。Battery 不提供设置弹窗。
-- Battery 行展示 Firmware version 与 Installation capacity，并列出可展开的 Cluster 行；所有 Cluster 进入页面时默认收起，包括 `Cluster #1`。Cluster 区域顶部和每个 Cluster 之间使用 `1px` `Separators/Non-opaque` 分隔线，设备技术字段底缘到首个 Cluster 分隔线保持 `16px`；Cluster 横线保持内容列原始宽度，不得向工作区外延伸。Cluster 行高 `40px`，文字 `14px / 590`，箭头 `18px`；箭头默认使用 `Labels/Tertiary`，整块 Cluster hover / focus 时提升为 `Labels/Primary`，Cluster 标签自身保持主文字色。文字与设备内容列左对齐。展开后的整块 Cluster 都是折叠热区，hover / focus 使用左右各外扩 `10px`、圆角 `12px` 的整块低对比高亮；点击任意非 SN 内容收起，标题按钮继续负责键盘开合。展开区顶部保留 `8px` 留白，Sub-master BMS 与 Batteries 两组间距为 `18px`；两个小节标题使用 `14px / 590`，比下方 `13px` 字段与型号值更大。三种内容共用设备顶部六列网格：Sub-master BMS 的 ID / Model / Hardware / Firmware / SN 依次落到第 1–5 列，Batteries 的 ID / Hardware / Firmware / SN 依次落到第 1–4 列。展开容器不再保留右侧内距，表头文字与上方字段标签统一为 `13px`。展开区只显示参考页中的两类数据：Sub-master BMS 五项字段，以及 Batteries 表中至少 6 个电池模块的 ID、Hardware version、Firmware version、SN；Batteries 记录使用全站标准字体，不使用代码字体。设备行顶部与 Cluster 内的所有 SN 都是独立复制按钮：hover / focus 显示下划线，点击复制序列号；Cluster 内复制不得折叠。Batteries 表头下第一行额外增加 `5px` 上内距，其余行保持统一紧凑行距；电池行本身不增加单独 hover 背景。
+- Battery 行展示 Firmware version 与 Installation capacity，并列出可展开的 Cluster 行；所有 Cluster 进入页面时默认收起，包括 `Cluster #1`。Cluster 区域顶部和每个 Cluster 之间使用 `1px` `Separators/Non-opaque` 分隔线，设备技术字段底缘到首个 Cluster 分隔线保持 `16px`；Cluster 横线保持内容列原始宽度，不得向工作区外延伸。Cluster 行高 `40px`，文字 `14px / 590`，箭头 `18px`；箭头默认使用 `Labels/Tertiary`，整块 Cluster hover 或键盘 `focus-visible` 时提升为 `Labels/Primary`，Cluster 标签自身保持主文字色。鼠标点击留下的普通 `:focus-within` 不得继续维持整块高亮，指针移开后必须消失。文字与设备内容列左对齐。展开后的整块 Cluster 都是折叠热区，hover / keyboard focus 使用左右各外扩 `10px`、圆角 `12px` 的整块低对比高亮；点击任意非 SN 内容收起，标题按钮继续负责键盘开合。开合复用共享 `bindDisclosure()`：内容用共享 `--wd-motion-disclosure` / `--wd-ease-disclosure` 做高度与透明度过渡，详情上下 padding 必须随高度同步收敛，否则会在 `22px` 残留高度上停顿；动画期间只裁切越界内容，箭头以相同节奏旋转，`prefers-reduced-motion` 时直接切换。设备布局观察器只在容器宽度变化时重算六列宽度和分隔线位置，不能因 Cluster 高度动画逐帧重写卡片样式。展开区顶部保留 `8px` 留白，Sub-master BMS 与 Batteries 两组间距为 `18px`；两个小节标题使用 `14px / 590`，比下方 `13px` 字段与型号值更大。三种内容共用设备顶部六列网格：Sub-master BMS 的 ID / Model / Hardware / Firmware / SN 依次落到第 1–5 列，Batteries 的 ID / Hardware / Firmware / SN 依次落到第 1–4 列。展开容器不再保留右侧内距，表头文字与上方字段标签统一为 `13px`。展开区只显示参考页中的两类数据：Sub-master BMS 五项字段，以及 Batteries 表中至少 6 个电池模块的 ID、Hardware version、Firmware version、SN；Batteries 记录使用全站标准字体，不使用代码字体。设备行顶部与 Cluster 内的所有 SN 都是独立复制按钮：hover / focus 显示下划线，点击复制序列号；Cluster 内复制不得折叠。Batteries 表头下第一行额外增加 `5px` 上内距，其余行保持统一紧凑行距；电池行本身不增加单独 hover 背景。
+- `2026-11-17` Battery Cluster 的收起行必须在箭头左侧显示淡色模块数量，例如 `6 modules`；数量使用 `12px` Caption 层级与 `Labels/Tertiary`，并与箭头组成右侧固定尾部组。
 - Heater 行字段顺序为 Model、Hardware version、Firmware version、SN、Check code；Settings 提供 Operating mode、Temperature、Operation control、Networking 与 Safety。
 - `Add device` 使用 `Device SN` 与 `Device name` 两个必填字段；空值或当前电站内重复 SN 不得提交。成功后在当前页面会话追加卡片并更新摘要。由于后端绑定尚未接入，本地预览按 SN 前缀推断样例类型：`WMT` 为 Heater，`R11 / STORAGE / BAT` 为 Battery，其余默认 Inverter；该规则只属于预览，不是生产识别协议。
 - Rename 使用单字段对话框；Replace 保留当前设备位置并展示旧 SN/检查码只读信息，新设备需要 SN、检查码与 Remarks；Unbind 使用明确确认层，文案为 `Unbind {name}?`，说明只从电站移除、不删除历史。所有修改仅存在于当前页面会话，刷新恢复样例。
 - Unbind 使用独立的居中确认布局：宽度 `480px`，无顶部关闭按钮，顶部为 `64px` 底托与 `28px` 红色删除图标，下方居中显示标题和说明，底部并排 `Cancel / Unbind device`；内容水平居中，整体沿用窄弹窗的“垂直居中后上移 `80px`”规则。
-- 所有设备对话框直接复用首页全屏搜索的 `.wd-search-fullscreen`、`.wd-search-backdrop`、`.wd-search-panel-frame` 与 Glass Surface：同一深浅主题遮罩模糊、同一材质和反射、同一 `30px` 圆角，以及同一入场/退场动画与时长。设备弹窗只提供内容宽度、位置和业务结构，不复制遮罩或动画 CSS。表单弹窗宽度固定为 Add / Rename `640px`、Settings / Replace `1160px` 双栏；`Unbind` 使用独立 `480px` 居中确认层，不能被误写回 `640px`。所有弹窗先按视口垂直居中，再按尺寸档位上移：窄版 `80px`，宽版 `24px`。标准标题栏左侧使用 `40px` 图标底托，图标、标题和右侧关闭按钮共用垂直中心，关闭图标收为 `14px`；标题下不显示解释副标题。确认层无标题栏与 X，使用 `64px` 图标底托、`28px` 图标、居中标题/说明和并排按钮。表单字段统一使用共享 `.wd-edit-field`，默认无描边；浅色默认与 focus 均保持 `Fills/Quaternary` / `Fills/Tertiary` 的中性灰，hover 提亮、focus 只使用中性轮廓，不出现纯白底或蓝色输入框描边。主按钮禁用时仍保持白字与蓝色材质，仅降低不透明度。
+- 所有设备对话框使用共享 `.wd-modal-fullscreen` / `.wd-modal-backdrop` / `.wd-modal-panel` / `.wd-modal-panel-frame` 与 Glass Surface，不再复用搜索的纵向入场。遮罩沿用搜索同等级的深浅主题 tint 与 blur；弹窗本体沿屏幕 Z 轴从近端 `translateZ(64px)` 的轻微放大状态单调收拢到实际尺寸，不穿过目标平面回弹。窗口起始约 `22%` 可见并以 `blur(16px)` 持续清晰化；退场向 `translateZ(42px)` 轻微放大、淡出并模糊至 `8px`。设备弹窗只提供内容宽度、位置和业务结构，不复制遮罩或关键帧。表单弹窗宽度为 Add / Rename / Replace `640px`，Settings `1160px` 双栏；Replace 在该窄版内将旧设备信息与替换表单纵向排列，表单字段保持 2×2。`Unbind` 使用独立 `480px` 居中确认层。所有弹窗先按视口垂直居中，再按尺寸档位上移：窄版 `80px`，宽版 `24px`。标准标题栏左侧使用 `40px` 图标底托，图标、标题和右侧关闭按钮共用垂直中心，关闭图标收为 `14px`；标题下不显示解释副标题。确认层无标题栏与 X，使用 `64px` 图标底托、`28px` 图标、居中标题/说明和并排按钮。表单字段统一使用共享 `.wd-edit-field`，默认无描边；浅色默认与 focus 均保持 `Fills/Quaternary` / `Fills/Tertiary` 的中性灰，hover 提亮、focus 只使用中性轮廓，不出现纯白底或蓝色输入框描边。主按钮禁用时仍保持白字与蓝色材质，仅降低不透明度。
+- 设备弹窗退场使用统一 `420ms`：窗口、内容 frame 与背景同时从 `0ms` 开始并同时结束。背景不得保持满模糊滞后，tint 与 blur 从第一帧同步下降，并在前半段快速消退主要模糊、后半段以更小步长缓释到零，不能出现最后突然消失。
+- 设备弹窗背景、窗口与内容统一在 `520ms` 内完成入场；背景按约 `25%` 到模糊的 `52%`、`50%` 到 `78%`、`75%` 到 `93%` 建立，再在结尾收满，避免背景提前定型。
+- 设备弹窗内容 frame 的入场 blur 在 `520ms` 内按 `16 / 10.5 / 6.5 / 3.8 / 2 / .8 / .15 / 0px` 连续收束；前段先快速去除主要模糊，后段每级变化量递减并平滑归零。
+- 以上共享入场 / 退场效果统一命名为 **Depth Reveal（景深浮现）**。Add、Rename、Replace、Settings、Unbind 均通过 `createDialog()` 共用该效果，不允许单页覆盖或复制关键帧。
+- 入场完成后不能移除 `data-entering` 或背景合成提示，只增加 `data-entered`；关闭时再同一帧切换到 `data-closing`，避免最后一帧重新合成 `backdrop-filter` 而闪暗。
 - Responsive：宽桌面保持紧凑双列行；`≤1100px` 技术字段改为三列，Cluster 改为两列；`≤900px` 产品缩略图收到 `56px`；`≤720px` 设备行改为单列，图片和操作与身份分行；`≤520px` 字段及 Cluster 明细改为单列。页面不得产生整页横向滚动。
 - 键盘：所有卡片操作、菜单项、Cluster 展开按钮和设置字段均使用真实可聚焦控件；模态层支持 Esc 关闭、Tab 焦点循环和关闭后焦点归还；减少动态效果时关闭对话框位移动画。
-- 产品图来源记录在 `design/figma/plants/devices-source.json`，运行资产位于 `home-assets/plants/devices/`；运行时 PNG 只移除边缘连续白色底，不重画产品。
+- 产品图来源记录在 `design/figma/plants/devices-source.json`，运行资产位于 `home-assets/plants/devices/`；运行时 PNG 只移除边缘连续白色底，不重画产品。Battery 当前使用用户提供的 `R13_list_dark.png` 透明原稿，来源副本为 `design/figma/plants/devices/r13-list-dark-source.png`，运行副本为 `home-assets/plants/devices/istorage-r13.png`，尺寸 `600×600`，不进行像素处理。
 
 ### Site details
 
 完整字段、状态、响应式和验收契约见 [Site details 页面规格](../../../../docs/SITE-DETAILS.md)。本页只维护电站级资料，不重复设备页的 SN、固件或控制能力。
 
-- 页面使用共享页头、收藏按钮和 `Overview / Devices / Site details` 范围页签。正文顶部直接以电站名作为标题，右侧是玻璃操作区，不显示额外页面说明，也不在共享页头放页面业务按钮。
+- 可见页面使用共享页头、收藏按钮和 `Overview / Devices / Site details` 三个范围页签。正文顶部直接以电站名作为标题，右侧是玻璃操作区，不显示额外页面说明，也不在共享页头放页面业务按钮。旧 `/site` 仅保留隐藏兼容路由。
 - 宽屏正文使用共享 `.wd-page-content`，最大宽度 `--wd-page-content-max`（当前 `1000px`）并居中；页面标题、两列卡片和提示共同撑满该内容列，避免超宽屏把设置项无限拉长。
-- 桌面左列为 Basic information、Electricity price 与 Owner information，右列为 Installer contact、Plant picture 与 Visitor management；两列等宽。
+- 桌面左列为 Basic information、Electricity price 与 Installer contact，右列为 Owner information、Visitor management 与 Plant picture；两列等宽。Installer company、Contact email、Alarm email recipient 与 Address 使用更宽的值列，查看和编辑态都不截断长内容。
 - 每个模块一张卡，卡片无描边、无阴影，行间只保留低对比 1px 分隔；模块标题使用 `15px / 590`，其余标签和值使用 14px 设置页字阶。
 - 详情滚动隐藏浏览器原生滚动条，只使用共享 `createScrollFeedback()`；内容增高时由共享滚动组件同步可见轨道，避免编辑态出现第二条样式不一致的滚动条或挤压卡片。
 - 查看态直接显示标签和值；整页编辑态在原位置替换为表单，顶部玻璃操作区切换为 Cancel 与 Save changes。标题电站名在原位改为自动增高文本区，默认高 `44px`、宽至约 `760px`，超长自然换行并向下生长；短标题进入编辑时标题行高度不变。Basic information 不再重复 Plant name。Save changes 与 Home 日期选择器 Apply 共用文本按钮结构，无额外图标且始终可用；无变更时点击直接退出编辑，校验失败时移动到第一个错误字段。
 - 切换编辑态不得改变任何卡片的位置或尺寸，行右侧控件的左右边界必须与查看态一致；编辑行默认保持 `52px` 高。查看值、输入和下拉文本统一 `14px`。
-- 文本、数字和自定义选择字段统一复用 `.wd-edit-field`：focus 只使用低对比中性轮廓，不使用蓝色描边；浅色默认与 focus 保持共享中性灰填充，不使用白底。编辑值、单位、文本输入和下拉当前值统一为 14px。
+- 文本、数字和自定义选择字段统一复用 `.wd-edit-field`：共享浅灰半透明填充 + 背景模糊，深色 blur 14px、浅色 16px；不挂完整 Glass Material，不显示 rim、高光、内阴影或投影。focus 只使用低对比中性轮廓，不使用蓝色描边；浅色默认与 focus 保持共享中性灰填充，不使用白底。编辑值、单位、文本输入和下拉当前值统一为 14px。
 - Basic information 包含 Plant type、PV capacity、Battery installation capacity、Creation time、Timezone、Country、Price area 和 Address；Plant name 只在页面标题行编辑，稳定内部 Plant ID 不向用户展示。
 - Electricity price 包含 Currency 与 Grid price/kWh。Owner information 复用共享头像和 36px 中性玻璃三点按钮。
 - Installer contact 包含安装商、联系人、邮箱、电话、Alarm email notification 和 recipient；通知使用共享 `createToggleSwitch()` 的真实 switch，状态由 `aria-checked` 表达。轨道复用标准玻璃按钮材质，关闭态保持可见中性填充，开启态为蓝色玻璃，内部高光克制。
-- Plant picture 与 Visitor management 当前保留明确空态；没有上传或邀请服务时不伪造成功状态。
-- Danger zone 只在编辑态出现，`Delete plant` 必须二次确认；当前确认只说明后端未连接，不删除本地电站。
+- Visitor management 空态保持紧凑，未连接说明只在本地开发预览显示；Plant picture 继续保留明确空态。没有上传或邀请服务时不伪造成功状态。
+- Danger zone 只在编辑态出现并横跨两列，位于全部资料模块下方；`Delete plant` 必须使用共享 `createConfirmDialog()` 的 `480px` 居中确认弹窗，与设备 `Unbind device` 同构并复用 Depth Reveal；不得调用浏览器原生 `confirm()`。确认动作只说明后端未连接，不删除本地电站。
 - Danger zone 使用淡红色背景隔离危险操作；`Delete plant` 复用 Save changes 的标准玻璃胶囊结构，但使用纯红玻璃底和始终为白色的文字，hover / focus 也只改变红色亮度，不能变蓝。
 - 数字输入不显示浏览器上下步进器；Plant type、Timezone、Country、Price area 和 Currency 使用自定义选择按钮 + 共享 Glass Surface 选项浮层，不使用原生 select 弹层。下拉箭头复用通用 `asset-14.svg` 并旋转 90° 指向下方。
 - 已保存资料只保留在当前 Plants 页面会话中，切换详情页签后仍存在，刷新恢复样例。
-- `≤1000px` 改为单列并让安装商与图片并排，`≤640px` 全部单列、字段标签在上；长邮箱和地址换行，页面不得横向滚动。
+- `≤1000px` 主资料列改为单列，Owner、Visitor 与 Plant picture 组成两列、图片占满第二行；`≤640px` 全部单列、字段标签在上；长邮箱和地址换行，页面不得横向滚动。
 - 专项回归为 `tests/verify-site-details.cjs`。
+
+### Site details
+
+#### 当前最终规则（2026-11-18）
+
+- 页面只显示 `Overview / Devices / Site details` 三个页签；旧 `Site details` 页签隐藏，可见的 `Site details` 使用稳定路由 `/plants/:id/site-v2`，原 `/site` 仅保留为隐藏兼容路由。标签与页面隐藏标题都删除数字 `2`。Hero 和资料卡共享 surface；Hero 使用 `1px var(--wd-separator-nonopaque)` 浅描边防止融入背景但不加投影，下方资料卡保持无描边、无阴影。Hero 四角只通过 `border-radius + overflow:hidden` 裁切，不得叠加 `clip-path`，否则描边会在四个圆角消失。Hero 最小高约 `264px`，地图铺满内容区并继承 `26px` 圆角，不显示 Plant type / Normal 胶囊。
+- 地图以当前代码和测试为准：只请求一张 Mapbox Static Images `dark-v11 / light-v11` 图片，方括号 bbox、`720x440@2x`、站点 zoom `13`。同一响应渲染为清晰底层与 `blur(10px)` 上层，上层通过 `28deg` 渐变蒙版在 `42%–78%` 范围实现“焦点区 0 → 过渡带连续增强 → 外层固定 10px”的分区模糊；模糊层向外 overscan `10px`，避免四边透明软边。深浅主题各使用预加载 map bank，主题变化共享 620ms 主题时长和缓动做交叉淡变。同一文档首次显示地图时淡入一次，离开再进入不重播，刷新后重置。通过 `setfilter=["boolean",false]` 与 `layer_id=road-label-simple` 隐藏道路文字。地址直接显示在地图上并保留完整换行与复制。
+- 定位点位于 Hero 约 `75% / 39%`，保留 36px 共享按钮命中区。深色继续使用玻璃圆钮与两圈波纹，blur 14px / tint `.24`；浅色只显示 8px 纯色 `--wd-accent-blue` 圆点，玻璃面、波纹、`::after`、呼吸光晕、hover 指针高光、渐变、外描边、阴影和动画全部隐藏。底图简化不得删除定位、地址浮窗或复制交互。
+- 所有编辑字段使用 `.wd-edit-field` 的浅灰半透明底和背景模糊（深色 14px、浅色 16px），不使用完整 Glass Material，不显示发光、rim、内阴影或投影。标题 textarea 使用块级布局，单行承托层与 44px 输入框等高，不得留下额外灰色底条；承托层左右各扩 14px、文本内距 14px，编辑文字与查看标题保持同 X 和同一顶部基线，进入编辑不得上浮。选择触发器共用该规则，选项浮层仍用 Glass Surface。
+- Hero 指标、Installer、Owner、Plant picture 的图标和命令菜单遵循“新图标默认实心面状”；Owner 联系方式与 Installer 联系方式统一 13px/18px/400、1px 竖线、点击复制并 toast。
+- `Energy & tariff` 固定 `Timezone / Price area / Currency / Grid price`，44px 行、20px 内距、卡内标题、无行前图标。Owner 分隔线全宽，Plant picture 空态与 Visitor 等高。
+- 范围页签滚动容器高度 `calc(100% + 16px)`、`padding:8px`，通过 `top:-8px` 与左右 `margin:0 -8px` 抵消，确保 hover/focus 不被上下裁切。
+
+#### 历史迭代记录
+
+- 入口为 `Overview / Devices / Site details / Site details 2` 的第四个页签，规范路径 `/plants/:id/site-v2`；原 `/site` 保持不变用于对比。
+- 顶部 Hero 卡不显示公司/SN 副标题，只承载电站名、四个指标和地图。地图层铺满 Hero 四周，并通过 `clip-path: inset(0 round 26px)` 与地图焦点层继承圆角。清晰地图与 `14px` 模糊地图使用同一全幅几何；模糊层在下提供真实模糊和地图灰度，清晰层通过椭圆径向遮罩在上方弧形渐入。约 `0%–42%` 保持模糊、`42%–84%` 渐变、之后完全清晰。Mapbox bbox 使用方括号语法和街区级 `15.2` zoom，把真实电站位置固定在清晰区中心 `75% / 50%`；页面定位点位于全 Hero 约 `75% / 34%`。
+- 地图组件为 `components/mapbox-static-map.js`，使用成对的 `dark-v11 / light-v11` 静态样式，默认街区级 zoom `15.2`，bbox 必须使用方括号语法。组件同时渲染同一全幅几何的清晰地图与 `24px` 不透明模糊地图。
+- 地图不使用 `backdrop-filter`：模糊层与清晰层同几何，清晰层通过椭圆径向遮罩从模糊地图上弧形显出。不得用不同裁切比例或直线遮罩拼接，否则会出现重影、脏带或假模糊。浅色主题保留柔和街区灰度，左侧同色蒙版极弱。
+- 定位圆点最新覆盖：继续使用共享 `createStandardButton` + `glass.addSurface({radius:18})`，通过共享玻璃变量产生明确毛玻璃，深色 blur 14px / tint `.24`、浅色 blur 18px / tint `.64`。宿主必须设置 `isolation:auto`，否则 backdrop 隔离会让模糊失效。浅色 `::after` 白点隐藏，核心只用 `#56c4f2 → #0b7fbe → #075c8d` 的纯蓝渐变。
+- 本地开发额外支持 `?mapboxToken=pk...` 一次性引导，仅在 `localhost / 127.0.0.1` 生效；地图组件读取后立即移除查询参数并尝试写入本地调试存储，正式域名不接受该参数。
+- 顶部 Hero 与下方卡片全部无描边、无阴影。每张资料卡的标题、标题图标与右上角加号都放回卡片内部；所有卡统一 `16px` 标题到正文间距，并去掉标题下横线。第一行 `Energy & tariff`、`Installer & support` 同列宽、顶对齐并最终等高；`Energy & tariff` 借用旧版 `Electricity price` 的 `4%` 透明卡面与 `16px` 圆角，同时保留卡内标题，卡体上下各保留 `16px` 内距，固定行序为 `Timezone / Price area / Currency / Grid price`，四项使用 `44px` 行高、共享左右 `20px` 内距、`14px / 510` 标签和常规字重标准字体值。Installer 标题不动；公司与联系人采用相同的上下排版，`12px` 次级标签在上、`14px / 510` 信息值在下，每组最左侧使用 organisation / user 原始图标，联系人不显示头像。邮箱和电话位于联系人下方，直接拼接为 `邮箱 | 电话`，不再显示标题；两者统一为 `13px / 18px / 400` 次级色，分别是点击复制按钮，不使用 `mailto:`、`tel:` 或跳转。Alarm email 为底部设置行，其分隔线贯穿卡片左右边缘，文案右侧提供 14px info 按钮，hover / focus 显示参考图说明，按钮使用普通 pointer 光标而不是 help 问号。页面提供本地 `Edit / Cancel / Save changes`：Energy 四项全部可编辑且编辑态保持同一行序，Grid price 为数字输入且隐藏原生步进器，其余使用共享选择器；Company / Contact 在编辑态为选择器，Email / Phone 随联系人自动带入但仍可点击复制，Alarm email 使用共享开关且仅在编辑态可切换。第二行 `Owner information`、`Plant picture` 等宽；Owner 固定展示三个信息完整示例账户，每个有头像、姓名、邮箱、电话与三点菜单，行间距收紧且联系字段同为 14px。`Visitor access` 位于 Owner 下方左列并复用其列宽，空态文字与 Plant picture 同色且不再保留大块底部空白。`Plant picture` 使用面性标题图标、紧凑空态和小圆形玻璃加号；无图保持较矮，有图随图片自然增高。账户、访客和图片上传仍只提供本地预览提示。
+- Site details 2 最新覆盖：Plant picture 标题图标使用 16px 单一连续实心面状图片符号，内部细节为负形；无图占位区从 76px 压缩为 20px，卡片高度与 Visitor access 完全一致，有图时高度跟随图片增长。账户操作等命令型菜单的每个功能项都在文字左侧显示 16px 实心面状语义图标；`Edit account` 使用填充铅笔/底线，`Manage access` 使用填充锁体/锁梁与负形锁孔。图标与文字继承同一菜单色并在 hover / focus 同步提亮，不允许退回线性描边。
+- Owner information 的邮箱和电话复用 Installer 联系方式的复制控件：13px / 18px / 400 次级色、中间 1px 竖线、hover / focus 主色下划线与 `cursor:copy`；点击分别复制并提示 `Email copied` / `Phone number copied`，不得生成 `mailto:` / `tel:` 链接。
+- Hero 指标与 Installer company / Contact 的信息组图标保留 Labels/Secondary 语义色，并以 `0.78` 不透明度做光学减淡，使实心图形与相邻小标签看起来同色、同视觉重量。
+- 最新覆盖：Hero 四张指标卡与 Company / Contact 共用 `createInfoGroup()` 图标信息组，左侧使用 16px 图标、右侧为小标签和值，移除外框、圆角和卡片底色；图标相对完整信息组垂直居中。排布改为 `Plant type / PV capacity` 与 `Commissioned / Battery storage` 两行，分别使用 organisation、module-balance、calendar、cell-balance 图标；列宽按内容自适应并使用 `40px` 中心列距。图标与小标签统一使用 Grid price 的 Labels/Secondary 色。Company / Contact 编辑选择框左对齐并随文案自适应宽度，Energy 保持原卡面与行结构。
+- `≤1000px` 保持全幅 Hero；`≤760px` 指标两列、资料卡单列；`≤520px` 指标单列、Hero 最小高 `520px` 且隐藏地图定位点，避免定位点压住指标。
+- 专项回归为 `tests/verify-site-details-v2.cjs`，覆盖页面路由、页签、标题编辑、Energy、四项编辑控件、Hero 圆角与全幅地图、模糊底图与右半清晰焦点、定位坐标、国家与完整地址、无地址遮罩、地址换行不截断、深浅 Mapbox 样式、定位玻璃、窄屏和横向溢出。
+
+- Hero 不叠加径向蓝光或白色装饰渐变；左侧同色渐变只在模糊地图上方承托文字。四个指标卡使用两行网格并整体垂直居中，标题和主值分别共享基线；Commissioned 的日期时间同一行，主值使用 `14px / 510`。地图信息国家在上、完整地址在下；编辑态国家使用下拉、地址使用共享编辑字段样式的输入框；Edit / Cancel / Save changes 固定在 Hero 地图侧右上角。
+- Site details 2 标题编辑承托层左右各外扩 `14px`、输入内距 `14px`，因此编辑文字与查看态标题保持同一 X 坐标；承托层只使用浅灰填充和共享背景 blur，不显示玻璃高光、rim 或投影。选择触发器沿用同一 `.wd-edit-field` 模糊规则。
+- Owner information 的账户行用左右 `-20px` 外边距扩展到卡片边缘，再用 `20px` 左右内距恢复内容坐标；因此账户分隔线全宽贯穿，首行仍无分隔线。
+- 编辑态隐藏地图定位图标。Country、Installer company、Contact 统一使用共享 `.site-details-select-trigger` 与 Glass 选择浮窗，禁止原生 select。默认地址使用完整街道地址示例并允许更长输入。
+- 地址区不添加任何玻璃、底色、圆角卡片或底部渐变；`20px` 实心面性 `plants/detail/location-solid.svg`、国家与完整地址直接落在地图轻微模糊区域。地址自然换行且不得省略。hover / focus 仍打开可移入的共享 Glass Surface，浮窗只显示完整地址；地址本身只使用文字下划线，点击复制并提示 `Address copied`。
+- Energy & tariff 行前不再绘制额外图标，只保留卡头 Calendar 标题图标。Alarm email 信息按钮使用 `plants/detail/info2.svg` 的 `14px` 单色遮罩，不附加圆底、描边或阴影；默认颜色直接继承同一行 `Alarm email` 标签的 Labels/Secondary，hover / focus 才切换到 Labels/Primary，颜色完全继承主题 token。
+- Hero 指标图标固定为 Plant type `organisation.svg`、PV capacity `solar-panel.svg`、Commissioned `imgBoldTimeCalendar.svg`、Battery storage `battery-storage.svg`。PV 与电池使用独立的实心面状遮罩，内部网格与电量符号以负形表达，不得改成线性图标或用 Module balance / Cell balance 代替。
+- 共享开关在浅色主题使用更低的内部白光：顶部反射约 `.18`、底部约 `.08`，rim 顶/底 `.48 / .24`，内部亮边 `.16 / .08`；开启态蓝色轨道和白色滑块不变，深色模式不变。
+- 标题编辑态复用 `.site-details-page-title-input`：输入框铺满 `.site-v2-title-region`、与区域左缘对齐，左右内距至少 `14px`；长标题自动换行增高，内容不得贴边。
+- Hero 与除 `Energy & tariff` 外的资料卡统一引用 `--site-v2-card-surface`，地图左缘桥接也使用同一 token，Hero 不得偏深。
+- 地址信息不使用独立背景或遮罩，直接依靠左侧地图模糊层承托可读性。
+- Hero 不显示 Plant type 与 Normal 状态胶囊；Hero、常规资料卡和地图桥接使用同一 `10%` 主文字色混合 surface。`Energy & tariff` 单独使用旧版参考卡的 `4%` 卡面、`16px` 圆角与 `44px` 紧凑行；它按自身内容高度顶对齐，不得被 Installer 拉伸，查看态与编辑态卡高和固定文字位置一致，并在编辑态开放四项设置。
+- Hero 桌面最小高约 `264px`；标题区增加上下留白并使用全宽共享标题输入，四个指标使用 2×2 紧凑透明、无描边图标信息组，右侧地图比例放大。
+- 所有资料卡内容左右内距统一为 `20px`，Energy 标题与数据行同步。
+- 深色主题 Hero、资料卡和地图桥接统一使用 Service Ticket 同色 `Backgrounds/Secondary`，不使用更深黑或 Energy 私有填充。
+- 指标卡外框、Energy 行线、账户行与 Alarm 分隔统一使用 `1px var(--wd-separator-nonopaque)`。
+- 共享下拉箭头使用 `asset-14.svg`、`14px × 14px` 字形盒并向下旋转。
 
 ## 11. 键盘与无障碍
 

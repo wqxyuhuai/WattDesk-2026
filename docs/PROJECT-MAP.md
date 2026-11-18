@@ -1,6 +1,6 @@
 # WattDesk 项目地图与交接索引
 
-更新：2026-11-10。
+更新：2026-11-18。
 
 本文是新对话的项目总索引，只汇总稳定边界、共享标准和维护入口，不复制
 `DESIGN-SYSTEM.md` 的完整视觉参数。需要执行具体改动时，仍以根目录
@@ -19,7 +19,7 @@
 
 历史计划放在 `docs/history/`，只用于理解背景，不能覆盖当前规范。`CHANGELOG.md`
 保留逐日过程记录；当前有效规则以本索引指向的规范文件为准。
-`docs/USER-REQUIREMENTS.md` 顶部的 **2026-11-10 今日最终规则归档（当前有效）**
+`docs/USER-REQUIREMENTS.md` 顶部的 **2026-11-18 最终规则归档（当前有效）**
 是最近一次总表；其下按日期保留的条目用于追溯，冲突时以总表、设计规范和专项
 页面规格为准。
 
@@ -31,7 +31,8 @@
 | `/plants` | 已完成本地交互预览 | 46 条样例、筛选并集、列显隐、排序、收藏、滚动反馈 |
 | `/plants/:id` | 已完成 Overview 本地交互预览 | 默认进入第一台设备；多设备可切并同步 `?device=`；Statistics 支持 `Day / Month / Year / Total` 与月/年 `Separate / Combined`，数据为确定性本地样例 |
 | `/plants/:id/devices` | 已完成本地交互预览 | Linear 式扁平设备行、命名、新增、替换、解绑和设置预览；真实后端与硬件控制未接入 |
-| `/plants/:id/site` | 已完成本地交互预览 | 电站资料查看、整页编辑、校验和会话内保存；上传、访客和后端写入未接入。规格见 [SITE-DETAILS.md](./SITE-DETAILS.md) |
+| `/plants/:id/site` | 隐藏兼容路由 | 旧资料页仅保留直达链接和回归兼容，不在详情页签中显示 |
+| `/plants/:id/site-v2` | 当前 Site details 页面 | 详情页签显示为 `Site details`；顶部 Hero、Mapbox、Energy / Installer / Owner / Picture / Visitor 卡，支持会话内编辑。规格见 [SITE-DETAILS.md](./SITE-DETAILS.md) |
 | `/plants/:id/faults|logs|tickets` | 子页占位 | Operations 三卡当前标签内进入；三层面包屑、刷新与历史可用，详细内容后续实现 |
 | `/service` | 已完成本地交互预览 | 工单卡片、状态与范围筛选、搜索 |
 | `/service/new` | 已完成本地交互预览 | 新标签双栏编辑、Plant 搜索选择、本地发布 |

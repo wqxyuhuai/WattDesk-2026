@@ -1,8 +1,10 @@
 import {createTextElement as text} from "../../foundations/dom.js";
-import {fullscreenOverlayEnterDuration,fullscreenOverlayExitDuration,reducedMotion} from "../../foundations/motion.js";
 import {assetURL,createMaskedIcon,opaqueMaskURL} from "../../components/icons.js";
 import {createStandardButton} from "../../components/controls.js";
+import {bindDisclosure} from "../../components/disclosure.js";
+import {createConfirmDialog} from "../../components/confirm-dialog.js";
 import {menuList,menuRow,mountMenu} from "../../components/menu-popover.js";
+import {closeActiveDialog,createModalDialog} from "../../components/modal-dialog.js";
 import {createScrollFeedback} from "../../components/scroll-feedback.js";
 import {createDeviceIdentity} from "./device-identity.js";
 
@@ -20,7 +22,7 @@ const DEVICE_LIBRARY=Object.freeze({
   name:"iStorage-G3",
   category:"Battery",
   product:"Battery storage",
-  image:assetURL("plants/devices/istorage.png"),
+ image:assetURL("plants/devices/istorage-r13.png"),
   model:"iStorage-G3",
   prefix:"R11STG3"
  },
@@ -35,6 +37,9 @@ const DEVICE_LIBRARY=Object.freeze({
 });
 
 const DEVICE_STORE=new Map();
+const PREVIEW_DEVICE_STATUS=Object.freeze({
+ p25:{bms:"offline"}
+});
 
 function hash(value){
  return [...String(value)].reduce((total,char)=>((total*31)+char.charCodeAt(0))>>>0,7);
@@ -66,6 +71,7 @@ function firmwareFor(plant,type,index){
 }
 
 function initialStatus(plant,type,index){
+ if(PREVIEW_DEVICE_STATUS[plant.id]?.[type])return PREVIEW_DEVICE_STATUS[plant.id][type];
  if(plant.status==="offline"||plant.status==="unbound")return "offline";
  if(plant.status==="partially_offline"&&type==="heater")return "offline";
  if(plant.status==="attention"&&type==="heater")return "attention";
@@ -187,9 +193,8 @@ export function plantDeviceIds(plant){
 }
 
 function deviceStatus(device){
- if(device.status==="offline")return {label:"Offline",tone:"red"};
- if(device.status==="attention")return {label:"Attention",tone:"orange"};
- return {label:"Online",tone:"green"};
+ if(device.status==="offline"||device.status==="attention")return {label:"Offline",tone:"offline",connection:"offline"};
+ return {label:"Online",tone:"online",connection:"online"};
 }
 
 function actionIcon(file){
@@ -253,125 +258,14 @@ function dialogTitleIcon(file,{danger=false}={}){
  return host;
 }
 
-function createDialog({
- title,description="",className="",titleIcon=null,showHeader=true,showClose=true,content,restoreFocus=true,onClose=null
-}){
- if(activeDialog){
-  const previous=activeDialog;
-  activeDialog=null;
-  previous.close({immediate:true,restoreFocus:false});
- }
- const previousFocus=document.activeElement;
- const layer=text("div","plants-device-modal wd-search-fullscreen");
- const backdrop=text("div","wd-search-backdrop");
- backdrop.setAttribute("aria-hidden","true");
- const dialog=text("section",`plants-device-dialog wd-search-panel wd-search-panel--fullscreen wd-glass--surface wd-glass-popup ${className}`.trim());
- const frame=text("div","plants-device-dialog-frame wd-search-panel-frame");
- dialog._wdFade=frame;
- dialog.setAttribute("role","dialog");
- dialog.setAttribute("aria-modal","true");
- dialog.setAttribute("aria-label",title);
- const headingId=`plants-device-dialog-${Math.random().toString(36).slice(2)}`;
- dialog.setAttribute("aria-labelledby",headingId);
- const titleNode=text("h2","plants-device-dialog-title",title,"Subheadline/Emphasized");
- titleNode.id=headingId;
- let closeButton=null;
- if(showHeader){
-  const head=text("header","plants-device-dialog-head");
-  const titleRow=text("div","plants-device-dialog-title-row");
-  const headingCopy=text("div","plants-device-dialog-heading");
-  headingCopy.append(titleNode);
-  if(description)headingCopy.append(text("p","plants-device-dialog-description",description,"Footnote/Regular"));
-  if(titleIcon)titleRow.append(titleIcon);
-  titleRow.append(headingCopy);
-  if(showClose){
-   closeButton=createStandardButton({
-    label:"Close",
-    iconOnly:true,
-    className:"plants-device-dialog-close",
-    icon:actionIcon(assetURL("tab-close.svg"))
-   });
-  }
-  head.append(titleRow,...(closeButton?[closeButton]:[]));
-  frame.append(head,content);
- }else{
-  dialog.removeAttribute("aria-labelledby");
-  frame.append(content);
- }
- dialog.append(frame);
- layer.append(backdrop,dialog);
- document.body.append(layer);
- glass.addSurface({host:dialog,radius:30});
- if(closeButton)glass.addSurface({host:closeButton,radius:18});
-
- let closed=false;
- let closing=false;
- const surfaceHosts=[dialog,...(closeButton?[closeButton]:[])];
- function registerSurface(host,radius=18){
-  if(!host)return;
-  glass.addSurface({host,radius});
-  surfaceHosts.push(host);
- }
- function release(){
-  if(closed)return;
-  closed=true;
-  try{onClose?.();}catch{}
-  for(const host of surfaceHosts)glass.removeSurface(host);
-  layer.remove();
-  if(activeDialog?.layer===layer)activeDialog=null;
-  if(restoreFocus&&previousFocus instanceof HTMLElement&&previousFocus.isConnected)previousFocus.focus({preventScroll:true});
- }
- function close({immediate=false,restoreFocus:shouldRestore=restoreFocus}={}){
-  if(closed||(closing&&!immediate))return;
-  closing=true;
-  layer.inert=true;
-  if(immediate||reducedMotion()){
-   if(!shouldRestore)restoreFocus=false;
-   release();
-   return;
-  }
-  if(!shouldRestore)restoreFocus=false;
-  layer.removeAttribute("data-entering");
-  layer.dataset.closing="true";
-  setTimeout(release,fullscreenOverlayExitDuration());
- }
- closeButton?.addEventListener("click",()=>close());
- layer.addEventListener("pointerdown",event=>{
-   if(event.target===layer||event.target===backdrop)close();
- });
- layer.addEventListener("keydown",event=>{
-  if(event.key==="Escape"){
-   event.preventDefault();
-   event.stopPropagation();
-   close();
-   return;
-  }
-  if(event.key!=="Tab")return;
-  const focusable=[...dialog.querySelectorAll("button:not(:disabled),input:not(:disabled),select:not(:disabled),textarea:not(:disabled),[tabindex='0']")]
-   .filter(element=>element.getClientRects().length);
-  if(!focusable.length)return;
-  const first=focusable[0],last=focusable[focusable.length-1];
-  if(event.shiftKey&&document.activeElement===first){
-   event.preventDefault();
-   last.focus();
-  }else if(!event.shiftKey&&document.activeElement===last){
-   event.preventDefault();
-   first.focus();
-  }
- });
- if(!reducedMotion()){
-  layer.dataset.entering="";
-  setTimeout(()=>layer.removeAttribute("data-entering"),fullscreenOverlayEnterDuration());
- }
- const firstTarget=dialog.querySelector("[autofocus],input:not(:disabled),button:not(.plants-device-dialog-close)");
- requestAnimationFrame(()=>firstTarget?.focus({preventScroll:true}));
- const controller={layer,dialog,close,registerSurface};
- activeDialog=controller;
- return controller;
-}
-
 let glass=null;
-let activeDialog=null;
+function createDialog(options){
+ return createModalDialog({
+  ...options,
+  glass,
+  closeIcon:actionIcon(assetURL("tab-close.svg"))
+ });
+}
 
 function openAddDialog(plant,onChange){
  const form=text("form","plants-device-dialog-form");
@@ -506,7 +400,7 @@ function openReplaceDialog(device,onChange){
  remarks.input.addEventListener("input",sync);
  const modal=createDialog({
   title:"Replace device",
-  className:"plants-device-dialog--wide",
+  className:"plants-device-dialog--replace",
   titleIcon:dialogTitleIcon(assetURL("plants/devices/actions/replace.svg")),
   content:form
  });
@@ -525,35 +419,14 @@ function openReplaceDialog(device,onChange){
 }
 
 function openUnbindDialog(device,onUnbind){
- const content=text("div","plants-device-dialog-form");
- const body=text("div","plants-device-confirm-dialog");
- const mark=text("span","plants-device-confirm-mark");
- mark.append(actionIcon(assetURL("plants/devices/actions/delete.svg")));
- const intro=text("div","plants-device-confirm-intro");
- intro.append(
-  mark,
-  text("h2","plants-device-confirm-title",`Unbind ${device.name}?`,"Subheadline/Emphasized"),
-  text("p","plants-device-confirm-description",`Device ${device.serial} will be removed from this plant. This does not erase device history.`,"Footnote/Regular")
- );
- const actions=text("div","plants-device-confirm-actions");
- const cancel=createStandardButton({label:"Cancel"});
- const unbind=createStandardButton({label:"Unbind device",className:"plants-device-danger-button"});
- actions.append(cancel,unbind);
- body.append(intro,actions);
- content.append(body);
- const modal=createDialog({
+ return createConfirmDialog({
+  glass,
   title:"Unbind device",
-  className:"plants-device-dialog--confirm",
-  showHeader:false,
-  showClose:false,
-  content
- });
- modal.registerSurface(cancel,18);
- modal.registerSurface(unbind,18);
- cancel.addEventListener("click",()=>modal.close());
- unbind.addEventListener("click",()=>{
-  modal.close();
-  onUnbind(device);
+  description:`Device ${device.serial} will be removed from this plant. This does not erase device history.`,
+  confirmLabel:"Unbind device",
+  icon:actionIcon(assetURL("plants/devices/actions/delete.svg")),
+  confirmClassName:"plants-device-danger-button",
+  onConfirm:()=>onUnbind(device)
  });
 }
 
@@ -879,13 +752,22 @@ function createClusterDisclosure(cluster,{toast}={}){
  button.type="button";
  button.setAttribute("aria-expanded",String(cluster.expanded));
  const label=text("span","plants-device-cluster-label",cluster.label,"Footnote/Medium");
+ const meta=text("span","plants-device-cluster-meta");
+ const moduleCount=text(
+  "span",
+  "plants-device-cluster-summary",
+  `${cluster.batteries.length} module${cluster.batteries.length===1?"":"s"}`,
+  "Caption1/Regular"
+ );
  const chevron=actionIcon(opaqueMaskURL("asset-14.svg"));
- chevron.classList.add("plants-device-cluster-chevron");
- button.append(label,chevron);
+ chevron.classList.add("plants-device-cluster-chevron","wd-disclosure-glyph");
+ meta.append(moduleCount,chevron);
+ button.append(label,meta);
  const detail=text("div","plants-device-cluster-detail");
  detail.id=`plants-device-${cluster.id}-detail`;
  button.setAttribute("aria-controls",detail.id);
  detail.hidden=!cluster.expanded;
+ detail.inert=!cluster.expanded;
  const subMaster=text("section","plants-device-cluster-section");
  subMaster.append(text("h4","plants-device-cluster-section-title","Sub-master BMS","Caption1/Emphasized"));
  const subMasterFields=text("div","plants-device-cluster-submaster");
@@ -940,11 +822,11 @@ function createClusterDisclosure(cluster,{toast}={}){
  table.append(caption,colgroup,head,body);
  batteries.append(table);
  detail.append(subMaster,batteries);
+ bindDisclosure(button,detail);
  group.addEventListener("click",event=>{
   if(event.target.closest?.(".plants-device-serial-copy"))return;
-  cluster.expanded=!cluster.expanded;
-  button.setAttribute("aria-expanded",String(cluster.expanded));
-  detail.hidden=!cluster.expanded;
+  if(button.contains(event.target))return;
+  button.click();
  });
  group.append(hoverSurface,button,detail);
  return group;
@@ -976,7 +858,7 @@ function createDeviceFields(device){
  ];
 }
 
-function createDeviceCard(device,{registerSurface,openMenu,toast,onChange}){
+function createDeviceCard(device,{registerSurface,openMenu,toggle,toast,onChange}){
  const meta=DEVICE_LIBRARY[device.type];
  const card=text("article","plants-device-card");
  card.dataset.deviceId=device.key;
@@ -1021,7 +903,7 @@ function createDeviceCard(device,{registerSurface,openMenu,toast,onChange}){
  const moreButton=createActionButton({
   label:`More actions for ${device.name}`,
   iconFile:opaqueMaskURL("asset-70.svg"),
-  onClick:()=>openMenu(moreButton,device)
+  onClick:()=>toggle(moreButton,()=>openMenu(moreButton,device))
  });
  firmwareButton.classList.add("plants-device-firmware");
  const actionButtons=[firmwareButton,...(settingsButton?[settingsButton]:[]),moreButton];
@@ -1052,7 +934,7 @@ function createDeviceCard(device,{registerSurface,openMenu,toast,onChange}){
  return card;
 }
 
-export function createPlantDevices({plant,glass:material,registerPanel,close,toast,onDeviceCountChange}){
+export function createPlantDevices({plant,glass:material,registerPanel,close,toggle,toast,onDeviceCountChange}){
  glass=material;
  const root=text("section","plants-devices");
  const host=text("div","plants-devices-host");
@@ -1076,7 +958,18 @@ export function createPlantDevices({plant,glass:material,registerPanel,close,toa
    card.style.setProperty("--plants-card-divider-right",`${hostBox.right-cardBox.right}px`);
   }
  }
- const deviceLayoutObserver=new ResizeObserver(syncDeviceLayout);
+ const observedLayoutWidths=new WeakMap();
+ const deviceLayoutObserver=new ResizeObserver(entries=>{
+  let widthChanged=false;
+  for(const entry of entries){
+   const width=entry.contentRect.width;
+   if(observedLayoutWidths.get(entry.target)!==width){
+    observedLayoutWidths.set(entry.target,width);
+    widthChanged=true;
+   }
+  }
+  if(widthChanged)syncDeviceLayout();
+ });
  deviceLayoutObserver.observe(list);
  deviceLayoutObserver.observe(host);
  const empty=text("div","plants-devices-empty");
@@ -1144,6 +1037,7 @@ export function createPlantDevices({plant,glass:material,registerPanel,close,toa
   list.replaceChildren(...devices.map(device=>createDeviceCard(device,{
    registerSurface:registerCardSurface,
    openMenu,
+   toggle,
    toast,
    onChange:render
   })));
@@ -1160,11 +1054,7 @@ export function createPlantDevices({plant,glass:material,registerPanel,close,toa
   render,
   destroy(){
    close?.(true);
-   if(activeDialog){
-    const modal=activeDialog;
-    activeDialog=null;
-    modal.close({immediate:true,restoreFocus:false});
-   }
+   closeActiveDialog({immediate:true,restoreFocus:false});
    clearCardSurfaces();
    deviceLayoutObserver.disconnect();
    glass.removeSurface(add);

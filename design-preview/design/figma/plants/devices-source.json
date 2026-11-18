@@ -13,9 +13,11 @@
     {
       "deviceType": "bms",
       "product": "iStorage-G3",
-      "remoteURL": "https://cdn.wattsonic.cn/fixed-static/R11/R11_app_detail_dark.png",
-      "source": "devices/istorage-source.png",
-      "runtime": "../../../home-assets/plants/devices/istorage.png"
+      "localSource": "E:/OneDrive/! Wattsonic 2022/网站 WattDesk/设计 模块/web 图片 OPS产品图存档/R13/R13_list_dark.png",
+      "capturedAt": "2026-11-12",
+      "source": "devices/r13-list-dark-source.png",
+      "runtime": "../../../home-assets/plants/devices/istorage-r13.png",
+      "processing": "Copied without pixel changes; the supplied 600×600 PNG already has a transparent background."
     },
     {
       "deviceType": "heater",
@@ -25,5 +27,5 @@
       "runtime": "../../../home-assets/plants/devices/iheater.png"
     }
   ],
-  "processing": "The runtime PNGs keep the product pixels and remove only the contiguous near-white page matte from the image edge so the cards work in both light and dark themes."
+  "processing": "The earlier inverter/heater/BMS runtime PNGs keep the product pixels and remove only the contiguous near-white page matte from the image edge. The current R13 iStorage image was supplied as a transparent PNG and is copied without pixel changes."
 }

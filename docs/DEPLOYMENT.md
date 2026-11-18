@@ -23,6 +23,13 @@
 
 构建产物写入 `design-preview/dist/`，**不入库**。
 
+### Mapbox 公开 Token
+
+- Mapbox Static Images API 需要 Public Access Token。通过构建环境变量 `WATTDESK_MAPBOX_TOKEN` 注入，不在 `home.html`、源码或本文中写真实 Token。
+- 本地开发可在启动 `npm run dev` 前设置该环境变量；正式环境在 Cloudflare 构建环境配置同名变量。构建脚本会把它写入 `mapbox-access-token` meta，页面再按当前 Site details 最终规范加载 `dark-v11 / light-v11` 对应主题底图。
+- 本地也可用 `?mapboxToken=pk...` 做一次性引导；组件只接受 `localhost / 127.0.0.1`，读取后立即用 `history.replaceState` 从地址栏移除，并尝试写入本地调试存储。正式域名不读取该查询参数。
+- 未配置 Token 时地图保持空白，不显示占位地图或伪造底图；Secret Token 不得用于客户端。
+
 `design-preview/dist-public/` 是早期手动构建的残留，从未被 Cloudflare 部署，已于 2026-10-21 从仓库移除；不要再创建同名入库目录。
 
 ## 本地发布流程

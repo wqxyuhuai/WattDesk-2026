@@ -69,6 +69,13 @@ const settle = page => page.evaluate(() => Promise.all(document.getAnimations().
   const columnTrigger = page.locator('.plants-toolbar-actions .plants-icon-button').nth(1);
   await filterTrigger.click();
   await page.waitForTimeout(340);
+  assert.equal(await page.locator('#home-active-popover').count(),1,'the filter trigger opens its panel');
+  await filterTrigger.click();
+  await page.waitForTimeout(260);
+  assert.equal(await page.locator('#home-active-popover').count(),0,'the filter trigger closes its own panel');
+  assert.equal(await filterTrigger.getAttribute('aria-expanded'),'false','the filter trigger restores its closed state');
+  await filterTrigger.click();
+  await page.waitForTimeout(340);
   await settle(page);
   assert.equal(await page.locator('.plants-filter-category').count(), 4, 'only the requested four filter groups remain');
   assert.deepEqual(
@@ -499,6 +506,13 @@ const settle = page => page.evaluate(() => Promise.all(document.getAnimations().
   const addFilter = page.locator('.plants-filter-add');
   await addFilter.scrollIntoViewIfNeeded();
   const addAnchor = await addFilter.boundingBox();
+  await addFilter.click();
+  await page.waitForTimeout(340);
+  assert.equal(await page.locator('#home-active-popover').count(),1,'the chip add trigger opens the filter panel');
+  await addFilter.click();
+  await page.waitForTimeout(260);
+  assert.equal(await page.locator('#home-active-popover').count(),0,'the chip add trigger closes its own panel');
+  assert.equal(await addFilter.getAttribute('aria-expanded'),'false','the chip add trigger restores its closed state');
   await addFilter.click();
   await page.waitForTimeout(340);
   await settle(page);
