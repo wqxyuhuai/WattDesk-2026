@@ -203,7 +203,7 @@
 .site-v2-map-select.site-details-select-trigger{
  justify-content:space-between;text-align:left;
 }
-.site-v2-map-select.site-details-select-trigger .site-details-select-value{text-align:left}
+.site-v2-map-select.site-details-select-trigger .wd-select-value{text-align:left}
 .site-v2-map-input{text-align:left}
 
 .site-v2-grid{
@@ -292,7 +292,7 @@
  justify-content:flex-end;text-align:right;
  font-size:14px;font-weight:400;line-height:20px;
 }
-.site-v2-energy-select.site-details-select-trigger .site-details-select-value{text-align:right}
+.site-v2-energy-select.site-details-select-trigger .wd-select-value{text-align:right}
 .site-v2-info-value.is-strong{font-weight:590}
 .site-v2-info-value.is-mono{font-family:ui-monospace,"SFMono-Regular",Consolas,monospace;font-variant-numeric:tabular-nums}
 .site-v2-info-value.is-empty{color:var(--wd-label-tertiary)}
@@ -339,7 +339,7 @@
  width:max-content;max-width:100%;height:34px;margin-left:0;padding:0 10px;
  justify-content:flex-start;text-align:left;font-size:14px;line-height:20px;
 }
-.site-v2-installer-select .site-details-select-value{text-align:left}
+.site-v2-installer-select .wd-select-value{text-align:left}
 .site-v2-installer-company-row>.site-v2-installer-select,
 .site-v2-installer-contact-copy>.site-v2-installer-select{height:32px;margin-left:0}
 .site-v2-installer-alarm{

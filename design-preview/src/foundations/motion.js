@@ -1,6 +1,31 @@
 export function reducedMotion(){return matchMedia("(prefers-reduced-motion: reduce)").matches}
 export function motionDuration(token){const value=getComputedStyle(document.documentElement).getPropertyValue(token).trim();return parseFloat(value)*(value.endsWith('ms')?1:1000)}
 export function motionEasing(token){return getComputedStyle(document.documentElement).getPropertyValue(token).trim()}
+export function motionEasingFunction(token){
+ const value=motionEasing(token);
+ const match=value.match(/cubic-bezier\(\s*([-.0-9]+)\s*,\s*([-.0-9]+)\s*,\s*([-.0-9]+)\s*,\s*([-.0-9]+)\s*\)/);
+ if(!match)return time=>time;
+ const [x1,y1,x2,y2]=match.slice(1).map(Number);
+ const sample=(a1,a2,time)=>3*(1-time)*(1-time)*time*a1+3*(1-time)*time*time*a2+time*time*time;
+ const slope=(a1,a2,time)=>3*(1-time)*(1-time)*a1+6*(1-time)*time*(a2-a1)+3*time*time*(1-a2);
+ const solve=x=>{
+  let time=x;
+  for(let index=0;index<8;index+=1){
+   const error=sample(x1,x2,time)-x;
+   const derivative=slope(x1,x2,time);
+   if(Math.abs(error)<1e-6||Math.abs(derivative)<1e-6)break;
+   time-=error/derivative;
+  }
+  let low=0,high=1;
+  for(let index=0;index<12&&Math.abs(sample(x1,x2,time)-x)>1e-6;index+=1){
+   if(sample(x1,x2,time)<x)low=time;
+   else high=time;
+   time=(low+high)/2;
+  }
+  return time;
+ };
+ return progress=>sample(y1,y2,solve(Math.max(0,Math.min(1,progress))));
+}
 // Fullscreen surfaces reuse the Home search timeline so removal never clips
 // either the staged content exit or the backdrop frost tail.
 export function fullscreenOverlayEnterDuration(){

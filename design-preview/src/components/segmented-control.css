@@ -4,7 +4,8 @@
   --wd-segmented-control-inset:4px;
   --wd-segmented-control-option-padding-inline:18px;
   --wd-segmented-control-option-radius:16px;
-  --wd-segmented-control-label-offset-y:-0.5px;
+  --wd-segmented-control-label-offset-y:0px;
+  --wd-segmented-control-indicator-fill:var(--wd-fill-primary);
   position:relative;display:grid;grid-auto-flow:column;grid-auto-columns:max-content;column-gap:0;flex:0 0 auto;
   width:max-content;max-width:100%;height:var(--wd-segmented-control-height);min-height:var(--wd-segmented-control-height);max-height:var(--wd-segmented-control-height);
   padding:0 var(--wd-segmented-control-inset);border-radius:calc(var(--wd-segmented-control-height)/2);box-sizing:border-box;
@@ -12,7 +13,7 @@
 }
 .wd-segmented-control-indicator{
   position:absolute;z-index:0;top:var(--wd-segmented-control-inset);bottom:var(--wd-segmented-control-inset);left:0;width:0;border-radius:999px;
-  background:var(--wd-fill-primary);box-shadow:none;pointer-events:none;
+  background:var(--wd-segmented-control-indicator-fill);box-shadow:none;pointer-events:none;
 }
 .wd-segmented-control-option{
   position:relative;z-index:1;display:flex;align-items:center;justify-content:center;width:auto;height:var(--wd-segmented-control-height);
@@ -29,6 +30,7 @@
   color:var(--wd-label-primary);background:transparent;
 }
 .wd-segmented-control-option:focus-visible{outline:2px solid var(--wd-blue);outline-offset:2px}
+:root:not([data-theme="light"]) .wd-segmented-control{--wd-segmented-control-indicator-fill:rgba(120,120,128,.56)}
 @media (max-width:560px){
   .wd-segmented-control{--wd-segmented-control-option-padding-inline:8px}
 }

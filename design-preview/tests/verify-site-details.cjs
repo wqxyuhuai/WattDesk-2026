@@ -315,6 +315,7 @@ async function openSite(page,query="?device=inverter"){
  assert.equal(await alarmSwitch.getAttribute("aria-checked"),"true");
  await alarmSwitch.click();
  assert.equal(await alarmSwitch.getAttribute("aria-checked"),"false","the switch exposes its off state");
+ await page.waitForTimeout(520);
  assert.match(
   await alarmSwitch.evaluate(control=>getComputedStyle(control.querySelector(".wd-glass-fill")).backgroundColor),
   /rgba\(120, 120, 128/,

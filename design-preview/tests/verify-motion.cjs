@@ -33,6 +33,10 @@ function motionTokens(){
   assert.equal(tokens['--wd-motion-panel'],'320ms');
   assert.equal(tokens['--wd-motion-panel-exit'],'200ms');
   assert.equal(tokens['--wd-motion-content-grow'],'280ms');
+  assert.equal(tokens['--wd-motion-view-switch'],'260ms');
+  assert.equal(tokens['--wd-motion-view-switch-in'],'260ms');
+  assert.equal(tokens['--wd-motion-view-switch-out'],'260ms');
+  assert.equal(tokens['--wd-motion-view-switch-delay'],'0ms');
   assert.equal(tokens['--wd-motion-chart'],'900ms');
   assert.equal(tokens['--wd-motion-modal-in'],'520ms');
   assert.equal(tokens['--wd-motion-modal-content-in'],'520ms');

@@ -305,6 +305,9 @@
 .plants-device-confirm-intro{display:flex;flex-direction:column;align-items:center;gap:10px;min-width:0}
 .plants-device-confirm-mark{
  display:grid;place-items:center;width:64px;height:64px;flex:0 0 64px;border-radius:20px;
+ color:var(--wd-label-primary);background:var(--wd-fill-quaternary);
+}
+.plants-device-confirm-mark.is-danger{
  color:var(--wd-accent-red);background:color-mix(in srgb,var(--wd-accent-red) 12%,transparent);
 }
 .plants-device-confirm-mark .plants-device-action-icon{width:28px;height:28px}

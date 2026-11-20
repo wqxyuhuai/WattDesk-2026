@@ -2,12 +2,12 @@ import {createTextElement as text} from "../foundations/dom.js";
 import {modalOverlayEnterDuration,modalOverlayExitDuration,reducedMotion} from "../foundations/motion.js";
 import {createStandardButton} from "./controls.js";
 
-let activeDialog=null;
+const activeDialogs=[];
 
 export function closeActiveDialog({immediate=true,restoreFocus=false}={}){
- const modal=activeDialog;
- activeDialog=null;
- modal?.close({immediate,restoreFocus});
+ for(const modal of [...activeDialogs].reverse()){
+  modal.close({immediate,restoreFocus:false});
+ }
 }
 
 export function createModalDialog({
@@ -19,20 +19,25 @@ export function createModalDialog({
  showHeader=true,
  showClose=true,
  closeIcon=null,
+ closeOnBackdrop=true,
+ closeOnEscape=true,
+ panelMaterial=true,
  content,
  restoreFocus=true,
  onClose=null
 }){
- if(activeDialog){
-  const previous=activeDialog;
-  activeDialog=null;
-  previous.close({immediate:true,restoreFocus:false});
- }
+ const parentDialog=activeDialogs.at(-1);
+ if(parentDialog?.dialog)parentDialog.dialog.inert=true;
  const previousFocus=document.activeElement;
  const layer=text("div","plants-device-modal wd-modal-fullscreen");
  const backdrop=text("div","wd-modal-backdrop");
  backdrop.setAttribute("aria-hidden","true");
- const dialog=text("section",`plants-device-dialog wd-modal-panel wd-glass--surface wd-glass-popup ${className}`.trim());
+ const dialog=text("section",[
+  "plants-device-dialog",
+  "wd-modal-panel",
+  panelMaterial?"wd-glass--surface wd-glass-popup":"",
+  className
+ ].filter(Boolean).join(" "));
  const frame=text("div","plants-device-dialog-frame wd-modal-panel-frame");
  dialog._wdFade=frame;
  dialog.setAttribute("role","dialog");
@@ -68,24 +73,26 @@ export function createModalDialog({
  dialog.append(frame);
  layer.append(backdrop,dialog);
  document.body.append(layer);
- glass?.addSurface({host:dialog,radius:30});
+ if(panelMaterial)glass?.addSurface({host:dialog,radius:30});
  if(closeButton)glass?.addSurface({host:closeButton,radius:18});
 
  let closed=false;
  let closing=false;
- const surfaceHosts=[dialog,...(closeButton?[closeButton]:[])];
- function registerSurface(host,radius=18){
+ const surfaceHosts=[...(panelMaterial?[dialog]:[]),...(closeButton?[closeButton]:[])];
+ function registerSurface(host,radius=18,options={}){
   if(!host)return;
-  glass?.addSurface({host,radius});
+  glass?.addSurface({host,radius,...options});
   surfaceHosts.push(host);
  }
  function release(){
   if(closed)return;
   closed=true;
+  const index=activeDialogs.findIndex(item=>item.layer===layer);
+  if(index>=0)activeDialogs.splice(index,1);
+  if(parentDialog?.dialog?.isConnected)parentDialog.dialog.inert=false;
   try{onClose?.();}catch{}
   for(const host of surfaceHosts)glass?.removeSurface(host);
   layer.remove();
-  if(activeDialog?.layer===layer)activeDialog=null;
   if(restoreFocus&&previousFocus instanceof HTMLElement&&previousFocus.isConnected)previousFocus.focus({preventScroll:true});
  }
  function close({immediate=false,restoreFocus:shouldRestore=restoreFocus}={}){
@@ -104,10 +111,12 @@ export function createModalDialog({
  }
  closeButton?.addEventListener("click",()=>close());
  layer.addEventListener("pointerdown",event=>{
-  if(event.target===layer||event.target===backdrop)close();
+  if((event.target===layer||event.target===backdrop)&&closeOnBackdrop)close();
  });
  layer.addEventListener("keydown",event=>{
   if(event.key==="Escape"){
+   if(!closeOnEscape)return;
+   if(document.querySelector("#overlays .popover"))return;
    event.preventDefault();
    event.stopPropagation();
    close();
@@ -135,6 +144,6 @@ export function createModalDialog({
  const firstTarget=dialog.querySelector("[autofocus],input:not(:disabled),button:not(.plants-device-dialog-close)");
  requestAnimationFrame(()=>firstTarget?.focus({preventScroll:true}));
  const controller={layer,dialog,close,registerSurface};
- activeDialog=controller;
+ activeDialogs.push(controller);
  return controller;
 }

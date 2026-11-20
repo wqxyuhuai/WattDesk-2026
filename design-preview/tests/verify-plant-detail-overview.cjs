@@ -1564,11 +1564,11 @@ const settle = page => page.evaluate(() => Promise.all(document.getAnimations().
   await energyOption.click();
   const indicatorAnimation = await page.locator('.wd-segmented-control-indicator').evaluate(indicator =>
     indicator.getAnimations().some(animation => {
-      const timing = animation.effect?.getComputedTiming();
-      return timing?.duration === 320;
+      const timing = animation.effect?.getTiming();
+      return timing?.duration === 600 && timing?.easing === 'cubic-bezier(0.34, 0.16, 0.18, 1)';
     })
   );
-  assert.equal(indicatorAnimation, true, 'the selected capsule animates instead of jumping');
+  assert.equal(indicatorAnimation, true, 'the selected capsule uses the shared soft-spring slide instead of jumping');
   await settle(page);
   assert.equal(await page.locator('.wd-segmented-control-option.is-selected').getAttribute('data-value'), 'default');
   const energyIndicator = await indicatorAt();

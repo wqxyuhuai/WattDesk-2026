@@ -393,8 +393,9 @@ Connection 与 Running status 是两个独立维度。Offline 和 Partially offl
 - 设备行不再复用 `.wd-discussion-card`：常态 `background:transparent`、四边 `border:0`、`box-shadow:none`；操作按钮或行内控件 hover / focus 只改变控件自身，不再给整行或整组绘制背景高亮。桌面左侧产品图区域使用 `120px` 宽、`96px` 高，产品图通过 `object-fit:contain` 完整显示且不得裁切，再以 `16px` 间距接连续内容列，默认不形成独立卡片表面；平板和移动端继续按现有断点收窄。相邻设备之间由行顶部 `1px` `Separators/Non-opaque` 分隔线隔开，设备间分隔线左右延伸到工作区两侧，并在两端各用 `64px` 透明渐变融入背景，不是卡片描边。
 - 设备身份区统一由 `device-identity.js` 的 `createDeviceIdentity()` 生成，Inverter / Battery / Heater 共用。固定两行：第一行只放设备名，第二行以在线状态开头，随后是类型、产品名和运行摘要；两行间距 `10px`。设备名使用 `16px / 590`，第二行使用 `13px`。技术字段统一使用六列网格，Battery 的 Installation capacity 必须与 Inverter 的 Hardware version 同列；字段标签为 `12px`，深色使用 `Labels/Tertiary`，浅色提升到可读的 `Labels/Secondary`。技术值保持 `Footnote/Medium` 类型绑定并使用标准界面字体，SN 复制按钮继承该字段样式。
 - Inverter / Heater 行操作固定为固件检查、设置和更多菜单；Battery 不提供设置入口，仅保留固件检查与更多菜单。所有行操作使用 `36px` 共享中性玻璃圆钮，按钮组使用共享 `8px` 间距。顶部 `Add device` 同样使用共享中性玻璃胶囊。固件检查改用 Figma `ICON/update` 原始升级图标，并通过遮罩缩放收在按钮内芯。更多菜单提供 `Run system test / Replace device / Rename / Unbind device`，四项均使用 Figma 导出图标，统一视觉高度并放在文字左侧。操作菜单复用标准 `30px` 浮层圆角，右缘与更多按钮对齐，不得被视口边距夹到最右侧。`Unbind device` 的默认、hover 与 `focus-visible` 图标和文字都保持纯红，hover 背景使用红色 `11%` 淡透明层，不能被普通菜单的中性 hover 覆盖。Rename 与 Settings 的 Primary 保存按钮统一采用“无真实修改即禁用”逻辑：回到初始值时重新禁用；Add / Replace 继续按必填字段有效性控制。
-- Inverter 行展示运行模式、运行状态与系统系列，字段顺序为 Model、Hardware version、Firmware version、Boot version、SN、Check code。相关 Inverter Settings 分类为 Running mode、Battery management、Professional settings、Safety-locked parameters、Networking、Shadow scan、Operation control、Other settings；Running mode 可在本地选择并保存。
-- Inverter 与 Heater 的设置弹窗共用同一 `openSettingsDialog()` 和保存状态逻辑：打开时 `Save changes` 原生禁用；任一字段产生真实修改且草稿不同于初始值后启用；修改后又恢复为初始值时重新禁用。Primary 按钮沿用共享蓝色玻璃与白字，禁用态只降低透明度。Battery 不提供设置弹窗。
+- Inverter 行展示运行模式、运行状态与系统系列，字段顺序为 Model、Hardware version、Firmware version、Boot version、SN、Check code。显示的 `Check code` 使用 `••••••` 掩码；真实值只用于本地会话或未来后端门禁，不在 Devices 明文展示。
+- Inverter settings 不再由 Devices 内的 `openSettingsDialog()` 生成。`Open iHybrid settings` 打开稳定路由 `/plants/:id/devices/inverter-settings?device=inverter&serial=<SN>`，页面模块位于 `src/pages/inverter-settings/`，完整页面、字段、文案、状态、门禁和回归契约见该目录 `README.md`。窗口在当前工作区标签内以 route-backed modal 呈现，`Cancel / Save` 位于右侧设置内容底部；关闭或浏览器后退返回 Devices。Battery 不提供设置入口。
+- Heater 继续使用紧凑设置弹窗和现有 dirty-state 保存逻辑：打开时 `Save changes` 原生禁用；产生真实修改后启用；恢复初始值后重新禁用。Primary 按钮沿用共享蓝色玻璃与白字，禁用态只降低透明度。
 - Battery 行展示 Firmware version 与 Installation capacity，并列出可展开的 Cluster 行；所有 Cluster 进入页面时默认收起，包括 `Cluster #1`。Cluster 区域顶部和每个 Cluster 之间使用 `1px` `Separators/Non-opaque` 分隔线，设备技术字段底缘到首个 Cluster 分隔线保持 `16px`；Cluster 横线保持内容列原始宽度，不得向工作区外延伸。Cluster 行高 `40px`，文字 `14px / 590`，箭头 `18px`；箭头默认使用 `Labels/Tertiary`，整块 Cluster hover 或键盘 `focus-visible` 时提升为 `Labels/Primary`，Cluster 标签自身保持主文字色。鼠标点击留下的普通 `:focus-within` 不得继续维持整块高亮，指针移开后必须消失。文字与设备内容列左对齐。展开后的整块 Cluster 都是折叠热区，hover / keyboard focus 使用左右各外扩 `10px`、圆角 `12px` 的整块低对比高亮；点击任意非 SN 内容收起，标题按钮继续负责键盘开合。开合复用共享 `bindDisclosure()`：内容用共享 `--wd-motion-disclosure` / `--wd-ease-disclosure` 做高度与透明度过渡，详情上下 padding 必须随高度同步收敛，否则会在 `22px` 残留高度上停顿；动画期间只裁切越界内容，箭头以相同节奏旋转，`prefers-reduced-motion` 时直接切换。设备布局观察器只在容器宽度变化时重算六列宽度和分隔线位置，不能因 Cluster 高度动画逐帧重写卡片样式。展开区顶部保留 `8px` 留白，Sub-master BMS 与 Batteries 两组间距为 `18px`；两个小节标题使用 `14px / 590`，比下方 `13px` 字段与型号值更大。三种内容共用设备顶部六列网格：Sub-master BMS 的 ID / Model / Hardware / Firmware / SN 依次落到第 1–5 列，Batteries 的 ID / Hardware / Firmware / SN 依次落到第 1–4 列。展开容器不再保留右侧内距，表头文字与上方字段标签统一为 `13px`。展开区只显示参考页中的两类数据：Sub-master BMS 五项字段，以及 Batteries 表中至少 6 个电池模块的 ID、Hardware version、Firmware version、SN；Batteries 记录使用全站标准字体，不使用代码字体。设备行顶部与 Cluster 内的所有 SN 都是独立复制按钮：hover / focus 显示下划线，点击复制序列号；Cluster 内复制不得折叠。Batteries 表头下第一行额外增加 `5px` 上内距，其余行保持统一紧凑行距；电池行本身不增加单独 hover 背景。
 - `2026-11-17` Battery Cluster 的收起行必须在箭头左侧显示淡色模块数量，例如 `6 modules`；数量使用 `12px` Caption 层级与 `Labels/Tertiary`，并与箭头组成右侧固定尾部组。
 - Heater 行字段顺序为 Model、Hardware version、Firmware version、SN、Check code；Settings 提供 Operating mode、Temperature、Operation control、Networking 与 Safety。
@@ -566,6 +567,8 @@ Plants 页面不新增第二套基础样式或交互，主要复用：
 
 - `design-preview/tests/verify-plants-filters.cjs`
 - `design-preview/tests/verify-routing.cjs`
+- `design-preview/tests/verify-plant-devices.cjs`
+- `design-preview/tests/verify-inverter-settings.cjs`
 - `design-preview/tests/verify-components.cjs`
 
 覆盖范围包括：
@@ -581,6 +584,8 @@ Plants 页面不新增第二套基础样式或交互，主要复用：
 - 行打开详情、Back to Plants、未知 ID 和空名称电站；
 - 详情共享页头、`Plants / 电站名` 面包屑、直接深链和未知 ID 末级；
 - `?` 提示的 hover/focus、setup 跳转与不透明状态图标；
+- Devices 入口打开独立逆变器设置路由、返回 Devices 和 `Check code` 掩码；
+- Inverter settings 的导航、门禁、国别档案、偏离恢复、保存和深浅 / 窄屏；
 - 深色、浅色主题；
 - 宽屏列宽、表格滚动、页面无整页横向溢出。
 

@@ -5,6 +5,9 @@
 ## 线上入口
 
 - 预览地址：<https://wattdesk-preview.carlwang.cn/>
+- Inverter settings 独立预览使用同一域名的
+  `/plants/p25/devices/inverter-settings?device=inverter&standalone=1`；
+  页面代码更新并重新部署后会同步更新。
 - 仓库：<https://github.com/wqxyuhuai/WattDesk-2026>（默认分支 `master`）
 - 发布方式：本地提交并推送 → Cloudflare 自动构建部署。**不做自动发布**，由维护者手动 push 触发。
 

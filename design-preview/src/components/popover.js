@@ -1,10 +1,19 @@
 import {motionDuration,motionEasing,reducedMotion} from "../foundations/motion.js";
 
+export function menuEndAlign(anchor,radius=0){
+ return()=>{
+  const rect=anchor.getBoundingClientRect();
+  const layoutWidth=anchor.offsetWidth||rect.width;
+  return rect.left+(rect.width+layoutWidth)/2+radius;
+ };
+}
+
 export function createPopoverController({overlays,toastElement,motion,glass}){
  let toastHideTimer;
  let toastEnterAnimation;
  let toastExitAnimation;
  let toastToken=0;
+ let toastAnchor=null;
  let repositionFrame=0;
  // Only panels registered here follow their anchor. Search and other
  // full-surface overlays manage their own placement.
@@ -53,12 +62,27 @@ export function createPopoverController({overlays,toastElement,motion,glass}){
    if(token===toastToken)toastExitAnimation=null;
   });
  }
- function toast(message){
+ function positionToast(){
+  if(toastAnchor?.isConnected){
+   const rect=toastAnchor.getBoundingClientRect();
+   toastElement.style.left=`${rect.left+rect.width/2}px`;
+   toastElement.dataset.toastScope="content";
+   return;
+  }
+  toastElement.style.removeProperty("left");
+  delete toastElement.dataset.toastScope;
+ }
+ function toast(message,{centerWithin=null}={}){
   const el=toastElement;prepareStaticSurface(el,24);
   // The material is a child; replacing textContent would delete it. Keep the
   // message in its own node so repeated toasts reuse the mounted surface.
   let text=el.querySelector(":scope>.wd-toast-text");
-  if(!text){text=document.createElement("span");text.className="wd-toast-text";el.append(text);}
+  if(!text){
+   text=document.createElement("span");
+   text.className="wd-toast-text";
+   text.dataset.typeStyle="Footnote/Medium";
+   el.append(text);
+  }
   const token=++toastToken;
   const wasHidden=el.hidden;
   const currentOpacity=wasHidden?0:Number.parseFloat(getComputedStyle(el).opacity)||0;
@@ -69,6 +93,8 @@ export function createPopoverController({overlays,toastElement,motion,glass}){
   toastEnterAnimation=null;
   toastExitAnimation=null;
   text.textContent=message;
+  toastAnchor=centerWithin instanceof Element?centerWithin:null;
+  positionToast();
   el.hidden=false;
   if(!reducedMotion()&&currentOpacity<1){
    const animation=el.animate(
@@ -127,7 +153,7 @@ export function createPopoverController({overlays,toastElement,motion,glass}){
   // scales the host and must not make the flip point drift by a few pixels.
   const width=panel.offsetWidth,height=panel.offsetHeight;
   const gap=8,edge=12;
-  let left=panel._align==="end"?rect.right-width:rect.left;
+  let left=panel._align==="end"?rect.right-width:panel._align==="center"?rect.left+rect.width/2-width/2:rect.left;
   let top=rect.bottom+gap+height>innerHeight-edge&&rect.top-height-gap>edge?rect.top-height-gap:rect.bottom+gap;
   if(panel._placement==="side"){
    // Secondary menus attach to the row they describe. Prefer the side with
@@ -205,7 +231,7 @@ export function createPopoverController({overlays,toastElement,motion,glass}){
    if(overlays.children.length&&!belongsToOpenAnchor&&!e.target.closest(".popover,.wd-date-picker,.wd-history-popover,.wd-search-panel,.wd-search-fullscreen,.plant-statistics-period-picker"))close();
  };
  const key=e=>{if(e.key==="Escape")close()};
- const onViewportChange=()=>reposition();
+ const onViewportChange=()=>{reposition();positionToast();};
  const scrollOptions={capture:true,passive:true};
  document.addEventListener("pointerdown",pointer);document.addEventListener("keydown",key);
  // Scroll events from nested work areas do not bubble; capture is required so

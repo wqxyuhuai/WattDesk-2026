@@ -1,5 +1,96 @@
 # 更新记录
 
+## 2026-11-20
+
+- 完成 Inverter settings 资源与文档整合：建立备份快照；把分散在 `AGENTS.md`、`DESIGN-SYSTEM.md`、组件手册、需求记录与页面 README 的页面专属规则收敛到 `docs/INVERTER-SETTINGS.md`，页面 README 改为指针；文案、功能和来源分别保留在 `COPY-AUDIT.md`、`FUNCTIONAL-AUDIT.md`、`SOURCE-MANIFEST.md`。新增 `settings-options.js` 统一预览枚举，渲染与日志格式化共用；删除无引用 CSS 类和重复枚举字面量。页面视觉与交互保持不变，专项测试、时间测试、资产审计和静态规范检查通过。
+- 完成 2026-11-20 全量规则归档（仅文档）：以当前可访问对话、工作树 diff、运行代码、专项测试和现有文档为依据，补齐今日最终规则分类索引、明确废弃方案、未决边界和输入错误态防回归经验；明确设置页首次进入从顶部、回访恢复自己的滚动位置。本次未修改运行代码、UI、交互、资源或测试。
+- 修复 Inverter settings 与设备当前运行模式不同步：设置窗首次打开从设备模式初始化，当前 `ToU mode` 显示为 `ToU`；保存 Battery、Networking 等非模式页面不再改写设备运行模式。普通页面 Save 现在按当前页作用域生成 Operation Log，列出每个变化字段及保存前后值。
+- 修正设置合法值：`Command timeout` 允许 `0` 表示不超时，固定功率因数和 cos φ 曲线允许负 under-excited 值；Devices 的 Check code 掩码长度跟随实际四位值。后端点位 `label / unit / min / max / step / enumList` 仍列为生产接入约束，本地范围只作为 preview fallback。
+- Inverter settings 按本轮标注统一文案：`Feed-in` 全部改为 `Export limit / Import & Export Limits`；Running Mode 六个选项对齐线上；Economic Schedule 使用 `Charge by PV Only`；MPPT 字段改为 `MPPT Input / MPPT #1–#4 / Parallel MPPT Operation`。Grid & Protection 门禁改为读取 Devices 同一设备的 4 位 `Check code`，Parameter Export 日期统一为 `YYYY/MM/DD`。改动前/后及未决项记录在 `src/pages/inverter-settings/COPY-AUDIT.md`。
+- 修复 Grid & Protection 正确解锁时门禁卡向右跳位：在二级栏展开前记录卡片屏幕中心，退场期间使用临时位移补偿内容列宽度变化，卡片保持原位淡出，并在动画结束后清除补偿。
+- 优化 Inverter settings 的 Running Mode 选择动画：卡片生长/收起统一为 `320ms` shared panel duration/easing，展开和收起共享同一时间轴，避免 expansion / collapse 一快一慢；说明文字只保留透明度变化。动画中再次切换模式时，从当前可见高度与说明透明度续接，不再先跳到上一目标。
+- 修复共享滚动反馈在快速连续和反向滚轮时的迟滞：普通滚动与回弹阶段滑块都在下一动画帧跟随最新 `scrollTop`；弹性状态下反向输入立即清除 pull 并把滚轮交还原生 viewport；轨道滚轮按 `deltaMode` 换算为像素距离。Inverter settings 左右栏及所有复用该组件的滚动区同步生效。
+- Inverter settings 的保存、取消与 dirty 状态改为按当前页面隔离：`Save` 只提交当前主页面或 Grid 二级页，`Cancel` 只回滚当前页。当前页有未保存修改时，主页面和 Grid 二级页切换都会先弹出共享确认层，提供 `Keep Editing` / `Discard Changes`；Discard 在点击当下恢复当前页基线并立即启动目标页转场，确认层退场与切页并行，右上 X 仍检查全局未保存状态。
+- 修正 Inverter settings 上下窗倒影的实现方式：不新增独立渐变层，直接调整既有的 `.isw-main-shell` 向上 `box-shadow` 为 `0 -10px 28px -10px`；浅色使用 `22%` 黑、深色使用 `34%` 黑，两种主题都保持黑色。保留 `1px` 黑色接触线。
+- Inverter settings 上方状态窗新增一次性的 `20px` 上浮入场：复用共享 `520ms` modal-content duration 与 spring easing，仅动画状态窗自身 transform。修复直接刷新时动画在页面首帧可见前已经结束的问题：改为应用 `data-ready` 后等待两个 `requestAnimationFrame` 再启动；下层设置窗、页面切换和局部状态更新不受影响，减少动态效果时不启动。
+- 设置页底部 `Cancel / Save` 改为同宽并加宽：桌面统一 `100px`，保持共享 36px 高度、8px 间距、居中排列与现有玻璃材质；窄屏继续等分可用宽度。
+- 设置页表面材质统一为深色轻阴影：右侧内容母面板、panel、table、effective chain、SOC、gantt、plot、profile list 与 mode card 保留共享 `1px` 中性内描边和 `0 0 4px` 外投影几何，但外投影统一调淡为 `rgba(0,0,0,.35)`；浅色模式继续使用共享轻阴影，专项断言母面板与全部卡片共享调淡后的阴影规则。
+- 设置页全量补齐输入可访问名称：数字行使用“行标题 + 单位”，表格使用“行标题 + 列标题 + 单位”，提示绑定 `aria-describedby`。共享 Select 使用“字段名: 当前值”并维护 `aria-expanded`。Info、时间箭头、复制值和日志账户名扩大透明命中区，视觉保持不变。
+- 特殊色标准按钮新增共享 warning 变体：Operation Control 的 Power off / Restart 改为橙红 warning，Factory reset 保持 danger。warning / danger 共用轻描边、轻阴影和对应色默认文字；hover / focus 使用同色系饱和叠加层并切换为白色文字，叠加层按共享进入 / 离开时长渐入渐出，不再混黑或直接跳色。
+- Inverter settings 建立组件字体语义契约：在 `.inverter-settings-window` 上集中定义 title / meta / row / caption / reading / field 等 `--isw-type-*` 角色，标题、导航、行标题、说明、表头、字段、模式卡与时序内容统一改用角色变量；移除被后续规则完全覆盖的旧分组标题声明。普通设置表头同步统一为 `12/400/16`、`32px` 高，并新增覆盖所有主页面、Grid 子页、门禁、弹层与设置弹窗的 SF Pro、字号和字重运行时审计。
+- 修正字段字体角色：Adaptive Select 与数字/百分比/时间输入统一为 `13 / 510 / 18`，不再沿用行标题的 `14 / 510 / 20`；Economic Mode、百分比字段、Mini/Point 数字字段及其他设置页可编辑字段同步生效。
+- Inverter settings 新增页面级 `--isw-card-gap:30px`，所有主页面和 Grid 子页的卡片、表格、曲线、模式列表统一引用该值，替代局部 `20px`。Economic Schedule 的标题仍距卡片 `7px`，Overview 卡至第二个标题同步为共享 `30px`。
+- Inverter settings 新增独立 `--isw-note-gap:10px`：所有 info 说明到上方卡片的距离统一收紧到 `10px`，并移除 Grid 与 Economic Schedule 的页面级 margin 覆盖；卡片之间保持共享 `30px`。
+- Inverter settings 数字编辑框增强状态对比：默认描边、hover 填充 / 描边、focus-within 填充 / 描边 / 中性外环形成三档递进，深浅主题都使用主文字色混合；不再沿用 hover 描边不变的旧规则，也不引入蓝色焦点框。
+- 修复数字编辑框深色 hover / focus 阴影被主文字混合色带成白色光晕的问题：接触阴影与主题 Ink 解耦，深浅主题统一使用黑色并独立按 `.2 / .3 / .36` 增强。
+- 共享分段控件增强深色选中胶囊：新增 `--wd-segmented-control-indicator-fill`，深色由弱 `36%` 灰填充提升到 `rgba(120,120,128,.56)`，浅色保持原共享 `20%`；滑动几何、动画时长和快速连点续接不变。
+- 调整数字编辑框浅色状态：hover 为 `6% / 16%`，focus 为 `12% / 32% / 12%` 外环，浅色阴影独立为默认 `.08`、hover `.14`、focus `.16`，同时解决 hover、选中态与阴影过黑；深色状态保持不变。
+- 新增共享 `createBottomScrollGuard()` 并由 `createScrollFeedback({preserveBottomOnShrink:true})` 托管，接入 Inverter settings、Plants 列表 / 详情、Plants Devices 和 Service Ticket 主滚动区。底部内容变短时使用临时缓冲平滑回落；内容增长只更新基线，不触发缓冲。
+- 增加共享收缩 / 增长双向回归；设置页完整专项、共享组件专项以及 Plants、Devices、Service Ticket 消费页专项均通过。
+- 修复 Frequency-Watt 首个说明贴住页面标题的问题：页面正文首个 `.isw-note` 清除负上边距，实际标题到首内容恢复为 `18px`，与其他 Grid 子页一致，后续说明间距不变。
+- Frequency-Watt 页面所有数字输入框统一为标准 `128 × 36px` 并与卡片内容右缘对齐，字段内部数值与单位整体右对齐；输入不再按内容自动收窄，分段选择和开关尺寸不变。
+- Inverter settings 新增集中式原型范围校验：所有数字字段带有限 min/max，非法输入保留值并将数值、单位、描边转红且增加淡红底；深浅主题的 hover、focus-within 和输入中状态均保持红色体系，浅色聚焦规则不再覆盖成中性灰。错误提示以 `2px` 紧凑间距贴身显示，Economic Schedule 等表格按实际输入框右缘对齐。错误态会在原行节奏之外增加真实高度：Economic 行使用独立上下缓冲，普通表格行增加 `6px` 上下内距，避免提示文字与下一行挤在一起。修正后立即清除，并通过共享 `280ms` content-grow 动画调整卡片高度。Economic Schedule 百分比与时间错误同步迁移到行内提示。
+- 设置页左侧导航顶部渐隐调整为 `24px` 平滑多段曲线，并只在导航滚动后启用、回顶即关闭；消除静止状态下明显的渐变线，同时保持无实体色条和窄屏自动关闭。
+- Grid & Protection 锁页门禁接入页面共享交叉淡变：进入、离开与安全码解锁都使用 `260ms` 页面切换 duration/easing；退场先设 `inert`，动画完成后才 `hidden`，快速切换从当前 opacity 续接。新增与 incoming/outgoing page 时间参数一致性的回归断言。
+- Economic Schedule 的 24h Overview 时间轴由 `8px` 收细到 `6px`，长度、绿/橙色段、刻度点与图例位置不变。
+- Economic Schedule 的 `24h Overview` 卡片最终使用上 `28px`、下 `18px` 内距，左右仍使用 `24px`；覆盖此前上下对称 `18px`。
+- `components/popover.js` 新增共享 `menuEndAlign(anchor,radius)`。共享 Select 与 Economic Schedule 行尾 `•••` 菜单统一使用“布局右缘 + 菜单圆角”定位，`•••` 菜单由原先与按钮右缘齐平改为向右偏移 `30px`；新增实际右缘误差断言。
+- 共享 `createSelectControl()` 新增 `variant:"adaptive"`，将 Economic Mode 的自适应编辑框视觉正式迁入组件 CSS；Economic、MPPT、Reactive 与 LVRT/HVRT 均改用该变体，移除页面 `.isw-eco-field.isw-eco-select` 双重类和固定宽度/分段分叉。共享单选标记保持 `18px`。
+- Inverter settings 的普通命令按钮统一改为共享玻璃按钮：CT `Run check`、Operation Control、Parameter Export 与 Grid Code `Reload …` 使用 `createStandardButton()`；主操作 primary、断电/重启使用 warning 橙红玻璃、恢复出厂使用 danger 红色玻璃、安全次操作 neutral，页面私有 `.isw-inline-button` 已删除。Operation Control 命令按钮统一 `144px` 宽。异步文案只更新 `.wd-control-label` 与 `aria-label`，避免移除 `.wd-glass-material`。
+- Operation Log 收口为 Economic Schedule 同源 `12px / 400` 表头与统一 `12px` 行文本；三列调整为 `112px / minmax(0,1fr) / 112px`，把更多宽度留给中间 Change，表头同步跟随。时间改用共享 `createTimeLabel()`，近期显示相对时间、7 天后显示本地绝对时间；操作人显示账户名，hover / focus 的共享 Glass 邮箱浮窗按内容自适应并与账户名居中，邮箱可点击复制并只显示下划线反馈。邮箱浮窗移除内部灰色 burn 阴影，并覆盖通用 Popover 按钮的 hover 背景与圆角，只保留外部轮廓。演示数据扩充为多参数提交，每个参数独立换行，长内容不横向截断。
+- Grid Connection 首尾两个窗口卡统一为 `48px` 行高、上下 `6px` 内距，左侧标签改用普通卡片标题主色字体，右侧改用标准 `128px × 36px` 字段并右对齐。设置页全部偏差状态只保留计数与说明，开关、分段、数字及其他控件都不再绘制橙色左侧竖条；新增 Grid Connection 截图与专项断言。
+- Reactive Power 与 LVRT/HVRT 的选项字段统一迁移到共享 `createSelectControl()`，并与 Economic Schedule Mode 共用 `.isw-eco-field.isw-eco-select` 自适应触发器；不再使用固定宽度或分段控件。共享菜单单选标记固定 `18px`，选择后关闭并归还焦点，页面只声明业务选项、菜单宽度和业务回调。Reactive 条件区独立数字字段保持 `128 × 36px`，新增三张页面截图与下拉交互回归。
+- Reactive Power 的 Q(U)、cos φ(P)、Q(P)、cos φ(U) 点表统一为 `.isw-point-table`：安静 `12/400` 表头、`48px` 行高与 `6px` 上下内距、`13/18` Point 标签、`112 × 36px` 居中字段，并让右侧表头与字段中心对齐。
+- 新增共享 `createSelectControl()` 与通用选择样式，统一选择触发器、玻璃菜单浮层、实心/空心选中标记、关闭和焦点归还；Inverter settings MPPT 与 Site details 2 已迁移到该组件。
+- Inverter settings Economic Schedule 的 Mode 也迁移到共享 Select，触发器按当前文案自适应宽度，浮层使用共享玻璃菜单并完整显示所有模式名称；空草稿沿用共享 placeholder。
+- 共享 Select 菜单右侧空心圆与实心对勾统一缩小到 `18px`。
+- 共享 Select 浮层统一按触发器右缘加当前圆角距离定位，Economic Mode、MPPT、Reactive Power 与 Site details 使用同一右侧对齐规则。
+- 共享 Select 补齐键盘交互、动态选项 API 和 `default / form / compact / table / adaptive` 变体；独立组件回归覆盖方向键、Home / End、typeahead、禁用项、选择回焦与选项热更新。
+- CT Detection 结果行改为 `50px` 高并增加上下间距；Correct 改为共享 success 绿色。Grid & Protection 密码卡改用静态共享玻璃材质和 `30px` 外圆角，安全码格与 Continue 圆角同步收紧。
+- MPPT Last scan 与 CT Last check 改用共享 `createTimeLabel()` 渲染设备回传时间，移除硬编码 `today` 文案；重新检查后显示 `Just now`，并保留 `<time datetime>` 与绝对时间 `title`。
+- Inverter settings 的 MPPT `Scan interval` 从数字输入改为共享玻璃单选菜单，固定提供 `5 mins / 15 mins / 30 mins / 1 h`，当前值与选择状态同步，选中项使用主题主色的实心对勾、未选项使用空心圆。
+- MPPT Scan interval 移除页面私有固定宽度，触发器完全继承共享 Select 的内容宽度、内距、图文间距和箭头尺寸。
+- MPPT Scan interval 与 Economic Schedule Mode 统一使用 `.isw-eco-field.isw-eco-select` 和 `.isw-eco-select-value`，消除两套选择框视觉。
+- Inverter settings 的纯展示数据行统一为标题字体：左侧只读标签使用次级浅色，右侧展示值保持主文字色；Last scan、Active profile、认证标准寄存器和 profile 变更数共用 `.isw-row--readonly-data`，不再把只读标签误当成设置项主标题。
+- Inverter settings 的 Networking Address 表统一为设置卡标题字体与 `46px` 行高；左侧标签使用次级文字色，右侧值使用主文字色。IP、子网掩码、网关和 MAC 右侧值支持 hover/focus 下划线与点击复制，并复用页面级 toast 反馈；复制监听已放入通用页面初始化，避免跨页漏绑。
+- Inverter settings 的 Grid & Protection 首次进入 `Grid Code`，随后恢复上次二级页；设置窗口会话内，各主页面与各 Grid 二级页分别记住滚动位置，左侧导航轨也恢复原位置。二级导航保持 `208px`、顶部/左右 `18px`、行内 `12px` 和单行标签，hover / selected 为半圆胶囊。Grid 子页继续使用居中 `560px` 列；档案行 hover 铺满卡片边缘并复用 Running Mode 的 `18px` 对号 / 空心圆。Protection Limits 表头复用 Economic 样式，Setting / Trip time 与字段中心对齐；输入框最宽 `112px`，上下各 `6px` 留白，阶段符号居中并左移 `6px`；开关变化不再产生左侧橙色竖条。专项回归和最终截图已更新。
+- Grid & Protection 安全码当前焦点格改用完整共享选中填充与 `1px` 中性描边，移除蓝色 outline；浅色下与空闲格的填充 alpha 对比提升到约 `8%`，输入框尺寸、间距及错误态红色描边保持不变。
+- Grid & Protection 门禁 Continue 改用共享蓝色主按钮 `createStandardButton({variant:"primary"})`，复用全站主按钮材质与白色文字；保持门禁原地 `38px` 高度和整行宽度。
+- 统一 Inverter settings 的 Effective chain 与 `Command timeout` 行字体：两处现在都使用 SF Pro、`14px / 510 / 18px`、`-0.14px` 字距和主文字色。同步调整 Effective chain 行高为 `36px`、列距为 `14px`、标签列为 `170px`、卡片上下内距为 `12px`，保证 `Battery power capability` 不再截断，并保留最后一行 `16px` 分隔间隔。
+- 修复 Inverter settings 左栏切页时右侧内容闪回、跳动和中间空档：旧、新正文与标题改为同步 `260ms` 互补交叉淡变，新页在第一帧开始渐入并位于旧页上方，两页透明度之和保持连续，不再出现先退后进的内容空洞。固定标题层保留不透明度，只动画内部文字标签；旧、新标题 label 共用同一坐标，恢复标题高斯模糊并消除叠字跳动。页面导航现在在同一任务内将新页滚到顶部，旧页则冻结原视口位置后退场，不再先继承旧滚动距离再跳顶。接力动画保持终态，快速连续切页会捕获当前实际透明度并从中续接，不再瞬回全亮。
+- 修复共享分段控件连续点击时胶囊回跳：旧实现先 cancel 动画再读取位置，导致指示层瞬回上一端点。现在先捕获当前可见边界并写回，再从该中间位置续接下一段 `600ms` soft-spring；ResizeObserver 在动画期间也保持当前位置续接。新增共享组件和 Inverter settings DI Port 的连续切换回归。
+- 修复进入 Grid & Protection 时旧设置页先向右移动：退场旧页节点直接从内容列移出并挂载在 `.isw-body` 的 `inert` 快照层，按切换前 viewport rect 固定 left/top/width；Grid 二级列展开只影响新页布局。同步移除旧页整树深拷贝、重复内容替换分支和过期标题 ghost 清理。标题 ghost 按旧 X 补正，专项覆盖旧页横向/纵向/宽度稳定与新页目标布局。
+- Grid 二级导航接入页面统一交叉淡变：进入时从透明与正文同步渐入，离开时使用固定 rect 的 `inert` 快照同步渐出，避免二级栏提前出现或单独消失。
+- 修复开关轨道颜色突然跳变：轨道背景改为从当前计算色出发的 `480ms` WAAPI 插值，CSS transition 只保留轮廓/阴影；同值同步不再取消运行中的滑块与轨道动画。
+- 修复 Device Features 卡片过窄：移除三个面板误用的 `isw-panel--narrow`，恢复为撑满标准 `640px` 内容列，并补充卡片宽度与页面列一致的回归。
+- 补充专项回归，覆盖旧层动画结束后的零透明度、旧层仍挂载、旧标题 ghost 保持透明，以及快速二次切换的透明度连续性；同步 `AGENTS.md`、`DESIGN-SYSTEM.md`、页面 README、`PROJECT-STATUS.md`、`USER-REQUIREMENTS.md` 与 `LESSONS-LEARNED.md`。
+
+## 2026-11-19
+
+- 完成当日动效规则归档（仅文档）：统一共享 switch `600ms` soft-spring / `480ms` 轨道、分段胶囊 `600ms` 与 `0px` 标签偏移、重绘复用同一控件 DOM、同卡条件行 `280ms` 高度生长，以及 Inverter settings 页面透明度接力。页面切换最终在 2026-11-20 收口为同步 `260ms` 互补交叉淡变，当前规则以对应新条目为准。明确废弃旧 `420ms / 380ms` switch、`320ms` 分段 panel motion、`-0.5px` 文字补偿、依赖内容等待动画、替换运动 DOM、方向位移和双页高重叠。同步收口 `AGENTS.md`、`DESIGN-SYSTEM.md`、`docs/COMPONENTS.md`、`docs/PROJECT-MAP.md`、`docs/USER-REQUIREMENTS.md`、`docs/LESSONS-LEARNED.md`、`docs/PROJECT-STATUS.md` 与 `docs/SITE-DETAILS.md`，并清除 `Site details 2` 第四个页签的历史措辞与当前三项导航的冲突。本次归档未修改运行代码、页面视觉或测试。
+- 完成当日规则归档：在 `PROJECT-STATUS.md` 建立最高优先级最终总表，并统一 `AGENTS.md`、`DESIGN-SYSTEM.md`、`COMPONENTS.md`、`USER-REQUIREMENTS.md`、`LESSONS-LEARNED.md`、路由规范和设置页 README 中的最终生效规则。
+- 修复顶部 toast 未居中：移除共享提示层旧的 `calc(50% + 140px)` 偏移；页面级 toast 使用视口中心，只有真正的局部内容提示才通过 `{centerWithin}` 按目标容器居中。Inverter settings 的保存反馈按页面级 toast 处理。
+- 调整 Inverter settings 的 Grid & Protection：二级导航移入右侧主面板并以贯穿高度的 1px 线分隔，门禁保持只覆盖内容列；补齐小锁图标，Continue 改为共享中性玻璃按钮。
+- 固定 Grid & Protection 左侧行的尾部箭头方向，进入页面后不再旋转。
+- Grid & Protection 二级列默认隐藏并只在安全码通过后出现；提高门禁说明文字对比度，把测试安全码压缩为单行，并删除底部关闭/日志说明。
+- 修复 Inverter settings 顶部标题和背景模糊跟随 elastic 回弹一起穿帮的问题：标题移到滚动内容外的固定 `.isw-title-layer`，正文继续使用共享上下越界回弹，普通滚动和两端回弹时标题坐标不再变化。
+- 优化 Inverter settings 上下窗的叠层关系：下层设置窗通过非玻璃外壳向上投影克制黑色阴影，表现下层窗口压在状态窗上方；阴影进一步减淡并扩大范围到 `0 -5px 20px -6px`，同时保持两窗共享玻璃材质不变。
+- Inverter settings 改为仅由右上 X 关闭：遮罩点击和 Escape 不再退出；存在未保存修改时先显示共享 `Keep Editing` / `Discard Changes` 确认层，丢弃修改后才返回 Devices。
+- 修复设置页退场被路由切换截断的问题：X 和无改动关闭都先播放共享 `420ms` Depth Reveal，待 `onClose` 释放后再切回 Devices；新增浅色、未保存确认、保存后退场和遮罩/Escape 不关闭的专项回归。
+- Inverter settings 完成独立页面与本地 2026-11-19 功能包迁移：5 组导航、15 个主页面、条件国别二级页、18 个档案、安全门禁、偏差记录、恢复、日志、导出、CT 检测和会话保存均保留。
+- 视觉收口为上下两层窗口、`288px` 无分割线透明导航、右侧独立 `.wd-main-panel` 内容区、底部模糊操作层和透明吸顶标题；导航标签使用 `Footnote/Medium 13/510` 并与 trailing 至少留 `4px`，内容区向右/下内缩 `12px`，并以 `2.5%` 黑色叠加层区分内部卡片。
+- 修正逆变器设置上下窗口材质观感不一致：撤销上方窄状态窗的本地 `98%` 实心填充，改为与下方窗口完全复用同一套共享 Glass Surface tint、blur 与 optics，消除浅色模式下上层接近纯白的问题。
+- 设置页左右两个主滚动区恢复共享 `elastic:true` 越界回弹，左侧新增独立导航内容层；顶部/底部继续滚动时统一使用共享内容位移、滑块收缩、透明回弹面和 `640ms` spring 恢复。
+- 修复设置页滚动区域在右侧轨道上滚轮不跟手的问题：非边界状态直接滚动对应视口，仅在上下边界进入共享回弹，并保留 `Ctrl/Cmd + 滚轮` 缩放。
+- 设置行左侧文案列改为弹性占满控件之外的可用宽度，行提示移除旧 `330px` 上限，长说明可自然利用右侧留白，同时保持控件宽度和右缘不变。
+- 设置卡片统一为 `.wd-main-panel` 材质/阴影和 `--isw-card-inset: 24px`，覆盖面板、表格、生效链、SOC、甘特、曲线、配置列表和模式卡；字号统一到 `14/14 medium`、`Caption1`、`Caption2/Emphasized` 等现有主题档位。
+- 设置数字框统一为 `128px × 36px`、`18px` 圆角胶囊，与同行上方分段按钮同宽同右缘；浅色默认透明并透出卡片底色，仅在 hover / focus 时显示浅灰反馈，描边颜色保持不变。参考轻量胶囊改为单层 `1px` 低对比描边；阴影使用短下移加 `1px` 虚化，默认 1px、hover 2px，颜色取当前描边的 `96% + 4%` 黑色，只比描边略深。状态过渡延长到 `380ms`。数字弹性占宽，单位按内容自适应，两者固定间距并在右侧保留安全内距。数字和单位共用字体参数、单位只降色，删除中间竖线。组件内统一移除上下调整按钮，保留直接输入和原步长键盘方向键调整。
+- 用户提供的 20 个设置图标以语义文件名归档到 `home-assets/icons/settings/`，通过 `SETTINGS_ICON_FILES` 共享注册；导航与运行模式均默认中性、选中主文字色。
+- 修复局部修改导致的内容跳动：不再重建导航或重播页面入场，关闭内容滚动锚定并在 hydrate 后恢复原 `scrollTop`；页面位置与焦点保持，profile 仅刷新二级导航。
+- 设置导航收窄到 `288px`，标签使用 `Footnote/Medium 13/510` 并保证与数值尾部净空；页面标题、卡片、info 与说明通道共用 `24px` 内容线。说明重点词改为中性次级色混合；Effective chain 五行统一文字样式，前四行保持 `34px` 行距，最后一行上方增加 `16px` 间隔并将分隔线居中，使分割线上下净距与普通文字行距一致。
+- Running Mode 选中卡将浅色底色加深到共享选中色的 `60%`，描边改为 `82% Separators/Non-opaque + 18% Labels/Primary`，左侧选中图标改为主文字色；未选中卡 hover / focus 使用清晰但弱于选中的底色变化，并增加选中描边 68% 的弱中性描边。浅色主题补齐同特异性覆盖，右侧圆环保持不变。标题、摘要、flow、说明统一 `3px` 间距，说明上方不再绘制分隔线；摘要、flow 与说明统一为 `13/400/18` 次级色。右侧 check-circle 与未选圆环同为 `18px`。模式切换继续使用共享 380ms 动效；侧栏完整显示 `Peak Load Shifting`。
+- 完整规则已同步 `AGENTS.md`、`DESIGN-SYSTEM.md`、`docs/USER-REQUIREMENTS.md`、`docs/COMPONENTS.md`、`docs/PROJECT-STATUS.md`、`docs/PROJECT-MAP.md`、`docs/ARCHITECTURE.md`、`docs/ROUTING.md`、`docs/LESSONS-LEARNED.md` 与页面 README、SOURCE-MANIFEST。
+
 ## 2026-11-18
 
 - Site details 最终入口收口为 `Overview / Devices / Site details`。可见 Site details 使用稳定 `/plants/:id/site-v2`，标签与页面隐藏标题删除数字 `2`；旧 `/plants/:id/site` 仅保留隐藏兼容路由。
@@ -86,7 +177,7 @@
 ### Energy trend 切换精修
 
 - 模式开关 hover 移除第二层圆角背景，只保留文字提亮与整体缩放。
-- 分段选项改为 flex 水平、垂直居中，并对标签做 `translateY(-0.5px)` 字形光学校正，消除实际墨迹相对胶囊中心偏低的问题。选中胶囊移除内描边，上下各内缩 `4px`，左右铺满当前选项以消除相邻项之间的额外空隙；外框左右保留 `4px` 内距。占位标签改为 `All / Default / Battery / Frequency`，选项按文字内容自适应宽度，左右内距 `18px`、相邻项间距 `0px`，指示层按实际选项位置和完整宽度平滑移动。
+- 分段选项改为 flex 水平、垂直居中，并对标签做 `translateY(-0.5px)` 字形光学校正，消除实际墨迹相对胶囊中心偏低的问题。选中胶囊移除内描边，上下各内缩 `4px`，左右铺满当前选项以消除相邻项之间的额外空隙；外框左右保留 `4px` 内距。占位标签改为 `All / Default / Battery / Frequency`，选项按文字内容自适应宽度，左右内距 `18px`、相邻项间距 `0px`，指示层按实际选项位置和完整宽度平滑移动。**该条为历史中间态，文字补偿已由 2026-11-19 的 `0px` 最终规则覆盖。**
 - 移除 Plants 专属分段开关类及两处页面级宽度覆盖；默认尺寸、间距、圆角、字形校正和响应式最大宽度统一收回共享组件 CSS 变量。
 - 趋势切换抽为共享 `createSegmentedControl()`，补齐键盘方向键、禁用项跳过、ResizeObserver、快速连续点击动画续接和销毁清理；页面只保留选项及业务回调。
 - 保留两个占位项和独立 `Today` 周期按钮，日期浮窗继续复用 Home。

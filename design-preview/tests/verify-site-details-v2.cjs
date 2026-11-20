@@ -747,7 +747,7 @@ const settle=page=>page.evaluate(()=>Promise.all(
  assert.equal(await page.locator(".site-v2-panel--energy .site-v2-energy-input").count(),1,"Grid price becomes editable");
  assert.equal(await page.locator(".site-v2-panel--energy .site-v2-energy-select").count(),3,"Currency, Price area and Timezone become editable");
  assert.equal(await page.locator(".site-v2-panel--energy .site-v2-energy-select.wd-edit-field").count(),3,"Energy selectors use the shared edit-field style");
- assert.equal(await page.locator(".site-details-select-trigger").count(),6,"map, installer and energy selects use one shared trigger style");
+ assert.equal(await page.locator(".wd-select-trigger.site-details-select-trigger").count(),6,"map, installer and energy selects use the shared select component");
  const selectMaterials=await page.locator(".site-details-select-trigger").evaluateAll(nodes=>nodes.map(node=>({
   glass:node.classList.contains("wd-glass"),
   materials:node.querySelectorAll(":scope>.wd-glass-material").length,
@@ -793,6 +793,16 @@ const settle=page=>page.evaluate(()=>Promise.all(
  assert.equal(await page.locator(".site-v2-energy-input").inputValue(),"0.41","the grid price accepts decimal input");
  await page.locator('.site-v2-energy-select[aria-label="Currency"]').click();
  assert.equal(await page.locator(".site-details-select-popover").isVisible(),true,"Currency opens the shared Glass select popover");
+ await page.waitForTimeout(320);
+ const currencyTriggerBox=await page.locator('.site-v2-energy-select[aria-label="Currency"]').boundingBox();
+ const currencyTriggerLayoutWidth=await page.locator('.site-v2-energy-select[aria-label="Currency"]').evaluate(node=>node.offsetWidth);
+ const currencyPopoverBox=await page.locator(".site-details-select-popover").boundingBox();
+ const currencyTriggerLayoutRight=currencyTriggerBox.x+(currencyTriggerBox.width+currencyTriggerLayoutWidth)/2;
+ const currencyRightDelta=(currencyPopoverBox.x+currencyPopoverBox.width)-currencyTriggerLayoutRight;
+ assert.ok(
+   Math.abs(currencyRightDelta-24)<=1,
+   `Site details select popovers use the shared right edge plus their 24px radius (${currencyRightDelta})`
+ );
  await page.locator('.site-details-select-popover [data-value="SEK"]').click();
  assert.equal((await page.locator('.site-v2-energy-select[aria-label="Currency"]').textContent()).trim(),"SEK");
  assert.equal((await page.locator(".site-v2-energy-unit").textContent()).trim(),"SEK","the grid-price unit follows the selected currency");

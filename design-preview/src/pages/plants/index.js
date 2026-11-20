@@ -14,7 +14,8 @@ import {createScrollFeedback} from "../../components/scroll-feedback.js";
 import {createTimeLabel} from "../../components/time-label.js";
 import {motionDuration,motionEasing,reducedMotion} from "../../foundations/motion.js";
 import {createPlantDetailTabs,createPlantOverview,createPlantSectionPlaceholder} from "./detail.js";
-import {createPlantDevices} from "./devices.js";
+import {createPlantDevices,resolvePlantDevice} from "./devices.js";
+import {openInverterSettings} from "../inverter-settings/index.js";
 import {createConnectionGlyph as connectionGlyph} from "./connection-icon.js";
 import {createPlantSiteDetails,defaultSiteDetails} from "./site-details.js";
 import {createPlantSiteDetailsV2} from "./site-details-v2.js";
@@ -293,6 +294,7 @@ export function createPlantsPage({
   host:scrollShell,
   viewport:scroll,
   content:table,
+  preserveBottomOnShrink:true,
   topInset:()=>scroll.offsetTop,
   bottomInset:10
  });
@@ -349,11 +351,13 @@ export function createPlantsPage({
   host:detail,
   viewport:detailViewport,
   content:detailInner,
+  preserveBottomOnShrink:true,
   topInset:()=>detailHeaderHost.offsetHeight+detailTabsHost.offsetHeight,
   bottomInset:10
  });
  let activeOverviewController=null;
  let activeDevicesController=null;
+ let activeInverterSettings=null;
  let activeSiteDetailsController=null;
  let activeSiteV2Controller=null;
  let currentDetailDevice=null;
@@ -872,11 +876,13 @@ function visibleRows({ignoreCategory=null}={}){
   toast(`${plant.name||"This plant"} — the plant detail page is not part of this build`);
  }
 
-function renderDetail(plantId,requestedDevice,requestedSection,requestedTab){
+function renderDetail(plantId,requestedDevice,requestedSection,requestedTab,requestedSettings=false,requestedSerial=null){
   activeOverviewController?.destroy();
   activeOverviewController=null;
   activeDevicesController?.destroy();
   activeDevicesController=null;
+  activeInverterSettings?.destroy();
+  activeInverterSettings=null;
   activeSiteDetailsController?.destroy();
   activeSiteDetailsController=null;
  activeSiteV2Controller?.destroy();
@@ -981,10 +987,48 @@ function renderDetail(plantId,requestedDevice,requestedSection,requestedTab){
     close,
     toggle,
    toast,
-   onSave:next=>siteDetailsByPlant.set(plant.id,next)
+   onSave:next=>siteDetailsByPlant.set(plant.id,next),
+   onOpenInverterSettings:device=>{
+    onOpenPlantSection?.({
+     plantId,
+     device:"inverter",
+     section:"devices",
+     settings:true,
+     serial:device.serial
+    });
+   }
    });
    detailInner.replaceChildren(detailA11y,activeDevicesController.element);
    detailViewport.scrollTop=0;
+   if(requestedSettings){
+    const device=resolvePlantDevice(plant,{
+     type:"inverter",
+     serial:requestedSerial
+    });
+    if(device){
+     activeInverterSettings=openInverterSettings({
+      plant,
+      device,
+      glass,
+      toast,
+      registerPanel,
+      togglePanel:toggle,
+      closePanels:close,
+      onClose:()=>onOpenPlantSection?.({
+       plantId,
+       device:"inverter",
+       section:"devices"
+      })
+     });
+    }else{
+     toast("Inverter not found for this settings link.");
+     onOpenPlantSection?.({
+      plantId,
+      device:"inverter",
+      section:"devices"
+     });
+    }
+   }
    return;
   }
   if(isSite){
@@ -1534,7 +1578,7 @@ function renderDetail(plantId,requestedDevice,requestedSection,requestedTab){
   if(plantId){
    inner.hidden=true;
    detail.hidden=false;
-   renderDetail(plantId,params?.device,params?.section,params?.tab);
+   renderDetail(plantId,params?.device,params?.section,params?.tab,params?.settings,params?.serial);
    detailScrollFeedback.sync();
    return;
   }
@@ -1586,6 +1630,8 @@ function renderDetail(plantId,requestedDevice,requestedSection,requestedTab){
   },
   hide(){
    close(true);
+   activeInverterSettings?.destroy();
+   activeInverterSettings=null;
    activeSiteV2Controller?.destroy();
    activeSiteV2Controller=null;
    element.hidden=true;

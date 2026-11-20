@@ -31,6 +31,12 @@ export function createSegmentedControl({
   const button=buttons.get(activeId);
   if(!button)return;
   const target=targetFor(button);
+ const trackRect=control.getBoundingClientRect();
+ const indicatorRect=indicator.getBoundingClientRect();
+ const from={
+  x:indicatorRect.left-trackRect.left,
+  width:indicatorRect.width
+ };
   indicatorMotion?.cancel();
   indicatorMotion=null;
   if(!animate||reducedMotion()||!indicatorState){
@@ -39,16 +45,15 @@ export function createSegmentedControl({
    indicatorState=target;
    return;
   }
-  const trackRect=control.getBoundingClientRect();
-  const indicatorRect=indicator.getBoundingClientRect();
-  const from={x:indicatorRect.left-trackRect.left,width:indicatorRect.width};
+ indicator.style.transform=`translateX(${from.x}px)`;
+ indicator.style.width=`${from.width}px`;
   indicatorState=target;
   const animation=indicator.animate(
    [
     {transform:`translateX(${from.x}px)`,width:`${from.width}px`},
     {transform:`translateX(${target.x}px)`,width:`${target.width}px`}
    ],
-   {duration:motionDuration("--wd-motion-panel"),easing:motionEasing("--wd-ease-panel"),fill:"both"}
+   {duration:motionDuration("--wd-motion-switch-thumb"),easing:motionEasing("--wd-ease-switch-thumb"),fill:"both"}
   );
   indicatorMotion=animation;
   animation.finished.then(()=>{
@@ -62,6 +67,10 @@ export function createSegmentedControl({
 
  function setValue(id,{animate=true,notify=true}={}){
   if(!buttons.has(id))return;
+  if(id===activeId&&indicatorState){
+   if(notify)onChange?.(id);
+   return;
+  }
   activeId=id;
   for(const [buttonId,button] of buttons){
    const selected=buttonId===id;
@@ -102,7 +111,7 @@ export function createSegmentedControl({
   buttons.get(enabled[next])?.focus();
  });
 
- const resizeObserver=new ResizeObserver(()=>positionIndicator({animate:false}));
+const resizeObserver=new ResizeObserver(()=>positionIndicator({animate:Boolean(indicatorMotion)}));
  resizeObserver.observe(control);
  for(const button of buttons.values())resizeObserver.observe(button);
  requestAnimationFrame(()=>setValue(activeId,{animate:false,notify:false}));

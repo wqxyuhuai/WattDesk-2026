@@ -11,6 +11,7 @@
   --wd-motion-tab-in:280ms;--wd-motion-tab-out:220ms;--wd-motion-tab-close:260ms;--wd-motion-tab-swap:110ms;
   --wd-motion-disclosure:380ms;--wd-motion-ambient:3200ms;--wd-motion-ambient-stagger:180ms;--wd-motion-map-pulse:2600ms;--wd-motion-map-pulse-stagger:1300ms;--wd-motion-refresh:640ms;--wd-motion-sheen:680ms;
   --wd-motion-panel:320ms;--wd-motion-panel-exit:200ms;--wd-motion-content-grow:280ms;--wd-motion-pull-rebound:640ms;--wd-motion-chart:900ms;--wd-motion-stagger:35ms;
+  --wd-motion-view-switch:260ms;--wd-motion-view-switch-in:260ms;--wd-motion-view-switch-out:260ms;--wd-motion-view-switch-delay:0ms;
   /* Fullscreen search: field and results arrive/leave on one offset timeline.
    * The entrance is deliberately slower than a popover and uses a gentle
    * overshoot so the glass settles instead of snapping into place. */
@@ -36,17 +37,22 @@
   --wd-ease-skeleton-in:cubic-bezier(.2,0,.2,1);--wd-ease-skeleton-out:cubic-bezier(.4,0,.2,1);
   --wd-skeleton-base:rgba(235,235,245,.14);--wd-skeleton-sheen:rgba(255,255,255,.22);--wd-skeleton-opacity:1;
   --wd-motion-glass-hover:300ms;--wd-motion-glass-press:110ms;--wd-motion-glass-release:420ms;
+  /* The compact switch gets a longer, softer travel so its short distance does
+   * not read as a snap. Track colour resolves just before the thumb settles. */
+  --wd-motion-switch-thumb:600ms;--wd-motion-switch-track:480ms;
   /* Search has its own veil: a full-page overlay cannot share the denser
    * activity tint without turning the page behind it into a flat sheet. */
   --wd-search-veil:var(--wd-overlay-activity);--wd-search-veil-blur-base:28px;
   --wd-search-drop-y:24px;--wd-search-drop-blur:26px;
   --wd-ease-glass:cubic-bezier(.22,.8,.25,1);--wd-ease-glass-press:cubic-bezier(.16,.84,.28,1);--wd-ease-glass-release:cubic-bezier(.16,.84,.24,1);--wd-ease-sheen:cubic-bezier(.2,.7,.3,1);
+  --wd-ease-switch-thumb:cubic-bezier(.34,.16,.18,1);--wd-ease-switch-track:cubic-bezier(.4,0,.2,1);
   --wd-glass-hover-scale:1.025;--wd-glass-press-scale:1.065;
   --wd-glass-hover-stretch:.006;--wd-glass-press-stretch:.014;
   --wd-glass-disc-hover-scale:1.07;--wd-glass-disc-press-scale:1.18;
   --wd-glass-disc-hover-stretch:.018;--wd-glass-disc-press-stretch:.03;
   --wd-ease-hover:cubic-bezier(.16,1,.3,1);--wd-ease-hover-out:cubic-bezier(.3,0,.2,1);--wd-ease-disclosure:cubic-bezier(.4,0,.2,1);
   --wd-ease-panel:cubic-bezier(.22,.8,.25,1);--wd-ease-content-grow:cubic-bezier(.22,.8,.25,1);--wd-ease-chart:cubic-bezier(.16,1,.3,1);--wd-ease-spring:cubic-bezier(.18,1.12,.3,1);
+  --wd-ease-view-switch:cubic-bezier(.4,0,.2,1);--wd-ease-view-switch-out:cubic-bezier(.4,0,.2,1);
   --wd-ease-tab-in:cubic-bezier(.22,.8,.25,1);--wd-ease-tab-out:cubic-bezier(.4,0,.2,1);--wd-ease-tab-swap-out:cubic-bezier(.4,0,1,1);
   --wd-ease-map-pulse:cubic-bezier(.22,.61,.36,1);
   --wd-shortcut-inset:20px;--wd-shortcut-gap:20px;--wd-control-circle:rgba(255,255,255,.12);

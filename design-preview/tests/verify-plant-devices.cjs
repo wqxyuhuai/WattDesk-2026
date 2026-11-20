@@ -555,49 +555,12 @@ async function ready(page, url, {settleAnimations=true}={}) {
   );
 
   await page.locator('.plants-device-card').first().getByRole('button', {name:'Open iHybrid settings'}).click();
-  assert.equal(await page.getByRole('heading', {name:'iHybrid settings'}).count(), 1);
-  await settle(page);
-  const settingsDialogLayout=await page.locator('.plants-device-dialog--settings').evaluate(dialog => ({
-    width:dialog.offsetWidth,
-    centerOffset:(innerHeight/2)-(dialog.getBoundingClientRect().top+dialog.getBoundingClientRect().height/2),
-    columns:getComputedStyle(dialog.querySelector('.plants-device-settings')).gridTemplateColumns,
-    titleIcon:dialog.querySelector('.plants-device-dialog-title-icon')?.offsetWidth,
-    closeIcon:dialog.querySelector('.plants-device-dialog-close .plants-device-action-icon')?.offsetWidth,
-    titleCenterGap:(() => {
-      const icon=dialog.querySelector('.plants-device-dialog-title-icon').getBoundingClientRect();
-      const title=dialog.querySelector('.plants-device-dialog-title').getBoundingClientRect();
-      return Math.abs((icon.top+icon.height/2)-(title.top+title.height/2));
-    })(),
-    saveColor:getComputedStyle(dialog.querySelector('.plants-device-dialog-actions .wd-button--primary')).color,
-    saveOpacity:Number(getComputedStyle(dialog.querySelector('.plants-device-dialog-actions .wd-button--primary')).opacity)
-  }));
-  assert.ok(Math.abs(settingsDialogLayout.width-1160)<=1, 'settings uses the wide dialog width');
-  assert.ok(settingsDialogLayout.centerOffset>=23&&settingsDialogLayout.centerOffset<=25, 'tall dialogs sit slightly above the viewport center');
-  assert.equal(settingsDialogLayout.columns.split(' ').length, 2, 'wide settings keep the two-column navigation/content layout');
-  assert.equal(settingsDialogLayout.titleIcon, 40, 'dialog titles use one shared 40px icon plate');
-  assert.equal(settingsDialogLayout.closeIcon, 14, 'dialog close glyph is reduced to 14px');
-  assert.ok(settingsDialogLayout.titleCenterGap<=1, 'dialog title icon and text share one vertical center');
-  assert.equal(settingsDialogLayout.saveColor, 'rgb(255, 255, 255)', 'disabled primary actions keep the primary white text');
-  assert.ok(settingsDialogLayout.saveOpacity>=.67&&settingsDialogLayout.saveOpacity<=.69, 'disabled primary actions retain a clearer material presence');
-  assert.equal(await page.locator('.plants-device-dialog-description').count(), 0, 'settings has no explanatory subtitle');
-  assert.deepEqual(
-    await page.locator('.plants-device-settings-tab').allTextContents(),
-    ['Running mode','Battery management','Professional settings','Safety-locked parameters','Networking','Shadow scan','Operation control','Other settings'],
-    'inverter settings expose the reference page categories'
-  );
-  const inverterSave=page.getByRole('button', {name:'Save changes'});
-  assert.equal(await inverterSave.isDisabled(), true, 'settings save is disabled before editing');
-  await page.getByRole('radio', {name:/General mode/}).click();
-  assert.equal(await inverterSave.isEnabled(), true, 'settings save enables after a real change');
-  await page.getByRole('radio', {name:/ToU mode/}).click();
-  assert.equal(await inverterSave.isDisabled(), true, 'settings save disables again when the draft returns to the initial value');
-  await page.getByRole('radio', {name:/General mode/}).click();
-  await page.getByRole('button', {name:'Save changes'}).click();
-  assert.match(await page.locator('.plants-device-meta-line').first().textContent(), /General mode/, 'saved mode updates the two-line device summary');
-  await page.getByRole('button', {name:'Open iHybrid settings'}).click();
-  assert.equal(await page.getByRole('radio', {name:/General mode/}).isChecked(), true, 'settings save in the local page session');
-  assert.equal(await page.getByRole('button', {name:'Save changes'}).isDisabled(), true, 'reopened settings start clean and disabled');
-  await page.getByRole('button', {name:'Cancel'}).click();
+  await page.waitForTimeout(420);
+  assert.match(page.url(), /\/plants\/p25\/devices\/inverter-settings\?device=inverter&serial=/, 'inverter settings open as a shareable route');
+  assert.equal(await page.locator('.inverter-settings-window').isVisible(), true, 'the dedicated inverter settings window is visible');
+  await page.locator('.isw-close-button').click();
+  await page.waitForTimeout(650);
+  assert.match(page.url(), /\/plants\/p25\/devices\?device=inverter/, 'Close X plays the shared exit before returning to Devices');
 
   await page.getByRole('button', {name:'Open iHeater settings'}).click();
   assert.equal(await page.getByRole('button', {name:'Save changes'}).isDisabled(), true, 'Heater uses the same clean-state save logic');

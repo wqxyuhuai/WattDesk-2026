@@ -303,7 +303,7 @@ function syncUrl(mode="push"){
  const next=new URL(path,location.origin);
  const currentParams=new URLSearchParams(location.search);
  for(const [key,value] of currentParams){
-  if(key==="connection"||key==="status"||next.searchParams.has(key))continue;
+  if(key==="connection"||key==="status"||key==="serial"||next.searchParams.has(key))continue;
   next.searchParams.append(key,value);
  }
  const url=next.pathname+next.search+location.hash;
@@ -353,6 +353,8 @@ function renderLocation(location,{restoreView=undefined}={}){
  const changed=!sameLocation({route:previous,params:activeParams},location);
  activeRoute=route;
  activeParams=params;
+ document.documentElement.dataset.standaloneSettings=
+  route==="plants"&&params.settings&&params.standalone?"true":"false";
  if(changed&&definition)recentVisits.record(route,params);
 
  homeColumn.hidden=!isHome;

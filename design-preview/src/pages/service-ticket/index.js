@@ -352,6 +352,7 @@ export function createServiceTicketPage({
     host:board,
     viewport:boardViewport,
     content:boardContent,
+    preserveBottomOnShrink:true,
     bottomInset:10
   });
 
@@ -377,6 +378,7 @@ export function createServiceTicketPage({
     host:detail,
     viewport:detailViewport,
     content:detailContent,
+    preserveBottomOnShrink:true,
     topInset:()=>detailHeaderHost.offsetHeight,
     bottomInset:10
   });

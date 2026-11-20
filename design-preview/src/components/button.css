@@ -21,6 +21,52 @@
 .wd-button--neutral{color:var(--wd-label-secondary)}
 .wd-button--neutral:is(:hover,:focus-visible,[aria-expanded="true"]){color:var(--wd-label-primary)}
 .wd-button--primary{color:var(--wd-figma-grays-white)}
+.wd-button--danger{
+  --wd-button-special-color:var(--wd-accent-red);
+  --wd-button-special-hover:var(--wd-accent-red);
+}
+.wd-button--warning{
+  --wd-button-special-color:var(--wd-accent-orange);
+  --wd-button-special-hover:color-mix(in srgb,var(--wd-accent-orange) 58%,var(--wd-accent-red) 42%);
+}
+.wd-button--danger,
+.wd-button--warning{color:var(--wd-button-special-color)}
+.wd-button--danger>.wd-glass-material,
+.wd-button--warning>.wd-glass-material{
+  --wd-glass-tint:color-mix(in srgb,var(--wd-button-special-color) 10%,transparent);
+  --wd-glass-blur:6px;--wd-glass-saturation:1.08;
+  --wd-glass-outline:color-mix(in srgb,var(--wd-button-special-color) 30%,transparent);
+  --wd-glass-outline-side:color-mix(in srgb,var(--wd-button-special-color) 26%,transparent);
+  --wd-glass-outline-width:.5px;
+  --wd-glass-drop:rgba(0,0,0,.07);
+  --wd-glass-drop-y:1px;--wd-glass-drop-blur:2px;
+  --wd-glass-rim-top:rgba(255,255,255,.08);
+  --wd-glass-rim-side:transparent;
+  --wd-glass-rim-bottom:color-mix(in srgb,var(--wd-button-special-color) 14%,transparent);
+  --wd-glass-inner-top:transparent;
+  --wd-glass-inner-bottom:transparent;
+  --wd-glass-optical-burn:transparent;
+  --wd-glass-optical-light-top:transparent;
+  --wd-glass-optical-light-bottom:transparent;
+  --wd-glass-reflection-field:none;
+  --wd-glass-hover-field:linear-gradient(180deg,color-mix(in srgb,var(--wd-button-special-color) 12%,transparent),color-mix(in srgb,var(--wd-button-special-color) 4%,transparent));
+  --wd-glass-glow:color-mix(in srgb,var(--wd-button-special-color) 7%,transparent);
+  --wd-glass-glow-edge:color-mix(in srgb,var(--wd-button-special-color) 30%,transparent);
+}
+.wd-button--danger>.wd-glass-material>.wd-glass-fill::after,
+.wd-button--warning>.wd-glass-material>.wd-glass-fill::after{
+  position:absolute;
+  inset:0;
+  border-radius:inherit;
+  background:var(--wd-button-special-hover);
+  content:"";
+  opacity:0;
+  pointer-events:none;
+}
+.wd-button--danger:is(:hover,:focus-visible)>.wd-glass-material>.wd-glass-fill::after,
+.wd-button--warning:is(:hover,:focus-visible)>.wd-glass-material>.wd-glass-fill::after{
+  opacity:1;
+}
 .wd-button--primary>.wd-glass-material{
   --wd-glass-tint:var(--wd-blue);
   --wd-glass-blur:0px;--wd-glass-saturation:1;
@@ -48,6 +94,11 @@
   --wd-glass-outline:color-mix(in srgb,var(--wd-blue) 66%,rgba(0,0,0,1));
   --wd-glass-outline-side:color-mix(in srgb,var(--wd-blue) 70%,rgba(0,0,0,.94));
   --wd-glass-drop:rgba(0,0,0,.20);
+}
+:root[data-theme="light"] :is(.wd-button--danger,.wd-button--warning)>.wd-glass-material{
+  --wd-glass-outline:color-mix(in srgb,var(--wd-button-special-color) 28%,rgba(0,0,0,.18));
+  --wd-glass-outline-side:color-mix(in srgb,var(--wd-button-special-color) 24%,rgba(0,0,0,.14));
+  --wd-glass-drop:rgba(0,0,0,.045);
 }
 .wd-button--pill:is(:disabled,[aria-disabled="true"]){opacity:.55;cursor:default}
 .wd-button--pill.wd-button--primary:is(:disabled,[aria-disabled="true"]){opacity:.68}

@@ -14,7 +14,7 @@ for(const file of runtime){
  const sharedMotion=path.dirname(relative)===path.join('src','foundations');
  if(/\.(css)$/.test(file)&&!sharedMotion&&/\btransition(?:-duration|-delay)?\s*:/.test(value))failures.push(`${relative}: local transition belongs in foundations/motion.css`);
 }
-for(const required of ['../AGENTS.md','../DESIGN-SYSTEM.md','../docs/PROJECT-MAP.md','../docs/PROJECT-STATUS.md']){
+for(const required of ['../AGENTS.md','../DESIGN-SYSTEM.md','../docs/PROJECT-MAP.md','../docs/PROJECT-STATUS.md','../docs/INVERTER-SETTINGS.md']){
  const file=path.resolve(root,required);
  if(!fs.existsSync(file))failures.push(`missing required project document: ${file}`);
 }

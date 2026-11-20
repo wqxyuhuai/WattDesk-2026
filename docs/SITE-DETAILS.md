@@ -1,13 +1,13 @@
 # Plants Site details 页面规格
 
-更新：2026-11-17
+更新：2026-11-19
 状态：查看态与整页编辑态已进入本地交互预览。
 参考：线上 WattDesk `Plant Info` 页面及其编辑态；本页沿用当前 WattDesk 设计系统，不复制参考站点的视觉。
 
 ## 1. 页面边界
 
-- 规范路由：`/plants/:id/site`，可继续携带 `?device=inverter|bms|heater`。
-- 入口：Plants Overview 的 `Site details` 页签。
+- 当前可见路由：`/plants/:id/site-v2`，可继续携带 `?device=inverter|bms|heater`；旧 `/plants/:id/site` 只保留为隐藏兼容路由。
+- 入口：Plants Overview 的 `Overview / Devices / Site details` 三个页签中的 `Site details`。
 - 导航发生在当前工作区标签内，不新建标签。
 - 返回 Overview 时保留当前设备，避免用户丢失原有设备作用域。
 - 面包屑保持 `Plants / 电站名`，不把页签增加成第三层面包屑。
@@ -126,7 +126,7 @@ Wärmeverbund Nord                    [Edit]
 - 正文资料字段统一使用 `.wd-edit-field`：深色默认 / hover / focus 为主文字色 `8% / 11% / 13%`；浅色默认 `Fills/Quaternary`，hover / focus `Fills/Tertiary`。focus 只使用低对比中性轮廓，不使用蓝色描边，浅色 focus 也不切回纯白。顶部页面标题是 `Title3/Emphasized` 专用编辑表面，不套普通字段高度。
 - Site details 最终覆盖：所有 `.wd-edit-field` 编辑表面使用浅灰半透明填充 + 背景模糊，不使用完整 Glass Material；深色 `blur(14px)`、浅色 `blur(16px)`，无玻璃 rim、高光、内阴影或投影。标题 textarea 必须为块级元素，单行承托层与输入框等高，不得留下 inline 基线造成的灰色底条；承托层左右各扩 `14px`、输入内距 `14px`，文本内容与查看态标题保持同一 X 坐标和同一顶部基线，进入编辑不得上浮。Country、Currency、Timezone、Price area、Installer company、Contact 等共享选择触发器全部复用该规则。
 - Owner information 的账户间分隔线改为全宽：每个账户行左右外扩 `-20px` 到卡片边缘，再以 `20px` 内距保持头像、信息和操作按钮的原坐标；首行不画线，后续行使用全局 `1px` 分隔色。
-- 页面上的 `Overview / Devices / Site details / Site details 2` 范围页签允许横向滚动，但滚动容器必须为 hover / focus 放大预留上下各 `8px`。列表使用 `height:calc(100% + 16px)`、`padding:8px`，通过 `top:-8px` 与左右 `margin:0 -8px` 保持页签原位置，不能裁掉上下描边。
+- 页面上的 `Overview / Devices / Site details` 三个范围页签允许横向滚动，但滚动容器必须为 hover / focus 放大预留上下各 `8px`。列表使用 `height:calc(100% + 16px)`、`padding:8px`，通过 `top:-8px` 与左右 `margin:0 -8px` 保持页签原位置，不能裁掉上下描边。
 - 编辑值、单位、文本输入和自定义下拉的当前值全部使用 `14px`，不得出现同一填充框内 13 / 14px 混排。
 - 原生滚动条必须隐藏，详情视口只显示共享 `createScrollFeedback()` 轨道；内容随编辑态增高时滚动反馈要立即同步，不能因浏览器滚动条出现或消失改变卡片宽度。
 - 数字输入隐藏浏览器上下步进按钮，保留键盘方向键和直接数字输入。

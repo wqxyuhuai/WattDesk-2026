@@ -61,6 +61,14 @@
   transition-timing-function: var(--wd-hover-ease);
 }
 
+/* Composite edit fields own shared surface state, so their fill, outline and
+ * contact shadow move together on the same hover rhythm as their children. */
+:where(.isw-number.wd-edit-field, .isw-mini-number.wd-edit-field) {
+  transition-property: background-color, border-color, box-shadow;
+  transition-duration: var(--wd-motion-disclosure);
+  transition-timing-function: var(--wd-ease-disclosure);
+}
+
 /* Text and icon leaves do not own a duration of their own; they inherit the
  * host's current rhythm so a background, label and icon never trail apart. */
 :where(
@@ -93,12 +101,27 @@
   transition-timing-function: var(--wd-hover-ease);
 }
 
-/* The toggle thumb owns one geometric movement; the shared control rhythm
- * keeps it aligned with every other state transition on the page. */
+/* The toggle reads as one physical state change. The component owns the
+ * interruptible thumb flight through WAAPI with the shared release duration;
+ * the glass track resolves its colour and outline on the slightly shorter
+ * panel rhythm. Both interpolate from the current rendered value, so rapid
+ * repeated toggles reverse cleanly. */
 .wd-switch-thumb {
-  transition-property: transform;
-  transition-duration: var(--wd-motion-hover);
-  transition-timing-function: var(--wd-ease-hover);
+  transition-property: none;
+}
+.wd-switch > .wd-glass-material > .wd-glass-fill {
+  transition-property: box-shadow;
+  transition-duration: var(--wd-motion-switch-thumb);
+  transition-timing-function: var(--wd-ease-switch-thumb);
+}
+
+/* Settings navigation keeps its DOM between pages; the selected surface is a
+ * separate pseudo layer so a 140ms cross-fade never changes row geometry. */
+.isw-nav-item::before,
+.isw-subnav-item::before {
+  transition-property: opacity;
+  transition-duration: var(--wd-motion-view-switch);
+  transition-timing-function: var(--wd-ease-view-switch);
 }
 
 /* One state switch per host, covering native controls, ARIA roles, the shared
@@ -184,6 +207,12 @@
  * shared hover rhythm as icons and buttons. The track width stays fixed; only
  * the thumb grows inside it, avoiding table reflow while the pointer is over
  * the scroll lane. */
+:where(.wd-scroll-feedback) {
+  transition-property: opacity;
+  transition-duration: var(--wd-hover-duration);
+  transition-timing-function: var(--wd-hover-ease);
+}
+
 :where(.wd-scroll-feedback__thumb) {
   transition-property: width, left, background-color;
   transition-duration: var(--wd-motion-hover-out);
@@ -306,6 +335,12 @@
   transition-property:transform;
   transition-duration:var(--wd-motion-glass-release);
   transition-timing-function:var(--wd-ease-glass-release);
+}
+.wd-button--danger>.wd-glass-material>.wd-glass-fill::after,
+.wd-button--warning>.wd-glass-material>.wd-glass-fill::after {
+  transition-property:opacity;
+  transition-duration:var(--wd-hover-duration);
+  transition-timing-function:var(--wd-hover-ease);
 }
 /* A tab owns both its layout/colour rhythm and its glass depth. Keep the
  * shared tab list intact instead of letting the later glass rule replace it. */

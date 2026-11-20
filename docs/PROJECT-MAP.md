@@ -1,6 +1,6 @@
 # WattDesk 项目地图与交接索引
 
-更新：2026-11-18。
+更新：2026-11-20。
 
 本文是新对话的项目总索引，只汇总稳定边界、共享标准和维护入口，不复制
 `DESIGN-SYSTEM.md` 的完整视觉参数。需要执行具体改动时，仍以根目录
@@ -12,16 +12,23 @@
 2. `AGENTS.md`：目录边界、当前有效交互与禁止恢复项。
 3. `DESIGN-SYSTEM.md`：颜色、字体、玻璃、按钮、动效和验收参数。
 4. `docs/PROJECT-STATUS.md`：当前实现、最近验证和待办边界。
-5. 新增页面时读 `docs/ARCHITECTURE.md`、`docs/COMPONENTS.md`。
-6. 修改既有交互时读 `docs/LESSONS-LEARNED.md`、`docs/USER-REQUIREMENTS.md`；
+5. 修改 Inverter settings 时必须读 `docs/INVERTER-SETTINGS.md`。
+6. 新增页面时读 `docs/ARCHITECTURE.md`、`docs/COMPONENTS.md`。
+7. 修改既有交互时读 `docs/LESSONS-LEARNED.md`、`docs/USER-REQUIREMENTS.md`；
    涉及顶栏标签再读 `docs/TOP-BAR-TABS.md`。
-7. Plants 与 Service Ticket 的具体行为分别读对应页面 README。
+8. Plants 与 Service Ticket 的具体行为分别读对应页面 README。
 
 历史计划放在 `docs/history/`，只用于理解背景，不能覆盖当前规范。`CHANGELOG.md`
 保留逐日过程记录；当前有效规则以本索引指向的规范文件为准。
-`docs/USER-REQUIREMENTS.md` 顶部的 **2026-11-18 最终规则归档（当前有效）**
-是最近一次总表；其下按日期保留的条目用于追溯，冲突时以总表、设计规范和专项
-页面规格为准。
+`docs/PROJECT-STATUS.md` 顶部的 **2026-11-20 当前规则归档（最高优先级）**
+是最近一次实现收口；`docs/USER-REQUIREMENTS.md` 顶部的 2026-11-20 条目
+记录同日最终用户要求，2026-11-19 逆变器设置基线继续作为功能与视觉基础。
+按日期保留的更早条目只用于追溯；冲突时以 2026-11-20 总表、当前设计规范、
+专项页面规格和已验证代码为准。
+
+2026-11-20 的归档只基于当前可访问的对话记录、当前工作树 diff、运行代码、
+专项测试和现有文档。无法直接访问的并行对话不补写、不推断；文档中的“待确认”
+项必须继续视为未决，直到用户或后端给出明确结论。
 
 ## 当前产品边界
 
@@ -31,6 +38,7 @@
 | `/plants` | 已完成本地交互预览 | 46 条样例、筛选并集、列显隐、排序、收藏、滚动反馈 |
 | `/plants/:id` | 已完成 Overview 本地交互预览 | 默认进入第一台设备；多设备可切并同步 `?device=`；Statistics 支持 `Day / Month / Year / Total` 与月/年 `Separate / Combined`，数据为确定性本地样例 |
 | `/plants/:id/devices` | 已完成本地交互预览 | Linear 式扁平设备行、命名、新增、替换、解绑和设置预览；真实后端与硬件控制未接入 |
+| `/plants/:id/devices/inverter-settings` | 已完成本地交互预览 | route-backed 逆变器设置窗口；5 组导航、18 个国别档案、Check code 门禁、维护页和本地会话保存；完整有效契约见 [INVERTER-SETTINGS.md](./INVERTER-SETTINGS.md) |
 | `/plants/:id/site` | 隐藏兼容路由 | 旧资料页仅保留直达链接和回归兼容，不在详情页签中显示 |
 | `/plants/:id/site-v2` | 当前 Site details 页面 | 详情页签显示为 `Site details`；顶部 Hero、Mapbox、Energy / Installer / Owner / Picture / Visitor 卡，支持会话内编辑。规格见 [SITE-DETAILS.md](./SITE-DETAILS.md) |
 | `/plants/:id/faults|logs|tickets` | 子页占位 | Operations 三卡当前标签内进入；三层面包屑、刷新与历史可用，详细内容后续实现 |
@@ -52,7 +60,8 @@ pages  →  layouts / components  →  foundations
 - `src/components/`：按钮、搜索、玻璃、头像、页头、菜单、浮层、滚动、时间标签和交互卡适配层。
 - `src/layouts/`：侧栏、顶栏与共享工作区外壳。
 - `src/pages/`：页面装配、业务状态和局部布局，不复制共享材质。
-- `design/figma/`：不可手改的上游来源；`home-assets/`：运行时本地资产。
+- `src/pages/inverter-settings/`：独立逆变器设置页面、国别档案、门禁和页面级交互。
+- `design/figma/`：不可手改的上游来源；`home-assets/`：运行时本地资产，其中 `home-assets/icons/settings/` 为共享设置图标。
 - `src/foundations/colors.css`、`type.css` 与 `src/pages/home/data/`：生成文件，不手改。
 
 共享层不得反向依赖 Home 节点 ID。Home 的绝对坐标 scene 只服务首页，不能被新
@@ -73,15 +82,17 @@ pages  →  layouts / components  →  foundations
 | 居中内容列 | `foundations/base.css` `.wd-page-content` + `tokens.css` | 非全屏设置/详情页最大 `1000px` 并居中；表格与设备清单仍可使用满宽布局 |
 | 卡片 | `cards.js` / `cards.css` | `panel`、`chart`、`status` 表示表面契约；讨论与 Operations 卡统一用 `.wd-discussion-card`，浅色纯白无投影 |
 | 浮层 | `popover.js` + `menu-popover.js` | 统一 Glass Surface、实时锚定、无标题菜单对称内距 |
-| 滚动 | `createScrollFeedback()` | 列表默认弹性；固定编辑器显式 `elastic:false`；页面不写原生滚动条 |
+| 滚动 | `createScrollFeedback()` + `createBottomScrollGuard()` | 列表默认弹性；固定编辑器显式 `elastic:false`；页面级动态内容可启用 `preserveBottomOnShrink:true`；页面不写原生滚动条或复制底部回落逻辑 |
 | 时间 | `time.js` + `createTimeLabel()` | 格式化与 `<time datetime>` / `title` 共用；排序继续用原值 |
 | 动效 | `motion.css` / `motion.js` | 组件不写局部时长；JS 动画读取 token；减少动态效果统一处理 |
 | 圆角 | `geometry.js` / `.css` | 保留原半径，普通矩形用 `superellipse(1.2)`，圆形和胶囊保留 round |
-| 分段切换 | `components/segmented-control.js` / `.css` | `createSegmentedControl()` 统一玻璃轨道、移动选中层、键盘、尺寸观测与销毁；页面只传选项和回调 |
+| 分段切换 | `components/segmented-control.js` / `.css` | `createSegmentedControl()` 统一玻璃轨道、`600ms` soft-spring 选中层、键盘、尺寸观测与销毁；标签偏移固定 `0px`；页面只传选项、无障碍名称、现有 glass 与回调；重绘保留同一 DOM |
 | Statistics 图表 | `pages/plants/statistics-period.js`、`statistics-charts.js` / `detail.css` | 页面级周期控件与 History / Combined 图表；Day 用 F6 / L3 / L10，Month Separate 用 F2，Year Separate 用 F1，Combined 用共享逐日时间轴；共享 chart motion token |
-| 开关 | `components/toggle-switch.js` / `.css` | `createToggleSwitch()` 统一真实 switch 语义、玻璃轨道、滑块位置与状态回调；适用于二值设置，不代替分段选择 |
+| 开关 | `components/toggle-switch.js` / `.css` | `createToggleSwitch()` 统一真实 switch 语义、玻璃轨道、滑块位置与状态回调；滑块 `600ms` soft-spring、轨道颜色 `480ms` WAAPI；适用于二值设置，不代替分段选择；重绘保留同一 DOM，同值同步不取消动画，依赖内容即时更新 |
 | 头像 | `createAvatar()` + `avatar.css` | 尺寸由调用方提供；描边、阴影和缩写光学居中由共享层负责 |
 | 图标 | `createIcon()` / `createMaskedIcon()` | 使用原始素材；中性遮罩统一生成不透明副本 |
+
+`2026-11-20` 的 switch、分段、条件卡高度生长和 Inverter settings 页面切换最终参数，以 [当前状态最高优先级总表](./PROJECT-STATUS.md) 与 [设计规范动效表](../DESIGN-SYSTEM.md) 为准。
 
 强制顺序是：先找完全匹配的共享组件；没有时给现有组件增加可验证变体；只有
 尺寸、数据契约或业务状态确有页面差异时，才允许页面局部实现。视觉相同但结构
@@ -108,6 +119,7 @@ pages  →  layouts / components  →  foundations
 | `docs/PROJECT-STATUS.md` | 当前实现、最近验证、已知边界与待办 |
 | `docs/ARCHITECTURE.md` | 分层、模块职责、扩展流程 |
 | `docs/COMPONENTS.md` | 共享组件 API 与组合方式 |
+| `docs/INVERTER-SETTINGS.md` | Inverter settings 唯一页面契约、组件选择、未决边界和防回归 |
 | `docs/USER-REQUIREMENTS.md` | 用户明确要求与已推翻方案 |
 | `docs/LESSONS-LEARNED.md` | 已发生问题、根因和防回归检查 |
 | `docs/ROUTING.md` | 路径、深链接、刷新与回退 |
@@ -158,6 +170,17 @@ git diff --check
 引入本地 `text()` / 时间格式化、旧 `.wd-date-action` 兼容类或局部 transition。
 视觉共享改动还需真实 Chrome 截图和计算样式检查；有固定基线时运行
 `npm run test:visual`，不能为了消除失败直接覆盖基线。
+
+## 2026-11-20 Inverter settings 整理快照
+
+- 整理前快照：
+  `E:\OneDrive\Design files sync\AI\Proj. WattDesk\Backups\WattDesk-inverter-settings-before-integration-20261120-155852.zip`
+- SHA-256：
+  `9AAE8B6151AAEEA78B76B242C81CBDA0705B01FB63F05631F98D88EC3E8FDD4C`
+- 快照为 463 项、6,635,126 bytes；排除 `.git`、`node_modules`、构建产物、
+  测试输出和日志。需要回退视觉或交互时可先恢复该快照。
+- 本轮只做资源与文档整合，不改变现有页面视觉和行为。完整契约见
+  [INVERTER-SETTINGS.md](./INVERTER-SETTINGS.md)。
 
 ## 2026-10-30 整理快照
 

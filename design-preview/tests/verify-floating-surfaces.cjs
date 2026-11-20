@@ -102,6 +102,7 @@ const assert=require('node:assert/strict');
  await page.waitForFunction(()=>document.querySelector('#toast').hidden);
  await page.getByRole('button',{name:'Add tab'}).click();await page.waitForTimeout(120);
  const toast=await page.locator('#toast').evaluate(el=>({hidden:el.hidden,classes:el.className,
+  centerDelta:(()=>{const box=el.getBoundingClientRect();return box.left+box.width/2-innerWidth/2;})(),
   material:!!el.querySelector(':scope>.wd-glass-material'),static:el.classList.contains('wd-glass--static'),
   filter:getComputedStyle(el.querySelector('.wd-glass-fill')).backdropFilter,border:getComputedStyle(el).borderTopWidth,
   animation:el.getAnimations().map(animation=>({duration:animation.effect.getTiming().duration,easing:animation.effect.getTiming().easing,
@@ -110,7 +111,7 @@ const assert=require('node:assert/strict');
     const value=String(frame.translate);
     return value.includes(' ')?value:`${value} 0px`;
    })})).find(entry=>entry.opacityFrames.some(value=>value!==undefined))}));
- assert.equal(toast.hidden,false);assert.ok(toast.material,'Toast must mount Glass Surface');assert.ok(toast.static);assert.match(toast.filter,/blur\(/);assert.equal(toast.border,'0px');
+ assert.equal(toast.hidden,false);assert.ok(Math.abs(toast.centerDelta)<=1,'Toast must be centered in the viewport');assert.ok(toast.material,'Toast must mount Glass Surface');assert.ok(toast.static);assert.match(toast.filter,/blur\(/);assert.equal(toast.border,'0px');
  assert.equal(toast.animation?.duration,320,'toast fades in with the shared panel timing');
  assert.equal(toast.animation?.easing,'cubic-bezier(0.22, 0.8, 0.25, 1)');
  assert.deepEqual(toast.animation?.translateFrames,['0px -4px','0px 0px'],'toast enters by settling gently downward');

@@ -1,6 +1,6 @@
 # 共享组件手册
 
-更新：2026-11-18。本文对应实际模块；完整视觉要求见 [DESIGN-SYSTEM.md](../DESIGN-SYSTEM.md)。路径均相对 `design-preview/`。
+更新：2026-11-20。本文对应实际模块；完整视觉要求见 [DESIGN-SYSTEM.md](../DESIGN-SYSTEM.md)。路径均相对 `design-preview/`。
 
 所有页面加载 `/src/shared.css`，包含 SF Pro、语义颜色、完整 Figma 字体 styles、材质、状态、动效、头像和连续曲线。页面局部 CSS 在共享入口之前加载，不自行拼出另一套基础。
 
@@ -12,14 +12,14 @@
 | 共享动效 | `src/foundations/motion.css` | `shared.css` 自动加载；组件不写局部 transition |
 | 字体 | `foundations/typography.js`、`type.css` | `applyTypeStyle(el,name)` 或 `data-type-style` |
 | 语义 DOM | `foundations/dom.js` | `createTextElement(tag,className,content,typeStyle)`；只负责元素、文本和可选完整 type style，不参与布局 |
-| 时间 | `foundations/time.js`、`components/time-label.js` | `formatTimestamp()` / `formatAgeMinutes()` / `formatAbsoluteTime()` 负责格式化；`createTimeLabel(value,{ageMinutes,className,typeStyle,now})` 统一生成带 `title` 与 `<time datetime>` 的语义节点 |
+| 时间 | `foundations/time.js`、`components/time-label.js` | `formatTimestamp()` / `formatAgeMinutes()` / `formatAbsoluteTime()` 负责时间格式化；`formatAbsoluteDate()` 统一输出纯日期 `YYYY/MM/DD`。`createTimeLabel(value,{ageMinutes,className,typeStyle,now})` 统一生成带 `title` 与 `<time datetime>` 的语义节点。Inverter settings 的 Last scan / Last check 也从 minutesAgo 走同一入口，禁止硬编码时间文案 |
 | 图标 | `components/icons.js` | `createIcon(name,tone?)` 使用命名注册表；`createMaskedIcon(url,className)` 统一内联遮罩 span、无障碍隐藏和 `--icon-mask` 写入 |
 | 按钮 | `components/controls.js`、`button.css` | 低层 `button()` 保留给现有节点；`createStandardButton({label,variant,className,icon,iconOnly,typeStyle})` 生成标准胶囊/圆钮的完整类名、标签与图标结构。玻璃实例仍由调用页面注册 |
 | 编辑字段 | `components/edit-field.css` | `.wd-edit-field` 统一普通可编辑填充框：默认无描边 / 内阴影；深色默认、hover、focus 为主文字色 `8% / 11% / 13%`，浅色为 `Fills/Quaternary 8% / Fills/Tertiary 12% / Fills/Tertiary 12%`，浅色 focus 不切白。所有编辑字段直接使用背景模糊：深色 `blur(14px)`、浅色 `blur(16px)`，不挂完整 Glass Material，不增加 rim、高光或投影。focus 只用中性轮廓，禁止蓝框；Site details 正文资料字段、选择触发器与 Plants Devices 弹窗共同复用，页面只负责尺寸和文字对齐。页面身份标题可用标题专用编辑表面，但必须作为明确例外记录 |
 | 现有节点控件化 | `components/controls.js` | `enhanceControl(el,{label,onActivate})`，返回事件清理函数 |
 | 搜索 | `components/search.js`、`search-surface.js` | `createSearchTrigger(label,className)` / `createSearchInput({label,placeholder,className})`；内联与工具栏字段用 `createSearchField({glass,placeholder,label,size})` |
-| 设置 / 确认弹窗 | `components/modal-dialog.js`、`confirm-dialog.js`、`modal-surface.css`、`foundations/motion.js` | `createModalDialog()` 统一弹窗外壳、焦点、关闭和 Depth Reveal；`createConfirmDialog()` 提供 480px 居中确认层。页面只声明业务内容与回调 |
-| 导航 | `components/navigation.js` | `makeNavRow(label,key,file,extraClass,tone)`，不自行导航 |
+| 设置 / 确认弹窗 | `components/modal-dialog.js`、`confirm-dialog.js`、`modal-surface.css`、`foundations/motion.js` | `createModalDialog()` 统一弹窗外壳、焦点、关闭和 Depth Reveal；`panelMaterial:false` 用于需要自行组合多个共享 Glass Surface 的复合窗口（当前 Inverter settings），默认保持单一共享面板材质。`closeOnBackdrop` 与 `closeOnEscape` 默认 `true`，需要仅由显式 X 关闭的页面可传 `false`。多个 modal 使用可嵌套栈：确认层叠在设置窗上，父窗暂时 inert，关闭后恢复焦点。`registerSurface(host,radius,options)` 可登记静态子表面。`createConfirmDialog()` 提供 480px 居中确认层。页面只声明业务内容与回调 |
+| 导航 | `components/navigation.js` | `makeNavRow(label,key,file,extraClass,tone,{labelClassName,trailing})` 输出共享侧栏行结构；Inverter settings 通过第六参数追加右侧状态值、锁和展开箭头。组件不自行导航 |
 | 路由与 URL | `pages/home/routes.js`、`pages/home/workspace.js` | `routeFromPath(pathname)` → `{route,params}`；`pathForRoute(route,params)`；页面只调用 `openRoute(route,{params})`。`/`、`/home.html` 规范到 `/home`，深链接由 `server.js` / `_redirects` 回退，详见 [ROUTING.md](./ROUTING.md) |
 | 折叠 | `components/disclosure.js` | `bindDisclosure(heading,content)` |
 | 头像 | `components/avatar.js`、`avatar.css` | `createAvatar(initials,{size=36,className})`；缩写自动包入 `.wd-avatar-label`，共享实现负责文字光学居中，并按 22–24 / 25–32 / 33+ 写 compact / small / regular 字号档位 |
@@ -29,7 +29,8 @@
 | 数据页头 | `components/page-header.js` / `.css` | `createPageBreadcrumb(items)`；`createPageHeader({breadcrumb})` → `{element,heading,breadcrumb,actions}`。固定 40px 高；多级路径中位于分隔箭头后的可点击父级取消负左边距，保持与两级路径同 X 起点，左右各 `8px` 内距和 hover 胶囊不得覆盖箭头 |
 | 居中内容列 | `foundations/base.css` `.wd-page-content`、`tokens.css` | 非全屏设置/详情/资料页使用 `width:min(100%,var(--wd-page-content-max))` 并水平居中，当前上限 `1000px`；内部卡片和网格撑满该列，密集表格与设备清单仍可满宽 |
 | Plants Overview | `pages/plants/detail.js` / `detail.css`、`statistics-charts.js`、`statistics-period.js` | `createPlantDetailTabs()` 生成 Overview 胶囊导航；`createPlantOverview({plant,requestedDevice,onDeviceChange,onOpenTicket,onOpenNewTicket,onOpenSection,glass})` 生成设备轨、横向状态条、Statistics / Energy trend、三卡 Operations rail 与子页导航。Statistics 使用 `createStatisticsPeriodControl()` 管理 Day / Month / Year / Total 周期与选择浮层；`statistics-charts.js` 以 F6、L3、L10 以及历史 F2/F1 装配 Statistics 图表，Current state 使用文字状态条。单设备不渲染设备轨；设备切换与 `?device=` 同步，Operations 子页保留当前设备 |
-| Plants Devices | `pages/plants/devices.js` / `devices.css` | `createPlantDevices({plant,glass,registerPanel,close,toast})` 生成添加动作、Inverter / Battery / Heater 扁平设备行、Cluster 展开、设备设置与本地新增/命名/替换/解绑流程；返回 `{element,render,destroy}`。设备行常态透明且无描边无阴影，相邻行之间用低对比分隔线；重要操作使用 36px 共享玻璃圆钮，Add Device 使用共享玻璃胶囊。更多菜单、对话框、共享编辑字段与滚动反馈继续复用共享组件，设备状态只保存在页面会话 |
+| Plants Devices | `pages/plants/devices.js` / `devices.css` | `createPlantDevices({plant,glass,registerPanel,close,toggle,toast,onOpenInverterSettings})` 生成添加动作、Inverter / Battery / Heater 扁平设备行、Cluster 展开、Heater 设置与本地新增/命名/替换/解绑流程；Inverter 设置只通过 `onOpenInverterSettings` 打开独立路由。返回 `{element,render,destroy}`。设备行常态透明且无描边无阴影，相邻行之间用低对比分隔线；重要操作使用 36px 共享玻璃圆钮，Add Device 使用共享玻璃胶囊。更多菜单、对话框、共享编辑字段与滚动反馈继续复用共享组件，设备状态只保存在页面会话 |
+| Inverter settings | `pages/inverter-settings/*` | `openInverterSettings(...)` 生成 route-backed 设置窗口。页面专属布局、字体角色、控件选择、保存作用域、Grid 门禁、滚动和防回归要求统一见 [INVERTER-SETTINGS.md](./INVERTER-SETTINGS.md)；本手册只记录其使用的共享组件 API。 |
 | 设备身份 | `pages/plants/device-identity.js` | `createDeviceIdentity({name,status,metaItems})` 统一生成设备两行身份区。第一行只放设备名，第二行以在线状态开头并继续类型和运行摘要；返回 `{element,titleLine,metaLine,statusChip}`，供 Inverter / Battery / Heater 共用，行间固定 `10px` |
 | Legacy Site details | `pages/plants/site-details.js` / `.css` | 旧 `/site` 隐藏兼容页；`createPlantSiteDetails(...)` 只用于直达链接与回归兼容，不在详情页签中显示 |
 | Plants Site details | `pages/plants/site-details-v2.js` / `.css` | `createPlantSiteDetailsV2(...)` 生成当前 `Site details`：Hero、全出血 Mapbox、Energy / Installer / Owner / Picture / Visitor 卡及会话内编辑。`site-v2` 是稳定路由，可见页签与页面标题不带数字 `2` |
@@ -38,16 +39,21 @@
 | 范围切换 | `components/scope-control.css` `.wd-scope-button` | Service Ticket 范围筛选与 Plants 详情页签共用；未选中无描边实体填充，选中使用共享内描边，不允许逐页复制状态样式 |
 | 范围切换交互 | `components/scope-control.css` + `foundations/motion.css` | `.wd-scope-button` hover / focus `1.045`、press `1.09`；禁用占位保留 hover 视觉但不响应点击 |
 | 横向滚动范围页签 | `pages/plants/detail.css` | `.plants-detail-tab-list` 保留 `overflow-x:auto`，同时为控件放大预留上下各 `8px`：总高 `calc(100% + 16px)`、`padding:8px`，以 `top:-8px` 和左右 `margin:0 -8px` 抵消；不得用 2px 缓冲或 `overflow:visible` 破坏横向滚动 |
-| 分段切换 | `components/segmented-control.js` / `.css` | `createSegmentedControl()` 统一玻璃轨道、响应式最大宽度、移动指示层、flex 居中与 `-0.5px` 字形光学校正、键盘与 ResizeObserver；默认几何由组件级 CSS 变量管理，返回 `{element,value,setValue,destroy}` |
-| 开关 | `components/toggle-switch.js` / `.css` | `createToggleSwitch({label,checked,disabled,glass,onChange})` 生成 42×24 的真实 `role="switch"`、共享玻璃轨道和 18px 滑块；浅色轨道降低白色内反射，深色保持原参数；返回 `{element,checked,setValue,destroy}`，打开状态由 `aria-checked` 与滑块位置共同表达 |
+| 分段切换 | `components/segmented-control.js` / `.css` | `createSegmentedControl()` 统一玻璃轨道、响应式最大宽度、移动指示层、键盘与 ResizeObserver；选项文字采用真实几何居中、偏移固定 `0px`；胶囊指示层使用与共享 switch 相同的 `600ms` soft-spring 位移。连续点击先在取消旧动画前捕获当前可见边界，再把该位置作为下一段动画起点；动画中的 ResizeObserver 也保持当前位置续接，不得重置到端点。默认几何由组件级 CSS 变量管理，返回 `{element,value,setValue,destroy}`。页面重绘必须保留并重新挂回同一 segmented-control DOM，不能替换正在运动的胶囊 |
+| 选择器 | `components/select-control.js` / `.css` | `createSelectControl({label,value,options,onChange,registerPanel,close,toggle,variant,...})` 返回 `{element,valueElement,getValue,getOptions,setValue,setOptions,updateOption,destroy}`。支持 ArrowUp / ArrowDown、Home / End、typeahead、Escape / Tab 与打开聚焦当前项；`variant` 接受 `default / form / compact / table / adaptive`。`adaptive` 提供 Economic 风格的自适应编辑框外观。浮层右缘按触发器布局右缘再外扩一个当前圆角值，页面不得自拼结构或覆盖定位 |
+
+`components/popover.js` 的 `menuEndAlign(anchor,radius)` 是右对齐浮层的共享定位 helper：先使用锚点布局右缘，再向右外扩 `radius`。`createSelectControl()` 已使用该 helper；Economic Schedule 行尾 `•••` 菜单也必须通过 `align:"end"` + `alignRight:menuEndAlign(button,30)` 挂载，不能只让菜单右缘与按钮齐平。
+
+
+| 开关 | `components/toggle-switch.js` / `.css` | `createToggleSwitch({label,checked,disabled,className,glass,onChange})` 生成 42×24 的真实 `role="switch"`、共享玻璃轨道和 18px 滑块；点击时滑块以 `600ms` soft spring 做可中断多段位移，轨道 `background-color` 用 `480ms` 可中断 WAAPI 从当前计算色过渡到目标色，不能只依赖 `color-mix()` CSS transition。返回 `{element,checked,setValue,destroy}`，页面重绘保留同一节点；同值同步不取消动画，依赖内容即时显隐 |
 | 趋势切换 | `pages/plants/detail.js` / `detail.css` + `components/date-picker.js` | `Energy trend` 使用 36px 玻璃分段开关，选中指示层按真实按钮几何平滑移动；周期按钮独立复用 Home 的日期选择器与 Apply 提交 |
 | 空状态 | `components/empty-state.js` / `.css` | `createEmptyState({iconFile,label})` → `{element,update,play}` |
-| 滚动反馈 | `components/scroll-feedback.js` / `.css` | `createScrollFeedback({host,viewport,content,elastic,topInset,bottomInset,maxPull,deadZone})` → `{element,sync,destroy}`；需要弹性时传实际内容节点，固定滚动区显式传 `elastic:false` |
+| 滚动反馈 | `components/scroll-feedback.js` / `.css`、`components/bottom-scroll-guard.js` | `createScrollFeedback({host,viewport,content,elastic,preserveBottomOnShrink,topInset,bottomInset,maxPull,deadZone,visibility})` → `{element,sync,cancelBottomShrink,destroy}`；需要弹性时传实际内容节点，固定滚动区显式传 `elastic:false`。页面级内容可动态增减的主滚动区传 `preserveBottomOnShrink:true`，由共享守卫处理底部内容缩短；内容增长只更新基线 |
 | 玻璃 | `components/glass-material.js` / `.css` | `createGlassMaterial({surfaces:[{host,radius,chrome,interactive}]})`，返回 `destroy()`；`interactive:false` 用于纯展示表面 |
 | 控件状态 | `components/control-states.js` / `.css` | 内容挂载后 `await prepareControlStates(container)` |
 | 悬停显隐 | `foundations/motion.css` `.wd-hover-reveal-host` / `.wd-hover-reveal` | 父级 hover / focus 控制显示透明度的容器接入共享 `240 / 360ms` 节奏；子按钮 transition 不能替代父层透明度过渡 |
 | 历史浮窗 | `components/history-popover.js` / `.css` | `createHistoryPopover({anchor,entries,onSelect,registerPanel,close,motion})`；复用共享玻璃与 30px 浮层圆角，最多 8 行 |
-| 浮层 / 提示 | `components/popover.js` / `.css` | `createPopoverController({overlays,toastElement,motion,glass})`；返回 `toggle(anchor, open)` 统一同一触发器的“打开 → 收起 → 再打开”状态，菜单、tooltip、toast 自动使用 Glass Surface |
+| 浮层 / 提示 | `components/popover.js` / `.css` | `createPopoverController({overlays,toastElement,motion,glass})`；返回 `toggle(anchor, open)` 统一同一触发器的“打开 → 收起 → 再打开”状态。`toast(message,{centerWithin})` 默认按视口中心，传入局部容器时按容器实时中心；菜单、tooltip、toast 自动使用 Glass Surface |
 | 标准浮层菜单 | `components/menu-popover.js`、`popover.css` 的 `.wd-menu` | `menuHeading / menuList / menuRow / menuNote / mountMenu`；顶栏紧凑菜单 200px，历史完整层级最多 380px |
 | 历史层级路径 | `components/history-path.js` / `.css` | `renderHistoryPath(container,parts)`；按实际容器宽度和字体测量，父级/分隔符与末级分别使用语义色，末级中间省略、整体尾部优先，首页最近访问和历史浮窗共用 |
 | 有限动效 | `foundations/motion.js` | `createHomeMotion({duration,easing,reducedMotion})`；名称保留，行为共享 |
@@ -76,6 +82,20 @@ applyTypeStyle(label,"14/14 medium"); // 14px / 510，原稿行高、字距
 颜色优先走语义入口；未暴露的 Figma 语义用 `--wd-figma-*`。已确认的玻璃、头像、浮层透明度是共享光学参数，保留显式值，不强行替换成近似色。旧提取用的 RGB/opacity 和 Fills/Quaternary 兼容值不扩展到新组件。
 
 ## 按钮、图标与玻璃
+
+设置域图标统一登记在 `components/icons.js` 的 `SETTINGS_ICON_FILES`，运行文件存放在共享 `home-assets/icons/settings/`，来源与哈希见 `design/inverter-settings/settings-icons-source.json`。这些 SVG 只提供形状，必须通过遮罩与 `currentColor` 着色；其他页面复用同一注册表，不得把图标重新命名后复制到页面目录。侧栏默认使用 `Labels/Tertiary` 或工作区侧栏的次级灰，选中后才继承主文字高亮；Running Mode 的单选项默认 `Labels/Tertiary`、选中使用 `Labels/Primary`。
+
+
+这些卡片统一使用 `--isw-card-inset: 24px` 作为圆角与左右内距参数，并使用页面级 `--isw-card-gap: 30px` 控制卡片之间纵向间距；紧随卡片的 `.isw-note` 使用独立 `--isw-note-gap: 10px` 控制其到上方卡片的距离。所有主页面与 Grid 子页的同类表面都必须引用这两个变量，不得逐页写 `20px` 或用正负 margin 覆盖。标题、正文和说明文字都不得贴入倒角区域。分组标题使用 `12px / 590 / 16px` 的主文字色句首大写样式，不使用全大写或扩张字距。卡片级标题放在卡外，不嵌入玻璃表面；Economic Schedule 使用 `24h Overview` 和 `Schedule periods` 两个外部 group title。行标题使用 `14/14 medium` 主文字色，说明使用 `Caption1/Regular` 次级色，数值使用 `14/14 medium` 或 `Footnote/Medium` 主文字色。行文案列使用弹性增长，提示文字可占满控件之外的剩余宽度，不得继续固定 `330px`。设置页常规表头与 Economic Schedule 表头统一使用 `12px / 400 / 16px`、`32px` 行高的安静样式。表格主值为 `Footnote/Medium`，辅助值为 `Caption1/Regular`。info 说明行使用 `4px` 图标到文字间距，图标和说明文字同用 `Labels/Secondary`。
+
+
+卡片外侧说明通道沿用卡片内容安全宽度。重点词用 `70% Labels/Secondary + 30% Labels/Primary` 的中性混合色轻微加强，不改成纯黑、纯白，不改变整句字号；只提高字重到 `510`。
+
+设置页标题的固定层保持通栏，但可见文字与卡片内容共用 `--isw-card-inset: 24px` 左右线；标题层位于滚动和弹性位移节点之外。Effective chain 使用上下 `12px`、左右 `24px` 内距；五行自身高度统一 `36px`，标签与数值都与同页 `Command timeout` 行使用相同的 SF Pro 字体栈、`14px / 510 / 18px`、`-0.14px` 字距和主文字色。网格列间距 `14px`，标签列至少 `170px`，确保 `Battery power capability` 不截断；前四行保持 `36px` 行距，最后一行上方增加 `16px` 间隔，`1px` 分隔线位于间隔中点。
+
+Running Mode 卡片默认预留 `1px` 透明边框；选中态使用 `--isw-mode-selected-fill` 和 `1px var(--isw-mode-selected-border)`，浅色为轻灰底黑字、深色为深灰底白字，选中模式图标也使用同一主文字色。浅色选中填充取共享选中色的 `60%`，描边取 `82% Separators/Non-opaque + 18% Labels/Primary`，只比基础分隔线略深。未选中卡 hover / focus 使用 `--isw-mode-hover-fill` 改变底色，并显示 `1px var(--isw-mode-hover-border)`；hover 描边取选中描边的 68% 与透明色混合，弱于选中态，右侧圆环仍保持不变。浅色主题需要单独覆盖同特异性的浅色卡底，确保 hover 不被后续规则覆盖。右侧选中标记来自 `home-assets/icons/settings/check-circle.svg`，以 `currentColor` 遮罩实现与未选圆环同为 `18px` 的实心圆和负形对号。模式标题、摘要、flow 与说明四段统一 `3px` 间距，说明上方不绘制分隔线。摘要、flow 与说明统一使用 `Footnote/Regular 13/400/18` 次级色，flow 使用字符 `→`。模式切换使用 `320ms` 的 `--wd-motion-panel` / `--wd-ease-panel` 对高度做生长 / 收起，展开和收起共享同一时间轴；说明只淡变透明度。动画中再次选择时从当前可见高度和说明透明度续接，不能先跳到上一动画终点。
+
+侧栏 Running Mode 的右侧值列最大宽度为 `108px`，必须完整容纳 `Peak Load Shifting`；不得使用省略号截断模式名称。
 
 ```js
 import {button} from "/src/components/controls.js";
@@ -123,9 +143,11 @@ material.addSurface({host:refresh,radius:18});
 - 圆形图标动作使用同一胶囊按钮并追加 `.wd-button--disc`：`36×36`、零左右内距、`50%` 圆角；图标保持视觉居中，并保留共享玻璃、缩放、焦点和禁用行为。不要为工具栏另写圆钮背景、描边或投影。
 - `.wd-button--neutral` 使用共享普通玻璃，默认 `Labels/Secondary`，hover / 键盘 focus 为 `Labels/Primary`，用于 `Cancel`、关闭和次要操作。
 - `.wd-button--primary` 是实心 `Accents/Blue`：关闭模糊、白色反射场和上下内阴影，只保留细深色外轮廓、极细亮边与指针高光；hover 仅轻微提亮，不能洗成浅蓝。一个视图只保留一个主按钮，用于 `Apply`、保存、确认。
+- 特殊色按钮共用一套玻璃契约：`.wd-button--warning` 使用 `Accents/Orange`，`.wd-button--danger` 使用 `Accents/Red`。默认填充约 `10%`、描边 `.5px`、阴影仅 `1px / 2px` 低透明下沉，文字保持对应特殊色；hover / focus 使用专用叠加层，warning 为高饱和橙红、danger 为纯红，不得混黑，并将文字切为白色。叠加层按共享 `240ms` 进入 / `360ms` 离开渐入渐出。warning 用于断电、重启等中断性操作；danger 只保留给恢复出厂等破坏性操作。
 - 主按钮在深浅主题的默认、hover 与键盘 focus 状态都保持白色文字和图标。共享控件 hover 规则在浅色主题会将普通文字切为主文字色，因此 `control-states.css` 必须为 `.wd-button--primary` 保留白色覆盖；页面不得另写按钮文字颜色。
 - `.wd-button--disc` 内图标使用共享 `wd-control-icon` 类或直接的 `.target-icon-art`：hover / focus 时在按钮外壳缩放之外再放大到 `1.06`，按下到 `1.12`。仅改变视觉 transform，不改变图标的布局尺寸，因此 36px 圆钮和周围排版保持稳定。
 - 缩放、边缘光弧、指针跟随和禁用态由共享材质与 `.wd-control-state` 提供；调用方不写局部 `transform`、`box-shadow`、transition，也不新增第三套玻璃。日期选择器已删除旧 `.wd-date-action` 兼容类，新组件直接使用 `createStandardButton()` 或同一标准类名。
+- Operation Log 复用 Economic Schedule 的 `12px / 400` 表头；行内所有文字统一 `12px`。表格使用 `112px / minmax(0,1fr) / 112px`，中间 Change 列吞掉剩余宽度，表头与正文同列。时间节点由 `createTimeLabel()` 生成；操作人姓名是键盘可聚焦按钮，hover / focus 使用共享 Glass 浮窗显示邮箱。邮箱浮窗使用内容宽度并 `align:"center"`，邮箱按钮可点击复制、hover / focus 只显示下划线。邮箱浮窗内部 burn 阴影、按钮 hover 背景、圆角和内阴影都必须清空。`changes` 数组中的每一项独立换行，记录一行本身不截断。
 
 `.wd-control-state` 为容器，`.wd-control-label` 为文字。hover / 键盘 `:focus-visible` 时中性文字和图标一起变主文字色，深色纯白、浅色主墨色；鼠标点击留下的普通 DOM 焦点不应持续呈现 hover，离开指针后恢复默认色。原始彩色图标保留原色。材质微光只影响光学层，控件和文字不位移。
 
@@ -160,7 +182,7 @@ const material=createGlassMaterial({surfaces:[{host:panel,radius:30}]});
 - `.wd-glass--surface` 选择更强的浮层雾面参数；`.wd-glass-popup` 表示整块面板不随点击缩放，只有内部独立玻璃控件响应。
 - 浮层圆角按尺度取共享 token：紧凑 tooltip / 数据浮签用 `--wd-radius-compact`（12px），通用 popover / 图表菜单用 `--wd-radius-medium`（18px），标准浮层菜单与大面板用 `--wd-radius-large`（30px）。`addSurface()` 的 `radius` 必须与宿主实际 `border-radius` 一致；玻璃层继承宿主，不在内容或伪元素上另写半径。
 - 已自带 `.wd-glass` 的面板（日期、历史、搜索）不能再调用 `addSurface()`；共享控制器检测到已有材质会自动跳过，避免双层模糊和重复观察。tooltip、toast 与图表数据浮签传 `interactive:false`：保留材质和指针光晕，但不缩放。动态文案写入内部 span，不得用 `textContent` 清空宿主。
-- toast 由共享 `#toast` 宿主统一固定在页面顶部 `top:70px`，水平中心沿用工作区内容中心线，纵向中心与数据页共享面包屑当前项对齐；不得在页面组件中写底部定位、局部偏移或另一套短提示。收藏、刷新、周期和预览反馈都复用该入口。首次出现从上方 `4px` 下落并使用 `--wd-motion-panel` / `--wd-ease-panel` 淡入，自动消失上浮 `4px` 并使用 `--wd-motion-panel-exit` / `--wd-ease-hover-out` 淡出；退出结束才设置 `hidden`，重复提示取消旧退场并从当前不透明度和位移恢复，减少动态效果时立即切换。
+- toast 由共享 `#toast` 宿主统一固定在视口顶部 `top:70px`，页面级提示默认水平中心为视口中心 `left:50%`，纵向中心与数据页共享面包屑当前项对齐。只有真正限定在局部内容区的提示调用 `toast(message,{centerWithin:element})`，在显示和视口变化时读取目标容器几何中心；Inverter settings 的页面级保存与校验提示使用普通默认定位。不得在页面组件中写底部定位、`calc(50% + 140px)` 或用固定像素猜测内容区中心，也不得另建短线提示。收藏、刷新、周期和预览反馈都复用该入口。首次出现从上方 `4px` 下落并使用 `--wd-motion-panel` / `--wd-ease-panel` 淡入，自动消失上浮 `4px` 并使用 `--wd-motion-panel-exit` / `--wd-ease-hover-out` 淡出；退出结束才设置 `hidden`，重复提示取消旧退场并从当前不透明度和位移恢复，减少动态效果时立即切换。
 - 内容独立放在同级容器（如 `.wd-date-picker-content`、`.wd-search-panel-body`），不要塞进 `.wd-glass-material`。
 - 深色 `18px` 模糊 / `30%` 中性底；浅色 `9px` 模糊 / `44%` 浅灰底 + `saturate 1.45`，模糊太高会把背后卡片抹成均匀白膜。深浅主题都保留背后页面可辨；不要再写 `backdrop-filter`、`background` 或局部 `--wd-glass-surface-tint` 覆盖。
 - hover 时指针附近出现光斑和一段边缘弧，由共享材质自动处理；深色是白弧，浅色是深色弧配白色内光斑。不要给浮层另外写 `:hover` 阴影或渐变。
@@ -197,7 +219,7 @@ registerPanel(panel,trigger,{label:"Language",radius:30});
 - 该效果的公共名称为 **Depth Reveal（景深浮现）**，实现入口统一为 `createModalDialog()` / `createConfirmDialog()` + `.wd-modal-*`。Add、Rename、Replace、Settings、Unbind 以及后续设置/确认弹窗共用同一动效；业务页面只传内容与尺寸。确认层固定为 `480px`，全部是 / 否流程不得调用原生 `confirm / alert / prompt`。
 - 设备流程中 Add / Rename / Replace 使用 `640px` 窄版，Replace 的内容列改为单列顺序、字段网格保持 2×2；只有 Settings 使用 `1160px` 双栏，Unbind 确认 `480px`。窄版先视口居中再上移 `80px`，宽版上移 `24px`；不要使用固定 `top`，否则不同高度弹窗会下沉。
 - 标准标题栏左侧为 `40px` 图标底托与 `18px` 图标，标题、图标、`36px` 关闭圆钮共用中心线，关闭 glyph 为 `14px`；标题下不放副标题。确认层无标题栏和 X，使用 `64px` 图标底托、`28px` 图标、居中标题/说明和并排两按钮。
-- Add / Replace 按必填有效性控制提交；Settings / Rename 按草稿相对初始值决定 dirty，只有真实修改后启用 Primary，改回初始值立即禁用。弹窗支持 Esc、外点关闭、Tab 焦点循环和关闭后焦点归还，并复用共享非弹性滚动反馈。
+- Add / Replace 按必填有效性控制提交；Settings / Rename 按草稿相对初始值决定 dirty，只有真实修改后启用 Primary，改回初始值立即禁用。弹窗默认支持 Esc、外点关闭、Tab 焦点循环和关闭后焦点归还，并复用共享非弹性滚动反馈。
 
 hover / 按下的视觉缩放由材质与 `motion.css` 自动继承，调用方不写缩放值：
 
@@ -232,7 +254,7 @@ Plants 的结构化筛选与列显隐位于 `src/pages/plants/index.js` / `plant
 - 详情页水平内距 `32px`，画布占满页头与标签以下的工作区高度。设备轨只在电站包含两台及以上设备时存在；默认选中设备顺序第一项，点击后更新中央设备、读数、统计、日志和趋势，并通过 `onDeviceChange` 将 `{plantId,device}` 同步到 URL。
 - 横向上下文条固定展示运行状态、通信、天气、地点与本地时间，使用图标 + 值，重复字段名仅保留在 `aria-label`。`901–1450px` 以两行两列排列，宽屏回到单行，`≤900px` 按单列顺序展开。上下文条容器背景透明、无圆角面板；Operations 三卡使用共享 `.wd-discussion-card` 并从状态条顶边纵向铺到底；Statistics 和 Energy trend 不用卡片表面，各只在顶部绘制一条 `2px` 横向分隔。只有可操作控件允许使用共享玻璃。
 - 当前 `Energy flow` 删除标题和 `LIVE` 整行，只保留从容器顶边铺满的空舞台；内部设备、读数、流线与圆环全部移除。逆变器默认进入 `Statistics / Today` 天视图：顶部横线下方分为 Energy、Savings、Self-powered、Current state 四组；周期支持 `Day / Month / Year / Total`，月 / 年视图支持 `Separate / Combined`。
-- `Energy trend` 顶部右侧包含两个独立控件：共享 `createSegmentedControl()` 生成的 `All / Default / Battery / Frequency` 四段开关，以及 Home 同款 `Today` 周期按钮。组件和页面都不再为分段控件写专属尺寸规则：默认 36px 高度、4px 外框内缩、18px 选项内距、16px 选项圆角及 `-0.5px` 字形校正全部由组件级 CSS 变量提供，`max-width:100%` 也由组件自身承担。切换指示层直接使用按钮真实位置和完整宽度；快速连续切换会取消旧动画并从当前可见位置续接。选项 hover 不绘制第二层背景，选中胶囊无描边。周期按钮调用 `createDatePicker()`，浮窗与首页共用预设、日期输入、Cancel / Apply 和 Glass Surface。
+- `Energy trend` 顶部右侧包含两个独立控件：共享 `createSegmentedControl()` 生成的 `All / Default / Battery / Frequency` 四段开关，以及 Home 同款 `Today` 周期按钮。组件和页面都不再为分段控件写专属尺寸规则：默认 36px 高度、4px 外框内缩、18px 选项内距、16px 选项圆角与 `0px` 标签偏移全部由组件级 CSS 变量提供，`max-width:100%` 也由组件自身承担。切换指示层使用按钮真实位置和完整宽度，并以共享 switch 的 `600ms` soft-spring 曲线移动；快速连续切换会取消旧动画并从当前可见位置续接。选项 hover 不绘制第二层背景，选中胶囊无描边。周期按钮调用 `createDatePicker()`，浮窗与首页共用预设、日期输入、Cancel / Apply 和 Glass Surface。
 - Operations rail 使用 `repeat(3,minmax(0,1fr))` 将三张卡从状态条顶边开始等高铺满，间距 `8px`。三卡直接复用 `wd-discussion-card`，圆角 `18px`、上下内距 `12px`、左右内距 `16px`；标题行 `36px`，标题到内容至少 `16px`。标题使用 `Footnote/Emphasized` 的 `13px / 590`，正文和票号至少 `12px`、日志 `12px` 等宽字。整卡提供 hover 放大、键盘与点击进入子页；子页移除 section tabs，占位内容在完整正文视口居中。Fault 不显示 `Clear`；System Log 不嵌套终端框；Service Tickets 的正圆 `36px` 玻璃加号在右上角上下/右侧各内缩 `6px`。
 - Plants Overview 页头收藏不挂玻璃；它与标题间距约 `4px`，图标下移 `0.5px` 对齐文字中线。外层按钮保持静止，内部 `.plants-detail-favorite-glyph-frame` 使用 `.wd-press-scale` 并覆盖为 hover `1.28` / press `1.38`，缩放原点固定中心。
 - Operations 标题固定为 `Fault & warning / System log / Service tickets`。无工单时不渲染 `None`；no-fault 行保留图标+文字的原始左右布局，整组在剩余正文区域居中并上移 `6px`；Ticket 空态也居中上移 `6px`。System Log 采用连续行内代码排版，不设固定列宽；消息换行回到最左侧，保留三级颜色区分，并用共享非弹性滚动轨道承载更多占位行。Energy trend 的 Today 继续复用 Home 的 36px 玻璃周期按钮、日历图标与日期浮窗；Statistics 使用独立的多周期控件。
@@ -245,7 +267,7 @@ Plants 的结构化筛选与列显隐位于 `src/pages/plants/index.js` / `plant
 
 - `pages/plants/devices.js` 负责设备行产品图、类型专属字段、Cluster 展开、设备级操作菜单与本地对话框；`device-identity.js` 负责三种设备共用的两行身份区；`devices.css` 只负责该页布局、字段和响应式。设备行不使用 `.wd-discussion-card`，必须保持透明底、`border:0`、`box-shadow:none`，以 Linear 式紧凑列层级替代卡片；相邻行使用 `1px` `Separators/Non-opaque` 伪元素分隔，左右延伸到工作区边缘并在两端用约 `64px` 渐变淡出。行操作和 Add Device 使用 `createStandardButton()` + 共享玻璃，行内按钮组间距 `8px`。桌面产品图区域固定 `120px × 96px`，图片 `object-fit:contain` 且不得裁切，和内容列间距 `16px`。技术字段使用标准界面字体，不使用代码字体；三种设备共用六列字段网格。所有 Cluster 默认收起，包括 `Cluster #1`；Cluster 横线保持内容列宽度，行高 `40px`、标签 `14px / 590`、箭头 `18px`，文字与主内容列对齐，hover 面左右各外扩 `10px`、圆角 `12px`。展开区顶部 `8px`，小节标题 `14px / 590` 高于下方 `13px` 字段与型号值，Sub-master 与 Batteries 间距 `18px`；Batteries 四列对齐 Sub-master BMS 前四列，表头与上方字段标签同为 `13px`。表头下首行额外增加 `5px` 上内距，电池行无 hover 背景。更多菜单使用 `.wd-menu` / `registerPanel()`，菜单圆角 `30px`、右缘对齐触发按钮；设置正文超出时使用 `createScrollFeedback({elastic:false})`。
 - 字段顺序固定为 Inverter `Model / Hardware / Firmware / Boot / SN / Check code`、Sub-master BMS `ID / Model / Hardware / Firmware / SN`、Batteries `ID / Hardware / Firmware / SN`、Heater `Model / Hardware / Firmware / SN / Check code`。Battery 不显示设置按钮。更多菜单提供 System test、Replace device、Rename、Unbind device，四项图标位于文字左侧；危险项 hover / focus-visible 使用淡红底和纯红图标、文字。
-- 设置对话框按设备类型生成分类。Inverter 保持参考页的 Running mode / Battery management / Professional settings / Safety-locked parameters / Networking / Shadow scan / Operation control / Other settings；Battery 与 Heater 使用各自策略、限制、网络和安全分类。Running mode 等可编辑值只能在点击 Save changes 后写回当前页面会话。
+- Heater keeps the compact device settings dialog. Inverter no longer uses `openSettingsDialog()` or the old eight-category schema; its independent settings module is authoritative. Battery has no settings action. Inverter `Save` writes the prototype state back to the current device session and `Cancel` closes the settings window without applying an unsaved draft.
 - Add Device 保持 Device SN / Device name 两个必填字段，并在当前电站内阻止重复 SN。本地预览按 SN 前缀推断设备类型，仅用于展示；不得把该规则写成生产协议。Replace、Rename、Unbind 和设置都使用共享 Glass Surface 对话框，支持 Esc、Tab 焦点循环与关闭后焦点归还。
 - 页面回归入口为 `tests/verify-plant-devices.cjs`，覆盖 `/plants/:id/devices` 直达与刷新、三类卡片、产品图、Cluster、设置保存、重命名、新增、解绑、Overview 往返、420px 单列和深浅主题。
 
@@ -372,9 +394,11 @@ const feedback=createScrollFeedback({
 
 滑块默认颜色取 `--wd-scroll-feedback-thumb-color`（Labels/Tertiary），hover / 拖动取 `--wd-scroll-feedback-thumb-hover-color`（Labels/Secondary）。位于内容可读性覆盖中的滚动区若需要与页面主滚动条一致，应显式把这两个变量映射到全局 `--wd-figma-labels-*`，不能另写背景色。
 
-上下越界时，回弹面逐步展开，内容沿越界方向平移，滑块同步缩短并在松手后沿 `--wd-motion-pull-rebound` / `--wd-ease-spring` 恢复。`prefers-reduced-motion` 下直接复位，不保留位移动画。组件只替换滚动视觉与越界反馈，不负责列头、行 hover、排序、筛选或数据。
+上下越界时，回弹面逐步展开，内容沿越界方向平移，滑块同步缩短并在松手后沿 `--wd-motion-pull-rebound` / `--wd-ease-spring` 恢复。启用 `elastic:true` 时，滚轮落在滚动轨道上也必须先驱动对应 `viewport` 正常滚动；只有到达上下边界才进入共享回弹并阻止页面继续滚动。回弹期间滑块仍必须在每个 rAF 跟随最新 `scrollTop`，不得因 settling 状态暂停。弹性状态下反向滚动时，应立即清除 pull 并将当前滚轮事件交还 viewport；不能继续 `preventDefault` 导致内容停住。轨道滚轮的距离按 `deltaMode` 归一为像素，行模式每格使用真实行高尺度。`Ctrl/Cmd + 滚轮` 属于缩放，不得被轨道接管。`prefers-reduced-motion` 下直接复位，不保留位移动画。组件只替换滚动视觉与越界反馈，不负责列头、行 hover、排序、筛选或数据。
 
 固定高度且无需回弹的多行输入传 `elastic:false`。Service Ticket 回复框由 `.service-reply-input-host` 包裹实际 `contenteditable` 视口，隐藏原生滚动条并显示共享 `10px` 轨道；滚轮在输入框内先滚动文本，到达上下边界后才把后续滚动交还页面，独立回复框和楼内编辑器共用这一实现。
+
+页面级滚动区若存在条件内容、说明或底部避让层显隐，应启用 `preserveBottomOnShrink:true`。共享 `createBottomScrollGuard()` 会跟踪最终滚动高度，只在视口已经位于底部且内容真实变短时临时添加 `.wd-scroll-shrink-spacer`，再按 `--wd-motion-content-grow` / `--wd-ease-content-grow` 平滑回落到新底边。内容增长不会触发缓冲；连续缩短从当前滚动位置续接，用户滚轮 / 触控会立即接管。当前接入方为 Inverter settings、Plants 列表与详情、Plants Devices 设置区和 Service Ticket 列表 / 详情，页面不得复制这套逻辑。
 
 ## 空状态
 
@@ -438,7 +462,7 @@ await skeletons.allSettled();
 ## 主题、浮层、图表与圆角
 
 - 首帧加载 `theme-bootstrap.js` 读取偏好，后续只走共享 theme controller。键 `wattdesk-home-theme` 保留兼容旧偏好，后续页面共用。`apply(mode)` 只适配确有差异的图像/图表；CSS token 自动跟随。
-- Popover controller 返回 `popover(anchor,trustedHTML,width)`、`toggle(anchor,open)`、`close(immediate)`、`toast(message)`、`reposition()`、`destroy()`；提供 overlays 与 role=status 的 toast 宿主。`toggle()` 按当前 anchor 是否拥有已打开 panel 分流；支持 Esc、外部点击及焦点恢复，这是轻量浮层，不是完整模态焦点陷阱。
+- Popover controller 返回 `popover(anchor,trustedHTML,width)`、`toggle(anchor,open)`、`close(immediate)`、`toast(message,{centerWithin})`、`reposition()`、`destroy()`；提供 overlays 与 role=status 的 toast 宿主。`toggle()` 按当前 anchor 是否拥有已打开 panel 分流；支持 Esc、外部点击及焦点恢复，这是轻量浮层，不是完整模态焦点陷阱。
 - 锚定面板由 `registerPanel()` 实时跟随触发元素：打开、`scroll`（document 捕获阶段，覆盖嵌套滚动区）、`resize` 与 `visualViewport` 变化都重新测量。位置以 `offsetWidth` / `offsetHeight` 计算，避免开合 `scale()` 让翻转点漂移；触发元素一半以上滚出视口时关闭，不能贴在视口边缘。调用方不得缓存坐标或另写滚动监听；内联搜索结果与工作区标签 tooltip 沿用同一约定（tooltip 由 workspace-tabs.js 自管坐标，但必须使用相同的捕获阶段监听与 rAF 合并）。
 - Motion controller 提供 `openPanel`、`closePanel`、`observeCharts(cards,scrollRoot)`。曲线挂 `.chart-mark`，柱形另挂 `.chart-bar`，观察点挂 `.chart-observation`；首次可见播放一次，减少动态效果时直接可见。
 - 圆角使用共享 `superellipse(1.2)`，保留组件自己的半径。该值由用户在实际 30px 卡片上确认，并非 Figma Corner Smoothing 60% 的数值换算；Figma 会延长切线，CSS 指数始终限制在半径盒内，两者不能逐点精确匹配。原稿正圆/胶囊保持 round，玻璃各层继承宿主，不加 clip-path 裁掉投影。

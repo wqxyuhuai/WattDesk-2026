@@ -1,6 +1,6 @@
 # 架构与扩展约定
 
-更新：2026-11-10。当前阶段采用原生网页，不引入新的 UI 框架、状态库或构建链。
+更新：2026-11-20。当前阶段采用原生网页，不引入新的 UI 框架、状态库或构建链。
 
 ```text
 Source/
@@ -19,6 +19,7 @@ Source/
       pages/home/               首页装配、专用场景适配、局部 CSS
         data/                   生成的精简节点、素材绑定、主题映射、运行期排版投影
       pages/plants/             Plants 列表、Overview、Devices 与 Site details
+      pages/inverter-settings/  独立逆变器设置窗口、国别档案与页面状态
       pages/service-ticket/     Service Ticket 卡片列表、详情、原位编辑与回复
     home-assets/                实际使用的本地 SVG / 字体
     design/figma/               完整 Figma 来源归档
@@ -33,8 +34,8 @@ Source/
 依赖方向为页面 → layout / component → foundation。共享组件不能反向导入 `pages/home` 或依赖具体 Figma 节点 ID。`home-assets` 名称保留以稳定原素材 URL，实际是全站共用资产。
 
 - 基础：`tokens.css` 的语义颜色引用按 Figma 变量 ID 生成的 `colors.css`；文字绑定完整命名 style。`dom.js` 只提供不带布局副作用的通用语义文本工厂。`time.js` 是相对 / 绝对时间的唯一格式化入口，`components/time-label.js` 统一生成可见 `<time>` 节点；页面只传时间值，不各自维护阈值、格式或属性。`design/figma/figma-type-source.json` 是带来源元数据的完整归档，`src/pages/home/data/type-runtime.json` 只保留运行所需的 `styles` 与 `rows`，由 `npm run sync:type` 同时生成，页面不直接读取设计归档。`geometry.js` 是连续圆角适配器的唯一启动入口，页面模块显式导入；不再需要 CSS 或独立空壳入口转发。材质和共享投影由各自组件入口控制。
-- 组件：共享外观、状态和行为契约；内容、尺寸、半径与业务操作由调用方提供，不能为了“统一”改变原稿几何。`components/controls.js` 同时提供低层真实按钮与标准按钮 DOM 工厂，玻璃实例生命周期仍由页面统一管理；`components/icons.js` 统一命名图标、原文件 URL、不透明遮罩和页面内联遮罩节点。`components/page-header.js` 同时提供页头结构和轻量文字动作；`components/search-surface.js` 统一搜索图标、清楚控件和玻璃字段。`components/pixel-card.js` 只负责原生 Canvas hover 纹理的绘制、主题重建和监听器清理；`components/flip-card.js` 只负责指针倾斜、反光与拖动回弹，不覆盖宿主的 click 动作；Service Ticket 卡片负责内容层级、语义状态和由共享 token 驱动的 hover 轻阴影。
-- 滚动反馈：`components/scroll-feedback.js` / `.css` 负责长列表的视觉滑块、拖动和上下越界回弹；页面提供宿主、滚动视口、内容节点与内距，并保留列头、行样式、业务数据和局部背景。Home 主画布、搜索面板和菜单的 overflow 不因组件存在而自动替换。
+- 组件：共享外观、状态和行为契约；内容、尺寸、半径与业务操作由调用方提供，不能为了“统一”改变原稿几何。`components/controls.js` 同时提供低层真实按钮与标准按钮 DOM 工厂，玻璃实例生命周期仍由页面统一管理；`components/icons.js` 统一命名图标、原文件 URL、不透明遮罩和页面内联遮罩节点。`components/select-control.js` 统一单选触发器、共享菜单浮层、选项标记、关闭与焦点归还，页面不得复制选择器内部结构。`components/page-header.js` 同时提供页头结构和轻量文字动作；`components/search-surface.js` 统一搜索图标、清楚控件和玻璃字段。`components/pixel-card.js` 只负责原生 Canvas hover 纹理的绘制、主题重建和监听器清理；`components/flip-card.js` 只负责指针倾斜、反光与拖动回弹，不覆盖宿主的 click 动作；Service Ticket 卡片负责内容层级、语义状态和由共享 token 驱动的 hover 轻阴影。
+- 滚动反馈：`components/scroll-feedback.js` / `.css` 负责长列表的视觉滑块、拖动和上下越界回弹；`components/bottom-scroll-guard.js` 提供可选的底部内容收缩保护。页面提供宿主、滚动视口、内容节点与内距，并保留列头、行样式、业务数据和局部背景。Home 主画布、搜索面板和菜单的 overflow 不因组件存在而自动替换。
 - 外壳：`layouts/app-shell.js` 组合组件，`createAppShell({sidebar,header,workspacePanelId})` 接收页面提供的标签面板 ID，标签通过 `aria-controls` 指向该面板；组件不写死首页节点 ID。尚未提供 `workspacePanelId` 时组件不输出无效的 `aria-controls`。当前菜单以首页确认稿为准；后续按真实需求扩展配置，不提前制造不存在的路由。
 - 首页：`scene.js` 只适配当前 Figma 绝对坐标提取，不是全站布局引擎。新页面使用语义 DOM 和适合内容的布局，不复制 scene JSON。
 - Service Ticket：`pages/service-ticket/index.js` 装配卡片列表、详情、工单/回复的原位编辑、提及与附件本地预览；`data.js` 保存当前会话样例与访问关系，`service-ticket.css` 只声明页面布局与视觉状态。真实上传、权限和通知未接入。
@@ -42,6 +43,7 @@ Source/
 - URL：`routes.js` 的 `routeFromPath()` / `pathForRoute()` 负责路径与 `{route, params}` 互转，包括 `/plants/:id`、`/service/new` 与 `/service/:ticketId`；新建工单使用 `{newTicket:true}` 参数并由 `pathForRoute()` 生成规范路径。`workspace.js` 只在这里调用 `pushState` / `replaceState`，页面通过 `openRoute()` 导航。深层链接由 `server.js`（本地）与 `wrangler.jsonc` 的 Workers Assets `single-page-application` 回退（线上）返回 SPA 外壳；规则见 [ROUTING.md](./ROUTING.md)。
 - Plants Operations 子页沿用同一 `plants` route，通过 `{plantId,device?,section}` 参数生成 `/plants/:id/faults|logs|tickets`；`sections.js` 是 slug 与显示名的共享清单。`statistics-period.js` 只负责 Inverter Statistics 的 `Day / Month / Year / Total` 周期状态、前后导航和玻璃选择浮层；`statistics-charts.js` 负责 Day、Month、Year、Total 的模板化 SVG 与 Combined 时间轴，页面负责标题、布局开关和数据派生。四类热区共用 hover / focus 局部读数。子页在当前工作区标签内导航并支持刷新/历史，不新增独立 routeView。
 - Devices 通过 `{plantId,device?,section:"devices"}` 生成 `/plants/:id/devices`；可见的 Site details 使用 `{plantId,device?,tab:"site-v2"}` 生成 `/plants/:id/site-v2`，旧 `{tab:"site"}` 仅保留隐藏兼容路由。三者仍属于 `plants` routeView，由 `pages/plants/index.js` 根据 section/tab 选择 `devices.js`、`site-details.js` 或 `site-details-v2.js`。`site-details-v2.js` 装配当前 Site details 的 Hero、Mapbox 缩略地图和资料卡，复用并回写 `siteDetailsByPlant` 会话数据；其本地编辑态支持 Installer / Contact 选择、联系人派生只读字段和 Alarm 开关。`mapbox-static-map.js` 负责静态图片 API URL、单响应分区模糊、深浅主题 map bank 交叉淡变、首次入场和失败/无 Token 空白态。设备状态、Cluster 展开、设置草稿和本地增删改只保存在 Plants 页面会话中，不使用独立状态库或伪造后端。
+- Inverter settings 使用 `{plantId,device:"inverter",section:"devices",settings:true,serial?}` 生成 route-backed 设置窗口。`devices.js` 只通过 `onOpenInverterSettings` 发出具体设备；`pages/plants/index.js` 负责路由和背景 Devices 装配，`pages/inverter-settings/` 独占设置页面、`settings-content.js`、`settings-model.js`、`grid-profiles.js`、门禁和会话草稿。设置图标通过 `components/icons.js` 的 `SETTINGS_ICON_FILES` 读取共享 `home-assets/icons/settings/`，页面不得自建资产副本。普通设置值更新走局部页面重绘与侧栏值同步，不重建导航；Save / Cancel 与未保存校验按主页面和 Grid 二级页独立作用域，Grid Code 负责 profile 标识与载入基线，其余 Grid 页只提交自身字段。Heater 保留现有紧凑弹窗。该目录不依赖 Plants 局部 CSS 或首页 scene。
 
 ## 增加页面
 

@@ -1,0 +1,133 @@
+{
+  "sourceDirectory": "C:\\Users\\Administrator\\Desktop\\ICON",
+  "usage": "Shape-only SVG masks. Runtime colour comes from WattDesk semantic tokens/currentColor.",
+  "files": [
+    {
+      "source": "Active Power Dispatch.svg",
+      "asset": "icons/settings/active-power-dispatch.svg",
+      "bytes": 2517,
+      "sha256": "8b8e58519f688570c70e12d0870e0eb077da946ba10c5004652da0ac768dc61e"
+    },
+    {
+      "source": "Battery Management.svg",
+      "asset": "icons/settings/battery-management.svg",
+      "bytes": 2747,
+      "sha256": "554b685f27bc069776d2ace3e8789d5f83ed82daa6277366d510950af693cbc2"
+    },
+    {
+      "source": "CT Detection.svg",
+      "asset": "icons/settings/ct-detection.svg",
+      "bytes": 2081,
+      "sha256": "7df02ab845bb1ae54ee6203e7a5721cb3062179262223819b8cc0f3bcccb88c8"
+    },
+    {
+      "source": "Device Features.svg",
+      "asset": "icons/settings/device-features.svg",
+      "bytes": 3201,
+      "sha256": "22ebc1bf4e0e1d647beea843839e8923c267877b7cef9ba73b6e235a5205c045"
+    },
+    {
+      "source": "DI Port.svg",
+      "asset": "icons/settings/di-port.svg",
+      "bytes": 3398,
+      "sha256": "f557df81c106d5a770b12efab042074ae593bc08c172a1634412617231c6e7c3"
+    },
+    {
+      "source": "Economic Mode.svg",
+      "asset": "icons/settings/economic-mode.svg",
+      "bytes": 2678,
+      "sha256": "b9f0006702cc6c4dea3c61176ae55fb4adf1040baf7594e3974ed72dc5daa4b4"
+    },
+    {
+      "source": "Feed-in & Import Limits.svg",
+      "asset": "icons/settings/feed-in-import-limits.svg",
+      "bytes": 2806,
+      "sha256": "b171ca5dcc9131eaf4e466bf0da08ff7f7333de57b49bd4c89fed1e601b7d7f3"
+    },
+    {
+      "source": "General Mode.svg",
+      "asset": "icons/settings/general-mode.svg",
+      "bytes": 1980,
+      "sha256": "c155c4d02d1b815902f6cdf25d75423076b835ef5c742d925cbbc6058a16e857"
+    },
+    {
+      "source": "Grid & Protection.svg",
+      "asset": "icons/settings/grid-protection.svg",
+      "bytes": 2352,
+      "sha256": "23267fe3d6b77862a6a56da7670d21304409954ba342a2259d9c1054ac920653"
+    },
+    {
+      "source": "MPPT & Strings.svg",
+      "asset": "icons/settings/mppt-strings.svg",
+      "bytes": 2754,
+      "sha256": "271c26568cdeb5d6e99e1a20f9014b82c515fa2beb9f46eccb04e1e00448d0be"
+    },
+    {
+      "source": "Networking.svg",
+      "asset": "icons/settings/networking.svg",
+      "bytes": 3999,
+      "sha256": "c186522f7496ee378ae6e37f83a9500f099e739de2778475d6e6e2e88bdcbaa3"
+    },
+    {
+      "source": "Off-grid Mode.svg",
+      "asset": "icons/settings/off-grid-mode.svg",
+      "bytes": 2822,
+      "sha256": "aef9a2c2287ba01a12e31ca2ba19ff0b74057c3ee7e9a25036f38f81010dce15"
+    },
+    {
+      "source": "Operation Control.svg",
+      "asset": "icons/settings/operation-control.svg",
+      "bytes": 4166,
+      "sha256": "b20c99f9ab9699380cb5d34803cfb57ec86d726f3f451c022581c7c8234fc9b2"
+    },
+    {
+      "source": "operation log.svg",
+      "asset": "icons/settings/operation-log.svg",
+      "bytes": 2147,
+      "sha256": "85b523a1738c94970b1e9cb554facbf89675fd1a32607c9f0e5c813d9a49ebcb"
+    },
+    {
+      "source": "Output Capability.svg",
+      "asset": "icons/settings/output-capability.svg",
+      "bytes": 1095,
+      "sha256": "c27b75737e5228316039c5cc4baef3582844bf40dc116ecb05391b32859e6ce6"
+    },
+    {
+      "source": "Parameter Export.svg",
+      "asset": "icons/settings/parameter-export.svg",
+      "bytes": 903,
+      "sha256": "a658d8403e375fffc0a7a05f611b57760b38995fe14481ece406a10522ee5447"
+    },
+    {
+      "source": "Peak Load Shifting Mode.svg",
+      "asset": "icons/settings/peak-load-shifting-mode.svg",
+      "bytes": 1226,
+      "sha256": "5874b3c049fac2e2cc79d489b08fdca69ecf3ea579dd844d00bf5840d3a476fd"
+    },
+    {
+      "source": "Running Mode.svg",
+      "asset": "icons/settings/running-mode.svg",
+      "bytes": 2633,
+      "sha256": "4b79918ac02286bf5951ef4a725b573ace3131a80af5d60b5b39a7563ed26078"
+    },
+    {
+      "source": "ToU Mode.svg",
+      "asset": "icons/settings/time-of-use-mode.svg",
+      "bytes": 1859,
+      "sha256": "7f2f160a084c897f3a91deee5dfbb2e81d1f175cb8aa5dc96a68d7474ecfda69"
+    },
+    {
+      "source": "UPS Mode.svg",
+      "asset": "icons/settings/ups-mode.svg",
+      "bytes": 1880,
+      "sha256": "1de9d71f4a99de2235d5225796b807b6e416a724257278dcddec60c4da2f08e5"
+    },
+    {
+      "source": "C:\\Users\\Administrator\\Desktop\\check.svg",
+      "asset": "icons/settings/check-circle.svg",
+      "bytes": 1271,
+      "sha256": "cc1f4fd52fe3ad23299afa5115d9be627db3e9320b27c2ca3289b3ee7cba325f",
+      "normalization": "Shape-only mask: circle retained, check converted to transparent negative space, runtime colour from currentColor."
+    }
+  ]
+}

@@ -674,6 +674,17 @@ const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
   assert.equal(pathname(), '/plants/p02/devices', 'refresh on Devices stays on Devices');
   assert.equal(await page.locator('.plants-detail-tab[data-section="devices"]').getAttribute('aria-current'), 'page');
 
+  await page.goto(`${origin}/plants/p02/devices/inverter-settings?device=inverter`, {waitUntil:'domcontentloaded'});
+  await ready();
+  await page.waitForTimeout(450);
+  assert.equal(pathname(), '/plants/p02/devices/inverter-settings', 'inverter settings has a stable deep link');
+  assert.equal(await page.locator('.inverter-settings-window').isVisible(), true);
+  await page.reload({waitUntil:'domcontentloaded'});
+  await ready();
+  await page.waitForTimeout(450);
+  assert.equal(pathname(), '/plants/p02/devices/inverter-settings', 'refresh keeps the settings window open');
+  assert.equal(await page.locator('.inverter-settings-window').isVisible(), true);
+
   assert.deepEqual(errors, []);
   console.log(JSON.stringify({ ok: true, errors }, null, 2));
   await browser.close();

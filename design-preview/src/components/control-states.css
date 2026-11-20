@@ -17,6 +17,18 @@
 :root[data-theme="light"] .wd-button--primary:is(:hover,:focus-visible,:has(:focus-visible)) :is(.wd-control-label,.wd-control-label>span){
  color:var(--wd-figma-grays-white)!important;
 }
+.wd-button--danger,
+.wd-button--warning,
+.wd-button--danger :is(.wd-control-label,.wd-control-label>span),
+.wd-button--warning :is(.wd-control-label,.wd-control-label>span){
+ color:var(--wd-button-special-color)!important;
+}
+.wd-button--danger:is(:hover,:focus-visible,:has(:focus-visible)),
+.wd-button--warning:is(:hover,:focus-visible,:has(:focus-visible)),
+.wd-button--danger:is(:hover,:focus-visible,:has(:focus-visible)) :is(.wd-control-label,.wd-control-label>span),
+.wd-button--warning:is(:hover,:focus-visible,:has(:focus-visible)) :is(.wd-control-label,.wd-control-label>span){
+ color:var(--wd-figma-grays-white)!important;
+}
 /* Original idle SVGs remain available; state masks use the exact same paths. */
 .shared-icon-highlight{position:absolute;display:block;background:var(--wd-label-primary);mask:var(--icon-mask) center/100% 100% no-repeat;-webkit-mask:var(--icon-mask) center/100% 100% no-repeat;opacity:0;pointer-events:none;transform-origin:center;}
 .wd-glass:is(:hover,:focus-visible,:has(:focus-visible)) .shared-icon-highlight{opacity:1}

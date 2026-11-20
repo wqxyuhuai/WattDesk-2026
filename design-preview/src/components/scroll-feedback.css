@@ -6,6 +6,13 @@
   position:relative;
 }
 
+.wd-scroll-shrink-spacer {
+  display:block;
+  width:1px;
+  overflow:hidden;
+  pointer-events:none;
+}
+
 .wd-scroll-feedback{
   --wd-scroll-feedback-right:0px;
   --wd-scroll-feedback-lane:10px;
@@ -16,6 +23,14 @@
   right:var(--wd-scroll-feedback-right);
   width:var(--wd-scroll-feedback-lane);
   overflow:clip;pointer-events:auto;
+}
+
+.wd-scroll-feedback--hover{
+  opacity:0;
+}
+
+.wd-scroll-feedback-host:hover>.wd-scroll-feedback--hover{
+  opacity:1;
 }
 
 .wd-scroll-feedback[hidden]{

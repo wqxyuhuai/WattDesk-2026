@@ -20,7 +20,7 @@ export const ROUTE_CATALOG={
 };
 export const SEARCH_QUICK_LINKS=["home","plants","service","track"];
 const PATH_TO_ROUTE=new Map(Object.entries(ROUTE_CATALOG).map(([route,definition])=>[definition.path,route]));
-const PLANT_DETAIL_PATH=/^\/plants\/([^/]+)(?:\/([^/]+))?$/;
+const PLANT_DETAIL_PATH=/^\/plants\/([^/]+)(?:\/([^/]+))?(?:\/([^/]+))?$/;
 const SERVICE_DETAIL_PATH=/^\/service\/([^/]+)$/;
 const PLANT_FILTER_VALUES=Object.freeze({
  connection:new Set(["online"]),
@@ -60,11 +60,20 @@ export function routeFromPath(pathname,search=""){
   if(plantId&&!plantId.includes("/")){
    const values=new URLSearchParams(search||"");
    const device=values.get("device");
+   const serial=values.get("serial");
+   const standalone=values.get("standalone")==="1";
    const segment=detail[2];
+   const childSegment=detail[3];
    const shared={
     plantId,
-    ...(PLANT_DEVICE_VALUES.has(device)?{device}:{})
+    ...(PLANT_DEVICE_VALUES.has(device)?{device}:{}),
+    ...(serial?{serial}:{}),
+    ...(standalone?{standalone:true}:{})
    };
+   if(segment==="devices"&&childSegment==="inverter-settings"){
+    return {route:"plants",params:{...shared,section:"devices",settings:true}};
+   }
+   if(childSegment)return {route:null,params:{},notFound:true};
    if(segment&&isPlantTab(segment))return {route:"plants",params:{...shared,tab:segment}};
    if(segment&&!isPlantSection(segment))return {route:null,params:{},notFound:true};
    return {route:"plants",params:{...shared,...(segment?{section:segment}:{})}};
@@ -88,11 +97,18 @@ export function routeFromPath(pathname,search=""){
 // The detail URL is part of the route contract, not page-local state.
 export function pathForRoute(route,params={}){
  if(route==="plants"&&params?.plantId){
-  const child=isPlantTab(params?.tab)
-   ?`/${params.tab}`
-   :isPlantSection(params?.section)?`/${params.section}`:"";
+  const child=params?.settings&&params?.section==="devices"
+   ?"/devices/inverter-settings"
+   :isPlantTab(params?.tab)
+    ?`/${params.tab}`
+    :isPlantSection(params?.section)?`/${params.section}`:"";
   const path=`/plants/${encodeURIComponent(String(params.plantId))}${child}`;
-  return PLANT_DEVICE_VALUES.has(params?.device)?`${path}?device=${encodeURIComponent(params.device)}`:path;
+  const search=new URLSearchParams();
+  if(PLANT_DEVICE_VALUES.has(params?.device))search.set("device",params.device);
+  if(params?.serial)search.set("serial",params.serial);
+  if(params?.settings&&params?.standalone)search.set("standalone","1");
+  const query=search.toString();
+  return query?`${path}?${query}`:path;
  }
  if(route==="service"&&params?.newTicket)return "/service/new";
  if(route==="service"&&params?.ticketId)return `/service/${encodeURIComponent(String(params.ticketId))}`;
@@ -113,6 +129,7 @@ export function displayTitle(route){
 
 export function documentTitle(route,params={},resourceName=""){
  if(!route)return "WattDesk · Page not found";
+ if(route==="plants"&&params?.settings)return `WattDesk · Inverter settings${resourceName?` · ${resourceName}`:""}`;
  if(route==="plants"&&params?.plantId)return `WattDesk · ${resourceName||"Plant not found"}`;
  if(route==="service"&&params?.newTicket)return "WattDesk · New ticket";
  if(route==="service"&&params?.ticketId)return `WattDesk · ${resourceName||"Ticket not found"}`;

@@ -4,6 +4,7 @@ import {assetURL,createMaskedIcon,opaqueMaskURL} from "../../components/icons.js
 import {createStandardButton} from "../../components/controls.js";
 import {createAvatar} from "../../components/avatar.js";
 import {menuList,mountMenu,menuRow} from "../../components/menu-popover.js";
+import {createSelectControl as createSharedSelectControl} from "../../components/select-control.js";
 import {createToggleSwitch} from "../../components/toggle-switch.js";
 import {createMapboxStaticMap} from "../../components/mapbox-static-map.js";
 import {motionDuration} from "../../foundations/motion.js";
@@ -96,52 +97,23 @@ function createInfoGroup(iconFile,className=""){
  return {group,content};
 }
 
-function createSelectControl({label,value,options,onChange,className="",registerPanel,close,toggle}){
- const field=text("button",`site-details-input site-details-select-trigger wd-control-state wd-edit-field site-v2-select ${className}`.trim());
- field.type="button";
- field.setAttribute("aria-label",label);
- field.setAttribute("aria-haspopup","listbox");
- const valueNode=text("span","site-details-select-value",value);
- valueNode.setAttribute("aria-hidden","true");
- const chevron=createMaskedIcon(opaqueMaskURL("asset-14.svg"),"site-details-select-chevron");
- field.append(valueNode,chevron);
-
- function update(next){
-  value=next;
-  valueNode.textContent=next;
-  field.dataset.value=next;
-  onChange(next);
- }
- field.dataset.value=value;
- field.addEventListener("click",()=>{
-  if(!registerPanel)return;
-  toggle?.(field,()=>{
-   const panel=document.createElement("div");
-   panel.className="popover popover--menu site-details-select-popover";
-   const list=menuList();
-   list.setAttribute("role","listbox");
-   for(const option of unique([value,...options])){
-    const row=menuRow(option,{checked:option===value});
-    row.setAttribute("role","option");
-    row.setAttribute("aria-selected",String(option===value));
-    row.dataset.value=option;
-    row.addEventListener("click",()=>{
-     update(option);
-     close?.(true);
-     requestAnimationFrame(()=>field.focus({preventScroll:true}));
-    });
-    list.append(row);
-   }
-   mountMenu(panel,{label:`Choose ${label}`,children:[list]});
-   return registerPanel(panel,field,{
-    label:`Choose ${label}`,
-    radius:24,
-    width:Math.max(200,Math.min(320,field.offsetWidth||220)),
-    align:"end"
-   });
-  });
- });
- return field;
+function createSiteSelectControl({label,value,options,onChange,className="",registerPanel,close,toggle}){
+ return createSharedSelectControl({
+  label,
+  value,
+  options,
+  onChange,
+  className:`site-details-input site-details-select-trigger site-v2-select ${className}`.trim(),
+  menuClassName:"site-details-select-popover",
+  variant:"form",
+  ariaLabel:label,
+  registerPanel,
+  close,
+  toggle,
+  radius:24,
+  menuWidth:field=>Math.max(200,Math.min(320,field.offsetWidth||220)),
+  align:"end"
+ }).element;
 }
 
 function createPanel(title,body,{className="",iconFile="",iconNode=null,action=null}={}){
@@ -282,7 +254,7 @@ export function createPlantSiteDetailsV2({
  }
 
  function selectControl(options){
-  return createSelectControl(options);
+  return createSiteSelectControl(options);
  }
 
  const mapLocationButton=createMapLocationButton(()=>toast?.("Location actions are not connected in this preview."));

@@ -16,6 +16,7 @@ const DEVICE_LIBRARY=Object.freeze({
   product:"WattMatic system",
   image:assetURL("plants/devices/ihybrid.png"),
   model:"MATIC-20KW-50A",
+  ratedPowerKw:20,
   prefix:"1M20K25B"
  },
  bms:{
@@ -158,6 +159,7 @@ function createDevice(plant,type,index=0,overrides={}){
   name:meta.name,
   status:initialStatus(plant,type,index),
   model:meta.model,
+  ratedPowerKw:meta.ratedPowerKw||null,
   serial:serialFor(plant,type,index),
   hardware:"V1",
   boot:"V4.4.1001",
@@ -181,6 +183,13 @@ function storeFor(plant){
   DEVICE_STORE.set(plant.id,store);
  }
  return store;
+}
+
+export function resolvePlantDevice(plant,{type="inverter",serial=null}={}){
+ if(!plant)return null;
+ const devices=storeFor(plant).devices.filter(device=>device.type===type);
+ if(serial)return devices.find(device=>device.serial===serial)||null;
+ return devices[0]||null;
 }
 
 // The Overview rail still groups by device type. Reusing this resolver keeps
@@ -568,6 +577,7 @@ function openSettingsDialog(device,onSave){
   viewport,
   content,
   elastic:false,
+  preserveBottomOnShrink:true,
   bottomInset:0
  });
 
@@ -858,7 +868,7 @@ function createDeviceFields(device){
  ];
 }
 
-function createDeviceCard(device,{registerSurface,openMenu,toggle,toast,onChange}){
+function createDeviceCard(device,{registerSurface,openMenu,toggle,toast,onChange,onOpenInverterSettings}){
  const meta=DEVICE_LIBRARY[device.type];
  const card=text("article","plants-device-card");
  card.dataset.deviceId=device.key;
@@ -891,14 +901,20 @@ function createDeviceCard(device,{registerSurface,openMenu,toggle,toast,onChange
  const settingsButton=device.type==="bms"?null:createActionButton({
   label:`Open ${device.name} settings`,
   iconFile:assetURL("settings.svg"),
-  onClick:()=>openSettingsDialog(device,changed=>{
-   if(changed.type==="inverter"){
-    const mode=INVERTER_MODES.find(option=>option.id===changed.settings.runningMode);
-    if(mode)changed.mode=mode.label;
+  onClick:()=>{
+   if(device.type==="inverter"&&onOpenInverterSettings){
+    onOpenInverterSettings(device);
+    return;
    }
-   onChange?.();
-   toast(`Saved settings for ${changed.name}`);
-  })
+   openSettingsDialog(device,changed=>{
+    if(changed.type==="inverter"){
+     const mode=INVERTER_MODES.find(option=>option.id===changed.settings.runningMode);
+     if(mode)changed.mode=mode.label;
+    }
+    onChange?.();
+    toast(`Saved settings for ${changed.name}`);
+   });
+  }
  });
  const moreButton=createActionButton({
   label:`More actions for ${device.name}`,
@@ -916,7 +932,7 @@ function createDeviceCard(device,{registerSurface,openMenu,toggle,toast,onChange
   const item=text("div","plants-device-field-item");
   const valueElement=text("strong","plants-device-field-value",undefined,"Footnote/Medium");
   if(label==="SN")valueElement.append(createSerialCopyButton(value,{toast}));
-  else valueElement.textContent=value||"—";
+  else valueElement.textContent=label==="Check code"&&value?"•".repeat(String(value).length):value||"—";
   item.append(
    text("span","plants-device-field-name",label,"Caption1/Regular"),
    valueElement
@@ -934,7 +950,9 @@ function createDeviceCard(device,{registerSurface,openMenu,toggle,toast,onChange
  return card;
 }
 
-export function createPlantDevices({plant,glass:material,registerPanel,close,toggle,toast,onDeviceCountChange}){
+export function createPlantDevices({
+ plant,glass:material,registerPanel,close,toggle,toast,onDeviceCountChange,onOpenInverterSettings
+}){
  glass=material;
  const root=text("section","plants-devices");
  const host=text("div","plants-devices-host");
@@ -1039,7 +1057,8 @@ export function createPlantDevices({plant,glass:material,registerPanel,close,tog
    openMenu,
    toggle,
    toast,
-   onChange:render
+   onChange:render,
+   onOpenInverterSettings
   })));
   syncDeviceLayout();
   onDeviceCountChange?.(devices.length);

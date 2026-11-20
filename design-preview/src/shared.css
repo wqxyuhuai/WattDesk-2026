@@ -7,6 +7,7 @@
 @import url("./layouts/app-shell.css");
 @import url("./components/button.css");
 @import url("./components/edit-field.css");
+@import url("./components/select-control.css");
 @import url("./components/search.css");
 @import url("./components/search-surface.css");
 @import url("./components/input-clear.css");

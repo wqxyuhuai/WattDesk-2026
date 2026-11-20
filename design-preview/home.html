@@ -6,6 +6,12 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="color-scheme" content="light dark">
   <meta name="mapbox-access-token" content="">
+  <script>
+    if (/\/devices\/inverter-settings\/?$/.test(location.pathname) &&
+        new URLSearchParams(location.search).get("standalone") === "1") {
+      document.documentElement.dataset.standaloneSettings = "true";
+    }
+  </script>
   <script src="./src/foundations/theme-bootstrap.js"></script>
   <title>WattDesk · Home</title>
   <link rel="icon" href="./home-assets/logo.svg" type="image/svg+xml">
@@ -13,6 +19,7 @@
   <link rel="stylesheet" href="./src/pages/plants/plants.css">
   <link rel="stylesheet" href="./src/pages/plants/detail.css">
   <link rel="stylesheet" href="./src/pages/plants/devices.css">
+  <link rel="stylesheet" href="./src/pages/inverter-settings/inverter-settings.css">
   <link rel="stylesheet" href="./src/pages/plants/site-details.css">
   <link rel="stylesheet" href="./src/pages/plants/site-details-v2.css">
   <link rel="stylesheet" href="./src/pages/service-ticket/service-ticket.css">

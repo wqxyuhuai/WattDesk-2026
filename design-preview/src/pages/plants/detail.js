@@ -285,7 +285,9 @@ function createOpsRail(plant,onOpenTicket,onOpenNewTicket,onOpenSection){
  const logScroll=createScrollFeedback({
   host:logBody,
   viewport:logViewport,
+  content:logContent,
   elastic:false,
+  preserveBottomOnShrink:true,
   bottomInset:2
  });
 

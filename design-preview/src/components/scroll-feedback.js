@@ -1,4 +1,5 @@
 import {motionDuration,motionEasing,reducedMotion} from "../foundations/motion.js";
+import {createBottomScrollGuard} from "./bottom-scroll-guard.js";
 
 const MIN_THUMB_HEIGHT=24;
 const PULL_SHRINK_RATIO=2;
@@ -26,15 +27,18 @@ export function createScrollFeedback({
  elastic=true,
  topInset=0,
  bottomInset=0,
+  preserveBottomOnShrink=false,
  maxPull=20,
  deadZone=4,
- releaseDelay=180
+  releaseDelay=180,
+  visibility="always"
 }={}){
  if(!host||!viewport||(elastic&&!content)){
   throw new Error("createScrollFeedback requires host and viewport; elastic mode also requires content");
  }
 
  const track=element("wd-scroll-feedback");
+ if(visibility==="hover")track.classList.add("wd-scroll-feedback--hover");
  const thumb=element("wd-scroll-feedback__thumb");
  const pullEnabled=Boolean(elastic&&content);
  const startSurface=pullEnabled?element("wd-scroll-feedback__pull wd-scroll-feedback__pull--start"):null;
@@ -50,9 +54,15 @@ export function createScrollFeedback({
  host.append(track);
 
  let frame=0,pullFrame=0,pullDistance=0,pullTarget=0,pullReleaseTimer=0;
- let pullSide=null,touchStartY=null,settling=false,baseMetrics=null;
+ let pullSide=null,touchStartY=null,baseMetrics=null;
  let pullAnimations=[];
  let scrollDrag=null;
+ const bottomGuard=preserveBottomOnShrink?createBottomScrollGuard({viewport,content}):null;
+
+ function wheelPixels(event){
+  const unit=event.deltaMode===1?16:event.deltaMode===2?viewport.clientHeight:1;
+  return event.deltaY*unit;
+ }
 
  function metrics(){
   // Menus may sit inside a scaling panel while opening. The rail is positioned
@@ -88,14 +98,15 @@ export function createScrollFeedback({
  }
 
  function sync(){
-  cancelAnimationFrame(frame);
+  bottomGuard?.sync();
+  if(frame)return;
   frame=requestAnimationFrame(()=>{
+   frame=0;
    if(startSurface)startSurface.style.top=`${viewport.offsetTop}px`;
    baseMetrics=metrics();
    track.hidden=!baseMetrics.visible;
    track.style.top=`${baseMetrics.top}px`;
    track.style.height=`${baseMetrics.trackHeight}px`;
-   if(settling)return;
    applyThumb();
   });
  }
@@ -137,10 +148,9 @@ export function createScrollFeedback({
  function cancelPullAnimations(){
   for(const animation of pullAnimations)animation.cancel();
   pullAnimations=[];
-  settling=false;
  }
 
- function settlePull(){
+ function settlePull({animate=true}={}){
   if(!pullEnabled)return;
   clearTimeout(pullReleaseTimer);
   cancelAnimationFrame(pullFrame);
@@ -148,10 +158,9 @@ export function createScrollFeedback({
   pullTarget=0;
   const settledSide=pullSide;
   const start=Math.max(0,pullDistance-deadZone);
-  const fromPose=thumbPose(baseMetrics,settledSide,pullDistance);
   cancelPullAnimations();
   pullDistance=0;
-  if(start<=0||reducedMotion()){
+  if(start<=0||reducedMotion()||!animate){
    pullSide=null;
    renderPullVisual();
    sync();
@@ -159,9 +168,9 @@ export function createScrollFeedback({
   }
 
   pullSide=null;
-  settling=true;
   const nextMetrics=metrics();
-  const toPose=thumbPose(nextMetrics,null,0);
+  baseMetrics=nextMetrics;
+  applyThumb(nextMetrics,null,0);
   const timing={
    duration:motionDuration("--wd-motion-pull-rebound"),
    easing:motionEasing("--wd-ease-spring")
@@ -175,13 +184,7 @@ export function createScrollFeedback({
    {height:`${start}px`,opacity:String(Math.min(1,start/10))},
    {height:"0px",opacity:"0"}
   ],timing);
-  const thumbAnimation=nextMetrics.visible&&fromPose.height
-   ?thumb.animate([
-    {height:`${fromPose.height}px`,transform:`translate3d(0,${fromPose.top}px,0)`},
-    {height:`${toPose.height}px`,transform:`translate3d(0,${toPose.top}px,0)`}
-   ],timing)
-   :null;
-  pullAnimations=[contentAnimation,surfaceAnimation,thumbAnimation].filter(Boolean);
+  pullAnimations=[contentAnimation,surfaceAnimation];
   Promise.allSettled(pullAnimations.map(animation=>animation.finished)).then(()=>{
    if(pullDistance>0)return;
    content.style.transform="";
@@ -190,10 +193,8 @@ export function createScrollFeedback({
    endSurface.style.height="0px";
    endSurface.style.opacity="0";
    content.classList.remove("is-pulling");
-   settling=false;
    pullAnimations=[];
-   baseMetrics=nextMetrics;
-   applyThumb(nextMetrics,null,0);
+   sync();
   });
  }
 
@@ -209,7 +210,9 @@ export function createScrollFeedback({
 
  function handleWheel(event){
   if(!pullEnabled)return;
+  if(event.defaultPrevented)return;
   if(event.ctrlKey||event.metaKey)return;
+  const delta=wheelPixels(event);
   const maxScroll=Math.max(0,viewport.scrollHeight-viewport.clientHeight);
   const atStart=viewport.scrollTop<=0;
   const atEnd=maxScroll>0&&viewport.scrollTop>=maxScroll-1;
@@ -219,22 +222,26 @@ export function createScrollFeedback({
     settlePull();
     return;
    }
+   const outward=(pullSide==="start"&&delta<0)||(pullSide==="end"&&delta>0);
+   if(!outward){
+    settlePull({animate:false});
+    return;
+   }
    event.preventDefault();
-   const outward=(pullSide==="start"&&event.deltaY<0)||(pullSide==="end"&&event.deltaY>0);
-   pullBy(outward?Math.abs(event.deltaY)*.035:-Math.abs(event.deltaY)*.035);
+   pullBy(Math.abs(delta)*.035);
    return;
   }
-  if(atStart&&event.deltaY<0){
+  if(atStart&&delta<0){
    pullSide="start";
    event.preventDefault();
-   pullBy(-event.deltaY*.035);
-  }else if(atEnd&&event.deltaY>0){
+   pullBy(-delta*.035);
+  }else if(atEnd&&delta>0){
    pullSide="end";
    event.preventDefault();
-   pullBy(event.deltaY*.035);
+   pullBy(delta*.035);
   }else if(pullTarget>0||pullDistance>0){
    event.preventDefault();
-   pullBy(-Math.abs(event.deltaY)*.035);
+   pullBy(-Math.abs(delta)*.035);
   }
  }
 
@@ -243,7 +250,7 @@ export function createScrollFeedback({
   if(!pullSide)return;
   const maxScroll=Math.max(0,viewport.scrollHeight-viewport.clientHeight);
   const movedAway=(pullSide==="start"&&viewport.scrollTop>0)||(pullSide==="end"&&viewport.scrollTop<maxScroll-1);
-  if(movedAway)settlePull();
+  if(movedAway)settlePull({animate:false});
  }
 
  function handleTouchStart(event){
@@ -309,12 +316,17 @@ export function createScrollFeedback({
   viewport.scrollTop=Math.max(0,Math.min(1,(event.clientY-rect.top-thumbHeight/2)/maxTop))*maxScroll;
  });
  track.addEventListener("wheel",event=>{
+  if(event.ctrlKey||event.metaKey)return;
+  const delta=wheelPixels(event);
   if(pullEnabled){
    handleWheel(event);
+   if(event.defaultPrevented)return;
+   event.preventDefault();
+   viewport.scrollTop+=delta;
    return;
   }
   event.preventDefault();
-  viewport.scrollTop+=event.deltaY;
+  viewport.scrollTop+=delta;
  },{passive:false});
  if(pullEnabled)viewport.addEventListener("wheel",handleWheel,{passive:false});
  viewport.addEventListener("scroll",handleScroll,{passive:true});
@@ -336,6 +348,7 @@ export function createScrollFeedback({
  return {
   element:track,
   sync,
+  cancelBottomShrink:()=>bottomGuard?.cancel(),
   destroy(){
    cancelAnimationFrame(frame);
    cancelAnimationFrame(pullFrame);
@@ -343,6 +356,7 @@ export function createScrollFeedback({
    cancelPullAnimations();
    resizeObserver.disconnect();
    mutationObserver.disconnect();
+   bottomGuard?.destroy();
    viewport.removeEventListener("scroll",handleScroll);
    if(pullEnabled){
     viewport.removeEventListener("wheel",handleWheel);
