@@ -7,8 +7,10 @@
   <meta name="color-scheme" content="light dark">
   <meta name="mapbox-access-token" content="">
   <script>
-    if (/\/devices\/inverter-settings\/?$/.test(location.pathname) &&
-        new URLSearchParams(location.search).get("standalone") === "1") {
+    if (location.pathname === "/settings" ||
+        location.pathname === "/inverter" ||
+        (/\/devices\/inverter-settings\/?$/.test(location.pathname) &&
+         new URLSearchParams(location.search).get("standalone") === "1")) {
       document.documentElement.dataset.standaloneSettings = "true";
     }
   </script>
