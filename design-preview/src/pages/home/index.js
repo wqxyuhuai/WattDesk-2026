@@ -301,7 +301,11 @@ if(document.documentElement.dataset.standaloneSettings==="true"){
  standaloneThemeControl=document.createElement("div");
  standaloneThemeControl.className="isw-standalone-theme-control";
  standaloneThemeButton=createStandardButton({label:"Dark mode"});
- standaloneThemeButton.addEventListener("click",()=>themeController?.toggle());
+ standaloneThemeButton.addEventListener("click",()=>{
+  const mode=document.documentElement.dataset.theme==="dark"?"light":"dark";
+  themeController?.set(mode);
+  try{sessionStorage.setItem("wattdesk-standalone-theme",mode)}catch{}
+ });
  standaloneThemeControl.append(standaloneThemeButton);
  document.body.append(standaloneThemeControl);
  glass.addSurface({host:standaloneThemeButton,radius:18});

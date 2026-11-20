@@ -10,14 +10,14 @@
 }
 
 :root[data-standalone-settings="true"] .plants-device-dialog.inverter-settings-dialog {
-  height: min(860px, calc(100vh - 124px));
-  max-height: calc(100vh - 124px);
+  height: min(860px, calc(100vh - 148px));
+  max-height: calc(100vh - 148px);
 }
 
 .isw-standalone-theme-control {
   position: fixed;
   left: 50%;
-  bottom: 18px;
+  bottom: 32px;
   z-index: 1301;
   translate: -50% 0;
 }

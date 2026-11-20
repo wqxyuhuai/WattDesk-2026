@@ -14,9 +14,9 @@
     if (standaloneSettings) {
       document.documentElement.dataset.standaloneSettings = "true";
       try {
-        const saved = localStorage.getItem("wattdesk-home-theme");
-        const theme = saved === "light" || saved === "dark" ? saved : "light";
-        if (!saved) localStorage.setItem("wattdesk-home-theme", theme);
+        const saved = sessionStorage.getItem("wattdesk-standalone-theme");
+        const theme = saved === "dark" ? "dark" : "light";
+        localStorage.setItem("wattdesk-home-theme", theme);
         document.documentElement.dataset.theme = theme;
       } catch {
         document.documentElement.dataset.theme = "light";
