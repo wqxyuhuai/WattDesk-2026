@@ -32,6 +32,9 @@
   `/plants/:plantId/devices/inverter-settings?device=inverter&standalone=1`。
   它只隐藏 WattDesk 外壳、其他页面入口和关闭 X，仍复用同一页面模块、数据和
   交互；设置页更新后无需维护第二份预览页面。
+- 对外简洁入口为 `https://inverter.carlwang.cn/`，内部规范路径为 `/settings`。
+  该域名使用单独 Worker 代理，只允许 `/settings`、`/src/*` 和
+  `/home-assets/*`；其他 WattDesk 路径返回 404。
 - 页面以 route-backed 设置窗口呈现，刷新、复制链接、浏览器前进/后退有效。
 - 主页面共 15 个：Running Mode、Economic Schedule、Battery、
   Active Power Dispatch、Import & Export Limits、Output Capability、DI Port、

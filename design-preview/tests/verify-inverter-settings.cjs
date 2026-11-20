@@ -3994,7 +3994,7 @@ const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
     await page.waitForTimeout(620);
     assert.match(page.url(),/\/plants\/p25\/devices\?device=inverter/);
     assert.equal(await page.locator(".inverter-settings-window").count(),0,"Discard Changes exits after unsaved confirmation");
-    const standaloneURL=`${origin}/plants/p25/devices/inverter-settings?device=inverter&standalone=1&glass=figma`;
+    const standaloneURL=`${origin}/settings`;
     await page.goto(standaloneURL,{waitUntil:"domcontentloaded"});
     await ready();
     await page.locator(".inverter-settings-window").waitFor();
@@ -4003,6 +4003,7 @@ const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
     assert.equal(await page.locator("#home").evaluate(node=>getComputedStyle(node).visibility),"hidden","standalone mode hides the WattDesk shell");
     assert.equal(await page.locator(".target-sidebar").isVisible(),false,"standalone mode exposes no sidebar navigation");
     assert.equal(await page.locator(".isw-close-button").isVisible(),false,"standalone mode exposes no route back to other pages");
+    assert.equal(new URL(page.url()).pathname,"/settings","the compact standalone URL remains canonical");
     await page.screenshot({path:"tests/output/inverter-settings-standalone.png"});
   } finally {
     await browser.close();

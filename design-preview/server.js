@@ -9,7 +9,7 @@ const annotationsFile = path.join(root, 'annotations.json');
 const types = { '.html':'text/html; charset=utf-8','.css':'text/css; charset=utf-8','.js':'text/javascript; charset=utf-8','.svg':'image/svg+xml','.woff2':'font/woff2','.woff':'font/woff','.ttf':'font/ttf','.json':'application/json' };
 const canonicalRoutes = new Set([
   '/home','/plants','/service','/statistics','/cell-balance','/module-balance',
-  '/device-track','/organisation','/teams','/users'
+  '/device-track','/organisation','/teams','/users','/settings'
 ]);
 
 // 本地批注层：只在 ?annotate=1 时注入，正式页面与截图基线不受影响。

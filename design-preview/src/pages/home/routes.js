@@ -49,6 +49,16 @@ function plantFiltersFromSearch(search){
 
 export function routeFromPath(pathname,search=""){
  const path=normalizePath(pathname);
+ if(path==="/settings"){
+  return {route:"plants",params:{
+   plantId:"p25",
+   device:"inverter",
+   section:"devices",
+   settings:true,
+   standalone:true,
+   standaloneAlias:true
+  }};
+ }
  if(path==="/"||path==="/home"||path==="/home.html"||path==="/index.html"){
   return {route:"home",params:{}};
  }
@@ -97,6 +107,7 @@ export function routeFromPath(pathname,search=""){
 // The detail URL is part of the route contract, not page-local state.
 export function pathForRoute(route,params={}){
  if(route==="plants"&&params?.plantId){
+  if(params?.settings&&params?.standaloneAlias)return "/settings";
   const child=params?.settings&&params?.section==="devices"
    ?"/devices/inverter-settings"
    :isPlantTab(params?.tab)

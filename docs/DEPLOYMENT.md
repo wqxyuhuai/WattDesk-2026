@@ -5,9 +5,10 @@
 ## 线上入口
 
 - 预览地址：<https://wattdesk-preview.carlwang.cn/>
-- Inverter settings 独立预览使用同一域名的
-  `/plants/p25/devices/inverter-settings?device=inverter&standalone=1`；
-  页面代码更新并重新部署后会同步更新。
+- Inverter settings 独立预览：<https://inverter.carlwang.cn/>。独立 Worker
+  `wattdesk-inverter-preview` 只代理 `/settings`、`/src/*` 和
+  `/home-assets/*` 到主预览；其他页面路径返回 404。页面代码更新并重新部署
+  主站后会同步更新。
 - 仓库：<https://github.com/wqxyuhuai/WattDesk-2026>（默认分支 `master`）
 - 发布方式：本地提交并推送 → Cloudflare 自动构建部署。**不做自动发布**，由维护者手动 push 触发。
 
@@ -23,8 +24,15 @@
 | 构建命令 | `npm run build:site:public` |
 | 部署命令 | `npx wrangler@4.152.0 deploy` |
 | 自定义域名 | `wattdesk-preview.carlwang.cn` |
+| Inverter 独立域名 | `inverter.carlwang.cn` |
+| Inverter 独立 Worker | `wattdesk-inverter-preview` |
 
 构建产物写入 `design-preview/dist/`，**不入库**。
+
+独立设置 Worker 源码和本地 Wrangler 配置分别为
+`design-preview/deploy/inverter-preview-worker.js` 与
+`design-preview/wrangler.inverter-preview.jsonc`。它不复制设置页代码，只做域名
+门禁和反向代理；主站设置页发布后无需再次部署独立 Worker。
 
 ### Mapbox 公开 Token
 

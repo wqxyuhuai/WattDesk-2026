@@ -1,0 +1,12 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "wattdesk-inverter-preview",
+  "main": "./deploy/inverter-preview-worker.js",
+  "compatibility_date": "2026-10-21",
+  "routes": [
+    {
+      "pattern": "inverter.carlwang.cn",
+      "custom_domain": true
+    }
+  ]
+}
