@@ -50,6 +50,7 @@
 
 - 生产点位 `label / unit / min / max / step / enumList` 仍待后端提供；当前 `settings-validation.js` 只是 preview fallback。
 - 认证操作者、服务端 Save/Cancel/权限、真实设备写入、历史聚合和跨会话持久化尚未接入。
+- 本地 `verify-routing.cjs` 仍有既有失败项：Plants 收藏后的 `#toast` 中心与页面标题中心断言不通过。该失败在本轮 standalone 路由验证之外已独立复现，根因尚未确认；不得为了通过测试直接放宽该视觉断言，应先核对实际 toast 与页头几何。
 - Inverter settings 的产品命名、页面结构与档案和演示数据边界仍以 [COPY-AUDIT.md](../design-preview/src/pages/inverter-settings/COPY-AUDIT.md) 的 `Still open` 为准，未获确认前不据本地原型推断生产规则。
 - Site details 超长标题最大高度/折叠方式、SettingsCard 是否抽共享、菜单字体未定项等历史待确认项继续有效，不能用本次归档擅自定稿。
 
