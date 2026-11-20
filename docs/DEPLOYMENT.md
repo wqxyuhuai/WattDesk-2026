@@ -9,7 +9,8 @@
   `wattdesk-inverter-preview` 只代理 `/settings`、`/src/*` 和
   `/home-assets/*` 到主预览；其他页面路径返回 404。页面代码更新并重新部署
   主站后会同步更新。
-- DNS 备用入口：<https://carlwang.cn/inverter>。该路径复用同一独立 Worker，
+- DNS 备用入口：<https://www.carlwang.cn/inverter>（裸域会 301 到 `www`）。
+  该路径复用同一独立 Worker，
   仅代理设置页及其从 `/inverter/` 开始的静态资源，不代理其他 WattDesk 页面。
 - 仓库：<https://github.com/wqxyuhuai/WattDesk-2026>（默认分支 `master`）
 - 发布方式：本地提交并推送 → Cloudflare 自动构建部署。**不做自动发布**，由维护者手动 push 触发。

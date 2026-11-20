@@ -42,7 +42,7 @@ export default {
   async fetch(request) {
     const url = new URL(request.url);
 
-    if (url.hostname === "carlwang.cn") {
+    if (url.hostname === "carlwang.cn" || url.hostname === "www.carlwang.cn") {
       if (url.pathname === "/inverter") return standalonePage(request, "/inverter/");
       if (!url.pathname.startsWith("/inverter/")) return notFound();
       const upstreamPath = url.pathname.slice("/inverter".length);

@@ -34,7 +34,8 @@
   交互；设置页更新后无需维护第二份预览页面。
 - 对外简洁入口为 `https://inverter.carlwang.cn/`，内部规范路径为 `/settings`。
   该域名使用单独 Worker 代理，只允许 `/settings`、`/src/*` 和
-  `/home-assets/*`；其他 WattDesk 路径返回 404。
+  `/home-assets/*`；其他 WattDesk 路径返回 404。DNS 尚未传播时可用备用入口
+  `https://www.carlwang.cn/inverter`，同样只显示独立设置页。
 - 页面以 route-backed 设置窗口呈现，刷新、复制链接、浏览器前进/后退有效。
 - 主页面共 15 个：Running Mode、Economic Schedule、Battery、
   Active Power Dispatch、Import & Export Limits、Output Capability、DI Port、
