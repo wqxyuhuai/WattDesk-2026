@@ -6,7 +6,7 @@ import {createThemeController} from "../../foundations/theme-controller.js";
 import {installSceneTheme} from "./scene-theme.js";
 import {createAppShell} from "../../layouts/app-shell.js";
 import {iconAsset,assetURL,isNeutralIconFile} from "../../components/icons.js";
-import {enhanceControl} from "../../components/controls.js";
+import {createStandardButton,enhanceControl} from "../../components/controls.js";
 import {prepareCard} from "../../components/cards.js";
 import {createPopoverController} from "../../components/popover.js";
 import {createHistoryPopover} from "../../components/history-popover.js";
@@ -186,9 +186,17 @@ for(const n of scene.filter(n=>/Menu Dots/.test(n.name))){
 // their feedback is deliberately local because this first page has no routes.
 const initialTheme=document.documentElement.dataset.theme==="light"?"light":"dark";
 let themeController;
+let standaloneThemeControl=null;
+let standaloneThemeButton=null;
 function updateThemeButton(mode){
  targetChrome.theme.setAttribute("aria-pressed",mode==="light"?"true":"false");
  targetChrome.theme.title=mode==="light"?"Switch to dark mode":"Switch to light mode";
+ const label=standaloneThemeButton?.querySelector(".wd-control-label");
+ if(label)label.textContent=mode==="light"?"Dark mode":"Light mode";
+ standaloneThemeButton?.setAttribute(
+  "aria-label",
+  mode==="light"?"Switch to dark mode":"Switch to light mode"
+ );
 }
 updateThemeButton(initialTheme);
 targetChrome.theme.addEventListener("click",()=>themeController?.toggle());
@@ -289,6 +297,16 @@ await prepareControlStates(root);
 // decode instead of extending first paint.
 sceneTheme.decode();
 themeController=createThemeController({initialTheme,apply(mode){sceneTheme.apply(mode);updateThemeButton(mode);}});
+if(document.documentElement.dataset.standaloneSettings==="true"){
+ standaloneThemeControl=document.createElement("div");
+ standaloneThemeControl.className="isw-standalone-theme-control";
+ standaloneThemeButton=createStandardButton({label:"Dark mode"});
+ standaloneThemeButton.addEventListener("click",()=>themeController?.toggle());
+ standaloneThemeControl.append(standaloneThemeButton);
+ document.body.append(standaloneThemeControl);
+ glass.addSurface({host:standaloneThemeButton,radius:18});
+ updateThemeButton(initialTheme);
+}
 skeletons.settle();
 document.documentElement.dataset.ready="true";
 document.fonts.ready.then(()=>{document.documentElement.dataset.fontsReady="true"});

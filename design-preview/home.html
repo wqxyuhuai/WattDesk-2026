@@ -7,11 +7,20 @@
   <meta name="color-scheme" content="light dark">
   <meta name="mapbox-access-token" content="">
   <script>
-    if (location.pathname === "/settings" ||
-        location.pathname === "/inverter" ||
-        (/\/devices\/inverter-settings\/?$/.test(location.pathname) &&
-         new URLSearchParams(location.search).get("standalone") === "1")) {
+    const standaloneSettings = location.pathname === "/settings" ||
+      location.pathname === "/inverter" ||
+      (/\/devices\/inverter-settings\/?$/.test(location.pathname) &&
+       new URLSearchParams(location.search).get("standalone") === "1");
+    if (standaloneSettings) {
       document.documentElement.dataset.standaloneSettings = "true";
+      try {
+        const saved = localStorage.getItem("wattdesk-home-theme");
+        const theme = saved === "light" || saved === "dark" ? saved : "light";
+        if (!saved) localStorage.setItem("wattdesk-home-theme", theme);
+        document.documentElement.dataset.theme = theme;
+      } catch {
+        document.documentElement.dataset.theme = "light";
+      }
     }
   </script>
   <script src="./src/foundations/theme-bootstrap.js"></script>
