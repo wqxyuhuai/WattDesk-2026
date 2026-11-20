@@ -19,7 +19,8 @@ function notFound() {
 }
 
 function upstreamRequest(request, pathname = null) {
-  const target = new URL(pathname ?? request.url, MAIN_ORIGIN);
+  const url = new URL(request.url);
+  const target = new URL(pathname ?? `${url.pathname}${url.search}`, MAIN_ORIGIN);
   return new Request(target, request);
 }
 
