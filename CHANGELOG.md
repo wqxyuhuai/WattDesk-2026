@@ -2,6 +2,7 @@
 
 ## 2026-11-20
 
+- 完成日终规则归档（仅文档）：按当前可访问对话、`0dadb92..6db9ed2` 提交、当前工作树和验证结果，提炼 Inverter settings 的最终功能、视觉、组件、独立预览、发布与防回归规则；更新 `AGENTS.md`、`DESIGN-SYSTEM.md`、`ARCHITECTURE.md`、`COMPONENTS.md`、`PROJECT-MAP.md`、`PROJECT-STATUS.md`、`ROUTING.md`、`DEPLOYMENT.md`、`USER-REQUIREMENTS.md`、`LESSONS-LEARNED.md` 与 `INVERTER-SETTINGS.md`。本次未修改运行代码、UI、路由实现或部署配置。
 - 发布 Inverter settings 设计预览到 Cloudflare：主站为 `https://wattdesk-preview.carlwang.cn/home`，独立设置预览为 `https://inverter.carlwang.cn/`。独立 Worker 只允许设置页与静态资源，其他 WattDesk 页面返回 404；页面仍复用同一设置模块、数据和更新路径。独立预览底部增加离底边 `32px` 的主题按钮，每个新标签默认浅色，并仅在当前标签页会话内记住切换结果。
 - 完成 Inverter settings 资源与文档整合：建立备份快照；把分散在 `AGENTS.md`、`DESIGN-SYSTEM.md`、组件手册、需求记录与页面 README 的页面专属规则收敛到 `docs/INVERTER-SETTINGS.md`，页面 README 改为指针；文案、功能和来源分别保留在 `COPY-AUDIT.md`、`FUNCTIONAL-AUDIT.md`、`SOURCE-MANIFEST.md`。新增 `settings-options.js` 统一预览枚举，渲染与日志格式化共用；删除无引用 CSS 类和重复枚举字面量。页面视觉与交互保持不变，专项测试、时间测试、资产审计和静态规范检查通过。
 - 完成 2026-11-20 全量规则归档（仅文档）：以当前可访问对话、工作树 diff、运行代码、专项测试和现有文档为依据，补齐今日最终规则分类索引、明确废弃方案、未决边界和输入错误态防回归经验；明确设置页首次进入从顶部、回访恢复自己的滚动位置。本次未修改运行代码、UI、交互、资源或测试。

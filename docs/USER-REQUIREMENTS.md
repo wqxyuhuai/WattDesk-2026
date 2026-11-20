@@ -7,6 +7,10 @@
 - 归档依据：本次仅使用当前可访问的对话记录、当前工作树 `git status` / `git diff`、运行代码、专项测试和现有项目文档。其他并行对话的原始内容无法直接访问，因此没有把未出现在当前记录或当前代码/文档中的要求补写成既定事实。
 - 本轮整合要求：先存档当前 Inverter settings 版本，再在不改变现有视觉和交互的前提下清理无用资源、错误嵌套和重复逻辑；颜色、字体、效果、按钮、搜索、玻璃、卡片等只做共享标准化，不把原稿已经写死的视觉值强行改成抽象 token；所有结果和注意事项写入文档，保证新对话能直接继续。
 - Inverter settings 当前文案按本轮标注统一：限制页使用 `Import & Export Limits`、`Export limit` 和 `Import limit`；Running Mode 选项使用 `General Mode / Peak Load Shifting Mode / Economic Mode / UPS Mode / ToU mode / Off-Grid Mode`；Economic Schedule 使用 `Charge by PV Only`；MPPT 字段使用 `MPPT Input`、`MPPT #1–#4` 和 `Parallel MPPT Operation`。Grid & Protection 门禁使用 Devices 同一个 4 位 `Check code`，不再使用六位 `safety code`。纯日期值统一通过共享 `formatAbsoluteDate()` 输出 `YYYY/MM/DD`。
+- 独立发布链接必须简洁，不得带 `wattdesk-preview` 前缀；拿到链接的人不能通过同域名访问整体 WattDesk 设计。当前唯一公开入口固定为 `https://inverter.carlwang.cn/`。
+- 独立预览必须复用同一 Inverter settings 页面代码和数据，设置页更新后同一链接自动更新，不维护第二份页面。旧的 `wattdesk-preview` 长分享链接、`/inverter` 别名和 `www.carlwang.cn/inverter` 备用入口均已明确删除，不得恢复。
+- 独立预览底部提供主题切换按钮，使用共享标准按钮和玻璃材质；按钮距视口底边 `32px`，不能贴边或遮挡设置窗口。
+- 独立预览每个新标签首次打开默认浅色，不继承主站深色偏好；用户切换后的主题只作为当前标签页会话偏好保存。该行为只属于 standalone，不得把主站默认主题改为浅色。
 - 设置窗口首次打开必须从设备当前运行模式初始化，不能在设备显示 `ToU mode` 时默认打开 `General`；任何非 Running Mode 页面保存都不得改写设备行的模式。
 - Active Power Dispatch 的 `Command timeout` 允许 `0`，表示不超时。固定功率因数与 cos φ 曲线字段允许 `-1–1`，负数代表 under-excited，不能被本地校验拦截。
 - 普通设置页面点击 Save 后必须新增一条 Operation Log：同一页面的所有字段变化合并为一条记录，每个字段独立一行并显示保存前/后的值；Grid Code 切档和 Reload 的即时日志不得在 Save 时重复添加。

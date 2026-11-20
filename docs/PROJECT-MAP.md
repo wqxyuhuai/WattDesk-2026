@@ -39,6 +39,7 @@
 | `/plants/:id` | 已完成 Overview 本地交互预览 | 默认进入第一台设备；多设备可切并同步 `?device=`；Statistics 支持 `Day / Month / Year / Total` 与月/年 `Separate / Combined`，数据为确定性本地样例 |
 | `/plants/:id/devices` | 已完成本地交互预览 | Linear 式扁平设备行、命名、新增、替换、解绑和设置预览；真实后端与硬件控制未接入 |
 | `/plants/:id/devices/inverter-settings` | 已完成本地交互预览 | route-backed 逆变器设置窗口；5 组导航、18 个国别档案、Check code 门禁、维护页和本地会话保存；完整有效契约见 [INVERTER-SETTINGS.md](./INVERTER-SETTINGS.md) |
+| `https://inverter.carlwang.cn/` → `/settings` | 已发布独立预览 | 仅显示 `p25` 第一台逆变器设置；独立 Worker 白名单代理，不允许访问其他 WattDesk 页面；默认浅色，底部 `32px` 主题按钮，复用同一页面代码 |
 | `/plants/:id/site` | 隐藏兼容路由 | 旧资料页仅保留直达链接和回归兼容，不在详情页签中显示 |
 | `/plants/:id/site-v2` | 当前 Site details 页面 | 详情页签显示为 `Site details`；顶部 Hero、Mapbox、Energy / Installer / Owner / Picture / Visitor 卡，支持会话内编辑。规格见 [SITE-DETAILS.md](./SITE-DETAILS.md) |
 | `/plants/:id/faults|logs|tickets` | 子页占位 | Operations 三卡当前标签内进入；三层面包屑、刷新与历史可用，详细内容后续实现 |
@@ -61,6 +62,7 @@ pages  →  layouts / components  →  foundations
 - `src/layouts/`：侧栏、顶栏与共享工作区外壳。
 - `src/pages/`：页面装配、业务状态和局部布局，不复制共享材质。
 - `src/pages/inverter-settings/`：独立逆变器设置页面、国别档案、门禁和页面级交互。
+- `deploy/inverter-preview-worker.js` 与 `wrangler.inverter-preview.jsonc`：独立设置域名的白名单代理，不复制页面代码。
 - `design/figma/`：不可手改的上游来源；`home-assets/`：运行时本地资产，其中 `home-assets/icons/settings/` 为共享设置图标。
 - `src/foundations/colors.css`、`type.css` 与 `src/pages/home/data/`：生成文件，不手改。
 
@@ -126,8 +128,9 @@ pages  →  layouts / components  →  foundations
 | `docs/DEPLOYMENT.md` | 构建、Cloudflare 发布与发布后检查 |
 | `CHANGELOG.md` | 按日期保留的实现与验证历史 |
 
-具体页面 README 是该页行为契约的一部分，修改页面行为、视觉规则或断言时必须
-同步更新。
+Plants 与 Service Ticket 的具体页面 README 是页面行为契约的一部分，修改对应
+页面时必须同步更新。Inverter settings 的 README 只作导航指针，唯一行为契约是
+[INVERTER-SETTINGS.md](./INVERTER-SETTINGS.md)。
 
 ## 标准工作流
 

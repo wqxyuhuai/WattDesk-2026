@@ -11,10 +11,21 @@
 - 本轮整理已建立可恢复快照 `Backups/WattDesk-inverter-settings-before-integration-20261120-155852.zip`（463 项，6,635,126 bytes，SHA-256 `9AAE8B6151AAEEA78B76B242C81CBDA0705B01FB63F05631F98D88EC3E8FDD4C`），未改变页面视觉或交互。
 - 枚举已集中到 `src/pages/inverter-settings/settings-options.js`，页面渲染和 Operation Log 的 before/after 显示共用同一来源；资产审计为 164 个运行资产、0 unused、0 missing。已删除无引用 CSS 类和重复选项字面量。
 
+### 2026-11-20 日终规则归档（本次）
+
+- **发布结果**：主站为 `https://wattdesk-preview.carlwang.cn/home`；Inverter settings 唯一公开独立入口为 `https://inverter.carlwang.cn/`，根路径 302 到 `/settings`。旧 `wattdesk-preview` 长分享链接、`/inverter` 应用别名和 `www.carlwang.cn/inverter` 备用入口均已删除，不得恢复。
+- **独立隔离**：`wattdesk-inverter-preview` Worker 只允许 `/settings`、`/src/*`、`/home-assets/*` 和独立 `robots.txt`，其他 WattDesk 路径返回 404。它只代理主站同一设置模块，不复制页面代码；主站内容更新后独立预览自动同步，只有代理策略或域名变化时需重新部署 Worker。
+- **独立主题**：standalone 每个新标签首次打开默认浅色，使用 `wattdesk-standalone-theme` 标签页 `sessionStorage`，不继承主站深色偏好。底部主题按钮使用共享 `createStandardButton()` 与 Glass Surface，距视口底边 `32px`，只属于独立预览；不得把主站默认主题改为浅色。
+- **页面功能最终态**：设备模式同步、非模式页不回写设备模式、timeout 0、功率因数 `-1–1`、4 位 Check code、普通 Save 单条多字段 Operation Log 和按页 Save/Cancel/dirty 均保持有效。
+- **组件最终态**：`settings-options.js` 是页面枚举唯一预览源；页面通用按钮、开关、分段、Select、滚动、时间、模态、玻璃、浮层和图标继续走共享入口。Figma 明确写死的局部几何不强行 token 化。
+- **文档最终态**：Inverter settings 详细契约只在 [INVERTER-SETTINGS.md](./INVERTER-SETTINGS.md)；文案改前/后、功能差异、来源哈希分别由页面目录三个审计文件负责；经验文档只保留可复用根因和验收。
+- **验证结果**：`npm run check` 通过（107 个 JS 文件）；Inverter settings 专项通过；公开构建通过（289 文件，约 2.84 MB）；`git diff --check` 通过。线上根路径与 `/settings` 可访问，独立域名 `/home`、`/plants` 和旧 fallback 均返回 404。
+- **一次性事项**：备份快照、本轮提交和具体线上检查结果只属于 2026-11-20 的交付记录，不升级为全站长期规则；长期规则已提炼到 `AGENTS.md`、设计/组件规范、页面契约、发布/路由规范和防回归清单。
+
 ### 归档口径与证据边界
 
 - 本次归档基于当前可访问的对话记录、当前工作树 `git status` / `git diff`、运行代码、专项测试与现有文档。其他并行对话无法直接访问，未出现在当前记录、代码或文档中的要求不作推断。
-- 本文件顶部的 2026-11-20 条目、`AGENTS.md`、`DESIGN-SYSTEM.md`、`docs/COMPONENTS.md` 与 `src/pages/inverter-settings/README.md` 共同构成当前交接入口；同日更早条目只用于追溯。
+- 本文件顶部的 2026-11-20 条目、`AGENTS.md`、`DESIGN-SYSTEM.md`、`docs/COMPONENTS.md` 与 [INVERTER-SETTINGS.md](./INVERTER-SETTINGS.md) 共同构成当前交接入口；页面 README 只作指针，同日更早条目只用于追溯。
 - 当前有效参数以运行代码和专项断言为准，例如 switch `600ms / 480ms`、分段 `600ms`、条件卡 `280ms`、Running Mode `320ms`、页面交叉淡变 `260ms`。被覆盖的中间时长和方向位移不得恢复。
 
 ### 今日最终规则分类索引

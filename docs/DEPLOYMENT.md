@@ -1,6 +1,6 @@
 # 发布与部署
 
-更新：2026-11-10。适用于当前设计预览。构建行为以本文件、`design-preview/wrangler.jsonc` 与 `design-preview/scripts/build-site.cjs` 为准。
+更新：2026-11-20。适用于当前设计预览。构建行为以本文件、`design-preview/wrangler.jsonc`、`design-preview/wrangler.inverter-preview.jsonc` 与 `design-preview/scripts/build-site.cjs` 为准。
 
 ## 线上入口
 
@@ -10,13 +10,13 @@
   `/home-assets/*` 到主预览；其他页面路径返回 404。页面代码更新并重新部署
   主站后会同步更新。
 - 仓库：<https://github.com/wqxyuhuai/WattDesk-2026>（默认分支 `master`）
-- 发布方式：本地提交并推送 → Cloudflare 自动构建部署。**不做自动发布**，由维护者手动 push 触发。
+- 主站发布方式：本地提交并推送 `master` → Cloudflare 自动构建部署。**不做自动发布**，由维护者手动 push 触发。独立设置 Worker 不从主站构建产物复制页面；其源码随仓库版本化，代理策略变化时单独部署。
 
 ## Cloudflare 配置
 
 | 项目 | 值 |
 |---|---|
-| 平台 | Cloudflare Workers（仅静态资源） |
+| 平台 | Cloudflare Workers（主站静态资源 + 独立设置代理） |
 | 项目名 | `wattdesk-2026` |
 | Git 仓库 | `wqxyuhuai/WattDesk-2026` |
 | 生产分支 | `master` |
@@ -33,6 +33,27 @@
 `design-preview/deploy/inverter-preview-worker.js` 与
 `design-preview/wrangler.inverter-preview.jsonc`。它不复制设置页代码，只做域名
 门禁和反向代理；主站设置页发布后无需再次部署独立 Worker。
+
+### Inverter settings 独立预览发布规则
+
+- 唯一公开地址是 `https://inverter.carlwang.cn/`；根路径只可 `302` 到
+  `/settings`，不得让独立域名返回 WattDesk Home、Plants 或其他页面。
+- Worker 只允许 `/settings`、`/src/*`、`/home-assets/*` 和独立
+  `robots.txt`；其他路径返回 `404`。禁止添加通用 `/` 代理、全站 SPA 回退或
+  任何能访问主站页面的通配允许规则。
+- 独立页面必须复用主站 `src/pages/inverter-settings/`，禁止复制一份预览源码。
+  Worker 只负责反向代理；主站发布后页面内容自动更新。Worker 的域名、路径
+  白名单、目标路径或代理逻辑改变时，必须单独重新部署 Worker。
+- 不得重新加入 `wattdesk-preview` 长链接分享入口、`/inverter` 应用别名或
+  `www.carlwang.cn/inverter` 备用路由；这些旧入口已经由用户明确删除，线上
+  路由也必须保持为空。
+- standalone 页面默认浅色，底部主题按钮距视口底边 `32px`，使用共享
+  `createStandardButton()`；主题偏好只存 `wattdesk-standalone-theme` 的
+  标签页 `sessionStorage`，不得改变主站默认主题或读取主站深色偏好作为默认。
+- 发布后必须验证：`https://inverter.carlwang.cn/` 一次 302 到 `/settings` 且
+  最终 200；`/settings` 返回 200；该域名 `/home`、`/plants` 返回 404；
+  `https://www.carlwang.cn/inverter` 返回 404；设置页可见、侧栏与关闭 X
+  不显示；首次打开为浅色，主题按钮可双向切换；桌面和窄屏无横向溢出。
 
 ### Mapbox 公开 Token
 

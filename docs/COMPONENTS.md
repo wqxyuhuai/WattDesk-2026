@@ -151,6 +151,8 @@ material.addSurface({host:refresh,radius:18});
 
 `.wd-control-state` 为容器，`.wd-control-label` 为文字。hover / 键盘 `:focus-visible` 时中性文字和图标一起变主文字色，深色纯白、浅色主墨色；鼠标点击留下的普通 DOM 焦点不应持续呈现 hover，离开指针后恢复默认色。原始彩色图标保留原色。材质微光只影响光学层，控件和文字不位移。
 
+Inverter settings 独立预览底部的主题切换按钮不是新的共享组件，而是标准按钮的直接消费方：使用 `createStandardButton()` 并挂载共享 Glass Surface，固定在视口底部 `32px`，标签在 `Dark mode` / `Light mode` 间切换。它只存在于 `/settings` standalone 模式；新标签默认浅色，偏好写入独立的 `wattdesk-standalone-theme` sessionStorage key。不得把该行为写成全站主题默认值，也不得用页面私有按钮材质替代标准按钮。
+
 交互组件不要写组件内 `transition` 或 `transition-duration`：只要页面加载 `shared.css`，原生 `button` / `a` / `input`、常见 ARIA role、`.wd-control-state`、共享玻璃层、tab、快捷入口和折叠箭头就自动继承 `foundations/motion.css` 的属性和节奏。组件只声明默认、hover、focus、选中、禁用等视觉值。需要 JS 几何动画时读取 `motionDuration()` / `motionEasing()`；`prefers-reduced-motion` 由共享层统一处理。
 
 ### Hover 节奏

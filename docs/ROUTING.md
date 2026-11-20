@@ -35,6 +35,12 @@
 - Devices 使用稳定 slug `devices`；与 Overview 之间切换写入当前工作区标签历史，并保留 `device` 查询参数。刷新、复制链接、标签恢复和浏览器前进/后退仍停留在对应状态。
 - Inverter settings 使用稳定 slug `inverter-settings`，位于 `devices` 下；`serial` 用于在多台同类型设备中定位具体逆变器。只有右上 X 会返回 `/plants/:id/devices?device=inverter`；`Cancel` 只回滚当前主页面或当前 Grid 二级页并留在设置页。当前页 dirty 时切换主页面或 Grid 二级页会先显示共享确认；Discard 在点击当下启动目标页转场。空白遮罩和 Escape 都不退出。设置页的临时子页面和草稿不进入 URL；刷新后恢复样例设置，因为后端持久化尚未接入。
 - `/settings` 是独立预览的简洁别名，固定映射到 `p25` 的第一台逆变器并启用 standalone。专属域名 `inverter.carlwang.cn` 只代理 `/settings` 与静态资源；`/` 重定向到 `/settings`，其余 WattDesk 页面返回 404，避免通过独立域名访问整体设计。
+- `/settings` 是唯一公开分享路径，必须保持简洁。不得新增或恢复
+  `wattdesk-preview` 长分享链接、`/inverter` 应用别名或
+  `www.carlwang.cn/inverter` 备用路由；旧入口删除后，其 HTTP 响应应为 404。
+- 独立预览仅在专用域名暴露给外部；standalone 模式隐藏 `#home`、侧栏、其他
+  页面入口和关闭 X。页面底部主题按钮使用共享标准按钮，默认浅色、距底边
+  `32px`，偏好按标签页会话保存，不得改变主站路由或主站主题默认值。
 - Site details 使用稳定 slug `site`；与 Overview、Devices 之间切换写入当前工作区标签历史，并保留 `device` 查询参数。存在未保存编辑时，页签和父级返回先提示保存或取消。
 - 可见的 Site details 使用稳定 slug `site-v2`，详情导航固定为 `Overview / Devices / Site details`；旧 `site` 隐藏且不显示页签。该页读取当前会话的 Site details 数据；刷新、复制链接与浏览器历史均保持 `device` 参数。
 - Operations 子页只接受 `faults`、`logs`、`tickets` 三个稳定 slug；刷新、复制链接、标签恢复和浏览器前进/后退均保留 `device` 查询参数。未知子页不得静默回落到 Overview。
@@ -85,3 +91,5 @@ npm run build:site:public
 ```
 
 必须实际验证：从 `/` 进入 `/home`；在 `/plants` 刷新仍在 Plants；打开 `/plants/p02` 后刷新仍是同一电站；打开 `/service/st-25638663` 后刷新仍是同一工单；两种详情返回来源列表；未知路径不回到 Home；构建产物 `_headers` 为 `/plants/*` 与 `/service/*` 保持 HTML 重验证。
+独立预览另需验证：`inverter.carlwang.cn/` 302 到 `/settings`，`/settings` 为
+200，该域名 `/home` 与 `/plants` 为 404，旧 `/inverter` 兼容入口为 404。

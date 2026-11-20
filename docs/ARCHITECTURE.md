@@ -23,6 +23,7 @@ Source/
       pages/service-ticket/     Service Ticket 卡片列表、详情、原位编辑与回复
     home-assets/                实际使用的本地 SVG / 字体
     design/figma/               完整 Figma 来源归档
+    deploy/                     Inverter settings 独立预览 Worker
     scripts/                    生成和静态检查
     templates/                  新页面起始模板，非业务页面
     tests/fixtures/             固定回归基线
@@ -44,6 +45,7 @@ Source/
 - Plants Operations 子页沿用同一 `plants` route，通过 `{plantId,device?,section}` 参数生成 `/plants/:id/faults|logs|tickets`；`sections.js` 是 slug 与显示名的共享清单。`statistics-period.js` 只负责 Inverter Statistics 的 `Day / Month / Year / Total` 周期状态、前后导航和玻璃选择浮层；`statistics-charts.js` 负责 Day、Month、Year、Total 的模板化 SVG 与 Combined 时间轴，页面负责标题、布局开关和数据派生。四类热区共用 hover / focus 局部读数。子页在当前工作区标签内导航并支持刷新/历史，不新增独立 routeView。
 - Devices 通过 `{plantId,device?,section:"devices"}` 生成 `/plants/:id/devices`；可见的 Site details 使用 `{plantId,device?,tab:"site-v2"}` 生成 `/plants/:id/site-v2`，旧 `{tab:"site"}` 仅保留隐藏兼容路由。三者仍属于 `plants` routeView，由 `pages/plants/index.js` 根据 section/tab 选择 `devices.js`、`site-details.js` 或 `site-details-v2.js`。`site-details-v2.js` 装配当前 Site details 的 Hero、Mapbox 缩略地图和资料卡，复用并回写 `siteDetailsByPlant` 会话数据；其本地编辑态支持 Installer / Contact 选择、联系人派生只读字段和 Alarm 开关。`mapbox-static-map.js` 负责静态图片 API URL、单响应分区模糊、深浅主题 map bank 交叉淡变、首次入场和失败/无 Token 空白态。设备状态、Cluster 展开、设置草稿和本地增删改只保存在 Plants 页面会话中，不使用独立状态库或伪造后端。
 - Inverter settings 使用 `{plantId,device:"inverter",section:"devices",settings:true,serial?}` 生成 route-backed 设置窗口。`devices.js` 只通过 `onOpenInverterSettings` 发出具体设备；`pages/plants/index.js` 负责路由和背景 Devices 装配，`pages/inverter-settings/` 独占设置页面、`settings-content.js`、`settings-model.js`、`grid-profiles.js`、门禁和会话草稿。设置图标通过 `components/icons.js` 的 `SETTINGS_ICON_FILES` 读取共享 `home-assets/icons/settings/`，页面不得自建资产副本。普通设置值更新走局部页面重绘与侧栏值同步，不重建导航；Save / Cancel 与未保存校验按主页面和 Grid 二级页独立作用域，Grid Code 负责 profile 标识与载入基线，其余 Grid 页只提交自身字段。Heater 保留现有紧凑弹窗。该目录不依赖 Plants 局部 CSS 或首页 scene。
+- Inverter settings 独立预览不复制页面模块：`deploy/inverter-preview-worker.js` 与 `wrangler.inverter-preview.jsonc` 只定义专用域名、允许路径和反向代理。`inverter.carlwang.cn/` 重定向到 `/settings`，仅 `/settings` 与静态资源可访问，其他 WattDesk 路由必须返回 404。主站设置页发布后代理自动使用最新内容；只有 Worker 白名单或代理逻辑变化时才单独重新部署。
 
 ## 增加页面
 
