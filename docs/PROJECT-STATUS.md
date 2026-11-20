@@ -6,6 +6,7 @@
 
 ## 2026-11-20 当前规则归档（最高优先级）
 
+- Inverter settings 已发布到 `https://wattdesk-preview.carlwang.cn/home`；独立设置预览为 `https://wattdesk-preview.carlwang.cn/plants/p25/devices/inverter-settings?device=inverter&standalone=1`。独立模式只隐藏 WattDesk 外壳、其他页面入口和关闭 X，页面实现、数据和后续更新仍共用同一模块。
 - Inverter settings 的页面专属规则已从本状态文件、`AGENTS.md`、`DESIGN-SYSTEM.md` 和组件手册收敛到 [唯一页面契约](./INVERTER-SETTINGS.md)。本文件下方同日更早的 Inverter 条目只保留实现与验证历史，不再作为第二套有效规格。
 - 本轮整理已建立可恢复快照 `Backups/WattDesk-inverter-settings-before-integration-20261120-155852.zip`（463 项，6,635,126 bytes，SHA-256 `9AAE8B6151AAEEA78B76B242C81CBDA0705B01FB63F05631F98D88EC3E8FDD4C`），未改变页面视觉或交互。
 - 枚举已集中到 `src/pages/inverter-settings/settings-options.js`，页面渲染和 Operation Log 的 before/after 显示共用同一来源；资产审计为 164 个运行资产、0 unused、0 missing。已删除无引用 CSS 类和重复选项字面量。
