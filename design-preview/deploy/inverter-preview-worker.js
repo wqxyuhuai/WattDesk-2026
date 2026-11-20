@@ -24,33 +24,13 @@ function upstreamRequest(request, pathname = null) {
   return new Request(target, request);
 }
 
-async function standalonePage(request, basePath = "/") {
-  const response = await fetch(upstreamRequest(request, SETTINGS_ORIGIN_PATH));
-  if (basePath === "/") return response;
-  const headers = new Headers(response.headers);
-  const html = (await response.text()).replace(
-    '<base href="/">',
-    `<base href="${basePath}">`
-  );
-  return new Response(html, {
-    status: response.status,
-    headers
-  });
+function standalonePage(request) {
+  return fetch(upstreamRequest(request, SETTINGS_ORIGIN_PATH));
 }
 
 export default {
   async fetch(request) {
     const url = new URL(request.url);
-
-    if (url.hostname === "carlwang.cn" || url.hostname === "www.carlwang.cn") {
-      if (url.pathname === "/inverter") return standalonePage(request, "/inverter/");
-      if (!url.pathname.startsWith("/inverter/")) return notFound();
-      const upstreamPath = url.pathname.slice("/inverter".length);
-      if (upstreamPath.startsWith("/src/") || upstreamPath.startsWith("/home-assets/")) {
-        return fetch(upstreamRequest(request, `${upstreamPath}${url.search}`));
-      }
-      return notFound();
-    }
 
     if (url.pathname === "/") return redirectToSettings(request);
     if (url.pathname === "/settings") return standalonePage(request);

@@ -30,8 +30,7 @@
   `/plants/:plantId/devices/inverter-settings?device=inverter&serial=<SN>`。
 - 对外简洁入口为 `https://inverter.carlwang.cn/`，内部规范路径为 `/settings`。
   该域名使用单独 Worker 代理，只允许 `/settings`、`/src/*` 和
-  `/home-assets/*`；其他 WattDesk 路径返回 404。DNS 尚未传播时可用备用入口
-  `https://www.carlwang.cn/inverter`，同样只显示独立设置页。
+  `/home-assets/*`；其他 WattDesk 路径返回 404。
 - 独立预览只隐藏 WattDesk 外壳、其他页面入口和关闭 X，仍复用同一页面模块、
   数据和交互；设置页更新后无需维护第二份预览页面。页面底部固定提供主题切换
   按钮并上移到离视口底边 `32px`；每个新标签首次打开都默认浅色，不再继承主站

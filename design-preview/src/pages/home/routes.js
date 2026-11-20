@@ -49,14 +49,14 @@ function plantFiltersFromSearch(search){
 
 export function routeFromPath(pathname,search=""){
  const path=normalizePath(pathname);
- if(path==="/settings"||path==="/inverter"){
+ if(path==="/settings"){
   return {route:"plants",params:{
    plantId:"p25",
    device:"inverter",
    section:"devices",
    settings:true,
    standalone:true,
-   standalonePath:path
+   standalonePath:"/settings"
   }};
  }
  if(path==="/"||path==="/home"||path==="/home.html"||path==="/index.html"){

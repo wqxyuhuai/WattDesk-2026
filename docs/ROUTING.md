@@ -12,7 +12,6 @@
 | 电站 Devices | `/plants/:id/devices`；可附带 `?device=` | 当前工作区标签内的设备列表；支持刷新、复制链接和浏览器历史，保留设备卡片、设置与本地增删改预览 |
 | Inverter settings | `/plants/:id/devices/inverter-settings?device=inverter&serial=<SN>` | 从 Devices 的逆变器设置入口打开；同一工作区标签内显示 route-backed 设置窗口，刷新、深链接和浏览器后退有效 |
 | Inverter settings 简洁预览 | `/settings` | 固定打开 `p25` 的第一台逆变器；保持简洁 URL 并进入 standalone 模式 |
-| Inverter settings 备用预览 | `/inverter` | `carlwang.cn/inverter` 的兼容入口；同样固定打开独立设置页 |
 | 隐藏兼容站资料 | `/plants/:id/site`；可附带 `?device=` | 旧资料页直达兼容路由，不在详情页签中显示；会话内保存与刷新恢复样例的边界不变 |
 | 电站 Site details | `/plants/:id/site-v2`；可附带 `?device=` | 当前可见的站点资料页；旧 `/site` 仅保留为隐藏兼容路由。地图通过 Mapbox Static Images API 加载 |
 | 电站子页占位 | `/plants/:id/faults`、`/plants/:id/logs`、`/plants/:id/tickets`；可附带 `?device=` | Operations 三卡在当前工作区标签内进入；面包屑为 `Plants / 电站名 / 子页名`，当前只显示明确占位 |
@@ -36,7 +35,6 @@
 - Devices 使用稳定 slug `devices`；与 Overview 之间切换写入当前工作区标签历史，并保留 `device` 查询参数。刷新、复制链接、标签恢复和浏览器前进/后退仍停留在对应状态。
 - Inverter settings 使用稳定 slug `inverter-settings`，位于 `devices` 下；`serial` 用于在多台同类型设备中定位具体逆变器。只有右上 X 会返回 `/plants/:id/devices?device=inverter`；`Cancel` 只回滚当前主页面或当前 Grid 二级页并留在设置页。当前页 dirty 时切换主页面或 Grid 二级页会先显示共享确认；Discard 在点击当下启动目标页转场。空白遮罩和 Escape 都不退出。设置页的临时子页面和草稿不进入 URL；刷新后恢复样例设置，因为后端持久化尚未接入。
 - `/settings` 是独立预览的简洁别名，固定映射到 `p25` 的第一台逆变器并启用 standalone。专属域名 `inverter.carlwang.cn` 只代理 `/settings` 与静态资源；`/` 重定向到 `/settings`，其余 WattDesk 页面返回 404，避免通过独立域名访问整体设计。
-- `/inverter` 是主域名的备用简洁入口，等价于 `/settings`。它只作为专属域名 DNS 尚未传播时的直达路径，不扩大独立预览可访问的页面范围。
 - Site details 使用稳定 slug `site`；与 Overview、Devices 之间切换写入当前工作区标签历史，并保留 `device` 查询参数。存在未保存编辑时，页签和父级返回先提示保存或取消。
 - 可见的 Site details 使用稳定 slug `site-v2`，详情导航固定为 `Overview / Devices / Site details`；旧 `site` 隐藏且不显示页签。该页读取当前会话的 Site details 数据；刷新、复制链接与浏览器历史均保持 `device` 参数。
 - Operations 子页只接受 `faults`、`logs`、`tickets` 三个稳定 slug；刷新、复制链接、标签恢复和浏览器前进/后退均保留 `device` 查询参数。未知子页不得静默回落到 Overview。

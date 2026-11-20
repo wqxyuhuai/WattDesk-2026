@@ -7,14 +7,6 @@
     {
       "pattern": "inverter.carlwang.cn",
       "custom_domain": true
-    },
-    {
-      "pattern": "carlwang.cn/inverter*",
-      "zone_name": "carlwang.cn"
-    },
-    {
-      "pattern": "www.carlwang.cn/inverter*",
-      "zone_name": "carlwang.cn"
     }
   ]
 }

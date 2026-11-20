@@ -8,7 +8,6 @@
   <meta name="mapbox-access-token" content="">
   <script>
     const standaloneSettings = location.pathname === "/settings" ||
-      location.pathname === "/inverter" ||
       (/\/devices\/inverter-settings\/?$/.test(location.pathname) &&
        new URLSearchParams(location.search).get("standalone") === "1");
     if (standaloneSettings) {
