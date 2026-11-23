@@ -2,6 +2,12 @@
 
 更新：2026-11-20。适用于当前设计预览。构建行为以本文件、`design-preview/wrangler.jsonc`、`design-preview/wrangler.inverter-preview.jsonc` 与 `design-preview/scripts/build-site.cjs` 为准。
 
+## 默认发布策略
+
+- 默认所有后续修改都是 **local-only**：允许本地编辑、本地提交、测试、构建和截图，但不得自动执行 `git push`、Cloudflare 部署或独立 Worker 更新。
+- 只有用户明确说“发布”“上线”“推送到线上”等发布指令时，才允许推送 `master` 和更新线上。
+- 用户未明确发布时，现有多端继续提供上一次已发布版本；本地新改动必须明确标记为未发布。
+
 ## 线上入口
 
 - 预览地址：<https://wattdesk-preview.carlwang.cn/>
@@ -10,7 +16,7 @@
   `/home-assets/*` 到主预览；其他页面路径返回 404。页面代码更新并重新部署
   主站后会同步更新。
 - 仓库：<https://github.com/wqxyuhuai/WattDesk-2026>（默认分支 `master`）
-- 主站发布方式：本地提交并推送 `master` → Cloudflare 自动构建部署。**不做自动发布**，由维护者手动 push 触发。独立设置 Worker 不从主站构建产物复制页面；其源码随仓库版本化，代理策略变化时单独部署。
+- 主站发布方式：本地提交并推送 `master` → Cloudflare 自动构建部署。Push 是发布动作，只能在用户明确授权后执行。独立设置 Worker 不从主站构建产物复制页面；其源码随仓库版本化，代理策略变化时仍需在明确发布指令下单独部署。
 
 ## Cloudflare 配置
 
