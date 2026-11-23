@@ -128,6 +128,29 @@ const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
     assert.equal(rangeContract.timeout.min,0,"Command timeout accepts zero for no timeout");
     assert.equal(rangeContract.curvePF.min,-1,"curve power factor accepts under-excited negative values");
     assert.equal(rangeContract.fixedPF.min,-1,"fixed power factor accepts under-excited negative values");
+    const limitBasisStates=await page.evaluate(async()=>{
+      const {createSettingsModel}=await import("/src/pages/inverter-settings/settings-model.js");
+      const {limitBasisViewState}=await import("/src/pages/inverter-settings/settings-content.js");
+      const supported=createSettingsModel({phaseCount:3,supportsPerPhaseLimit:true});
+      supported.S.limits.basis=1;
+      const unsupported=createSettingsModel({phaseCount:3,supportsPerPhaseLimit:false});
+      unsupported.S.limits.basis=1;
+      unsupported.normalizeLimitBasis();
+      const single=createSettingsModel({phaseCount:1,supportsPerPhaseLimit:true});
+      return {
+        supported:limitBasisViewState(supported),
+        unsupported:limitBasisViewState(unsupported),
+        unsupportedBasis:unsupported.S.limits.basis,
+        single:limitBasisViewState(single)
+      };
+    });
+    assert.equal(limitBasisStates.supported.show,true,"three-phase devices expose limit basis");
+    assert.equal(limitBasisStates.supported.options[1].disabled,false,"supported firmware enables per-phase basis");
+    assert.equal(limitBasisStates.supported.showNote,true,"per-phase selection shows the operational note");
+    assert.equal(limitBasisStates.unsupported.options[1].disabled,true,"unsupported firmware disables per-phase basis");
+    assert.match(limitBasisStates.unsupported.hint,/not supported by the current firmware/);
+    assert.equal(limitBasisStates.unsupportedBasis,0,"unsupported firmware normalizes the saved basis to total");
+    assert.equal(limitBasisStates.single.show,false,"single-phase devices hide limit basis");
     assert.match(page.url(),/\/plants\/p25\/devices\/inverter-settings\?device=inverter&serial=/);
     assert.equal(await page.locator(".inverter-settings-window").isVisible(),true);
     assert.equal(await page.title(),"WattDesk · Inverter settings · Wärmeverbund Nord");
@@ -1578,7 +1601,20 @@ const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
     const feedPanel=page.locator(".isw-panel").first();
     const feedToggle=page.locator('[data-isw-switch="limits.feedOn"]');
     const feedToggleHandle=await feedToggle.elementHandle();
-    assert.equal(await feedPanel.locator(".isw-row").count(),2);
+    assert.equal(await feedPanel.locator(".isw-row").count(),3);
+    const limitBasis=page.locator('[data-isw-seg="limits.basis"]');
+    assert.equal(await limitBasis.count(),1,"the export panel exposes limit basis");
+    assert.equal(await limitBasis.locator('[data-value="0"]').getAttribute("aria-selected"),"true","Total is the default basis");
+    await limitBasis.locator('[data-value="1"]').click();
+    await page.waitForTimeout(700);
+    assert.equal(await page.locator('.isw-page[data-page="limits"] > .isw-note').count(),2,"per-phase mode adds its note");
+    assert.match(await page.locator('.isw-page[data-page="limits"] > .isw-note').first().innerText(),/per-phase closed-loop control/i,"the note preserves the firmware requirement");
+    assert.match(await page.locator('.isw-page[data-page="limits"] > .isw-note').first().innerText(),/increase PV curtailment/i,"the note preserves the curtailment warning");
+    assert.equal(await page.locator(".isw-actions").isVisible(),true,"changing limit basis dirties the current page");
+    await limitBasis.locator('[data-value="0"]').click();
+    await page.waitForTimeout(700);
+    assert.equal(await page.locator('.isw-page[data-page="limits"] > .isw-note').count(),1,"Total removes the per-phase note");
+    assert.equal(await page.locator(".isw-actions").isVisible(),false,"returning to Total restores the saved baseline");
     await feedToggle.click();
     await page.waitForTimeout(40);
     assert.equal(await page.locator(".isw-panel").first().locator(".isw-row").count(),1,"the conditional row is removed immediately");
@@ -1599,7 +1635,7 @@ const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
     await page.waitForTimeout(320);
     assert.equal(await page.locator(".isw-panel").first().evaluate(node=>node.style.height===""&&node.style.overflow===""),true,"the collapsed card releases its temporary fixed height and clipping");
     await page.locator('[data-isw-switch="limits.feedOn"]').click();
-    assert.equal(await page.locator(".isw-panel").first().locator(".isw-row").count(),2,"the conditional row returns immediately");
+    assert.equal(await page.locator(".isw-panel").first().locator(".isw-row").count(),3,"the conditional rows return immediately");
     await page.waitForFunction(
       ()=>document.querySelector(".isw-panel")?.getAnimations().some(animation=>animation.effect?.getTiming().duration===280),
       null,
@@ -4020,6 +4056,19 @@ const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
     await page.waitForTimeout(700);
     assert.equal(await page.evaluate(()=>document.documentElement.dataset.theme),"light","the standalone toggle returns to light");
     await page.screenshot({path:"tests/output/inverter-settings-standalone.png"});
+    await page.locator('[data-isw-go="limits"]').click();
+    await waitForPage("limits");
+    await page.locator('[data-isw-seg="limits.basis"] [data-value="1"]').click();
+    await page.waitForTimeout(700);
+    await page.locator(".isw-actions .wd-button--primary").click();
+    await page.waitForTimeout(500);
+    await page.locator('[data-isw-go="log"]').click();
+    await waitForPage("log");
+    assert.match(
+      await page.locator(".isw-log-row").first().innerText(),
+      /Limit basis[\s\S]*Total[\s\S]*Per phase/,
+      "saving limit basis records readable before/after values in the operation log"
+    );
   } finally {
     await browser.close();
   }

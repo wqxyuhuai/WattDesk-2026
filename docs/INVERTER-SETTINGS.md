@@ -1,6 +1,6 @@
 # Inverter settings 唯一页面契约
 
-更新：2026-11-20
+更新：2026-11-23
 
 本文是 Inverter settings 的有效规则入口。页面视觉、交互、状态、组件选择和
 防回归要求只在这里维护；其他文档如出现更旧的实现细节，以本文、当前运行代码
@@ -14,7 +14,9 @@
 ## 目标与优先级
 
 - 功能基线：
-  `E:\OneDrive\Design files sync\AI\Proj. WattDesk\资料\逆变器设置更新 261119`。
+  `E:\OneDrive\Design files sync\AI\Proj. WattDesk\资料\逆变器设置更新 261119`，
+  加上 `...\逆变器设置更新 261120` 的增量原型和更新说明；1120 只新增
+  `Limit basis`，没有替换其余 1119 页面、档案或说明。
 - 最终交互原型和用户明确修订优先于早期规划；不得迁就不完整或滞后的在线页面。
 - 当前任务是渐进式标准化，不重做页面。没有用户要求的页面结构、文案、数据或
   硬件能力不得擅自增加。
@@ -193,6 +195,26 @@ Inverter 的业务枚举只属于该页面，放在 `settings-options.js`，不�
   `14/510/18`、`-0.14px`；五行 `36px`，列距 `14px`，标签列至少 `170px`。
 - Export/Import 术语固定为 `Import & Export Limits`、`Export limit`、
   `Import limit`，不再使用 `Feed-in`。
+- `Limit basis` 只作用于 Export limit，不控制 Import limit。数据字段固定为
+  `limits.basis`：`0=Total`，`1=Per phase`。
+- 三相机型且 Export limit 开启时，在 Export limit 卡片内依次显示
+  `Export limit → Limit value → Limit basis`。单相机型隐藏整行；Export limit
+  关闭时隐藏但保留已选值，重新开启后恢复。
+- `Limit basis` 使用共享 `createSegmentedControl()`，选项为
+  `Total / Per phase`，默认 `Total`。控件沿用共享 36px 高度、胶囊移动、
+  键盘和快速切换规则，不创建页面私有分段控件。
+- 固件支持按相闭环时，`Per phase` 可选择，并显示说明：按相闭环需要固件支持；
+  三相平衡输出机型会按最轻载相限制总功率，可能增加弃光；仅在电网公司或电表
+  要求时使用。
+- 三相机型但固件不支持按相时，`Per phase` 保持可见并置灰，说明
+  `Current firmware does not support per-phase limiting`；不得隐藏这一能力
+  边界，也不得让它产生 dirty。
+- 当前 `p25` 本地预览固定为三相机型且支持按相；`Limit basis` 可实际切换。
+  生产环境仍需读取设备相数和固件能力位，不能根据机型名称或现有
+  `Unbalanced output` 开关推断。
+- 当前 preview 没有三相功率数据，Effective chain 仍按总和模型计算和展示；
+  不得伪造某一相的实时限值。生产接入按相闭环、点位地址和实时数据后再扩展
+  约束计算。
 - Output Capability 保留 Rated / Overload / Underload；DI Port 保留
   Off / DRM / RCR。
 
@@ -340,6 +362,9 @@ git diff --check
   不变。
 - 首开模式来自设备；非 Running Mode 保存不反向改写设备模式。
 - timeout `0`、功率因数 `-1–1`、Check code 四位和普通 Save 日志仍有效。
+- `Limit basis` 默认 Total；三相支持按相的预览可切换，单相隐藏，固件不支持时
+  Per phase 可见但禁用；Save/Cancel 和 Operation Log 均显示
+  `Total / Per phase`，不是原始 `0 / 1`。
 - dirty、Cancel、Save 和切页确认严格按页面作用域工作。
 - Grid 门禁未解锁时不泄漏二级栏；解锁后位置、滚动记忆和 Check code 关联不变。
 - switch、segmented、select 和条件卡在局部重绘后保留动画宿主。

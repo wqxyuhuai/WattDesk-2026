@@ -38,7 +38,7 @@
 | `/plants` | 已完成本地交互预览 | 46 条样例、筛选并集、列显隐、排序、收藏、滚动反馈 |
 | `/plants/:id` | 已完成 Overview 本地交互预览 | 默认进入第一台设备；多设备可切并同步 `?device=`；Statistics 支持 `Day / Month / Year / Total` 与月/年 `Separate / Combined`，数据为确定性本地样例 |
 | `/plants/:id/devices` | 已完成本地交互预览 | Linear 式扁平设备行、命名、新增、替换、解绑和设置预览；真实后端与硬件控制未接入 |
-| `/plants/:id/devices/inverter-settings` | 已完成本地交互预览 | route-backed 逆变器设置窗口；5 组导航、18 个国别档案、Check code 门禁、维护页和本地会话保存；完整有效契约见 [INVERTER-SETTINGS.md](./INVERTER-SETTINGS.md) |
+| `/plants/:id/devices/inverter-settings` | 已完成本地交互预览 | route-backed 逆变器设置窗口；5 组导航、18 个国别档案、Check code 门禁、维护页、本地会话保存，以及 1120 新增的 `Limit basis`；完整有效契约见 [INVERTER-SETTINGS.md](./INVERTER-SETTINGS.md) |
 | `https://inverter.carlwang.cn/` → `/settings` | 已发布独立预览 | 仅显示 `p25` 第一台逆变器设置；独立 Worker 白名单代理，不允许访问其他 WattDesk 页面；默认浅色，底部 `32px` 主题按钮，复用同一页面代码 |
 | `/plants/:id/site` | 隐藏兼容路由 | 旧资料页仅保留直达链接和回归兼容，不在详情页签中显示 |
 | `/plants/:id/site-v2` | 当前 Site details 页面 | 详情页签显示为 `Site details`；顶部 Hero、Mapbox、Energy / Installer / Owner / Picture / Visitor 卡，支持会话内编辑。规格见 [SITE-DETAILS.md](./SITE-DETAILS.md) |
@@ -173,6 +173,14 @@ git diff --check
 引入本地 `text()` / 时间格式化、旧 `.wd-date-action` 兼容类或局部 transition。
 视觉共享改动还需真实 Chrome 截图和计算样式检查；有固定基线时运行
 `npm run test:visual`，不能为了消除失败直接覆盖基线。
+
+## 2026-11-23 1120 Limit basis 实施前快照
+
+- 快照：
+  `E:\OneDrive\Design files sync\AI\Proj. WattDesk\Backups\WattDesk-before-1120-limit-basis-20261123-110928.zip`
+- SHA-256：
+  `044FFF7AA5A2EF1AF781103FC3FBF74C37227F91C40B232452EF514A09C432CA`
+- 445 项、4,670,860 bytes；用于回退本次 Limit basis 增量。
 
 ## 2026-11-20 Inverter settings 整理快照
 

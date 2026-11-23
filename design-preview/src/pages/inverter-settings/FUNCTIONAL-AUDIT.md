@@ -14,6 +14,22 @@ The effective page contract lives in
 [`docs/INVERTER-SETTINGS.md`](../../../../docs/INVERTER-SETTINGS.md); this file
 records functional evidence, fixed issues and remaining integration boundaries.
 
+## 2026-11-23 1120 incremental update
+
+The 1120 package adds one field only: `Limit basis` on the export-limit section.
+The prototype adds `limits.basis: 0`, a shared-style two-option control and a
+conditional warning note; the remaining 1119 files are unchanged and remain the
+base reference.
+
+| Area | Implemented result |
+|---|---|
+| Data | `limits.basis` stores `0=Total`, `1=Per phase`; old settings normalize to Total |
+| Visibility | Shown only for three-phase devices with Export limit enabled; hidden for single-phase |
+| Capability | `Per phase` requires a separate firmware capability; unsupported firmware keeps it visible but disabled |
+| Preview fixture | `p25` is three-phase and supports per-phase selection |
+| Save/log | Save/Cancel uses the existing page scope; Operation Log formats values as Total / Per phase |
+| Computation boundary | Preview still uses the aggregate effective model; no per-phase telemetry is fabricated |
+
 ## Verified consistent
 
 | Area | Result |

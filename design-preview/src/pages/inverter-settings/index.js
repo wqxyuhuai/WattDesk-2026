@@ -19,6 +19,7 @@ import {
  CAPABILITY_OPTIONS,
  DI_PORT_OPTIONS,
  EXPORT_FORMAT_OPTIONS,
+ LIMIT_BASIS_OPTIONS,
  MPPT_SCAN_INTERVAL_OPTIONS,
  MPPT_SOURCE_OPTIONS,
  NETWORK_INTERFACE_OPTIONS,
@@ -1047,7 +1048,7 @@ function crossfadeView(page,outgoingPage,outgoingTitle,layoutSnapshot,subTransit
    const row=slot.closest(".isw-row");
    const label=row?.querySelector(".isw-row-label")?.textContent?.trim()||path;
    const control=createSegmentedControl({
-    items:options.map((item,index)=>({id:String(index),label:item})),
+    items:options.map((item,index)=>({id:String(index),label:item.label,disabled:Boolean(item.disabled)})),
     value:String(current),
     label,
     glass,
@@ -2314,6 +2315,7 @@ function syncGate({animate=false,preserveCardRect=null}={}){
   if(value===undefined)return "—";
   if(path==="runMode")return MODES[Number(value)]?.label||String(value);
   if(path==="dispatch.unit")return Number(value)?"kW":"%Pn";
+  if(path==="limits.basis")return LIMIT_BASIS_OPTIONS[Number(value)]??String(value);
   if(path==="capability")return CAPABILITY_OPTIONS[Number(value)]??String(value);
   if(path==="di")return DI_PORT_OPTIONS[Number(value)]??String(value);
   if(path==="net.iface")return NETWORK_INTERFACE_OPTIONS[Number(value)]??String(value);
@@ -2569,11 +2571,14 @@ export function openInverterSettings({
  const detectedRunMode=modeIndexFromLabel(device.mode);
  const model=createSettingsModel({
   ratedPower:device.ratedPowerKw,
-  runMode:detectedRunMode>=0?detectedRunMode:0
+  runMode:detectedRunMode>=0?detectedRunMode:0,
+  phaseCount:device.phaseCount,
+  supportsPerPhaseLimit:device.supportsPerPhaseLimit
  });
  if(device.inverterSettings){
   Object.assign(model.S,clone(device.inverterSettings));
   model.normalizeEco();
+  model.normalizeLimitBasis();
  }
  return createWindow({
   device,

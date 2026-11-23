@@ -1,5 +1,11 @@
 # 更新记录
 
+## 2026-11-23
+
+- 接入 1120 增量的 `Limit basis`：Export limit 新增 `Total / Per phase` 共享分段控件，默认 Total；`limits.basis` 已进入模型、Save/Cancel 和 Operation Log。p25 预览按三相机型且支持按相配置，单相隐藏和固件不支持时禁用分支已覆盖。
+- 文案保留 1120 的全部限制：按相闭环固件要求、固件不支持提示、三相平衡输出按最轻载相限总功率、弃光可能增加，以及只在电网或电表要求时使用。
+- 1120 原型与更新说明哈希已加入 `SOURCE-MANIFEST.md`；功能、文案和页面契约同步更新。实施前存档为 `Backups/WattDesk-before-1120-limit-basis-20261123-110928.zip`。
+
 ## 2026-11-20
 
 - 完成日终规则归档（仅文档）：按当前可访问对话、`0dadb92..6db9ed2` 提交、当前工作树和验证结果，提炼 Inverter settings 的最终功能、视觉、组件、独立预览、发布与防回归规则；更新 `AGENTS.md`、`DESIGN-SYSTEM.md`、`ARCHITECTURE.md`、`COMPONENTS.md`、`PROJECT-MAP.md`、`PROJECT-STATUS.md`、`ROUTING.md`、`DEPLOYMENT.md`、`USER-REQUIREMENTS.md`、`LESSONS-LEARNED.md` 与 `INVERTER-SETTINGS.md`。本次未修改运行代码、UI、路由实现或部署配置。

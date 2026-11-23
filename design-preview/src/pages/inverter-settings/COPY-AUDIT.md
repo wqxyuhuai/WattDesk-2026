@@ -33,6 +33,20 @@ The shared time utility now exposes `formatAbsoluteDate()` for visible
 date-only values. Relative and absolute timestamps continue to use the existing
 seven-day rule and `YYYY/MM/DD HH:mm` format.
 
+## 2026-11-23 Limit basis copy
+
+| Surface | Final copy | Reason |
+|---|---|---|
+| Row | `Limit basis` | Matches the 1120 source field name |
+| Options | `Total`, `Per phase` | Keeps the short source labels while using the project's English UI style |
+| Total hint | `Sum of the three phases at the meter` | Preserves the meter-side aggregate meaning |
+| Per-phase hint | `No single phase may exceed the limit` | Preserves the source constraint exactly |
+| Unsupported hint | `Current firmware does not support per-phase limiting` | Makes the disabled capability explicit without hiding the option |
+| Conditional note | `Per-phase limiting requires firmware with per-phase closed-loop control. On models with balanced three-phase output, the lightest-loaded phase caps total output, which can increase PV curtailment. Use it only when required by the grid operator or meter.` | Keeps all source warnings: firmware dependency, balanced-output consequence, curtailed PV and restricted use |
+
+The existing project term `Import & Export Limits` is retained; the 1120
+prototype still uses the older `Feed-in & Import Limits` wording.
+
 ## Still open
 
 These items were reviewed but were not approved for this change set.
@@ -51,6 +65,7 @@ These items were reviewed but were not approved for this change set.
 | Live page structure | Live separates `Economic Mode`, `Economic Time Settings`, `Battery Management`, `Professional Settings`, `Shadow Scan` and `Other Settings` | Confirm whether the current grouped prototype should retain its different information architecture |
 | Check code and operator identity | Save and Grid profile/reload entries currently use the fixed local preview operator `Lena Tong` | Production must associate every save with the authenticated account that used the device Check code; the Check code alone identifies the unit, not the person |
 | Backend point metadata | `settings-validation.js` still contains local preview ranges, units and enum interpretations | Replace these with backend point metadata for `label / unit / min / max / step / enumList`; do not treat preview ranges as firmware truth |
+| Limit basis production points | 1120 proposes two points: measurement-basis enable (`0=total`, `1=per phase`) and a firmware capability flag | Product/firmware owners must confirm names, addresses and release timing before production wiring |
 
 ## Deliberately unchanged
 

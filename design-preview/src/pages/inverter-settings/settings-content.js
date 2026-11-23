@@ -5,6 +5,7 @@ import {
  DI_PORT_OPTIONS,
  EXPORT_FORMAT_OPTIONS,
  F_P_REFERENCE_OPTIONS,
+ LIMIT_BASIS_OPTIONS,
  MPPT_SOURCE_OPTIONS,
  NETWORK_INTERFACE_OPTIONS,
  POWER_CHANGE_OPTIONS,
@@ -17,7 +18,8 @@ const iconMarkup=name=>`<i class="isw-icon" data-isw-icon="${name}" aria-hidden=
 const ecoPowerRange=settingRange("eco.power","%");
 const sw=path=>`<span class="isw-switch-slot" data-isw-switch="${path}"></span>`;
 const seg=(path,options,current)=>{
- const encoded=encodeURIComponent(JSON.stringify(options));
+ const normalized=options.map(option=>typeof option==="string"?{label:option}:option);
+ const encoded=encodeURIComponent(JSON.stringify(normalized));
  return `<span class="isw-seg-slot" data-isw-seg="${path}" data-isw-options="${encoded}" data-isw-value="${current}"></span>`;
 };
 const note=(html,narrow=false)=>`<div class="isw-note${narrow?" isw-note--narrow":""}">${iconMarkup("info")}<div>${html}</div></div>`;
@@ -76,15 +78,34 @@ function pageDispatch(model){
  <div class="isw-chain-foot">${e.src?`Limited by <b>${e.src}</b>.`:"Setpoint reached. Nothing is limiting the output."}</div>`:""}`;
 }
 
+export function limitBasisViewState(model){
+ const limits=model.S.limits;
+ const supported=model.capabilities.supportsPerPhaseLimit;
+ return {
+  show:Boolean(limits.feedOn&&model.capabilities.phaseCount===3),
+  options:LIMIT_BASIS_OPTIONS.map((label,index)=>({
+   label,
+   disabled:index===1&&!supported
+  })),
+  hint:supported
+   ?limits.basis?"No single phase may exceed the limit":"Sum of the three phases at the meter"
+   :"Sum of the three phases at the meter. Per-phase limiting is not supported by the current firmware.",
+  showNote:Boolean(limits.feedOn&&Number(limits.basis)===1&&supported)
+ };
+}
+
 function pageLimits(model){
  const limits=model.S.limits;
+ const basis=limitBasisViewState(model);
  return `<h2 class="isw-page-title">Import &amp; Export Limits</h2>
  <h3 class="isw-group-title">Grid-tied point · export</h3>
  <section class="isw-panel">
   ${row("Export limit","Maximum power fed to the public grid",sw("limits.feedOn"))}
   ${limits.feedOn?row("Limit value","",num("limits.feed",limits.feed,"kW",.5),true):""}
+  ${basis.show?row("Limit basis",basis.hint,seg("limits.basis",basis.options,limits.basis),true):""}
  </section>
  <div class="isw-chain-foot isw-chain-foot--tight">This limit is never exceeded, including while the Frequency-Watt (F-P) function is active. Set it to match the site's cable and breaker rating.</div>
+ ${basis.showNote?note("Per-phase limiting requires firmware with per-phase closed-loop control. On models with balanced three-phase output, the lightest-loaded phase caps total output, which can increase PV curtailment. Use it only when required by the grid operator or meter."):""}
  <h3 class="isw-group-title">Grid-tied point · import</h3>
  <section class="isw-panel">
   ${row("Import limit","Maximum power drawn from the public grid",sw("limits.impOn"))}

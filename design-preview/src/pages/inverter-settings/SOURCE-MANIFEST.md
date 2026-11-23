@@ -1,4 +1,4 @@
-# 2026-11-19 source package manifest
+# Inverter settings source manifests
 
 Source path:
 
@@ -19,6 +19,21 @@ only records source provenance and hashes.
 | `DESIGN.md` | 18553 | `19d9927053066259143d2207f377584670ead0cd0cff6fd8e164fdd5fc42d5a7` |
 | `GRID-AUDIT-20261118.md` | 13510 | `e6d666d12a2f640030883c8f3b00a39af92c8b3d969697d9e5d8bac02d22e0f4` |
 | `GRID-PROFILES.md` | 15360 | `b11180e4644f150f646be3eed91c321fbeac1b726bdda6cec19c9d9116af3653` |
+
+## 2026-11-20 incremental package
+
+Source path:
+
+`E:\OneDrive\Design files sync\AI\Proj. WattDesk\资料\逆变器设置更新 261120`
+
+| File | Bytes | SHA-256 |
+|---|---:|---|
+| `更新说明.txt` | 1423 | `9ad09e4da70f35ad712568827892b7df7eefa5cb73dd2b1c6aae2a05ff58f3d4` |
+| `逆变器设置-交互原型_v1120.html` | 122548 | `d533f307123bdab3f99dc42cf74ca057fba350f301ebaf795f6c45e990665267` |
+
+This package is incremental: it adds `limits.basis` and the `Limit basis`
+export row only. The other 1119 source files remain the base reference and are
+not superseded by this package.
 
 The runtime `grid-profiles.js` data was checked against the complete embedded
 `GRID_PROFILES` block of the prototype. The source and runtime objects contain

@@ -87,7 +87,7 @@ function initialState(){
   navExpanded:{},
   runMode:0,
   dispatch:{on:1,unit:1,sp:-10,timeout:300},
-  limits:{feedOn:1,feed:10,impOn:0,imp:15},
+  limits:{feedOn:1,feed:10,impOn:0,imp:15,basis:0},
   capability:0,di:2,
   soc:{chgStop:100,gridFloor:20,offFloor:10},
   battChgMax:6.0,battDisMax:20.0,pvAvail:4.8,
@@ -182,9 +182,18 @@ function initialState(){
  };
 }
 
-export function createSettingsModel({ratedPower=50,runMode=0}={}){
+export function createSettingsModel({
+ ratedPower=50,
+ runMode=0,
+ phaseCount=1,
+ supportsPerPhaseLimit=false
+}={}){
  const S=initialState();
  const PN=Number.isFinite(Number(ratedPower))&&Number(ratedPower)>0?Number(ratedPower):50;
+ const capabilities=Object.freeze({
+  phaseCount:Number(phaseCount)===3?3:1,
+  supportsPerPhaseLimit:Boolean(supportsPerPhaseLimit)
+ });
  S.runMode=Number.isInteger(Number(runMode))&&MODES[Number(runMode)]?Number(runMode):0;
  const has=key=>Object.prototype.hasOwnProperty.call(S.g,key);
  const hasAll=(...keys)=>keys.every(has);
@@ -205,6 +214,10 @@ export function createSettingsModel({ratedPower=50,runMode=0}={}){
  };
  const normalizeEco=()=>{
   S.eco=normalizeEconomicPeriods(S.eco,PN);
+ };
+ const normalizeLimitBasis=()=>{
+  const basis=Number(S.limits.basis);
+  S.limits.basis=capabilities.phaseCount===3&&capabilities.supportsPerPhaseLimit&&basis===1?1:0;
  };
  const get=path=>path.split(".").reduce((value,key)=>value?.[/^\d+$/.test(key)?Number(key):key],S);
  const set=(path,value)=>{
@@ -256,9 +269,10 @@ export function createSettingsModel({ratedPower=50,runMode=0}={}){
  });
  loadProfile(S.gridCode);
  normalizeEco();
+ normalizeLimitBasis();
  return {
-  PN,GRID_PROFILES,S,has,hasAll,dev,prof,tfmt,loadProfile,get,set,devCount,devHere,
-  unit,spKW,effective,gridSubs,devList,normalizeEco
+  PN,GRID_PROFILES,S,capabilities,has,hasAll,dev,prof,tfmt,loadProfile,get,set,devCount,devHere,
+  unit,spKW,effective,gridSubs,devList,normalizeEco,normalizeLimitBasis
  };
 }
 

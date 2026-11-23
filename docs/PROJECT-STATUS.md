@@ -1,10 +1,19 @@
 # 当前状态与新对话交接
 
-更新：2026-11-20。
+更新：2026-11-23。
 
 先读 `AGENTS.md` → `PROJECT-MAP.md` → `DESIGN-SYSTEM.md` → 本文件。新增页面再读 `ARCHITECTURE.md`、`COMPONENTS.md`；核对既往反馈见 `USER-REQUIREMENTS.md`。用户最新明确要求优先。
 
-## 2026-11-20 当前规则归档（最高优先级）
+## 2026-11-23 当前规则归档（最高优先级）
+
+- 1120 源包是 1119 的增量：只新增 `Limit basis` 与更新说明；其余页面、字段、18 个档案和校验说明继续沿用 1119。
+- `Import & Export Limits → Export limit` 增加 `Limit basis`：`Total` 默认、`Per phase` 可选；仅三相机型、Export limit 开启时显示，单相隐藏。
+- 当前 `p25` 本地预览设为三相机型且固件支持按相，两个选项可实际切换。固件不支持时 `Per phase` 仍可见但禁用；该分支有模型级回归，测试覆盖单相隐藏和 unsupported 规范化。
+- `limits.basis` 纳入现有 limits 页面保存域；Save/Cancel、dirty、Operation Log 复用现有机制，日志显示 `Total / Per phase`。当前 preview 不伪造三相实时限值，Effective chain 继续使用总和模型。
+- 实施前存档：`Backups/WattDesk-before-1120-limit-basis-20261123-110928.zip`，445 项、4,670,860 bytes，SHA-256 `044FFF7AA5A2EF1AF781103FC3FBF74C37227F91C40B232452EF514A09C432CA`。
+- 生产仍需确认按相闭环排期、计量方式点位和固件能力位；在收到 11 月 26 日前的硬件/固件回复前，不把 preview 数据视为生产元数据。
+
+## 2026-11-20 规则基线
 
 - Inverter settings 已发布到 `https://wattdesk-preview.carlwang.cn/home`；独立设置预览为 `https://inverter.carlwang.cn/`。独立 Worker 只代理设置页与静态资源，其他 WattDesk 页面返回 404；页面实现、数据和后续更新仍共用同一模块。独立预览底部主题按钮离底边 `32px`，每个新标签默认浅色。
 - Inverter settings 的页面专属规则已从本状态文件、`AGENTS.md`、`DESIGN-SYSTEM.md` 和组件手册收敛到 [唯一页面契约](./INVERTER-SETTINGS.md)。本文件下方同日更早的 Inverter 条目只保留实现与验证历史，不再作为第二套有效规格。

@@ -4,6 +4,7 @@ export const CAPABILITY_OPTIONS=Object.freeze(["Rated","Overload","Underload"]);
 export const DI_PORT_OPTIONS=Object.freeze(["Off","DRM","RCR"]);
 export const NETWORK_INTERFACE_OPTIONS=Object.freeze(["LAN","Wi-Fi","4G"]);
 export const EXPORT_FORMAT_OPTIONS=Object.freeze(["PDF","XLSX"]);
+export const LIMIT_BASIS_OPTIONS=Object.freeze(["Total","Per phase"]);
 export const MPPT_SOURCE_OPTIONS=Object.freeze(["Solar","Wind","None"]);
 export const POWER_CHANGE_OPTIONS=Object.freeze(["Step","Ramp"]);
 export const F_P_REFERENCE_OPTIONS=Object.freeze([

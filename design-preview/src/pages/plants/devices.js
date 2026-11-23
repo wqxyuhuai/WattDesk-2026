@@ -17,6 +17,8 @@ const DEVICE_LIBRARY=Object.freeze({
   image:assetURL("plants/devices/ihybrid.png"),
   model:"MATIC-20KW-50A",
   ratedPowerKw:20,
+  phaseCount:3,
+  supportsPerPhaseLimit:true,
   prefix:"1M20K25B"
  },
  bms:{
@@ -160,6 +162,8 @@ function createDevice(plant,type,index=0,overrides={}){
   status:initialStatus(plant,type,index),
   model:meta.model,
   ratedPowerKw:meta.ratedPowerKw||null,
+  phaseCount:meta.phaseCount||1,
+  supportsPerPhaseLimit:Boolean(meta.supportsPerPhaseLimit),
   serial:serialFor(plant,type,index),
   hardware:"V1",
   boot:"V4.4.1001",
