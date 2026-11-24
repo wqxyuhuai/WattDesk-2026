@@ -25,6 +25,13 @@ html[data-theme="light"] .popover{color:var(--wd-label-primary)}
 .wd-menu .wd-menu-row{display:flex;align-items:center;width:100%;min-width:0;height:36px;padding:0 14px;gap:8px;border:0;border-radius:999px;background:none;text-align:left;color:var(--wd-label-secondary);font-size:var(--wd-text-14-14-medium-size);font-weight:var(--wd-text-14-14-medium-weight);letter-spacing:var(--wd-text-14-14-medium-tracking)}
 .wd-menu .wd-menu-row:is(button,a){cursor:pointer}
 .wd-menu .wd-menu-row:is(:hover,:focus-visible){background:var(--wd-fill-secondary);color:var(--wd-label-primary)}
+:root .wd-menu .wd-menu-row.is-danger,
+:root .wd-menu .wd-menu-row.is-danger .wd-menu-label,
+:root .wd-menu .wd-menu-row.is-danger .target-nav-icon{color:var(--wd-accent-red)}
+:root .wd-menu .wd-menu-row.is-danger:is(:hover,:focus-visible){
+ background:color-mix(in srgb,var(--wd-accent-red) 11%,transparent);
+ color:var(--wd-accent-red);
+}
 .wd-menu .wd-menu-row:focus-visible{outline:2px solid var(--wd-label-primary);outline-offset:-2px}
 .wd-menu .wd-menu-row .target-nav-icon{color:var(--wd-label-secondary)}
 .wd-menu .wd-menu-row .wd-menu-row-icon-end{margin-left:auto}
@@ -38,4 +45,4 @@ html[data-theme="light"] .popover{color:var(--wd-label-primary)}
 .wd-menu-row[aria-checked="true"] .wd-menu-check{opacity:1;color:var(--wd-label-primary)}
 /* The toast is a static Glass Surface; its silhouette stays pill-shaped while
  * the shared material supplies the tint, blur and pointer optics. */
-#toast{position:fixed;left:50%;top:70px;bottom:auto;transform:translateX(-50%);padding:11px 18px;border:0;border-radius:24px;z-index:110}
+#toast{position:fixed;left:50%;top:70px;bottom:auto;transform:translateX(-50%);padding:8px 18px;border:0;border-radius:24px;z-index:110}

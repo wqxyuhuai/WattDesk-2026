@@ -9,10 +9,11 @@ function normalizeOption(option){
   return {
    value:option.value,
    label:option.label??String(option.value),
+   description:String(option.description??""),
    disabled:Boolean(option.disabled)
   };
  }
- return {value:option,label:String(option),disabled:false};
+ return {value:option,label:String(option),description:"",disabled:false};
 }
 
 export function createSelectControl({
@@ -35,6 +36,7 @@ export function createSelectControl({
  alignOffset=radius,
  menuWidth,
  chooseLabel=`Choose ${label}`,
+ panelBuilder=null,
  ariaLabel,
  id="",
  name="",
@@ -136,6 +138,22 @@ export function createSelectControl({
  const openPanel=preferred=>{
   if(!registerPanel)return;
   const start=()=>{
+   if(panelBuilder){
+    const mounted=panelBuilder({field,selectedValue});
+    if(!mounted)return;
+    activePanel=mounted;
+    activeRows=[];
+    const previousClose=mounted._onClose;
+    mounted._onClose=()=>{
+     if(activePanel===mounted){
+      activePanel=null;
+      activeRows=[];
+      clearTypeahead();
+     }
+     previousClose?.();
+    };
+    return mounted;
+   }
    const panel=document.createElement("div");
    panel.className=["popover","popover--menu","wd-select-popover",menuClassName].filter(Boolean).join(" ");
    const list=menuList();
@@ -144,8 +162,9 @@ export function createSelectControl({
    list.setAttribute("aria-orientation","vertical");
    const rows=[];
    for(const option of normalized){
-    const row=menuRow(option.label,{checked:false,showCheck:false});
+    const row=menuRow(option.label,{checked:false,showCheck:false,description:option.description});
     row.classList.add("wd-select-option");
+    if(option.description)row.classList.add("has-description");
     if(optionClassName)row.classList.add(optionClassName);
     row.setAttribute("role","option");
     row.setAttribute("aria-selected",String(Object.is(option.value,selectedValue)));
@@ -270,7 +289,7 @@ export function createSelectControl({
   element:field,
   valueElement:valueNode,
   getValue:()=>selectedValue,
-  getOptions:()=>normalized.map(option=>({...option})),
+  getOptions:()=>normalized.map(({description,...option})=>description?{...option,description}:option),
   setValue:next=>setValue(next),
   setOptions,
   updateOption,

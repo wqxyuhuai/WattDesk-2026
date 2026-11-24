@@ -19,6 +19,11 @@ const DEVICE_LIBRARY=Object.freeze({
   ratedPowerKw:20,
   phaseCount:3,
   supportsPerPhaseLimit:true,
+  batteryPathCount:2,
+  supportsBatteryParallel:true,
+  mpptInventoryPoints:[1,2,3,4,5],
+  mpptGroupPoints:[1,2,3,4],
+  batteryMasterBattery:"bank1",
   prefix:"1M20K25B"
  },
  bms:{
@@ -164,6 +169,11 @@ function createDevice(plant,type,index=0,overrides={}){
   ratedPowerKw:meta.ratedPowerKw||null,
   phaseCount:meta.phaseCount||1,
   supportsPerPhaseLimit:Boolean(meta.supportsPerPhaseLimit),
+  batteryPathCount:meta.batteryPathCount||1,
+  supportsBatteryParallel:Boolean(meta.supportsBatteryParallel),
+  mpptInventoryPoints:Array.isArray(meta.mpptInventoryPoints)?[...meta.mpptInventoryPoints]:[1,5,5,5,5],
+  mpptGroupPoints:Array.isArray(meta.mpptGroupPoints)?[...meta.mpptGroupPoints]:[1,2,3,4],
+  batteryMasterBattery:meta.batteryMasterBattery||null,
   serial:serialFor(plant,type,index),
   hardware:"V1",
   boot:"V4.4.1001",

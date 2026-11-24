@@ -100,40 +100,65 @@ const assert=require('node:assert/strict');
  await page.mouse.move(0,0);await page.waitForTimeout(300);
  // Toast shares the material and is also non-interactive.
  await page.waitForFunction(()=>document.querySelector('#toast').hidden);
+ const idleToast=await page.locator('#toast').evaluate(el=>({
+  hidden:el.hidden,
+  material:!!el.querySelector(':scope>.wd-glass-material'),
+  filter:getComputedStyle(el.querySelector('.wd-glass-fill')).backdropFilter,
+  opacity:getComputedStyle(el).opacity
+ }));
+ assert.equal(idleToast.hidden,true,'Toast starts hidden');
+ assert.equal(idleToast.material,true,'Toast material is mounted before its first visible frame');
+ assert.match(idleToast.filter,/blur\(/,'Toast keeps its backdrop blur ready before opening');
+ assert.equal(idleToast.opacity,'1','Toast glass host never starts from a transparent opacity state');
  await page.getByRole('button',{name:'Add tab'}).click();await page.waitForTimeout(120);
- const toast=await page.locator('#toast').evaluate(el=>({hidden:el.hidden,classes:el.className,
+ const toast=await page.locator('#toast').evaluate(el=>{const text=el.querySelector('.wd-toast-text');return({hidden:el.hidden,classes:el.className,
   centerDelta:(()=>{const box=el.getBoundingClientRect();return box.left+box.width/2-innerWidth/2;})(),
   material:!!el.querySelector(':scope>.wd-glass-material'),static:el.classList.contains('wd-glass--static'),
   filter:getComputedStyle(el.querySelector('.wd-glass-fill')).backdropFilter,border:getComputedStyle(el).borderTopWidth,
-  animation:el.getAnimations().map(animation=>({duration:animation.effect.getTiming().duration,easing:animation.effect.getTiming().easing,
-   opacityFrames:animation.effect.getKeyframes().map(frame=>frame.opacity),
-   translateFrames:animation.effect.getKeyframes().map(frame=>{
+  opacity:getComputedStyle(el).opacity,padding:[getComputedStyle(el).paddingTop,getComputedStyle(el).paddingBottom],
+  hostAnimation:el.getAnimations().map(animation=>({duration:animation.effect?.getTiming().duration,easing:animation.effect?.getTiming().easing,
+   opacityFrames:animation.effect?.getKeyframes().map(frame=>frame.opacity)||[],
+   translateFrames:animation.effect?.getKeyframes().map(frame=>{
     const value=String(frame.translate);
     return value.includes(' ')?value:`${value} 0px`;
-   })})).find(entry=>entry.opacityFrames.some(value=>value!==undefined))}));
+   })||[]})).find(entry=>entry.translateFrames.some(value=>value!==undefined)),
+  textAnimation:text.getAnimations().map(animation=>({duration:animation.effect?.getTiming().duration,easing:animation.effect?.getTiming().easing,
+   opacityFrames:animation.effect?.getKeyframes().map(frame=>frame.opacity)||[]})).find(entry=>entry.opacityFrames.some(value=>value!==undefined))
+ });});
  assert.equal(toast.hidden,false);assert.ok(Math.abs(toast.centerDelta)<=1,'Toast must be centered in the viewport');assert.ok(toast.material,'Toast must mount Glass Surface');assert.ok(toast.static);assert.match(toast.filter,/blur\(/);assert.equal(toast.border,'0px');
- assert.equal(toast.animation?.duration,320,'toast fades in with the shared panel timing');
- assert.equal(toast.animation?.easing,'cubic-bezier(0.22, 0.8, 0.25, 1)');
- assert.deepEqual(toast.animation?.translateFrames,['0px -4px','0px 0px'],'toast enters by settling gently downward');
+ assert.equal(toast.opacity,'1','toast material is fully opaque while its content enters');
+ assert.deepEqual(toast.padding,['8px','8px'],'toast uses the shared compact vertical padding');
+ assert.equal(toast.hostAnimation?.duration,320,'toast settles in with the shared panel timing');
+ assert.equal(toast.hostAnimation?.easing,'cubic-bezier(0.22, 0.8, 0.25, 1)');
+ assert.equal(toast.hostAnimation?.opacityFrames.every(value=>value===undefined),true,'toast never animates opacity on the glass host');
+ assert.deepEqual(toast.hostAnimation?.translateFrames,['0px -4px','0px 0px'],'toast enters by settling gently downward');
+ assert.equal(toast.textAnimation?.duration,320,'toast text fades in with the shared panel timing');
+ assert.deepEqual(toast.textAnimation?.opacityFrames,['0','1'],'toast text alone carries the entry fade');
  await page.waitForFunction(()=>{
   const el=document.querySelector('#toast');
-  return !el.hidden&&el.getAnimations().some(animation=>animation.effect.getTiming().duration===200);
+  return !el.hidden&&el.getAnimations().some(animation=>animation.effect?.getTiming().duration===200);
  },null,{timeout:4000});
  const toastExit=await page.locator('#toast').evaluate(el=>{
-  const animation=el.getAnimations().find(item=>item.effect.getTiming().duration===200);
+  const text=el.querySelector('.wd-toast-text');
+  const hostAnimation=el.getAnimations().find(item=>item.effect?.getTiming().duration===200);
   return {
    hidden:el.hidden,
-   duration:animation?.effect.getTiming().duration,
-   easing:animation?.effect.getTiming().easing,
-   translateFrames:animation?.effect.getKeyframes().map(frame=>{
+   opacity:getComputedStyle(el).opacity,
+   duration:hostAnimation?.effect?.getTiming().duration,
+   easing:hostAnimation?.effect?.getTiming().easing,
+   hostOpacityFrames:hostAnimation?.effect?.getKeyframes().map(frame=>frame.opacity),
+   textExitAnimations:text.getAnimations().filter(item=>item.effect?.getTiming().duration===200).length,
+   translateFrames:hostAnimation?.effect?.getKeyframes().map(frame=>{
     const value=String(frame.translate);
     return value.includes(' ')?value:`${value} 0px`;
    })
   };
  });
  assert.equal(toastExit.hidden,false);
- assert.equal(toastExit.duration,200,'toast fades out with the shared panel-exit timing');
+ assert.equal(toastExit.duration,200,'toast settles out with the shared panel-exit timing');
  assert.equal(toastExit.easing,'cubic-bezier(0.3, 0, 0.2, 1)');
+ assert.deepEqual(toastExit.hostOpacityFrames,['1','0'],'toast text and glass fade together on exit');
+ assert.equal(toastExit.textExitAnimations,0,'toast text does not fade out ahead of the glass');
  assert.deepEqual(toastExit.translateFrames,['0px 0px','0px -4px'],'toast exits by floating gently upward');
  await page.waitForFunction(()=>document.querySelector('#toast').hidden);
 

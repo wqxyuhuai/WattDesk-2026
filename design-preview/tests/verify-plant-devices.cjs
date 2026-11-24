@@ -676,15 +676,19 @@ async function ready(page, url, {settleAnimations=true}={}) {
     return {
       border:getComputedStyle(shell).borderWidth,
       fill:getComputedStyle(shell).backgroundColor,
-      outline:getComputedStyle(shell).outlineStyle
+      outline:getComputedStyle(shell).outlineStyle,
+      outlineColor:getComputedStyle(shell).outlineColor
     };
   });
   assert.equal(editFieldDefault.border, '0px');
   assert.match(editFieldDefault.fill, /0\.08\)/);
-  assert.equal(editFieldDefault.outline, 'none');
+  assert.equal(editFieldDefault.outline, 'solid');
+  assert.equal(editFieldDefault.outlineColor, 'rgba(0, 0, 0, 0)', 'editable fields reserve an invisible outline for smooth focus colour');
   await renameInput.hover();
+  await page.waitForTimeout(420);
   assert.notEqual(await renameInput.evaluate(input => getComputedStyle(input.closest('.wd-edit-field')).backgroundColor), editFieldDefault.fill, 'editable fields brighten on hover');
   await renameInput.focus();
+  await page.waitForTimeout(420);
   const editFocus=await renameInput.evaluate(input => {
     const shell=input.closest('.wd-edit-field');
     return {
@@ -924,14 +928,14 @@ async function ready(page, url, {settleAnimations=true}={}) {
   });
   assert.equal(lightFieldDefault,'rgba(116, 116, 116, 0.08)','light editable fields use the Site details grey surface');
   await lightField.hover();
-  await page.waitForTimeout(300);
+  await page.waitForTimeout(420);
   assert.equal(
     await lightField.evaluate(input => getComputedStyle(input.closest('.wd-edit-field')).backgroundColor),
     'rgba(118, 118, 118, 0.12)',
     'light editable fields brighten to a neutral grey on hover'
   );
   await lightField.focus();
-  await page.waitForTimeout(300);
+  await page.waitForTimeout(420);
   assert.equal(
     await lightField.evaluate(input => getComputedStyle(input.closest('.wd-edit-field')).backgroundColor),
     'rgba(118, 118, 118, 0.12)',

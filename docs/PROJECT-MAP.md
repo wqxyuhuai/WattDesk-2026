@@ -1,6 +1,6 @@
 # WattDesk 项目地图与交接索引
 
-更新：2026-11-20。
+更新：2026-11-24。
 
 本文是新对话的项目总索引，只汇总稳定边界、共享标准和维护入口，不复制
 `DESIGN-SYSTEM.md` 的完整视觉参数。需要执行具体改动时，仍以根目录
@@ -13,20 +13,22 @@
 3. `DESIGN-SYSTEM.md`：颜色、字体、玻璃、按钮、动效和验收参数。
 4. `docs/PROJECT-STATUS.md`：当前实现、最近验证和待办边界。
 5. 修改 Inverter settings 时必须读 `docs/INVERTER-SETTINGS.md`。
-6. 新增页面时读 `docs/ARCHITECTURE.md`、`docs/COMPONENTS.md`。
-7. 修改既有交互时读 `docs/LESSONS-LEARNED.md`、`docs/USER-REQUIREMENTS.md`；
+6. 修改 ToU Manual / Dynamic、动态电价、Intelligent Mode、时间段编辑或 ToU
+   视觉时，还必须读 `docs/TOU-MODE-SETTINGS.md`。
+7. 新增页面时读 `docs/ARCHITECTURE.md`、`docs/COMPONENTS.md`。
+8. 修改既有交互时读 `docs/LESSONS-LEARNED.md`、`docs/USER-REQUIREMENTS.md`；
    涉及顶栏标签再读 `docs/TOP-BAR-TABS.md`。
-8. Plants 与 Service Ticket 的具体行为分别读对应页面 README。
+9. Plants 与 Service Ticket 的具体行为分别读对应页面 README。
 
 历史计划放在 `docs/history/`，只用于理解背景，不能覆盖当前规范。`CHANGELOG.md`
 保留逐日过程记录；当前有效规则以本索引指向的规范文件为准。
-`docs/PROJECT-STATUS.md` 顶部的 **2026-11-20 当前规则归档（最高优先级）**
-是最近一次实现收口；`docs/USER-REQUIREMENTS.md` 顶部的 2026-11-20 条目
-记录同日最终用户要求，2026-11-19 逆变器设置基线继续作为功能与视觉基础。
-按日期保留的更早条目只用于追溯；冲突时以 2026-11-20 总表、当前设计规范、
-专项页面规格和已验证代码为准。
+`docs/PROJECT-STATUS.md` 顶部的 **2026-11-24 当前规则归档（最高优先级）**
+是最近一次实现收口；`docs/USER-REQUIREMENTS.md` 顶部的 2026-11-24 条目
+记录最新用户要求，2026-11-23 的 ToU、Battery、MPPT、Reset、Wi-Fi 等规则与
+2026-11-19 / 2026-11-20 基线继续作为功能与视觉基础。按日期保留的更早条目只用于
+追溯；冲突时以 2026-11-24 总表、当前设计规范、专项页面规格和已验证代码为准。
 
-2026-11-20 的归档只基于当前可访问的对话记录、当前工作树 diff、运行代码、
+2026-11-24 的归档只基于当前可访问的对话记录、当前工作树 diff、运行代码、
 专项测试和现有文档。无法直接访问的并行对话不补写、不推断；文档中的“待确认”
 项必须继续视为未决，直到用户或后端给出明确结论。
 
@@ -38,7 +40,8 @@
 | `/plants` | 已完成本地交互预览 | 46 条样例、筛选并集、列显隐、排序、收藏、滚动反馈 |
 | `/plants/:id` | 已完成 Overview 本地交互预览 | 默认进入第一台设备；多设备可切并同步 `?device=`；Statistics 支持 `Day / Month / Year / Total` 与月/年 `Separate / Combined`，数据为确定性本地样例 |
 | `/plants/:id/devices` | 已完成本地交互预览 | Linear 式扁平设备行、命名、新增、替换、解绑和设置预览；真实后端与硬件控制未接入 |
-| `/plants/:id/devices/inverter-settings` | 已完成本地交互预览 | route-backed 逆变器设置窗口；5 组导航、18 个国别档案、Check code 门禁、维护页、本地会话保存，以及 1120 新增的 `Limit basis`；完整有效契约见 [INVERTER-SETTINGS.md](./INVERTER-SETTINGS.md) |
+| `/plants/:id/devices/inverter-settings` | 已完成本地交互预览 | route-backed 逆变器设置窗口；5 组导航、17 个主页面入口（含 Manual / Dynamic 两个 `ToU Mode`）、18 个国别档案、Check code 门禁、维护页、本地会话保存、1120 `Limit basis`，以及单/双电池拓扑、并联、共享 SOC、加热配置；完整有效契约见 [INVERTER-SETTINGS.md](./INVERTER-SETTINGS.md) |
+| ToU Manual / Dynamic | 已完成本地交互预览 | [ToU 功能契约](./TOU-MODE-SETTINGS.md) 已确认并实现双入口、手动计划、动态电价、五种控制模式、Intelligent 云端决策、费用与生成计划；暂不实现侧栏资格隐藏及真实后端下发 |
 | `https://inverter.carlwang.cn/` → `/settings` | 已发布独立预览 | 仅显示 `p25` 第一台逆变器设置；独立 Worker 白名单代理，不允许访问其他 WattDesk 页面；默认浅色，底部 `32px` 主题按钮，复用同一页面代码 |
 | `/plants/:id/site` | 隐藏兼容路由 | 旧资料页仅保留直达链接和回归兼容，不在详情页签中显示 |
 | `/plants/:id/site-v2` | 当前 Site details 页面 | 详情页签显示为 `Site details`；顶部 Hero、Mapbox、Energy / Installer / Owner / Picture / Visitor 卡，支持会话内编辑。规格见 [SITE-DETAILS.md](./SITE-DETAILS.md) |
@@ -80,6 +83,7 @@ pages  →  layouts / components  →  foundations
 | 普通按钮 | `createStandardButton()` + `button.css` | 标准 36px 胶囊或圆钮；页面只注册玻璃实例与生命周期 |
 | 页头动作 | `createPageHeaderAction()` + `page-header.css` | 28px 轻量透明动作，不套 36px 玻璃按钮 |
 | 搜索 | `createSearchField()` + `search-surface.css` | 默认 46px，数据页紧凑 36px；不另写图标、清除或玻璃 |
+| 编辑字段 | `edit-field.css` + `motion.css` | `.wd-edit-field` 统一填充、outline、placeholder 与 `380ms` disclosure；直接输入、复合输入和 Select 自动继承，不登记页面类名白名单 |
 | 页头/面包屑 | `createPageHeader()` + `page-header.css` | Home 以外页面共用 40px 固定页头 |
 | 居中内容列 | `foundations/base.css` `.wd-page-content` + `tokens.css` | 非全屏设置/详情页最大 `1000px` 并居中；表格与设备清单仍可使用满宽布局 |
 | 卡片 | `cards.js` / `cards.css` | `panel`、`chart`、`status` 表示表面契约；讨论与 Operations 卡统一用 `.wd-discussion-card`，浅色纯白无投影 |
@@ -122,6 +126,7 @@ pages  →  layouts / components  →  foundations
 | `docs/ARCHITECTURE.md` | 分层、模块职责、扩展流程 |
 | `docs/COMPONENTS.md` | 共享组件 API 与组合方式 |
 | `docs/INVERTER-SETTINGS.md` | Inverter settings 唯一页面契约、组件选择、未决边界和防回归 |
+| `docs/TOU-MODE-SETTINGS.md` | ToU Manual / Dynamic 页面、高级设置、数据契约、生产边界和防回归要求 |
 | `docs/USER-REQUIREMENTS.md` | 用户明确要求与已推翻方案 |
 | `docs/LESSONS-LEARNED.md` | 已发生问题、根因和防回归检查 |
 | `docs/ROUTING.md` | 路径、深链接、刷新与回退 |
@@ -141,7 +146,7 @@ Plants 与 Service Ticket 的具体页面 README 是页面行为契约的一部�
 3. 从 `templates/page.html` 建立语义外壳，复用 Plants 数据页布局。
 4. 登记 `routes.js`、本地/生产 SPA 回退和路由回归。
 5. 页面只写布局与业务装配；共享能力缺失时先扩展组件 API。
-6. 验证默认、hover、focus、选中、禁用/加载、双主题、减少动态效果和响应式。
+6. 验证默认、hover、focus、选中、禁用/加载、双主题、减少动态效果和响应式；共享字段或交互控件还要验证中间帧，而不是只看最终颜色。
 
 ### 修改视觉
 
@@ -163,11 +168,16 @@ Plants 与 Service Ticket 的具体页面 README 是页面行为契约的一部�
 
 ```powershell
 npm run check
-npm test
+npm run audit:motion
+npm run test:file -- tests/verify-<page>.cjs
 npm run build:site:public
 npm run audit:assets
 git diff --check
 ```
+
+`npm test` 只在用户明确要求完整回归、或共享基础发生跨页面高风险变更时执行；
+日常页面改动使用对应专项，避免重复运行全部 25 套 Playwright。共享字段、动效
+宿主或状态矩阵变化先运行 `npm run audit:motion`。
 
 `npm run check` 同时验证 JavaScript 语法、必读文档是否存在，以及页面是否重新
 引入本地 `text()` / 时间格式化、旧 `.wd-date-action` 兼容类或局部 transition。

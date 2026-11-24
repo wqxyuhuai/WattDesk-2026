@@ -198,15 +198,6 @@
 }
 .plants-devices-empty-title{margin:0}
 .plants-devices-empty-copy{max-width:360px;margin:0;color:var(--wd-label-secondary)}
-.plants-device-actions-menu .wd-menu-row.is-danger,
-.plants-device-actions-menu .wd-menu-row.is-danger .wd-menu-label,
-.plants-device-actions-menu .wd-menu-row.is-danger .target-nav-icon{color:var(--wd-accent-red)}
-:root .plants-device-actions-menu .wd-menu-row.is-danger:is(:hover,:focus-visible){
- background:color-mix(in srgb,var(--wd-accent-red) 11%,transparent);
- color:var(--wd-accent-red);
-}
-:root .plants-device-actions-menu .wd-menu-row.is-danger:is(:hover,:focus-visible) .wd-menu-label,
-:root .plants-device-actions-menu .wd-menu-row.is-danger:is(:hover,:focus-visible) .target-nav-icon{color:var(--wd-accent-red)}
 .plants-device-actions-menu .wd-menu-label{flex:1 1 auto}
 .plants-device-menu-icon.is-system-tests{-webkit-mask-size:108% 108%;mask-size:108% 108%}
 .plants-device-menu-icon.is-replace{-webkit-mask-size:105% 105%;mask-size:105% 105%}
@@ -314,6 +305,7 @@
 .plants-device-confirm-title{margin:0;color:var(--wd-label-primary);font-size:18px;line-height:24px;font-weight:590}
 .plants-device-confirm-description{margin:0;color:var(--wd-label-secondary);font-size:13px;line-height:19px}
 .plants-device-confirm-actions{display:flex;align-items:center;justify-content:center;gap:8px;width:100%}
+.plants-device-confirm-actions.is-single-action>.wd-button{width:100%}
 
 .plants-device-dialog--settings{height:min(720px,calc(100vh - 40px))}
 .plants-device-settings-form{min-height:0}

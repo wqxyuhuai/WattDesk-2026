@@ -7,7 +7,9 @@ export function createConfirmDialog({
  title,
  description,
  confirmLabel="Confirm",
+ confirmVariant="neutral",
  cancelLabel="Cancel",
+ showCancel=true,
  icon=null,
  danger=true,
  confirmClassName="",
@@ -29,9 +31,12 @@ export function createConfirmDialog({
   text("p","plants-device-confirm-description",description,"Footnote/Regular")
  );
  const actions=text("div","plants-device-confirm-actions");
- const cancel=createStandardButton({label:cancelLabel});
- const confirm=createStandardButton({label:confirmLabel,className:confirmClassName});
- actions.append(cancel,confirm);
+ actions.classList.toggle("is-single-action",!showCancel);
+ const cancel=showCancel?createStandardButton({label:cancelLabel}):null;
+ const resolvedConfirmVariant=confirmVariant==="neutral"&&danger?"danger-solid":confirmVariant;
+ const confirm=createStandardButton({label:confirmLabel,variant:resolvedConfirmVariant,className:confirmClassName});
+ if(cancel)actions.append(cancel);
+ actions.append(confirm);
  body.append(intro,actions);
  content.append(body);
  const modal=createModalDialog({
@@ -44,9 +49,9 @@ export function createConfirmDialog({
   restoreFocus,
   onClose
  });
- modal.registerSurface(cancel,18);
+ if(cancel)modal.registerSurface(cancel,18);
  modal.registerSurface(confirm,18);
- cancel.addEventListener("click",()=>{
+ cancel?.addEventListener("click",()=>{
   modal.close();
   onCancel?.();
  });

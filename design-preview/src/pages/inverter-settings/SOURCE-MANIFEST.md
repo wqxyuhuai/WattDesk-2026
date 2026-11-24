@@ -56,3 +56,16 @@ The separately supplied `check.svg` is normalized to
 alpha and the check is a transparent negative cutout, so light mode renders
 primary black and dark mode primary white without source-file colour leakage.
 
+## 2026-11-24 Reset & Recovery icon
+
+Source path:
+
+`C:\Users\Administrator\Desktop\reset.svg`
+
+Runtime asset:
+
+`home-assets/icons/settings/reset-recovery.svg`
+
+The supplied 30px SVG is retained as a shape-only mask. Its bytes and SHA-256
+are recorded in `design/inverter-settings/settings-icons-source.json`.
+

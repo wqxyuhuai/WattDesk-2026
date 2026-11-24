@@ -349,6 +349,8 @@ export function createScrollFeedback({
   element:track,
   sync,
   cancelBottomShrink:()=>bottomGuard?.cancel(),
+  holdBottomShrink:()=>bottomGuard?.holdBottom(),
+  settleBottomShrink:hold=>bottomGuard?.settleBottom(hold),
   destroy(){
    cancelAnimationFrame(frame);
    cancelAnimationFrame(pullFrame);

@@ -23,12 +23,12 @@ export function menuList(){
 // that path: do not re-derive mono/colour from the filename, or neutral exports
 // silently lose their shared hover mask.
 export function menuRow(label,{
- iconFile,iconTone="mono",iconNode,iconPosition="start",checked=false,showCheck=true,onSelect
+ iconFile,iconTone="mono",iconNode,iconPosition="start",checked=false,showCheck=true,onSelect,description=""
 }={}){
  const row=document.createElement("button");
  row.type="button";
  row.className="wd-menu-row";
- row.setAttribute("aria-label",label);
+ row.setAttribute("aria-label",description?`${label}. ${description}`:label);
  applyTypeStyle(row,"14/14 medium");
  if(checked)row.setAttribute("aria-checked","true");
  row.setAttribute("role",checked?"menuitemradio":"menuitem");
@@ -37,7 +37,18 @@ export function menuRow(label,{
  const text=document.createElement("span");
  text.className="wd-menu-label";
  text.textContent=label;
- row.append(text);
+ if(description){
+  const copy=document.createElement("span");
+  copy.className="wd-menu-copy";
+  const descriptionNode=document.createElement("span");
+  descriptionNode.className="wd-menu-description";
+  descriptionNode.textContent=description;
+  applyTypeStyle(descriptionNode,"Caption1/Regular");
+  copy.append(text,descriptionNode);
+  row.append(copy);
+ }else{
+  row.append(text);
+ }
  if(hasIcon&&iconPosition==="end"){
   const icon=menuIcon(iconFile,iconTone,iconNode);
   icon.classList.add("wd-menu-row-icon-end");

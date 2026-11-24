@@ -22,8 +22,18 @@ function motionTokens(){
   }));
 }
 
+function easingTokens(){
+  const css=fs.readFileSync(path.join(sourceRoot,'src/foundations/tokens.css'),'utf8');
+  const block=css.match(/:root\{([\s\S]*?)\n\}/)?.[1]||'';
+  return Object.fromEntries([...block.matchAll(/--wd-ease-[\w-]+:[^;]+/g)].map(match=>{
+    const [name,value]=match[0].split(':');
+    return [name,value.replace(/[;\s]+$/g,'')];
+  }));
+}
+
 (async()=>{
   const tokens=motionTokens();
+  const easings=easingTokens();
   assert.equal(tokens['--wd-motion-hover'],'240ms');
   assert.equal(tokens['--wd-motion-hover-out'],'360ms');
   assert.equal(tokens['--wd-motion-tab-close'],'260ms');
@@ -33,6 +43,7 @@ function motionTokens(){
   assert.equal(tokens['--wd-motion-panel'],'320ms');
   assert.equal(tokens['--wd-motion-panel-exit'],'200ms');
   assert.equal(tokens['--wd-motion-content-grow'],'280ms');
+  assert.equal(easings['--wd-ease-content-settle'],'cubic-bezier(.4,0,.2,1)');
   assert.equal(tokens['--wd-motion-view-switch'],'260ms');
   assert.equal(tokens['--wd-motion-view-switch-in'],'260ms');
   assert.equal(tokens['--wd-motion-view-switch-out'],'260ms');

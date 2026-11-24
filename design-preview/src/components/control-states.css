@@ -11,10 +11,16 @@
 }
 /* The solid accent button keeps white ink in both themes; the generic light
  * hover state must not turn its label or icon into the dark primary ink. */
-:root[data-theme="light"] .wd-button--primary:is(:hover,:focus-visible,:has(:focus-visible)){
+:root[data-theme="light"] :is(.wd-button--primary,.wd-button--danger-solid):is(:hover,:focus-visible,:has(:focus-visible)){
  color:var(--wd-figma-grays-white)!important;
 }
-:root[data-theme="light"] .wd-button--primary:is(:hover,:focus-visible,:has(:focus-visible)) :is(.wd-control-label,.wd-control-label>span){
+:root[data-theme="light"] :is(.wd-button--primary,.wd-button--danger-solid):is(:hover,:focus-visible,:has(:focus-visible)) :is(.wd-control-label,.wd-control-label>span){
+ color:var(--wd-figma-grays-white)!important;
+}
+.wd-button--danger-solid,
+.wd-button--danger-solid :is(.wd-control-label,.wd-control-label>span),
+.wd-button--danger-solid:is(:hover,:focus-visible,:has(:focus-visible)),
+.wd-button--danger-solid:is(:hover,:focus-visible,:has(:focus-visible)) :is(.wd-control-label,.wd-control-label>span){
  color:var(--wd-figma-grays-white)!important;
 }
 .wd-button--danger,
@@ -37,7 +43,9 @@
 .wd-control-state:is(:disabled,[aria-disabled="true"]){color:var(--wd-label-quaternary)!important;cursor:default}
 .wd-control-state:is(:disabled,[aria-disabled="true"]) :is(.target-icon-art,.wd-control-label,.wd-control-label>span){color:var(--wd-label-quaternary)!important}
 .wd-button--primary:is(:disabled,[aria-disabled="true"]),
-.wd-button--primary:is(:disabled,[aria-disabled="true"]) :is(.wd-control-label,.wd-control-label>span){
+.wd-button--primary:is(:disabled,[aria-disabled="true"]) :is(.wd-control-label,.wd-control-label>span),
+.wd-button--danger-solid:is(:disabled,[aria-disabled="true"]),
+.wd-button--danger-solid:is(:disabled,[aria-disabled="true"]) :is(.wd-control-label,.wd-control-label>span){
  color:var(--wd-figma-grays-white)!important;
 }
 .wd-control-state:is(:disabled,[aria-disabled="true"]) .target-icon-neutral::after{opacity:0!important}

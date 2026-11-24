@@ -12,11 +12,14 @@ import {createToggleSwitch} from "../../components/toggle-switch.js";
 import {bindDisclosure} from "../../components/disclosure.js";
 import {menuList,menuRow,mountMenu} from "../../components/menu-popover.js";
 import {makeNavRow} from "../../components/navigation.js";
+import {createTimeRangeControl} from "../../components/time-range-control.js";
 import {animateContentHeight,motionDuration,motionEasing,reducedMotion} from "../../foundations/motion.js";
 import {createSettingsModel,ECONOMIC_MODES,isEconomicDraft,modeIndexFromLabel,MODES,minutesToTime,timeToMinutes} from "./settings-model.js";
-import {GRID_PAGES,NAV_GROUPS,PAGES,formatSigned} from "./settings-content.js";
+import {GRID_PAGES,MPPT_PARALLEL_HINT,NAV_GROUPS,PAGES,backupOutputSafetyNotice,formatSigned,mpptGroupLabel} from "./settings-content.js";
 import {
+ BATTERY_BRAND_OPTIONS,
  CAPABILITY_OPTIONS,
+ CT_CURRENT_MODE_OPTIONS,
  DI_PORT_OPTIONS,
  EXPORT_FORMAT_OPTIONS,
  LIMIT_BASIS_OPTIONS,
@@ -27,9 +30,14 @@ import {
  P_U_MODE_OPTIONS,
  REACTIVE_LIMIT_OPTIONS,
  REACTIVE_MODE_OPTIONS,
- RIDE_THROUGH_PRIORITY_OPTIONS
+ RIDE_THROUGH_PRIORITY_OPTIONS,
+ SETTINGS_POINT_CONTRACTS,
+ TOU_CONTROL_MODES,
+ TOU_PERIOD_MODES
 } from "./settings-options.js";
 import {settingRange,settingRangeMessage} from "./settings-validation.js";
+import {hydrateTouSettingsPage,validateTouSchedule} from "./tou-settings.js";
+import {openResetRecovery} from "./reset-recovery.js";
 
 const settingIconURL=key=>assetURL(SETTINGS_ICON_FILES[key]);
 const ICONS=Object.freeze({
@@ -40,6 +48,7 @@ const ICONS=Object.freeze({
  offgrid:settingIconURL("offGridMode"),
  cap:settingIconURL("peakLoadShiftingMode"),
  info:assetURL("plants/detail/info2.svg"),
+ warning:opaqueMaskURL("light/imgBoldEssentionalUiDanger.svg"),
  chevron:opaqueMaskURL("asset-14.svg"),
  plus:assetURL("plants/plus.svg"),
  lock:assetURL("inverter-settings/lock.svg")
@@ -47,6 +56,7 @@ const ICONS=Object.freeze({
 const NAV_ICON_FILES=Object.freeze({
  mode:SETTINGS_ICON_FILES.runningMode,
  clock:SETTINGS_ICON_FILES.economicSchedule,
+ tou:SETTINGS_ICON_FILES.timeOfUseMode,
  batt:SETTINGS_ICON_FILES.batteryManagement,
  dispatch:SETTINGS_ICON_FILES.activePowerDispatch,
  limit:SETTINGS_ICON_FILES.feedInImportLimits,
@@ -61,6 +71,7 @@ const NAV_ICON_FILES=Object.freeze({
  exp:SETTINGS_ICON_FILES.parameterExport,
  log:SETTINGS_ICON_FILES.operationLog
 });
+const POINTS=SETTINGS_POINT_CONTRACTS;
 
 function icon(name){
  const node=document.createElement("i");
@@ -92,11 +103,13 @@ async function copyText(value){
  return copied;
 }
 
-const TRANSIENT_SETTINGS=new Set(["page","gridSub","gridOpen","unlocked","navExpanded","log","ct","ops"]);
+const TRANSIENT_SETTINGS=new Set(["page","gridSub","gridOpen","unlocked","mpptPickerOpen","navExpanded","log","ct","ops","touDay","touView"]);
 const MAIN_PAGE_SETTING_PATHS=Object.freeze({
  mode:[["runMode"]],
  eco:[["eco"]],
- batt:[["soc"],["battChgMax"],["battDisMax"],["pvAvail"]],
+ touManual:[["tou","manual"],["tou","interval"]],
+ touDynamic:[["tou","dynamic"],["tou","config"]],
+ batt:[["battery"],["battChgMax"],["battDisMax"],["pvAvail"]],
  dispatch:[["dispatch"]],
  limits:[["limits"]],
  cap:[["capability"]],
@@ -104,6 +117,7 @@ const MAIN_PAGE_SETTING_PATHS=Object.freeze({
  net:[["net"]],
  feat:[["features"]],
  mppt:[["mppt"]],
+ ct:[["ctCurrentMode"]],
  export:[["exp"]]
 });
 const GRID_SUBPAGE_SETTING_RULES=Object.freeze({
@@ -263,7 +277,7 @@ function hydrateIcons(root){
  }
 
  function fieldIdentity(input){
-  return String(input.dataset.iswNumber||input.dataset.iswEcoPower||input.dataset.iswEcoTimeInput||input.value||"field").replace(/[^a-z0-9_-]+/gi,"-");
+  return String(input.dataset.iswNumber||input.dataset.iswEcoPower||input.dataset.iswEcoTimeInput||input.dataset.iswTouTimeInput||input.value||"field").replace(/[^a-z0-9_-]+/gi,"-");
  }
 
  function syncFieldDescription(input,errorId=null){
@@ -276,7 +290,7 @@ function hydrateIcons(root){
  }
 
  function syncInlineErrorAlignment(row,errors,input){
-  if(!row.matches(".isw-table-row,.isw-eco-row")){
+  if(!row.matches(".isw-table-row,.isw-eco-row,.isw-tou-row")){
    errors.style.removeProperty("--isw-error-right");
    return;
   }
@@ -291,7 +305,7 @@ function hydrateIcons(root){
  }
 
  function showInlineFieldError(input,message){
-  const row=input.closest(".isw-row,.isw-table-row,.isw-eco-row");
+  const row=input.closest(".isw-row,.isw-table-row,.isw-eco-row,.isw-tou-row");
   if(!row)return;
   const card=validationCard(input);
   const previousHeight=card?.getBoundingClientRect().height;
@@ -320,7 +334,7 @@ function hydrateIcons(root){
  }
 
  function clearInlineFieldError(input){
-  const row=input.closest(".isw-row,.isw-table-row,.isw-eco-row");
+  const row=input.closest(".isw-row,.isw-table-row,.isw-eco-row,.isw-tou-row");
   const card=validationCard(input);
   const previousHeight=card?.getBoundingClientRect().height;
   const errors=row?.querySelector(":scope > .isw-field-errors");
@@ -424,29 +438,29 @@ function renderSubnav(model){
 
 function renderOverview(model,overview){
  const effective=model.effective();
- const hard=effective.src==="Export limit"||effective.src==="Import limit";
- const tone=!effective.src?"success":hard?"warning":"signal";
- const limit=!effective.src
-  ?"Setpoint reached"
-  :effective.src==="Battery power capability"
-   ?`Limited by ${effective.sp<0?"battery charging":"battery discharge and PV"}`
-   :`Limited by ${effective.src.toLowerCase()}`;
+ const tone=effective.available?effective.sourceTone:"idle";
+ const limit=!effective.available
+  ?"Effective values unavailable"
+  :effective.src
+   ?`Limited by ${effective.src}`
+   :"No active limit source";
+ const power=value=>Number.isFinite(value)?`${value.toFixed(1)}<em>kW</em>`:"Unavailable";
  const metrics=[
    ["Mode",MODES[model.S.runMode].compactLabel],
   ["Control",model.S.dispatch.on?"EMS dispatch":"Local strategy"],
   ["Setpoint",model.S.dispatch.on?`${effective.sp.toFixed(1)}<em>kW</em>`:"—"],
    ["Export limit",model.S.limits.feedOn?`${model.S.limits.feed.toFixed(1)}<em>kW</em>`:"Off"],
-  ["PV curtailed",`${effective.curtail.toFixed(1)}<em>kW</em>`],
+  ["PV curtailed",power(effective.curtail),POINTS.effectivePvCurtailed.point],
   ["Battery","50.3<em>%</em>"]
  ];
  overview.innerHTML=`<div class="isw-overview-main">
-   <div class="isw-overview-kicker">Grid-tied point now</div>
+   <div class="isw-overview-kicker">Effective active-power limit</div>
    <div class="isw-overview-result">
-    <div class="isw-overview-reading"><b>${effective.out.toFixed(1)}</b><em>kW</em></div>
-    <div class="isw-status isw-overview-limit isw-status--${tone}"><i></i><span>${limit}</span></div>
+    <div class="isw-overview-reading" data-isw-point="${POINTS.effectiveLimit.point}">${Number.isFinite(effective.out)?`<b>${effective.out.toFixed(1)}</b><em>kW</em>`:"<b>Unavailable</b>"}</div>
+    <div class="isw-status isw-overview-limit isw-status--${tone}" data-isw-point="${POINTS.effectiveLimitSource.point}"><i></i><span>${limit}</span></div>
    </div>
   </div>
-  <div class="isw-overview-grid">${metrics.map(([label,value])=>`<div class="isw-overview-metric"><span>${label}</span><div>${value}</div></div>`).join("")}</div>`;
+  <div class="isw-overview-grid">${metrics.map(([label,value,point])=>`<div class="isw-overview-metric"${point?` data-isw-point="${point}"`:""}><span>${label}</span><div>${value}</div></div>`).join("")}</div>`;
 }
 
 function renderDeviceHeader(model,device,container){
@@ -544,6 +558,9 @@ function createWindow({device,model,onCancel,onSave,glass,toast,registerPanel,to
  let actionsAnimation=null;
  let actionsTransition=0;
  let pageChangeConfirm=null;
+ let backupOutputAlert=null;
+ let pendingMpptPicker=false;
+ let wifiPasswordVisible=false;
  let animateNextSurfaceGrowth=false;
  let viewSwitchGeneration=0;
  let viewSwitchAnimations=[];
@@ -955,6 +972,50 @@ function crossfadeView(page,outgoingPage,outgoingTitle,layoutSnapshot,subTransit
   return close;
  }
 
+ function showBackupOutputSafetyAlert(enabling){
+  if(backupOutputAlert)return;
+  const copy=backupOutputSafetyNotice(enabling);
+  backupOutputAlert=createConfirmDialog({
+   glass,
+   title:copy.title,
+   description:copy.description,
+   confirmLabel:"OK",
+   confirmVariant:"primary",
+   showCancel:false,
+   icon:createMaskedIcon(opaqueMaskURL("asset-32.svg"),"plants-device-action-icon"),
+   danger:false,
+   onClose:()=>{
+    backupOutputAlert=null;
+   }
+  });
+ }
+
+ function switchMpptScanMode(mode){
+  const page=content.querySelector(".isw-page:not(.isw-page--leaving)");
+  const currentMode=Number(model.S.mppt.scanMode);
+  if(mode===currentMode)return;
+  const regions=[...page.querySelectorAll("[data-isw-mppt-shadow-region]")];
+  const nextRegion=page.querySelector(`[data-isw-mppt-shadow-region="${mode===1?"individual":"all"}"]`);
+  if(!nextRegion||regions.length!==2){
+   const bottomHold=scrollFeedback.holdBottomShrink?.();
+   model.set("mppt.scanMode",mode);
+   refresh({bottomHold});
+   return;
+  }
+  const bottomHold=scrollFeedback.holdBottomShrink?.();
+  model.set("mppt.scanMode",mode);
+  for(const region of regions){
+   const active=region===nextRegion;
+   region.hidden=!active;
+   region.toggleAttribute("inert",!active);
+   if(active)region.removeAttribute("aria-hidden");
+   else region.setAttribute("aria-hidden","true");
+  }
+  syncActions();
+  if(bottomHold)scrollFeedback.settleBottomShrink?.(bottomHold);
+  requestAnimationFrame(()=>scrollFeedback.sync());
+ }
+
  function hydrateTimeLabels(page){
   for(const slot of page.querySelectorAll("[data-isw-time-minutes],[data-isw-log-minutes]")){
    const minutes=Number(slot.dataset.iswTimeMinutes??slot.dataset.iswLogMinutes);
@@ -983,6 +1044,31 @@ function crossfadeView(page,outgoingPage,outgoingTitle,layoutSnapshot,subTransit
  function hydratePage(page){
   hydrateIcons(page);
   decorateNumberInputs(page);
+  for(const input of page.querySelectorAll("[data-isw-text]")){
+   const path=input.dataset.iswText;
+   input.addEventListener("input",()=>{
+    model.set(path,input.value);
+    syncActions();
+   });
+  }
+  for(const toggle of page.querySelectorAll("[data-isw-password-toggle]")){
+   const input=page.querySelector(`[data-isw-text="${CSS.escape(toggle.dataset.iswPasswordToggle)}"]`);
+   const icon=toggle.querySelector("[data-isw-password-eye]");
+   if(!input||!icon)continue;
+   const syncPasswordVisibility=()=>{
+    input.type=wifiPasswordVisible?"text":"password";
+    toggle.setAttribute("aria-label",wifiPasswordVisible?"Hide password":"Show password");
+    toggle.setAttribute("aria-pressed",String(wifiPasswordVisible));
+    icon.style.setProperty("--icon-mask",`url("${assetURL(wifiPasswordVisible?"plants/icons/eye.svg":"plants/icons/eye-closed.svg")}")`);
+    icon.classList.toggle("is-closed",!wifiPasswordVisible);
+   };
+   syncPasswordVisibility();
+   toggle.addEventListener("click",()=>{
+    wifiPasswordVisible=!wifiPasswordVisible;
+    syncPasswordVisibility();
+    input.focus({preventScroll:true});
+   });
+  }
  for(const slot of page.querySelectorAll("[data-isw-standard-button]")){
   const action=slot.dataset.iswAction;
   const label=slot.dataset.iswButtonLabel||slot.textContent;
@@ -1013,12 +1099,32 @@ function crossfadeView(page,outgoingPage,outgoingTitle,layoutSnapshot,subTransit
    }
    const row=slot.closest(".isw-row");
    const label=row?.querySelector(".isw-row-label")?.textContent?.trim()||path;
+   if(path==="features.backupOutput"&&row){
+    const guardBackupOutput=event=>{
+     if(!model.S.ops.running)return;
+     if(!event.target.closest?.(`[data-isw-switch="${CSS.escape(path)}"]`))return;
+     event.preventDefault();
+     event.stopPropagation();
+     showBackupOutputSafetyAlert(!Boolean(model.get(path)));
+    };
+    row.addEventListener("click",guardBackupOutput,true);
+    controlDisposers.push(()=>row.removeEventListener("click",guardBackupOutput,true));
+   }
    const toggle=createToggleSwitch({
     label,
     checked:Boolean(model.get(path)),
     glass,
     onChange:value=>{
      model.set(path,value?1:0);
+     if(path.startsWith("mppt."))model.normalizeMppt();
+     if(path.startsWith("tou.")){
+      model.normalizeTou();
+      model.regenerateTouDynamic();
+     }
+     if(path==="mppt.parallel"){
+      pendingMpptPicker=Boolean(value&&model.capabilities.mpptCount>2&&!model.mpptGroups().length);
+      model.S.mpptPickerOpen=pendingMpptPicker;
+     }
      pendingFocus={type:"switch",value:path};
      animateNextSurfaceGrowth=true;
      refresh();
@@ -1054,12 +1160,23 @@ function crossfadeView(page,outgoingPage,outgoingTitle,layoutSnapshot,subTransit
     glass,
     onChange:value=>{
      const index=Number(value);
-     if(path==="dispatch.unit"){
+     if(path==="mppt.scanMode"){
+      switchMpptScanMode(index);
+      pendingFocus={type:"segment",path,value:String(index)};
+      return;
+     }
+     if(path==="touDay"){
+      model.S.touDay=index===1?"tomorrow":"today";
+     }else if(path==="dispatch.unit"){
       const currentKW=model.spKW();
       model.S.dispatch.unit=index;
       model.S.dispatch.sp=index?currentKW:currentKW/model.PN*100;
      }else{
       model.set(path,index);
+     }
+     if(path.startsWith("tou.")){
+      model.normalizeTou();
+      model.regenerateTouDynamic();
      }
      pendingFocus={type:"segment",path,value:String(index)};
      refresh();
@@ -1074,17 +1191,308 @@ function crossfadeView(page,outgoingPage,outgoingTitle,layoutSnapshot,subTransit
    control.destroy();
    segmentedControls.delete(path);
   }
+  for(const slot of page.querySelectorAll("[data-isw-battery-brand]")){
+   const path=slot.dataset.iswBatteryBrand;
+   const value=decodeURIComponent(slot.dataset.iswBatteryBrandValue||BATTERY_BRAND_OPTIONS[0]);
+   const label=slot.dataset.iswBatteryBrandLabel||"Battery Brand";
+   const control=createSelectControl({
+    label,
+    value,
+    options:BATTERY_BRAND_OPTIONS,
+    variant:"adaptive",
+    className:"isw-battery-brand-trigger",
+    menuClassName:"isw-battery-brand-popover",
+    registerPanel,
+    close:closePanels,
+    toggle:togglePanel,
+    radius:30,
+    menuWidth:200,
+    align:"end",
+    chooseLabel:`Choose ${label}`,
+    onChange:next=>{
+     model.set(path,next);
+     pendingFocus={type:"batteryBrand",value:path};
+     refresh();
+    }
+   });
+   control.element.dataset.iswBatteryBrand=path;
+   control.element.dataset.iswLogLabel=slot.dataset.iswLogLabel||label;
+   slot.replaceWith(control.element);
+  }
+  function batterySocFields(input){
+   const match=/^(battery\.soc)\.(grid|off)(Min|Max)$/.exec(input?.dataset.iswNumber||"");
+   if(!match)return null;
+   return {
+    lowPath:`${match[1]}.${match[2]}Min`,
+    highPath:`${match[1]}.${match[2]}Max`
+   };
+  }
+  function validateBatterySocRelation(input,{show=true}={}){
+   const fields=batterySocFields(input);
+   if(!fields)return true;
+   const low=page.querySelector(`[data-isw-number="${CSS.escape(fields.lowPath)}"]`);
+   const high=page.querySelector(`[data-isw-number="${CSS.escape(fields.highPath)}"]`);
+   if(!low||!high)return true;
+   const lowValue=Number(low.value),highValue=Number(high.value);
+   const valid=Number.isFinite(lowValue)&&Number.isFinite(highValue)&&lowValue!==highValue;
+   if(valid){
+    clearInlineFieldError(low);
+    clearInlineFieldError(high);
+    low.closest(".isw-mini-number")?.classList.remove("is-invalid");
+    high.closest(".isw-mini-number")?.classList.remove("is-invalid");
+    low.removeAttribute("aria-invalid");
+    high.removeAttribute("aria-invalid");
+    return true;
+   }
+   if(show)showInlineFieldError(low,"Start and end SOC limits must be different.");
+   const errorId=low.closest(".isw-row")?.querySelector(".isw-field-error-message")?.id||null;
+   for(const field of [low,high]){
+    field.closest(".isw-mini-number")?.classList.add("is-invalid");
+    field.setAttribute("aria-invalid","true");
+    syncFieldDescription(field,errorId);
+   }
+   return false;
+  }
+  function commitBatterySocNumber(input,value){
+   const fields=batterySocFields(input);
+   if(!fields)return false;
+   const low=page.querySelector(`[data-isw-number="${CSS.escape(fields.lowPath)}"]`);
+   const high=page.querySelector(`[data-isw-number="${CSS.escape(fields.highPath)}"]`);
+   if(!low||!high)return false;
+   const other=input===low?high:low;
+   const otherValue=Number(other.value);
+   if(!Number.isFinite(value)||!Number.isFinite(otherValue)||value===otherValue){
+    validateBatterySocRelation(input);
+    return false;
+   }
+   const lowValue=Math.min(value,otherValue);
+   const highValue=Math.max(value,otherValue);
+   low.value=lowValue.toFixed(0);
+   high.value=highValue.toFixed(0);
+   clearInlineFieldError(low);
+   clearInlineFieldError(high);
+   model.set(fields.lowPath,lowValue);
+   model.set(fields.highPath,highValue);
+   pendingFocus={type:"number",value:value<otherValue?fields.lowPath:fields.highPath};
+   refresh();
+   return true;
+  }
+  function updateSocTooltip(range,handle,value,positionValue=value){
+   const tooltip=range.querySelector("[data-isw-soc-tooltip]");
+   const label=tooltip?.querySelector("[data-isw-soc-tooltip-text]");
+   if(!tooltip||!label)return;
+   label.textContent=`SOC ${value}%`;
+   const halfWidth=Math.max(32,tooltip.getBoundingClientRect().width/2);
+   const percent=Math.max(0,Math.min(100,Number(positionValue)));
+   range.dataset.activeHandle=typeof handle==="string"?handle:handle.dataset.iswSocHandle;
+   tooltip.style.left=`clamp(${halfWidth}px, ${percent}%, calc(100% - ${halfWidth}px))`;
+   tooltip.classList.add("is-visible");
+  }
+  function hideSocTooltip(range){
+   delete range.dataset.activeHandle;
+   range.querySelector("[data-isw-soc-tooltip]")?.classList.remove("is-visible");
+  }
+  function socRangeInputs(range){
+   return {
+    low:page.querySelector(`[data-isw-number="${CSS.escape(range.dataset.lowField)}"]`),
+    high:page.querySelector(`[data-isw-number="${CSS.escape(range.dataset.highField)}"]`)
+   };
+  }
+  function clearSocRangeError(range){
+   const inputs=socRangeInputs(range);
+   if(!inputs.low||!inputs.high)return;
+   clearInlineFieldError(inputs.low);
+   clearInlineFieldError(inputs.high);
+  }
+  function showSocRangeError(range){
+   const inputs=socRangeInputs(range);
+   if(!inputs.low||!inputs.high)return;
+   showInlineFieldError(inputs.low,"Start and end SOC limits must be different.");
+   inputs.low.closest(".isw-mini-number")?.classList.add("is-invalid");
+   inputs.high.closest(".isw-mini-number")?.classList.add("is-invalid");
+   inputs.high.setAttribute("aria-invalid","true");
+  }
+  function normalizeSocHandles(range,selectedHandle){
+   const handles=[...range.querySelectorAll("[data-isw-soc-handle]")].sort((left,right)=>
+    Number(left.dataset.renderValue??left.dataset.value)-Number(right.dataset.renderValue??right.dataset.value)
+   );
+   const low=Number(handles[0].dataset.value),high=Number(handles[1].dataset.value);
+   if(low===high){
+    showSocRangeError(range);
+    return false;
+   }
+   clearSocRangeError(range);
+   const inputs=socRangeInputs(range);
+   handles[0].dataset.iswSocHandle="low";
+   handles[1].dataset.iswSocHandle="high";
+   if(inputs.low)handles[0].setAttribute("aria-label",inputs.low.getAttribute("aria-label")||"SOC start limit");
+   if(inputs.high)handles[1].setAttribute("aria-label",inputs.high.getAttribute("aria-label")||"SOC end limit");
+   range.dataset.low=String(low);
+   range.dataset.high=String(high);
+   if(selectedHandle)range.dataset.activeHandle=selectedHandle.dataset.iswSocHandle;
+   return true;
+  }
+  function syncSocRange(range,handle,nextValue,{finalize=false}={}){
+   const lowField=range.dataset.lowField;
+   const highField=range.dataset.highField;
+   const handles=[...range.querySelectorAll("[data-isw-soc-handle]")];
+   const rawValue=Math.max(0,Math.min(100,Number(nextValue)));
+   const renderValue=Math.round(rawValue*10)/10;
+   const value=Math.round(renderValue);
+   handle.dataset.value=String(value);
+   handle.dataset.renderValue=String(renderValue);
+   handle.style.left=`${renderValue}%`;
+   handle.setAttribute("aria-valuenow",String(value));
+   handle.setAttribute("aria-valuetext",`${value}%`);
+   const positions=handles.map(item=>({
+    handle:item,
+    value:Number(item.dataset.value),
+    render:Number(item.dataset.renderValue??item.dataset.value)
+   }));
+   const lowRender=Math.min(...positions.map(item=>item.render));
+   const highRender=Math.max(...positions.map(item=>item.render));
+   const low=Math.min(...positions.map(item=>item.value));
+   const high=Math.max(...positions.map(item=>item.value));
+   range.dataset.low=String(low);
+   range.dataset.high=String(high);
+   range.dataset.lowRender=String(lowRender);
+   range.dataset.highRender=String(highRender);
+   const fill=range.querySelector(".isw-soc-range-fill");
+   fill.style.left=`${lowRender}%`;
+   fill.style.right=`${100-highRender}%`;
+   const lowNumber=page.querySelector(`[data-isw-number="${CSS.escape(lowField)}"]`);
+   const highNumber=page.querySelector(`[data-isw-number="${CSS.escape(highField)}"]`);
+   if(lowNumber)lowNumber.value=low.toFixed(0);
+   if(highNumber)highNumber.value=high.toFixed(0);
+   if(range.dataset.activeHandle)updateSocTooltip(range,handle,value,renderValue);
+   model.set(lowField,low);
+   model.set(highField,high);
+   syncActions();
+   if(finalize)normalizeSocHandles(range,handle);
+  }
+  for(const range of page.querySelectorAll("[data-isw-soc-range]")){
+   const track=range.querySelector(".isw-soc-range-track");
+   const tooltip=range.querySelector("[data-isw-soc-tooltip]");
+   if(tooltip&&glass){
+    tooltip.classList.add("wd-glass--surface","wd-glass-popup");
+    glass.addSurface({host:tooltip,radius:12,interactive:false});
+    controlDisposers.push(()=>glass.removeSurface(tooltip));
+   }
+   const valueAtPointer=event=>{
+    const rect=track.getBoundingClientRect();
+    const raw=Math.max(0,Math.min(1,(event.clientX-rect.left)/rect.width))*100;
+    return Math.round(raw*10)/10;
+   };
+   for(const handle of range.querySelectorAll("[data-isw-soc-handle]")){
+    let dragging=false;
+    handle.addEventListener("pointerenter",event=>{
+     if(event.pointerType==="touch")return;
+     updateSocTooltip(range,handle,Number(handle.dataset.value),Number(handle.dataset.renderValue??handle.dataset.value));
+    });
+    handle.addEventListener("pointerleave",()=>{
+     if(!dragging)hideSocTooltip(range);
+    });
+    handle.addEventListener("pointerdown",event=>{
+     if(event.button!==0)return;
+     event.preventDefault();
+     dragging=true;
+     handle.focus({preventScroll:true});
+     updateSocTooltip(range,handle,Number(handle.dataset.value));
+     handle.setPointerCapture(event.pointerId);
+    });
+    handle.addEventListener("pointermove",event=>{
+     if(!dragging||!handle.hasPointerCapture(event.pointerId))return;
+     syncSocRange(range,handle,valueAtPointer(event));
+    });
+    const endPointer=event=>{
+     if(!dragging)return;
+     dragging=false;
+     syncSocRange(range,handle,valueAtPointer(event),{finalize:true});
+     if(handle.hasPointerCapture(event.pointerId))handle.releasePointerCapture(event.pointerId);
+     if(!handle.matches(":hover"))hideSocTooltip(range);
+    };
+    handle.addEventListener("pointerup",endPointer);
+    handle.addEventListener("pointercancel",endPointer);
+    handle.addEventListener("focus",()=>updateSocTooltip(range,handle,Number(handle.dataset.value)));
+    handle.addEventListener("blur",()=>requestAnimationFrame(()=>{
+     const focused=document.activeElement?.closest?.("[data-isw-soc-handle]");
+     if(focused&&range.contains(focused))updateSocTooltip(range,focused,Number(focused.dataset.value));
+     else hideSocTooltip(range);
+    }));
+    handle.addEventListener("keydown",event=>{
+     const current=Number(handle.dataset.value);
+     const step=event.shiftKey?10:1;
+     let next=null;
+     if(event.key==="ArrowLeft"||event.key==="ArrowDown")next=current-step;
+     if(event.key==="ArrowRight"||event.key==="ArrowUp")next=current+step;
+     if(event.key==="PageDown")next=current-10;
+     if(event.key==="PageUp")next=current+10;
+     if(event.key==="Home")next=0;
+     if(event.key==="End")next=100;
+     if(next===null)return;
+     event.preventDefault();
+     updateSocTooltip(range,handle,current,Number(handle.dataset.renderValue??current));
+     syncSocRange(range,handle,Math.max(0,Math.min(100,next)),{finalize:true});
+    });
+    if(glass){
+     glass.addSurface({host:handle,radius:10});
+     controlDisposers.push(()=>glass.removeSurface(handle));
+    }
+   }
+   let trackPointerHandle=null;
+   const nearestHandle=value=>[...range.querySelectorAll("[data-isw-soc-handle]")].reduce((nearest,handle)=>{
+    const position=Number(handle.dataset.renderValue??handle.dataset.value);
+    const distance=Math.abs(position-value);
+    return !nearest||distance<nearest.distance?{handle,distance}:nearest;
+   },null)?.handle||null;
+   track.addEventListener("pointerdown",event=>{
+    if(event.button!==0||event.target.closest("[data-isw-soc-handle]"))return;
+    const handle=nearestHandle(valueAtPointer(event));
+    if(!handle)return;
+    event.preventDefault();
+    trackPointerHandle=handle;
+    handle.focus({preventScroll:true});
+    syncSocRange(range,handle,valueAtPointer(event));
+    track.setPointerCapture(event.pointerId);
+   });
+   track.addEventListener("pointermove",event=>{
+    if(!trackPointerHandle||!track.hasPointerCapture(event.pointerId))return;
+    syncSocRange(range,trackPointerHandle,valueAtPointer(event));
+   });
+   const endTrackPointer=event=>{
+    if(!trackPointerHandle)return;
+    const handle=trackPointerHandle;
+    trackPointerHandle=null;
+    syncSocRange(range,handle,valueAtPointer(event),{finalize:true});
+    if(track.hasPointerCapture(event.pointerId))track.releasePointerCapture(event.pointerId);
+    if(!handle.matches(":hover"))hideSocTooltip(range);
+   };
+   track.addEventListener("pointerup",endTrackPointer);
+   track.addEventListener("pointercancel",endTrackPointer);
+  }
   for(const input of page.querySelectorAll("[data-isw-number]")){
    input.addEventListener("input",()=>{
     const raw=input.value.trim();
     if(!raw||!Number.isFinite(Number(raw)))return;
     validateNumberField(input);
    });
-   input.addEventListener("blur",()=>validateNumberField(input,{showEmpty:true,allowEmpty:false}));
+   input.addEventListener("blur",()=>{
+    validateNumberField(input,{showEmpty:true,allowEmpty:false});
+    validateBatterySocRelation(input);
+   });
    input.addEventListener("change",()=>{
     const validation=validateNumberField(input,{showEmpty:true,allowEmpty:false});
     if(!validation.valid)return;
+    if(batterySocFields(input)){
+     commitBatterySocNumber(input,validation.value);
+     return;
+    }
+    if(!validateBatterySocRelation(input))return;
     model.set(input.dataset.iswNumber,validation.value);
+    if(input.dataset.iswNumber?.startsWith("tou.")){
+     model.normalizeTou();
+     model.regenerateTouDynamic();
+    }
     refresh();
    });
    input.addEventListener("keydown",event=>{
@@ -1105,6 +1513,10 @@ function crossfadeView(page,outgoingPage,outgoingTitle,layoutSnapshot,subTransit
     const validation=validateNumberField(input);
     if(!validation.valid)return;
     model.set(input.dataset.iswNumber,formatted);
+    if(input.dataset.iswNumber?.startsWith("tou.")){
+     model.normalizeTou();
+     model.regenerateTouDynamic();
+    }
     pendingFocus={type:"number",value:input.dataset.iswNumber};
     refresh();
    });
@@ -1203,8 +1615,10 @@ function crossfadeView(page,outgoingPage,outgoingTitle,layoutSnapshot,subTransit
    });
   }
   for(const slot of page.querySelectorAll("[data-isw-interval-select]")){
+   const path=slot.dataset.iswIntervalPath||"mppt.interval";
+   const label=slot.dataset.iswIntervalLabel||"Scan interval";
    const control=createSelectControl({
-    label:"Scan interval",
+    label,
     value:Number(slot.dataset.iswIntervalSelect),
     options:MPPT_SCAN_INTERVAL_OPTIONS.map(option=>({
      value:option.minutes,
@@ -1221,18 +1635,273 @@ function crossfadeView(page,outgoingPage,outgoingTitle,layoutSnapshot,subTransit
     align:"end",
     chooseLabel:"Choose scan interval",
     onChange:next=>{
-     if(model.S.mppt.interval===next)return;
-     model.S.mppt.interval=next;
-     pendingFocus={type:"interval"};
+     if(model.get(path)===next)return;
+     model.set(path,next);
+     pendingFocus={type:"interval",path};
      refresh();
     }
    });
    control.element.dataset.iswIntervalTrigger="";
+   control.element.dataset.iswIntervalPath=path;
    slot.replaceWith(control.element);
   }
   hydrateTimeLabels(page);
   hydrateEconomy(page);
+  hydrateTouSettingsPage(page,{
+   titleLayer,
+   model,
+   glass,
+   registerPanel,
+   togglePanel,
+   closePanels,
+   refresh,
+   notify,
+   bindHoverPanel,
+   addDisposer:dispose=>controlDisposers.push(dispose),
+   setPendingFocus:focus=>{pendingFocus=focus;},
+   showFieldError:showInlineFieldError,
+   clearFieldError:clearInlineFieldError,
+   navigateView:view=>{
+    model.S.touView=view==="advanced"?"advanced":"main";
+    renderPage({animate:false,preserveScroll:false});
+   }
+  });
+  hydrateMppt(page);
  }
+
+function hydrateMppt(page){
+ const buildGroupPicker=(anchor,groupId=null)=>{
+  if(!anchor||!registerPanel)return null;
+  const groups=model.mpptGroups();
+  const editing=groupId!==null;
+  const currentGroup=editing?groups.find(group=>group.id===groupId):null;
+  const activeIndices=model.mpptIndices();
+  const claimed=new Set(groups
+   .filter(group=>group.id!==groupId)
+   .flatMap(group=>group.members));
+  const selected=new Set(currentGroup?.members||[]);
+  const panel=text("div","popover popover--menu wd-select-popover isw-mppt-picker-popover");
+  const picker=text("div","wd-menu wd-menu--no-heading isw-mppt-picker");
+  const options=text("div","wd-menu-list isw-mppt-picker-options");
+  options.setAttribute("role","listbox");
+  options.setAttribute("aria-label","Select two MPPTs for this group");
+  options.setAttribute("aria-multiselectable","true");
+  const rows=[];
+  for(const index of activeIndices){
+   const displayIndex=activeIndices.indexOf(index)+1;
+   const row=menuRow(`MPPT #${displayIndex}`,{showCheck:false});
+   row.classList.add("isw-mppt-picker-option");
+   row.dataset.iswMpptPickerIndex=String(index);
+   row.setAttribute("role","option");
+   row.setAttribute("aria-selected",String(selected.has(index)));
+   const unavailable=claimed.has(index);
+   row.setAttribute("aria-disabled",String(unavailable));
+   row.disabled=unavailable;
+   row.classList.toggle("is-disabled",unavailable);
+   row.classList.toggle("is-selected",selected.has(index));
+   const mark=text("span","isw-radio-mark");
+   mark.setAttribute("aria-hidden","true");
+   row.append(mark);
+   rows.push(row);
+   options.append(row);
+  }
+  const actions=text("div","isw-mppt-picker-actions");
+  const cancel=createStandardButton({label:"Cancel"});
+  const save=createStandardButton({label:"Save",variant:"primary"});
+  actions.append(cancel,save);
+  picker.append(options,actions);
+  panel.append(picker);
+  panel._wdFade=picker;
+  const syncSelection=()=>{
+   save.disabled=selected.size!==2;
+   for(const row of rows){
+    const index=Number(row.dataset.iswMpptPickerIndex);
+    const active=selected.has(index);
+    row.classList.toggle("is-selected",active);
+    row.setAttribute("aria-selected",String(active));
+   }
+  };
+  for(const row of rows){
+   if(row.disabled)continue;
+   row.addEventListener("click",()=>{
+    const index=Number(row.dataset.iswMpptPickerIndex);
+    if(selected.has(index)){
+     selected.delete(index);
+    }else{
+     if(selected.size>=2)selected.delete(selected.values().next().value);
+     selected.add(index);
+    }
+    syncSelection();
+   });
+  }
+  syncSelection();
+  if(glass){
+   glass.addSurface({host:cancel,radius:18});
+   glass.addSurface({host:save,radius:18});
+  }
+  const mounted=registerPanel(panel,anchor,{
+   label:"Select MPPT group",
+   radius:30,
+   width:220,
+   align:"end",
+   alignRight:menuEndAlign(anchor,30)
+  });
+  const disposeButtonSurfaces=()=>{
+   glass?.removeSurface(cancel);
+   glass?.removeSurface(save);
+  };
+  const previousClose=mounted._onClose;
+  mounted._onClose=()=>{
+   model.S.mpptPickerOpen=false;
+   previousClose?.();
+   schedule(disposeButtonSurfaces,motionDuration("--wd-motion-panel-exit"));
+   if(!model.mpptGroups().length){
+    animateNextSurfaceGrowth=true;
+    schedule(()=>{
+     if(model.S.page==="mppt")refresh();
+    },0);
+   }
+  };
+  cancel.addEventListener("click",()=>closePanels?.(true));
+  save.addEventListener("click",()=>{
+   if(selected.size!==2)return;
+   const members=[...selected].sort((left,right)=>left-right);
+   const changed=editing?model.replaceMpptGroup(groupId,members):model.addMpptGroup(members);
+   if(!changed)return;
+   closePanels?.(true);
+   pendingFocus={type:"mpptGroup",value:String(activeIndices.indexOf(members[0])+1)};
+   animateNextSurfaceGrowth=true;
+   refresh();
+  });
+  requestAnimationFrame(()=>{
+   const first=rows.find(row=>row.classList.contains("is-selected"))||rows.find(row=>!row.disabled);
+   first?.focus({preventScroll:true});
+  });
+  return mounted;
+ };
+
+ const addSlot=page.querySelector("[data-isw-mppt-add]");
+ let addButton=null;
+ if(addSlot){
+  addButton=createStandardButton({
+   label:"Add MPPT group",
+   iconOnly:true,
+   className:"isw-mppt-add",
+   icon:createMaskedIcon(assetURL("plants/plus.svg"),"isw-mppt-add-icon")
+  });
+  addButton.dataset.iswMpptAdd="";
+  if(glass){
+   glass.addSurface({host:addButton,radius:18});
+   controlDisposers.push(()=>glass.removeSurface(addButton));
+  }
+  addButton.addEventListener("click",()=>{
+   const claimed=new Set(model.mpptGroups().flatMap(group=>group.members));
+   const activeIndices=model.mpptIndices();
+   const remaining=activeIndices.filter(index=>!claimed.has(index));
+   if(remaining.length!==2)return;
+   if(!model.addMpptGroup(remaining))return;
+   pendingFocus={type:"mpptGroup",value:String(activeIndices.indexOf(remaining[0])+1)};
+   animateNextSurfaceGrowth=true;
+   refresh();
+  });
+  addSlot.replaceWith(addButton);
+ }
+
+ let draftSelect=null;
+ const groups=model.mpptGroups();
+ for(const slot of page.querySelectorAll("[data-isw-mppt-group-select]")){
+  const rawId=slot.dataset.iswMpptGroupSelect;
+  const groupId=rawId==="draft"?null:Number(rawId);
+  const group=groupId===null?null:groups.find(item=>item.id===groupId);
+  if(groupId!==null&&!group)continue;
+  const groupIndex=groupId===null?0:groups.findIndex(item=>item.id===groupId);
+  const value=group?mpptGroupLabel(group.members,model.mpptIndices()):"";
+  const control=createSelectControl({
+   label:`MPPT Group ${groupIndex+1}`,
+   value,
+   options:value?[{value,label:value}]:[],
+   variant:"adaptive",
+   className:"isw-mppt-group-select",
+   placeholder:"Select MPPT",
+   placeholderClassName:"wd-select-placeholder",
+   registerPanel,
+   close:closePanels,
+   toggle:togglePanel,
+   panelBuilder:({field})=>buildGroupPicker(field,groupId),
+   ariaLabel:currentLabel=>`MPPT Group ${groupIndex+1}: ${currentLabel||"Select MPPT"}`
+  });
+  control.element.dataset.iswMpptGroupSelect=rawId;
+  slot.replaceWith(control.element);
+  if(rawId==="draft")draftSelect=control.element;
+ }
+
+ for(const slot of page.querySelectorAll("[data-isw-mppt-more]")){
+  if(slot.dataset.iswMpptMore==="draft"){
+   const disabled=createStandardButton({
+    label:"Actions for MPPT Group 1",
+    iconOnly:true,
+    className:"isw-mppt-more",
+    icon:createMaskedIcon(opaqueMaskURL("asset-70.svg"),"isw-mppt-more-icon")
+   });
+   disabled.disabled=true;
+   disabled.dataset.iswMpptMore="draft";
+   if(glass){
+    glass.addSurface({host:disabled,radius:18});
+    controlDisposers.push(()=>glass.removeSurface(disabled));
+   }
+   slot.replaceWith(disabled);
+   continue;
+  }
+  const groupId=Number(slot.dataset.iswMpptMore);
+  const group=model.mpptGroups().find(item=>item.id===groupId);
+  if(!group)continue;
+  const button=createStandardButton({
+   label:`Actions for MPPT Group ${model.mpptGroups().findIndex(item=>item.id===groupId)+1}`,
+   iconOnly:true,
+   className:"isw-mppt-more",
+   icon:createMaskedIcon(opaqueMaskURL("asset-70.svg"),"isw-mppt-more-icon")
+  });
+  button.dataset.iswMpptMore=String(group.id);
+  if(glass){
+   glass.addSurface({host:button,radius:18});
+   controlDisposers.push(()=>glass.removeSurface(button));
+  }
+  slot.replaceWith(button);
+  button.addEventListener("click",()=>{
+   if(!registerPanel)return;
+   togglePanel?.(button,()=>{
+    const panel=text("div","popover popover--menu isw-mppt-group-popover");
+    const list=menuList();
+    const row=menuRow("Delete group",{
+     iconNode:createMaskedIcon(assetURL("plants/devices/actions/delete.svg"),"isw-mppt-delete-icon"),
+     showCheck:false,
+     onSelect:()=>{
+      closePanels?.(true);
+      model.removeMpptGroup(group.id);
+      pendingFocus=model.mpptGroups().length?{type:"mpptAdd"}:{type:"mpptGroupDraft"};
+      animateNextSurfaceGrowth=true;
+      refresh();
+     }
+    });
+    row.classList.add("is-danger");
+    list.append(row);
+    mountMenu(panel,{label:`Actions for MPPT Group ${model.mpptGroups().findIndex(item=>item.id===groupId)+1}`,children:[list]});
+    return registerPanel(panel,button,{
+     label:`Actions for MPPT Group ${model.mpptGroups().findIndex(item=>item.id===groupId)+1}`,
+     radius:30,
+     width:180,
+     align:"end",
+     alignRight:menuEndAlign(button,30)
+    });
+   });
+  });
+ }
+
+ if(pendingMpptPicker){
+  pendingMpptPicker=false;
+  requestAnimationFrame(()=>draftSelect?.click());
+ }
+}
 
 function hydrateEconomy(page){
  const overview=page.querySelector(".isw-eco-overview");
@@ -1262,7 +1931,7 @@ function hydrateEconomy(page){
  }
 
  const info=page.querySelector("[data-isw-eco-info]");
- if(info)bindHoverPanel(info,"Power limit is a percentage of the inverter's rated output.","Power limit information",248);
+ if(info)bindHoverPanel(info,"Power limit is a percentage of the inverter's rated output.","Power limit information",248,{align:"center"});
 
  const openDeleteConfirm=(period,trigger)=>{
   let confirmed=false;
@@ -1320,6 +1989,36 @@ function hydrateEconomy(page){
   if(collides(candidate,period.id))return "Time ranges cannot overlap.";
   return "";
  };
+ for(const field of page.querySelectorAll(".isw-eco-time-range-field:not([data-isw-shared-time])")){
+  const input=field.querySelector("[data-isw-eco-time-input]");
+  const trigger=field.querySelector("[data-isw-eco-time-trigger]");
+  const period=periodFor(input?.dataset.iswEcoTimeInput);
+  if(!period)continue;
+  field.dataset.iswSharedTime="";
+  const control=createTimeRangeControl({
+   field,
+   input,
+   trigger,
+   getValue:()=>({from:period.from,to:period.to}),
+   stepMinutes:1,
+   validate:value=>validateRange(period,value.from,value.to),
+   onCommit:value=>{
+    period.from=value.from;
+    period.to=value.to;
+    sortPeriods();
+    pendingFocus={type:"ecoTime",id:period.id};
+    syncActions();
+    refresh();
+   },
+   onError:message=>showInlineFieldError(input,message),
+   onClearError:()=>clearInlineFieldError(input),
+   registerPanel,
+   close:closePanels,
+   toggle:togglePanel,
+   addDisposer:dispose=>controlDisposers.push(dispose)
+  });
+  controlDisposers.push(control.destroy);
+ }
  const formatTimeDigits=value=>{
   const digits=String(value||"").replace(/\D/g,"").slice(0,8).padEnd(8,"_");
   return `${digits.slice(0,2)}:${digits.slice(2,4)} – ${digits.slice(4,6)}:${digits.slice(6,8)}`;
@@ -1437,6 +2136,7 @@ function hydrateEconomy(page){
   });
  }
  for(const trigger of page.querySelectorAll("[data-isw-eco-time-trigger]")){
+  if(trigger.closest(".isw-eco-time-range-field")?.hasAttribute("data-isw-shared-time"))continue;
   trigger.addEventListener("click",()=>{
    const period=periodFor(trigger.dataset.iswEcoTimeTrigger);
    if(!period||!registerPanel)return;
@@ -1726,12 +2426,16 @@ function hydrateEconomy(page){
    refresh();
    return;
   }
+  if(action==="resetRecovery"){
+   openResetRecovery({glass,notify});
+   return;
+  }
   if(action==="clear"){
    model.S.ops.faults=0;
    refresh();
    return;
   }
-  if(action==="restart"||action==="factory"||action==="export"){
+  if(action==="restart"||action==="export"){
    const setLabel=label=>{
     const text=button.querySelector(".wd-control-label");
     if(text)text.textContent=label;
@@ -1757,12 +2461,22 @@ function hydrateEconomy(page){
   if(focus.type==="mode")target=content.querySelector(`[data-isw-mode="${CSS.escape(focus.value)}"]`);
   if(focus.type==="profile")target=content.querySelector(`[data-isw-profile="${CSS.escape(focus.value)}"]`);
   if(focus.type==="ecoTime")target=content.querySelector(`[data-isw-eco-time-trigger="${CSS.escape(focus.id)}"]`);
+  if(focus.type==="touTime")target=content.querySelector(`[data-isw-tou-time-trigger="${CSS.escape(focus.id)}"][data-isw-tou-kind="${CSS.escape(focus.kind)}"]`);
+  if(focus.type==="touMode")target=content.querySelector(`[data-isw-tou-mode-select="${CSS.escape(focus.id)}"][data-isw-tou-kind="${CSS.escape(focus.kind)}"]`);
+  if(focus.type==="touGroupMode")target=content.querySelector(`[data-isw-tou-group-mode="${CSS.escape(focus.id)}"]`);
+  if(focus.type==="touControl")target=content.querySelector("[data-isw-tou-control]");
+  if(focus.type==="touInterval")target=content.querySelector("[data-isw-tou-interval]");
+  if(focus.type==="touAdd")target=content.querySelector(`[data-isw-tou-add="${CSS.escape(focus.kind)}"]`);
   if(focus.type==="ecoPower")target=content.querySelector(`[data-isw-eco-power="${CSS.escape(focus.id)}"]`);
   if(focus.type==="ecoMode")target=content.querySelector(`[data-isw-eco-mode-trigger="${CSS.escape(focus.id)}"]`);
   if(focus.type==="ecoAdd")target=content.querySelector("[data-isw-eco-add]");
-  if(focus.type==="interval")target=content.querySelector("[data-isw-interval-trigger]");
+  if(focus.type==="interval")target=content.querySelector(`[data-isw-interval-path="${CSS.escape(focus.path||"mppt.interval")}"]`);
   if(focus.type==="reacMode")target=content.querySelector("[data-isw-reac-mode-trigger]");
   if(focus.type==="ridePriority")target=content.querySelector(`[data-isw-ride-priority-trigger="${CSS.escape(focus.value)}"]`);
+  if(focus.type==="batteryBrand")target=content.querySelector(`[data-isw-battery-brand="${CSS.escape(focus.value)}"]`);
+  if(focus.type==="mpptGroup")target=content.querySelector(`[data-isw-mppt-group="${CSS.escape(focus.value)}"] [data-isw-mppt-more]`);
+  if(focus.type==="mpptAdd")target=content.querySelector("[data-isw-mppt-add]");
+  if(focus.type==="mpptGroupDraft")target=content.querySelector('[data-isw-mppt-group-select="draft"]');
   target?.focus({preventScroll:true});
  }
 
@@ -1902,12 +2616,15 @@ function renderPage({animate=true,preserveScroll=true,crossfade=false,layoutSnap
  const renderedTitle=page.querySelector(".isw-page-title");
  if(renderedTitle){
   renderedTitle.dataset.page=model.S.page;
-  const titleLabel=text("span","isw-title-label",renderedTitle.textContent);
-  renderedTitle.replaceChildren(titleLabel);
+  if(!renderedTitle.hasAttribute("data-isw-title-control")){
+   const titleLabel=text("span","isw-title-label",renderedTitle.textContent);
+   renderedTitle.replaceChildren(titleLabel);
+  }
   renderedTitle.remove();
   titleLayer.replaceChildren(renderedTitle);
   titleLayer.dataset.page=model.S.page;
   titleLayer.hidden=false;
+  hydrateIcons(titleLayer);
  }else{
   titleLayer.replaceChildren();
   delete titleLayer.dataset.page;
@@ -2020,6 +2737,8 @@ function renderPage({animate=true,preserveScroll=true,crossfade=false,layoutSnap
  }
 
  function currentPageLabel(){
+  if(model.S.page==="touManual")return "ToU Mode · Manual";
+  if(model.S.page==="touDynamic")return "ToU Mode · Dynamic";
   if(model.S.page==="grid"){
    return model.gridSubs().find(([id])=>id===model.S.gridSub)?.[1]||"Grid & Protection";
   }
@@ -2079,6 +2798,7 @@ function renderPage({animate=true,preserveScroll=true,crossfade=false,layoutSnap
    model.S.gridOpen=opening;
    model.S.page="grid";
   }else{
+   if(id==="touManual"||id==="touDynamic")model.S.touView="main";
    model.S.page=id;
    model.S.gridOpen=false;
   }
@@ -2097,17 +2817,20 @@ function renderPage({animate=true,preserveScroll=true,crossfade=false,layoutSnap
   syncGate({animate:true});
  }
 
- function refresh({header=false}={}){
+ function refresh({header=false,bottomHold=null}={}){
   const scrollTop=scroll.scrollTop;
   if(header)renderDeviceHeader(model,device,deviceHead);
   syncNavigationValues();
   renderPage({animate:false});
-  scroll.scrollTop=scrollTop;
+  if(bottomHold)scrollFeedback.settleBottomShrink?.(bottomHold);
+  else scroll.scrollTop=scrollTop;
   renderOverview(model,overview);
   syncGate();
-  requestAnimationFrame(()=>{
-   if(scroll.isConnected)scroll.scrollTop=scrollTop;
-  });
+  if(!bottomHold){
+   requestAnimationFrame(()=>{
+    if(scroll.isConnected)scroll.scrollTop=scrollTop;
+   });
+  }
  }
 
 function setGateVisibility(shouldShow,{animate=false,preserveCardRect=null}={}){
@@ -2288,6 +3011,7 @@ function syncGate({animate=false,preserveCardRect=null}={}){
   const escaped=CSS.escape(path);
   if(path==="mppt.interval")return page.querySelector("[data-isw-interval-trigger]");
   if(path==="g.reacMode")return page.querySelector("[data-isw-reac-mode-trigger]");
+  if(path.endsWith(".brand"))return page.querySelector(`[data-isw-battery-brand="${CSS.escape(path)}"]`);
   if(path.endsWith(".reacQSet")||path==="reacQSet")return page.querySelector('[data-isw-number="reacQSet"]');
   return page.querySelector(
    `[data-isw-number="${escaped}"],[data-isw-switch="${escaped}"],[data-isw-seg="${escaped}"]`
@@ -2296,6 +3020,49 @@ function syncGate({animate=false,preserveCardRect=null}={}){
 
  function logFieldLabel(path,node){
   if(path==="runMode")return "Running mode";
+  if(path==="ctCurrentMode")return "CT current mode";
+  if(path==="net.wifiOn")return "Inverter Wi-Fi Hotspot";
+  if(path==="net.wifiSsid")return "Wi-Fi hotspot SSID";
+  if(path==="net.wifiPassword")return "Wi-Fi hotspot password";
+  if(path==="tou.interval")return "ToU time interval";
+  if(/^tou\.config\.(high|normal|low)\.mode$/.test(path)){
+   return `${path.split(".")[2][0].toUpperCase()+path.split(".")[2].slice(1)} price mode`;
+  }
+  if(/^tou\.config\.(high|normal|low)\.power$/.test(path)){
+   return `${path.split(".")[2][0].toUpperCase()+path.split(".")[2].slice(1)} price battery power limit`;
+  }
+  if(/^tou\.config\.(high|normal|low)\.pvForbidden$/.test(path)){
+   return `${path.split(".")[2][0].toUpperCase()+path.split(".")[2].slice(1)} price PV forbidden`;
+  }
+  const touLabels={
+   "tou.config.controlMode":"ToU control mode",
+   "tou.config.durationHighHours":"High price hours",
+   "tou.config.durationLowHours":"Low price hours",
+   "tou.config.percentageHighRange":"High price hours",
+   "tou.config.percentageLowRange":"Low price hours",
+   "tou.config.fixedHighPrice":"High price",
+   "tou.config.fixedLowPrice":"Low price",
+   "tou.config.handlingFee":"Handling fee",
+   "tou.config.distributionFee":"Distribution fee",
+   "tou.config.taxRate":"Tax rate",
+   "tou.config.autoExportLimit":"Automatic export limit",
+   "tou.config.country":"Country/Region",
+   "tou.config.area":"Area",
+   "tou.config.timezone":"Timezone",
+   "tou.config.currency":"Currency"
+  };
+  if(touLabels[path])return touLabels[path];
+  if(path==="mppt.scanMode")return "Shadow scan control mode";
+  const individualMppt=/^mppt\.individual\.(\d+)\.(scan|interval)$/.exec(path);
+  if(individualMppt)return `MPPT #${Number(individualMppt[1])+1} ${individualMppt[2]==="scan"?"shadow scan":"scan interval"}`;
+  const mpptPointPath=/^mppt\.groupPoints\.(\d+)$/.exec(path);
+  if(mpptPointPath){
+   const pointIndex=Number(mpptPointPath[1]);
+   const displayIndex=model.mpptIndices().indexOf(pointIndex);
+   return displayIndex>=0?`MPPT #${displayIndex+1} group`:`MPPT interface ${pointIndex+1} status`;
+  }
+  const explicitLabel=node?.dataset?.iswLogLabel?.trim();
+  if(explicitLabel)return explicitLabel;
   const row=node?.closest(".isw-row");
   const rowLabel=row?.querySelector(".isw-row-label")?.textContent?.trim();
   if(rowLabel)return rowLabel;
@@ -2314,13 +3081,22 @@ function syncGate({animate=false,preserveCardRect=null}={}){
  function logFieldValue(path,value,node){
   if(value===undefined)return "—";
   if(path==="runMode")return MODES[Number(value)]?.label||String(value);
+  if(path==="ctCurrentMode")return CT_CURRENT_MODE_OPTIONS[Number(value)]??String(value);
+  if(path==="net.wifiPassword")return value?"••••••••":"Not set";
+  if(path==="tou.interval")return Number(value)===60?"1 h":`${value} mins`;
+  if(path==="tou.config.controlMode")return TOU_CONTROL_MODES.find(mode=>mode.value===Number(value))?.label||String(value);
+  if(/^tou\.config\.(high|normal|low)\.mode$/.test(path)){
+   return TOU_PERIOD_MODES.find(mode=>mode.value===Number(value))?.label||String(value);
+  }
   if(path==="dispatch.unit")return Number(value)?"kW":"%Pn";
   if(path==="limits.basis")return LIMIT_BASIS_OPTIONS[Number(value)]??String(value);
   if(path==="capability")return CAPABILITY_OPTIONS[Number(value)]??String(value);
   if(path==="di")return DI_PORT_OPTIONS[Number(value)]??String(value);
   if(path==="net.iface")return NETWORK_INTERFACE_OPTIONS[Number(value)]??String(value);
   if(path==="exp.fmt")return EXPORT_FORMAT_OPTIONS[Number(value)]??String(value);
+  if(path==="mppt.scanMode")return Number(value)===1?"Individual Control":"All MPPTs Control";
   if(path==="mppt.interval")return Number(value)===60?"1 h":`${value} mins`;
+  if(/^mppt\.individual\.\d+\.interval$/.test(path))return Number(value)===60?"1 h":`${value} mins`;
   if(/^mppt\.pv\.\d+$/.test(path))return MPPT_SOURCE_OPTIONS[Number(value)]??String(value);
   if(path.endsWith("reacMode"))return REACTIVE_MODE_OPTIONS.find(option=>Number(option.value)===Number(value))?.label||String(value);
   if(path.endsWith("rampMode"))return POWER_CHANGE_OPTIONS[Number(value)]??String(value);
@@ -2359,6 +3135,33 @@ function syncGate({animate=false,preserveCardRect=null}={}){
   return changes;
  }
 
+ function touScheduleLogChanges(before=[],after=[],scope){
+  const byId=new Map((before||[]).map(period=>[period.id,period]));
+  const afterById=new Map((after||[]).map(period=>[period.id,period]));
+  const format=period=>period
+   ?`${period.from}–${period.to} · ${TOU_PERIOD_MODES.find(mode=>mode.value===Number(period.mode))?.label||period.mode} · ${period.power??100}%`
+   :"Removed";
+  const changes=[];
+  for(const period of after||[]){
+   const previous=byId.get(period.id);
+   if(!sameLogValue(previous,period)){
+    changes.push({
+     parameter:`${scope} · ${period.from}–${period.to}`,
+     from:previous?format(previous):"Not configured",
+     to:format(period)
+    });
+   }
+  }
+  for(const period of before||[]){
+   if(!afterById.has(period.id))changes.push({
+    parameter:`${scope} · ${period.from}–${period.to}`,
+    from:format(period),
+    to:"Removed"
+   });
+  }
+  return changes;
+ }
+
  function savedChangeLog(){
   if(model.S.page==="grid"&&model.S.gridSub==="code")return [];
   const current=settingsSnapshot(model.S);
@@ -2371,6 +3174,22 @@ function syncGate({animate=false,preserveCardRect=null}={}){
    if(path.length===1&&path[0]==="eco"){
     changes.push(...economicScheduleLogChanges(before.value,after.value));
     continue;
+   }
+   if(path[0]==="tou"){
+    if(path[1]==="manual"){
+     changes.push(...touScheduleLogChanges(before.value,after.value,"ToU Manual"));
+     continue;
+    }
+    if(path[1]==="dynamic"){
+     for(const day of ["today","tomorrow"]){
+      changes.push(...touScheduleLogChanges(
+       before.value?.[day],
+       after.value?.[day],
+       `ToU Dynamic · ${day[0].toUpperCase()+day.slice(1)}`
+      ));
+     }
+     continue;
+    }
    }
    for(const leaf of flattenChangedValues(before.value,after.value,path)){
     const node=logFieldNode(leaf.path);
@@ -2452,6 +3271,33 @@ function syncGate({animate=false,preserveCardRect=null}={}){
    if(draft){
     notify("Complete or delete the empty time range before saving.");
     content.querySelector(`[data-isw-eco-row="${CSS.escape(draft.id)}"] [data-isw-eco-time-trigger]`)?.focus();
+    return;
+   }
+   if(model.S.page==="touManual"||model.S.page==="touDynamic"){
+    const plan=model.S.page==="touManual"?model.S.tou.manual:model.touPlan();
+    const validation=validateTouSchedule({plan,interval:model.S.tou.interval});
+    if(validation){
+     notify(validation.message);
+     const input=content.querySelector(`[data-isw-tou-time-input="${CSS.escape(validation.period?.id||"")}"]`);
+     if(input){
+      showInlineFieldError(input,validation.message);
+      input.focus({preventScroll:true});
+     }
+     return;
+    }
+    if(
+      model.S.page==="touDynamic"&&
+      model.S.tou.config.controlMode===3&&
+      model.S.tou.config.fixedHighPrice<=model.S.tou.config.fixedLowPrice
+    ){
+     notify("High Price must be greater than Low Price.");
+     content.querySelector('[data-isw-number="tou.config.fixedHighPrice"]')?.focus({preventScroll:true});
+     return;
+    }
+   }
+   if(model.S.page==="mppt"&&model.S.mppt.parallel&&model.capabilities.mpptCount>2&&model.mpptGroups().length===0){
+    notify("At least one MPPT Group must be created");
+    content.querySelector("[data-isw-mppt-add]")?.focus({preventScroll:true});
     return;
    }
    const committed=currentPageCommittedSettings();
@@ -2555,6 +3401,7 @@ function syncGate({animate=false,preserveCardRect=null}={}){
 export function openInverterSettings({
  plant,
  device,
+ siteDetails=null,
  glass,
  onClose,
  onSave,
@@ -2573,12 +3420,23 @@ export function openInverterSettings({
   ratedPower:device.ratedPowerKw,
   runMode:detectedRunMode>=0?detectedRunMode:0,
   phaseCount:device.phaseCount,
-  supportsPerPhaseLimit:device.supportsPerPhaseLimit
+  supportsPerPhaseLimit:device.supportsPerPhaseLimit,
+  batteryPathCount:device.batteryPathCount,
+  supportsBatteryParallel:device.supportsBatteryParallel,
+  batteryMasterBattery:device.batteryMasterBattery,
+  mpptInventoryPoints:device.mpptInventoryPoints,
+  mpptGroupPoints:device.mpptGroupPoints,
+  siteDetails,
+  supportsDynamicPricing:device.supportsDynamicPricing??true
  });
  if(device.inverterSettings){
   Object.assign(model.S,clone(device.inverterSettings));
   model.normalizeEco();
   model.normalizeLimitBasis();
+  model.normalizeBattery();
+  model.normalizeMppt();
+  model.normalizeTou();
+  model.regenerateTouDynamic();
  }
  return createWindow({
   device,

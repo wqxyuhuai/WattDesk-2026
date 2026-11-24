@@ -1,8 +1,11 @@
 import {ECONOMIC_MODES,MODES,isEconomicDraft,timeToMinutes} from "./settings-model.js";
 import {formatAbsoluteDate} from "../../foundations/time.js";
 import {
+ BATTERY_BRAND_OPTIONS,
  CAPABILITY_OPTIONS,
+ CT_CURRENT_MODE_OPTIONS,
  DI_PORT_OPTIONS,
+ DISPATCH_MODE_OPTIONS,
  EXPORT_FORMAT_OPTIONS,
  F_P_REFERENCE_OPTIONS,
  LIMIT_BASIS_OPTIONS,
@@ -10,11 +13,14 @@ import {
  NETWORK_INTERFACE_OPTIONS,
  POWER_CHANGE_OPTIONS,
  P_U_MODE_OPTIONS,
- REACTIVE_LIMIT_OPTIONS
+ REACTIVE_LIMIT_OPTIONS,
+ SETTINGS_POINT_CONTRACTS
 } from "./settings-options.js";
 import {settingRange} from "./settings-validation.js";
+import {dynamicTouPage,manualTouPage} from "./tou-settings.js";
 
 const iconMarkup=name=>`<i class="isw-icon" data-isw-icon="${name}" aria-hidden="true"></i>`;
+const POINTS=SETTINGS_POINT_CONTRACTS;
 const ecoPowerRange=settingRange("eco.power","%");
 const sw=path=>`<span class="isw-switch-slot" data-isw-switch="${path}"></span>`;
 const seg=(path,options,current)=>{
@@ -24,6 +30,14 @@ const seg=(path,options,current)=>{
 };
 const note=(html,narrow=false)=>`<div class="isw-note${narrow?" isw-note--narrow":""}">${iconMarkup("info")}<div>${html}</div></div>`;
 const row=(label,hint,control,dim=false)=>`<div class="isw-row"><div class="isw-row-copy"><div class="isw-row-label${dim?" isw-row-label--secondary":""}">${label}</div>${hint?`<div class="isw-row-hint">${hint}</div>`:""}</div>${control}</div>`;
+const escapeAttribute=value=>String(value??"").replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+const textField=(path,value,label)=>`<span class="isw-wifi-field wd-edit-field">
+ <input type="text" value="${escapeAttribute(value)}" data-isw-text="${path}" aria-label="${escapeAttribute(label)}" autocomplete="off" autocapitalize="off" spellcheck="false">
+</span>`;
+const passwordField=(path,value,label)=>`<span class="isw-wifi-field isw-wifi-field--password wd-edit-field">
+ <input type="password" value="${escapeAttribute(value)}" data-isw-text="${path}" aria-label="${escapeAttribute(label)}" autocomplete="new-password" autocapitalize="off" spellcheck="false">
+ <button class="isw-wifi-password-toggle wd-control-state" type="button" data-isw-password-toggle="${path}" aria-label="Show password" aria-pressed="false"><span class="isw-wifi-eye" data-isw-password-eye aria-hidden="true"></span></button>
+</span>`;
 const readonlyDataRow=(label,hint,value)=>row(label,hint,`<div class="isw-readonly-value">${value}</div>`).replace('class="isw-row"','class="isw-row isw-row--readonly-data"');
 const num=(path,value,unitName,step=.1,decimals=1)=>`<span class="isw-number wd-edit-field">
  <input value="${Number(value).toFixed(decimals)}" data-isw-number="${path}" data-isw-decimals="${decimals}" data-isw-step-size="${step}" inputmode="decimal">
@@ -38,7 +52,7 @@ const copyValue=(label,value)=>`<button class="isw-copy-value wd-control-state" 
 const tableRow=(columns,cells)=>`<div class="isw-table-row" style="grid-template-columns:${columns}">${cells}</div>`;
 const tableHead=(columns,cells,className="")=>`<div class="isw-table-head${className?` ${className}`:""}" style="grid-template-columns:${columns}">${cells}</div>`;
 const actionButton=(label,action,variant="neutral",disabled=false)=>`<button class="isw-button-slot" type="button" data-isw-standard-button data-isw-action="${action}" data-isw-button-label="${label}" data-isw-button-variant="${variant}"${disabled?" disabled":""}>${label}</button>`;
-const scanIntervalSelect=value=>`<span class="isw-select-slot" data-isw-interval-select="${value}"></span>`;
+const scanIntervalSelect=(value,path="mppt.interval",label="Scan interval")=>`<span class="isw-select-slot" data-isw-interval-select="${value}" data-isw-interval-path="${path}" data-isw-interval-label="${label}"></span>`;
 const stateMark=(html,...keys)=>{
  // Keep deviation semantics and counts without adding a page-local visual stripe.
  return html.replace('class="isw-table-row"','class="isw-table-row isw-row--deviated"')
@@ -48,34 +62,37 @@ const markedRow=(model,key,label,hint,control,dim=false)=>{
  const markup=row(label,hint,control,dim);
  return model.dev(key)?stateMark(markup):markup;
 };
+const pointRow=(label,hint,control,point,dim=false)=>
+ row(label,hint,control,dim).replace('class="isw-row"',`class="isw-row" data-isw-point="${point}"`);
 
 function effectiveChainParts(model){
  const e=model.effective();
- return {e,max:Math.max(Math.abs(e.sp),Math.abs(e.out),e.feed,model.S.battChgMax,1)};
+ return {e,max:Math.max(Math.abs(e.sp),Math.abs(e.out??0),e.feed,model.S.battChgMax,1)};
 }
 
 function pageDispatch(model){
  const {e,max}=effectiveChainParts(model);
- const width=value=>`${Math.min(100,Math.abs(value)/max*100).toFixed(1)}%`;
+ const width=value=>`${Math.min(100,Math.abs(Number(value)||0)/max*100).toFixed(1)}%`;
+ const power=value=>e.available?`${Number(value).toFixed(1)} kW`:"Unavailable";
+ const source=e.available&&e.src?e.src:"Not reported";
+  const sourceTone=e.available?e.sourceTone:"idle";
  return `<h2 class="isw-page-title">Active Power Dispatch</h2>
- <section class="isw-panel">${row("EMS dispatch","Takes a power setpoint from the EMS in place of the running mode",sw("dispatch.on"))}</section>
+ <section class="isw-panel">${pointRow("EMS dispatch","Takes a power setpoint from the EMS in place of the running mode",sw("dispatch.on"),POINTS.dispatchEnable.point)}</section>
  ${model.S.dispatch.on?`
  ${note("Setpoint is the target net power <b>at the grid-tied point</b>. Grid support functions (F-P, P(U)) may override it when the grid requires. The export limit is never overridden.")}
  <h3 class="isw-group-title">Dispatch</h3>
  <section class="isw-panel">
-  ${row("Setpoint unit","",seg("dispatch.unit",["%Pn","kW"],model.S.dispatch.unit),true)}
-  ${row("Setpoint","Positive exports to the grid · negative imports from it",num("dispatch.sp",model.S.dispatch.sp,model.unit(),model.S.dispatch.unit?.5:1),true)}
-  ${row("Command timeout","Reverts to the running mode when no new command arrives within this time",num("dispatch.timeout",model.S.dispatch.timeout,"s",30,0),true)}
+  ${pointRow("Setpoint unit","",seg("dispatch.unit",DISPATCH_MODE_OPTIONS,model.S.dispatch.unit),POINTS.dispatchMode.point,true)}
+  ${pointRow("Setpoint","Positive exports to the grid · negative imports from it",num("dispatch.sp",model.S.dispatch.sp,model.unit(),model.S.dispatch.unit?.5:1),POINTS.dispatchSetpoint.point,true)}
+  ${pointRow("Command timeout","Reverts to the running mode when no new command arrives within this time",num("dispatch.timeout",model.S.dispatch.timeout,"s",30,0),POINTS.dispatchTimeout.point,true)}
  </section>
  <h3 class="isw-group-title">Currently effective</h3>
- <section class="isw-effective-chain">
-  <div class="isw-chain-row"><span class="isw-chain-key">Dispatch setpoint</span><span class="isw-chain-track"><i class="isw-chain-bar isw-chain-bar--cap" style="width:${width(e.sp)}"></i></span><span class="isw-chain-value">${e.sp.toFixed(1)} kW</span></div>
-   <div class="isw-chain-row"><span class="isw-chain-key">${e.sp<0?"Battery power capability":"Export limit"}</span><span class="isw-chain-track"><i class="isw-chain-bar" style="width:${width(e.sp<0?model.S.battChgMax:e.feed)}"></i></span><span class="isw-chain-value">${e.sp<0?(-model.S.battChgMax).toFixed(1):e.feed.toFixed(1)} kW</span></div>
-  <div class="isw-chain-row"><span class="isw-chain-key">PV curtailed</span><span class="isw-chain-track"><i class="isw-chain-bar" style="width:${width(e.curtail)}"></i></span><span class="isw-chain-value">${e.curtail.toFixed(1)} kW</span></div>
-  <div class="isw-chain-row"><span class="isw-chain-key">Grid support (F-P)</span><span class="isw-chain-track"></span><span class="isw-chain-value">inactive</span></div>
-  <div class="isw-chain-row isw-chain-row--hard"><span class="isw-chain-key">Grid-tied point now</span><span class="isw-chain-track"><i class="isw-chain-bar" style="width:${width(e.out)}"></i></span><span class="isw-chain-value">${e.out.toFixed(1)} kW</span></div>
+ <section class="isw-effective-chain" data-isw-point-group="active-power-effective">
+  <div class="isw-chain-row isw-chain-row--primary" data-isw-point="${POINTS.effectiveLimit.point}"><span class="isw-chain-key">Effective power limit</span><span class="isw-chain-track"><i class="isw-chain-bar" style="width:${width(e.out)}"></i></span><span class="isw-chain-value">${power(e.out)}</span></div>
+  <div class="isw-chain-row isw-chain-row--source" data-isw-point="${POINTS.effectiveLimitSource.point}"><span class="isw-chain-key">Limit source</span><span class="isw-chain-value isw-chain-source isw-status isw-status--${sourceTone}"><i></i><span>${source}</span></span></div>
+  <div class="isw-chain-row" data-isw-point="${POINTS.effectivePvCurtailed.point}"><span class="isw-chain-key">PV curtailed</span><span class="isw-chain-track"><i class="isw-chain-bar" style="width:${width(e.curtail)}"></i></span><span class="isw-chain-value">${power(e.curtail)}</span></div>
  </section>
- <div class="isw-chain-foot">${e.src?`Limited by <b>${e.src}</b>.`:"Setpoint reached. Nothing is limiting the output."}</div>`:""}`;
+ <div class="isw-chain-foot">${e.available?"Values are reported by the inverter.":"The inverter has not reported effective values."}</div>`:""}`;
 }
 
 export function limitBasisViewState(model){
@@ -129,36 +146,114 @@ function pageMode(model){
   </button>`).join("")}</div>`;
 }
 
-function pageBattery(model){
- const soc=model.S.soc;
- return `<h2 class="isw-page-title">Battery</h2>
- <h3 class="isw-group-title">State of charge</h3>
- <section class="isw-panel">
-  ${row("Charge cut-off SOC","Charging stops here. A lower value eases ageing, a higher one stores more energy",num("soc.chgStop",soc.chgStop,"%",1,1),true)}
-  ${row("Grid-tied discharge floor","Discharge stops here while on-grid. A lower value yields more usable energy, a higher one keeps more reserve",num("soc.gridFloor",soc.gridFloor,"%",1,1),true)}
-  <div class="isw-row"><div class="isw-row-copy"><div class="isw-row-label isw-row-label--secondary">Off-grid discharge floor</div><div class="isw-row-hint">Discharge stops here during an outage. A lower value runs backup loads longer, a higher one limits deep discharge</div></div>${num("soc.offFloor",soc.offFloor,"%",1,1)}</div>
- </section>
- <section class="isw-soc-panel">
-  <div class="isw-soc-track">
-   <span class="isw-soc-pin" style="left:${soc.offFloor}%">${soc.offFloor.toFixed(1)}</span>
-   <span class="isw-soc-pin" style="left:${soc.gridFloor}%">${soc.gridFloor.toFixed(1)}</span>
-   <span class="isw-soc-pin" style="left:${soc.chgStop}%">${soc.chgStop.toFixed(1)}</span>
-   <span class="isw-soc-fill" style="left:${soc.gridFloor}%;right:${100-soc.chgStop}%"></span>
-   <span class="isw-soc-tick" style="left:0">0%</span><span class="isw-soc-tick" style="left:100%">100%</span>
+function batteryEntries(model){
+ const battery=model.S.battery;
+ const parallel=model.capabilities.batteryPathCount===2&&model.capabilities.supportsBatteryParallel&&battery.parallel;
+ if(parallel||model.capabilities.batteryPathCount===1){
+  return [{key:"common",label:"Battery",data:battery.common}];
+ }
+ return [
+  {key:"bank1",label:"Battery #1",data:battery.bank1},
+  {key:"bank2",label:"Battery #2",data:battery.bank2}
+ ];
+}
+
+function batteryParallelWarning(){
+ return `<div class="isw-battery-warning" data-isw-battery-parallel-warning role="alert">
+  ${iconMarkup("warning")}
+  <div>Battery Parallel Mode is enabled. The system cannot detect which battery string is active. Please verify the battery power and communication cable connections to ensure proper configuration.</div>
+ </div>`;
+}
+
+const labeledBatteryNumber=(markup,label,hintId="")=>markup
+ .replace("<input ",`<input aria-label="${label}" data-isw-log-label="${label}"${hintId?` aria-describedby="${hintId}"`:""} `);
+const batteryBoundary=(path,value,label,hintId)=>labeledBatteryNumber(mini(path,value,"%",1,0),label,hintId);
+const batteryCurrent=(path,value,label)=>labeledBatteryNumber(num(path,value,"A",1,0),label);
+
+function socRangeCard(entry,kind){
+ const prefix=`battery.${entry.key}`;
+ const grid=kind==="grid";
+ const title=grid?"Grid-tied SOC":"Off-grid SOC";
+ const hint=grid
+  ?"Operating range while connected to the grid."
+  :"Operating range during an outage.";
+ const lowPath=`${prefix}.${kind}Min`;
+ const highPath=`${prefix}.${kind}Max`;
+ const low=Number(entry.data[`${kind}Min`]);
+ const high=Number(entry.data[`${kind}Max`]);
+ const hintId=`isw-${prefix.replaceAll(".","-")}-${kind}-hint`;
+ return `<section class="isw-soc-panel isw-soc-range-card" data-isw-soc-card="${prefix}.${kind}">
+  <div class="isw-row">
+   <div class="isw-row-copy">
+    <div class="isw-row-label">${title}</div>
+    <div class="isw-row-hint" id="${hintId}">${hint}</div>
+   </div>
+   <div class="isw-soc-range-values">
+    ${batteryBoundary(lowPath,low,`${entry.label} ${title} lower limit`,hintId)}
+    <span aria-hidden="true">–</span>
+    ${batteryBoundary(highPath,high,`${entry.label} ${title} upper limit`,hintId)}
+   </div>
   </div>
- </section>
- ${note("The filled band runs from the grid-tied floor to the charge cut-off: the range the battery works in while on-grid. When the off-grid floor sits lower, charge is left for an outage.")}`;
+  <div class="isw-soc-range" data-isw-soc-range data-low-field="${lowPath}" data-high-field="${highPath}" data-low="${low}" data-high="${high}">
+   <div class="isw-soc-range-track">
+    <span class="isw-soc-range-fill" style="left:${low}%;right:${100-high}%"></span>
+    <button class="isw-soc-handle" type="button" role="slider" aria-orientation="horizontal" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${low}" aria-valuetext="${low}%" aria-label="${entry.label} ${title} lower limit" aria-describedby="${hintId}" data-isw-soc-handle="low" data-value="${low}" data-render-value="${low}" style="left:${low}%"></button>
+    <button class="isw-soc-handle" type="button" role="slider" aria-orientation="horizontal" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${high}" aria-valuetext="${high}%" aria-label="${entry.label} ${title} upper limit" aria-describedby="${hintId}" data-isw-soc-handle="high" data-value="${high}" data-render-value="${high}" style="left:${high}%"></button>
+    <span class="isw-soc-value-tooltip" data-isw-soc-tooltip role="tooltip" aria-hidden="true"><span data-isw-soc-tooltip-text></span></span>
+   </div>
+   <div class="isw-soc-range-ticks" aria-hidden="true"><span>0%</span><span>20%</span><span>40%</span><span>60%</span><span>80%</span><span>100%</span></div>
+  </div>
+ </section>`;
+}
+
+function batteryConfigCard(entry,{parallelRow=false,parallelMasterUnknown=false}={}){
+ const path=`battery.${entry.key}`;
+ const hideParallelConfig=parallelRow&&parallelMasterUnknown;
+ return `<section class="isw-panel" data-isw-battery-config="${entry.key}">
+  ${parallelRow?row("Parallel Battery Operation","Operate both connected batteries as one bank. Turn it off to configure each battery separately",sw("battery.parallel"),true):""}
+  ${parallelRow&&parallelMasterUnknown?batteryParallelWarning():""}
+  ${hideParallelConfig?"":`
+   ${row("Battery Brand","Battery model paired with this input",`<span class="isw-select-slot" data-isw-battery-brand="${path}.brand" data-isw-battery-brand-value="${encodeURIComponent(entry.data.brand||BATTERY_BRAND_OPTIONS[0])}" data-isw-battery-brand-label="${entry.label} Battery Brand" data-isw-log-label="${entry.label} Battery Brand"></span>`,true)}
+   ${row("Max. Charge Current","Upper charging current accepted by this battery input",batteryCurrent(`${path}.chargeMax`,entry.data.chargeMax,`${entry.label} Max. Charge Current`),true)}
+   ${row("Max. Discharge Current","Upper discharge current supplied by this battery input",batteryCurrent(`${path}.dischargeMax`,entry.data.dischargeMax,`${entry.label} Max. Discharge Current`),true)}`}
+ </section>`;
+}
+
+function pageBattery(model){
+ const battery=model.S.battery;
+ const entries=batteryEntries(model);
+ const multiBank=entries.length>1;
+ const socEntry={key:"soc",label:"Battery",data:battery.soc};
+ const showParallel=model.capabilities.batteryPathCount===2&&model.capabilities.supportsBatteryParallel;
+ const parallelMasterUnknown=showParallel&&battery.parallel&&!model.capabilities.batteryMasterBattery;
+ const bankTitle=entry=>multiBank?`<h3 class="isw-group-title">${entry.label}</h3>`:"";
+ const configuration=showParallel&&battery.parallel
+  ?batteryConfigCard(entries[0],{parallelRow:true,parallelMasterUnknown})
+  :`${showParallel?`<section class="isw-panel" data-isw-battery-parallel><div class="isw-row"><div class="isw-row-copy"><div class="isw-row-label isw-row-label--secondary">Parallel Battery Operation</div><div class="isw-row-hint">Operate both connected batteries as one bank. Turn it off to configure each battery separately</div></div>${sw("battery.parallel")}</div></section>`:""}
+    ${entries.map(entry=>`${bankTitle(entry)}${batteryConfigCard(entry)}`).join("")}`;
+ const heatingRows=multiBank
+  ? entries.map(entry=>row(`Keep ${entry.label} Warm`,"Pre-heats the battery instead of blocking charge when the pack is cold",sw(`battery.${entry.key}.warm`),true)).join("")
+  :row("Keep Battery Warm","Pre-heats the battery instead of blocking charge when the pack is cold",sw("battery.common.warm"),true);
+ return `<h2 class="isw-page-title">Battery</h2>
+ <h3 class="isw-group-title">Battery configuration</h3>
+ ${configuration}
+ <h3 class="isw-group-title">State of charge</h3>
+ ${socRangeCard(socEntry,"grid")}
+ ${socRangeCard(socEntry,"off")}
+ ${note("Each filled band shows the battery operating range. The off-grid range can keep more reserve available for an outage.")}
+ <h3 class="isw-group-title">Battery heating</h3>
+ <section class="isw-panel">${heatingRows}</section>`;
 }
 
 function pageCapability(model){
  return `<h2 class="isw-page-title">Output Capability</h2>
- <section class="isw-panel">${row("AC power limit mode","Determines the inverter's own output ceiling",seg("capability",CAPABILITY_OPTIONS,model.S.capability))}</section>
+ <section class="isw-panel">${pointRow("AC power limit mode","Determines the inverter's own output ceiling",seg("capability",CAPABILITY_OPTIONS,model.S.capability),POINTS.outputCapabilityMode.point)}</section>
  ${note("Rated: max output = rated output power.<br>Overload: max output &gt; rated.<br>Underload: max output &lt; rated.<br>This is the inverter ceiling, independent of the grid-tied point limits.")}`;
 }
 
 function pageDi(model){
  return `<h2 class="isw-page-title">DI Port</h2>
- <section class="isw-panel">${row("DI port configuration","Digital input for grid operator dispatch",seg("di",DI_PORT_OPTIONS,model.S.di))}</section>
+ <section class="isw-panel">${pointRow("DI port configuration","Digital input for grid operator dispatch",seg("di",DI_PORT_OPTIONS,model.S.di),POINTS.diPort.point)}</section>
  ${note("<b>DRM</b> is the demand response mode defined by AS/NZS 4777.<br><b>RCR</b> is the Rundsteuerempfänger, the ripple control receiver used by German DSOs.<br>Select the scheme your grid operator wires to this port. Leave it Off when nothing is wired.")}`;
 }
 
@@ -173,8 +268,8 @@ function pageFeatures(model){
  <h3 class="isw-group-title">Operating envelope</h3>
  <section class="isw-panel">
   ${row("Allow grid / off-grid switching","Enables the backup port to carry load when the grid is absent",sw("features.offgrid"))}
+  ${row("Backup Output","Controls energy output from the backup port. Stop the inverter before changing this setting",sw("features.backupOutput"))}
   ${row("Unbalanced output","Per-phase regulation on the backup port. Off keeps the three phases symmetrical",sw("features.unbalanced"))}
-  ${row("Battery heating","When the pack is colder than its charge window, pre-heats it instead of blocking the charge",sw("features.heating"))}
  </section>
  <h3 class="isw-group-title">Local interface</h3>
  <section class="isw-panel">
@@ -182,6 +277,18 @@ function pageFeatures(model){
   ${row("Buzzer","Audible alarm on a protection trip",sw("features.buzzer"))}
  </section>
  ${note("The watchdog fallback and the off-grid permission are recorded in the operation log. Both are part of the commissioning record.")}`;
+}
+
+export function backupOutputSafetyNotice(enabling){
+ return enabling
+  ?{
+   title:"Cannot Enable Backup Output",
+   description:"To safely activate Backup Output, the inverter must be stopped and the backup load must be confirmed to be within the nameplate's rated power range with secure connections."
+  }
+  :{
+   title:"Cannot Disable Backup Output",
+   description:"The inverter is currently running. To ensure system safety, the inverter must be stopped before turning off the Backup Output."
+  };
 }
 
 function pageGrid(model){
@@ -244,6 +351,8 @@ function pageEconomic(model){
  ${note("This schedule belongs to the Economic running mode. Unassigned time uses General Mode. Power is a percentage of the inverter's rated power.")}`;
 }
 
+export const WIFI_HOTSPOT_HINT="Disabling this switch stops the inverter hotspot without affecting cloud connection. Re-enabling must be done via cloud or Wi-Fi dongle for reconfiguration.";
+
 function pageNetworking(model){
  const network=model.S.net;
  return `<h2 class="isw-page-title">Networking</h2>
@@ -251,6 +360,12 @@ function pageNetworking(model){
  <section class="isw-panel">
   ${row("Interface","",seg("net.iface",NETWORK_INTERFACE_OPTIONS,network.iface))}
   ${row("DHCP","Obtain an address automatically",sw("net.dhcp"))}
+ </section>
+ <h3 class="isw-group-title">Wi-Fi</h3>
+ <section class="isw-panel">
+  ${row("Inverter Wi-Fi Hotspot",WIFI_HOTSPOT_HINT,sw("net.wifiOn"))}
+  ${row("SSID","",textField("net.wifiSsid",network.wifiSsid,"Wi-Fi hotspot SSID"))}
+  ${row("Password","",passwordField("net.wifiPassword",network.wifiPassword,"Wi-Fi hotspot password"))}
  </section>
  <h3 class="isw-group-title">Address</h3>
  <section class="isw-table">
@@ -267,22 +382,85 @@ function pageNetworking(model){
  </section>`;
 }
 
+export const MPPT_PARALLEL_HINT="Shares input current across MPPT channels for more energy from parallel PV strings.";
+
+export function mpptGroupLabel(members,activeIndices=null){
+ const ordinals=(members||[]).map(index=>{
+  const ordinal=activeIndices?activeIndices.indexOf(Number(index)):Number(index);
+  return ordinal+1;
+ });
+ if(!ordinals.length)return "";
+ return `MPPT #${ordinals[0]}${ordinals.slice(1).map(value=>` & #${value}`).join("")}`;
+}
+
+export function renderMpptScanContent(model,individualMode){
+ const mppt=model.S.mppt;
+ const activeIndices=model.mpptIndices();
+ return individualMode
+  ?activeIndices.map((index,displayIndex)=>{
+   const item=mppt.individual[index]||{scan:1,interval:30};
+   const label=`MPPT #${displayIndex+1}`;
+   return `<h3 class="isw-group-title">${label}</h3>
+   <section class="isw-panel" data-isw-mppt-shadow="${index}">
+    ${row("Enable Shadow Scan","Sweeps the I-V curve to find the global maximum",sw(`mppt.individual.${index}.scan`))}
+    ${item.scan?row("Scan interval","",scanIntervalSelect(item.interval,`mppt.individual.${index}.interval`,`${label} scan interval`),true):""}
+   </section>`;
+  }).join("")
+  :`<section class="isw-panel" data-isw-mppt-shadow="all">
+   ${row("Shadow scan","Sweeps the I-V curve to find the global maximum",sw("mppt.scan"))}
+   ${mppt.scan?row("Scan interval","",scanIntervalSelect(mppt.interval,"mppt.interval","Scan interval"),true):""}
+   ${mppt.scan?readonlyDataRow("Last scan","",`<span data-isw-time-minutes="${mppt.lastScanMinutesAgo}"></span>`):""}
+  </section>`;
+}
+
 function pageMppt(model){
  const mppt=model.S.mppt;
  const options=MPPT_SOURCE_OPTIONS;
+ const count=model.capabilities.mpptCount;
+ const activeIndices=model.mpptIndices();
+ const groups=model.mpptGroups();
+ const groupedMembers=groups.reduce((total,group)=>total+group.members.length,0);
+ const canAddGroup=mppt.parallel&&count>2&&groups.length>0&&count-groupedMembers>=2;
+ const showGroupEditor=mppt.parallel&&count>2;
+ const groupRows=groups.map((group,index)=>`<div class="isw-row isw-mppt-group-row" data-isw-mppt-group="${group.id}">
+  <div class="isw-row-copy"><div class="isw-row-label">MPPT Group ${index+1}</div></div>
+  <div class="isw-mppt-group-control">
+   <span class="isw-mppt-group-select-slot" data-isw-mppt-group-select="${group.id}"></span>
+   <span class="isw-mppt-more-slot" data-isw-mppt-more="${group.id}"></span>
+  </div>
+ </div>`).join("");
+ const placeholderRow=`<div class="isw-row isw-mppt-group-row is-placeholder" data-isw-mppt-group="draft">
+  <div class="isw-row-copy"><div class="isw-row-label">MPPT Group 1</div></div>
+  <div class="isw-mppt-group-control">
+   <span class="isw-mppt-group-select-slot" data-isw-mppt-group-select="draft"></span>
+   <span class="isw-mppt-more-slot" data-isw-mppt-more="draft"></span>
+  </div>
+ </div>`;
+ const individualMode=Number(mppt.scanMode)===1;
  return `<h2 class="isw-page-title">MPPT &amp; Strings</h2>
  <h3 class="isw-group-title">MPPT Input</h3>
  <section class="isw-panel">
   ${mppt.pv.map((value,index)=>row(`MPPT #${index+1}`,"",seg(`mppt.pv.${index}`,options,value),true)).join("")}
  </section>
  <h3 class="isw-group-title">Tracker</h3>
- <section class="isw-panel">${row("Parallel MPPT Operation","Combine trackers for one large array",sw("mppt.parallel"))}</section>
- <h3 class="isw-group-title">Shadow scan</h3>
- <section class="isw-panel">
-  ${row("Shadow scan","Sweeps the I-V curve to find the global maximum",sw("mppt.scan"))}
-  ${mppt.scan?row("Scan interval","",scanIntervalSelect(mppt.interval),true):""}
-  ${mppt.scan?readonlyDataRow("Last scan","",`<span data-isw-time-minutes="${mppt.lastScanMinutesAgo}"></span>`):""}
+ <section class="isw-panel isw-mppt-panel">
+  ${row("Parallel MPPT Operation",MPPT_PARALLEL_HINT,sw("mppt.parallel"))}
+  ${showGroupEditor?`<div class="isw-mppt-groups" data-isw-mppt-groups>
+   ${groups.length||model.S.mpptPickerOpen?"":`<div class="isw-mppt-group-error" role="alert">At least one MPPT Group must be created</div>`}
+   ${groups.length?groupRows:placeholderRow}
+   ${canAddGroup?`<div class="isw-mppt-add-row"><span data-isw-mppt-add></span></div>`:""}
+  </div>`:""}
  </section>
+ <h3 class="isw-group-title">Shadow scan</h3>
+ <section class="isw-panel" data-isw-mppt-scan-mode>
+  ${row("Control Mode","All MPPTs Control applies the same scan setting to every MPPT. Individual Control configures each present MPPT separately.",seg("mppt.scanMode",["All MPPTs Control","Individual Control"],mppt.scanMode),true)}
+ </section>
+ <div class="isw-mppt-shadow-region" data-isw-mppt-shadow-region="all" data-isw-surface-key="mppt-shadow-all"${individualMode?' hidden inert aria-hidden="true"':""}>
+  ${renderMpptScanContent(model,false)}
+ </div>
+ <div class="isw-mppt-shadow-region" data-isw-mppt-shadow-region="individual" data-isw-surface-key="mppt-shadow-individual"${individualMode?'':' hidden inert aria-hidden="true"'}>
+  ${renderMpptScanContent(model,true)}
+ </div>
  ${note("Set each input to the source that is wired to it, and leave the unused inputs on None. Check the string configuration again after any change to the array.")}`;
 }
 
@@ -290,7 +468,9 @@ function pageCt(model){
  const ct=model.S.ct;
  const status=value=>value==="ok"?`<span class="isw-status isw-status--success"><i></i>Correct</span>`:value==="rev"?`<span class="isw-status isw-status--warning"><i></i>Reversed</span>`:`<span class="isw-status isw-status--idle"><i></i>Not checked</span>`;
  return `<h2 class="isw-page-title">CT Detection</h2>
+ <h3 class="isw-group-title">CT Self-check</h3>
  <section class="isw-panel">
+  ${row("Current Mode","Selects whether grid current is measured from the meter or the CT clamps",seg("ctCurrentMode",CT_CURRENT_MODE_OPTIONS,model.S.ctCurrentMode),true)}
  ${row("Direction check","Checks each phase clamp for a reversed installation",actionButton(ct.running?"Checking...":"Run check","ctRun","primary",ct.running))}
  </section>
  <h3 class="isw-group-title">Result</h3>
@@ -312,8 +492,8 @@ function pageOperations(model){
  ${row("Restart","Reboots the control board and interrupts generation",actionButton("Restart","restart","warning"))}
  </section>
  <h3 class="isw-group-title">Reset</h3>
-<section class="isw-panel">${row("Factory reset","Clears all settings, including the grid code",actionButton("Reset all settings","factory","danger"))}</section>
- ${note("Power off and restart interrupt generation. Both actions keep the grid code and protection settings.")}`;
+ <section class="isw-panel">${row("Reset &amp; Recovery","Restore selected settings or return the inverter to its initial setup state",actionButton("Open","resetRecovery","neutral"))}</section>
+ ${note("Power off and restart interrupt generation. Reset &amp; Recovery opens the controlled recovery flow without changing the grid code or protection settings until a reset is confirmed.")}`;
 }
 
 function pageExport(model){
@@ -711,6 +891,8 @@ export const NAV_GROUPS=Object.freeze([
  {label:"Operating strategy",items:[
   {id:"mode",label:"Running Mode",icon:"mode",value:model=>MODES[model.S.runMode].compactLabel},
   {id:"eco",label:"Economic Schedule",icon:"clock",value:()=>""},
+  {id:"touManual",label:"ToU Mode",icon:"tou",value:()=>"Manual"},
+  {id:"touDynamic",label:"ToU Mode",icon:"tou",value:()=>"Dynamic"},
   {id:"batt",label:"Battery",icon:"batt",value:()=>"50.3 %"}
  ]},
  {label:"Power control",items:[
@@ -734,7 +916,7 @@ export const NAV_GROUPS=Object.freeze([
 ]);
 
 export const PAGES=Object.freeze({
- mode:pageMode,eco:pageEconomic,batt:pageBattery,dispatch:pageDispatch,limits:pageLimits,
+ mode:pageMode,eco:pageEconomic,touManual:manualTouPage,touDynamic:dynamicTouPage,batt:pageBattery,dispatch:pageDispatch,limits:pageLimits,
  cap:pageCapability,di:pageDi,grid:pageGrid,net:pageNetworking,feat:pageFeatures,
  mppt:pageMppt,ct:pageCt,ops:pageOperations,export:pageExport,log:pageLog
 });

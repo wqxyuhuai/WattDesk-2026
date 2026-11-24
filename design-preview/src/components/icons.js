@@ -17,6 +17,7 @@ export const SETTINGS_ICON_FILES=Object.freeze({
  mpptStrings:"icons/settings/mppt-strings.svg",
  ctDetection:"icons/settings/ct-detection.svg",
  operationControl:"icons/settings/operation-control.svg",
+ resetRecovery:"icons/settings/reset-recovery.svg",
  parameterExport:"icons/settings/parameter-export.svg",
  operationLog:"icons/settings/operation-log.svg",
  generalMode:"icons/settings/general-mode.svg",

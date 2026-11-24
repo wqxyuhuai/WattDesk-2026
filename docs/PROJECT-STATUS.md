@@ -1,18 +1,131 @@
 # 当前状态与新对话交接
 
-更新：2026-11-23。
+更新：2026-11-24。
 
 先读 `AGENTS.md` → `PROJECT-MAP.md` → `DESIGN-SYSTEM.md` → 本文件。新增页面再读 `ARCHITECTURE.md`、`COMPONENTS.md`；核对既往反馈见 `USER-REQUIREMENTS.md`。用户最新明确要求优先。
 
-## 2026-11-23 当前规则归档（最高优先级）
+## 2026-11-24 当前规则归档（最高优先级）
 
+- **本次日终归档口径**：仅依据当前可访问的对话、当前工作树 `git status` / `git diff`、运行代码、专项测试和现有文档；无法直接访问的并行对话未补写或推断。长期规则分别落在 `AGENTS.md`、`DESIGN-SYSTEM.md`、`docs/COMPONENTS.md`、`docs/INVERTER-SETTINGS.md` 与 `docs/TOU-MODE-SETTINGS.md`，本文件只保留当前状态、验证证据和未决边界。
+- **本次规则修正**：共享底部回落统一使用 `--wd-motion-content-grow` 时长和独立 `--wd-ease-content-settle` 缓动，废弃旧 `--wd-ease-content-grow` 回落描述；共享 Select 的 `description` 双行说明结构纳入顶层组件规则；ToU 图表采用 Buy 主曲线与轻面积、Sell 次级曲线、8% 模式底色、最低 / 最高价格摘要和 hover 当前模式列；用户标注的图例结构保持不变；Dynamic `24h Overview` 保留右 `2px` / 下 `3px` 光学校正。
+- **ToU 标题与摘要微调**：`24h Overview` 提升为 `13px / 18px`；价格摘要左缘与标题文字左缘对齐，标题到摘要净距收紧到约 `16–18px`。
+- **ToU 图表回退快照**：改版前 `Backups/WattDesk-before-tou-chart-redesign-20261124-171242.zip`，478 项，`6,748,372` bytes，SHA-256 `4E35A36B6D171F3A47558DC87CFCC6351844EA880308F7A7A4385EFBC99862A8`；模式轨道方案调整前 `Backups/WattDesk-before-tou-mode-background-20261124-172410.zip`，478 项，`6,750,834` bytes，SHA-256 `3DA40182A8764816DDDECA213703E5269F02DE539705DABEACEC22FB422B7841`。
+- **实际预览落地复核**：用户当前打开的 Cent Browser 标签曾保留旧 DOM；刷新并重新进入 Dynamic ToU 后确认新标题类、`2px 3px` 计算位移和最终计划样例已加载。后续视觉验收必须区分代码已修改、测试标签通过和用户当前窗口已更新。
+- 共享 `.wd-edit-field` 已收口为单一状态与动效契约：直接输入、复合输入和 Select 触发器统一使用 `380ms` / `--wd-ease-disclosure`，`motion.css` 不再按 `.isw-number / .isw-wifi-field` 等页面类名手工登记。字段通过共享自定义属性管理默认、hover、focus 和深浅主题；默认 outline 为 `1px transparent`，focus 只动画颜色并保持 `1px`，placeholder 同时覆盖字段宿主和内部输入。
+- 新增 `npm run audit:motion` 与 `tests/verify-edit-field-motion.cjs`。专项在真实 Chromium 中同时验证直接输入、复合输入和 Select 字段，采样 hover、leave、focus 的中间帧，并覆盖 reduced-motion；不再只断言最终颜色或 transition 声明。
+- 数据页 toast 改为读取当前可见面包屑标题的真实 rect，再按 toast 自身渲染高度垂直居中；固定 `top:70px` 只作为无标题页面的回落，避免标题行高变化后中心偏移。
+- 全站 toast 统一为共享单实例：Glass Surface 在 controller 创建时预挂载；入场时宿主保持 `opacity:1`，只淡文字并做 `4px` 下落；退场时宿主与文字作为一个整体同步 `1 → 0` 淡出并上浮 `4px`，不能文字先消失、空玻璃后消失。不得单独对 fill 的 opacity / backdrop-filter 做动画。上下内距从 `11px` 收紧为 `8px`，Inverter settings 与数据页、Home、Service Ticket 完全共用。
+- Active Power Dispatch 的四个 RW 点、`Output_Capability_Mode`、`DRM_SET` 已形成统一点位契约；`DRM_SET` 固定 `0=Off / 1=DRM / 2=RCR`，Output Capability 候选枚举继续标记为 firmware-pending。
+- 顶部状态卡和 Active Power Dispatch 的 Currently effective 改为设备上报 RO 值：`ActivePower_Effective_Limit`、`ActivePower_Limit_Source`、`ActivePower_PV_Curtailed`。Setpoint、Export limit 或电池能力变化不再触发生效值推导；缺失时显示 unavailable。
+- 顶部主标题由 `Grid-tied point now` 改为 `Effective active-power limit`；Effective chain 改为三行：Effective power limit、Limit source、PV curtailed。首行结果使用主题蓝强调，并与支持值用分隔线分组；Limit source 不画空进度轨，使用状态点 + 单行源标签跨轨道区右对齐，不能换行。
+- 本轮点位与回显验证：`npm run check`、`npm run test:file -- tests/verify-inverter-settings.cjs`、`npm run build:site:public`（296 文件 / 3.05 MB）、`npm run audit:assets`（167 个资产，0 unused / 0 missing）和 `git diff --check` 通过；深色与浅色 overview、dispatch 页面已实拍复查。
+- toast 专项验证：`tests/verify-floating-surfaces.cjs` 覆盖隐藏态预挂载材质、入场首帧 `opacity:1`、blur 就绪、文字独立淡入、无入场宿主 opacity 关键帧、退场宿主 opacity `1 → 0` 与文字同一时间线、`8px` 纵向内距和退出收尾；`tests/verify-routing.cjs` 覆盖数据页标题几何对齐；`npm run audit:motion` 覆盖共享编辑字段中间帧。
+- 验证边界：`npm test` 25 套回归曾在共享层收口阶段全部通过；后续点位/回显改动已重新通过 `npm run check`、Inverter settings 全量专项、公开构建、资产审计和 `git diff --check`。未把这些页面专项结果表述为修改后的再次全站回归。
+- ToU 已按确认稿实现：[TOU-MODE-SETTINGS.md](./TOU-MODE-SETTINGS.md) 记录双入口、Manual / Dynamic、24 段共享调度、线上五种控制模式、Intelligent 云端决策、地区/费用、自动生成与生产边界。
+- Inverter settings 的 `Operating strategy` 分组现显示两个 `ToU Mode` 入口，右侧小字分别为 `Manual / Dynamic`，共用 ToU 模式图标；Manual 为默认业务形态，两个入口始终显示，暂不做侧栏资格判断。
+- ToU 最终验证通过：`npm run check`、`npm run test:file -- tests/verify-inverter-settings.cjs`、`npm run build:site:public`（296 文件 / 3.05 MB）、`npm run audit:assets`（167 个运行资产，0 unused / 0 missing）和 `git diff --check`。专项覆盖双入口、计划表完整文案、稀疏分钟轮、错误去重、96 点电价图、Tomorrow 空态、五种控制模式、Percentage 阈值、Intelligent 无本地策略字段及保存后的模式保持。
+- 2026-11-24 ToU 最终状态：两个 `ToU Mode` 入口始终显示 `Manual / Dynamic`，Manual 默认；Manual / Dynamic 使用标准 `640px` 内容列和同一份 ToU 模型。完整业务、数据、图表和设备点位边界见 [TOU-MODE-SETTINGS.md](./TOU-MODE-SETTINGS.md)。
+- Manual 最终状态：24h Overview 复用 Economic Schedule；计划表五列为 `136 / 160 / 154 / 90 / minmax(...)`、列间距 `4px`、左右内距 `24px`。时间输入完整、Mode 名称完整、PV 表头单行，电量到开关净距约 `20px`。时间范围共用 `createTimeRangeControl()`：`1 h` 分钟列静态 `00`，`15 / 30 mins` 每值只渲染一次；打开箭头与共享 Select 同为 14px、约 12px 右距、`.72 → 1` 状态。
+- ToU 校验与编辑最终状态：同一时间、反序、非步长、重叠和超过 24 段均阻止保存；有效计划按开始时间升序。同一字段只保留一条当前错误，错误横跨时间与模式两列并单行显示。删除后计划真实减少且不自动补 General Mode；全空计划只有新增或 Cancel 才改变。
+- Dynamic 最终状态：Today/Tomorrow、96 点 Buy/Sell 价格线、8% 模式底色、最低 / 最高价格摘要、15 分钟吸附与模式列高亮浮窗，以及 Manual / Duration / Percentage / Fixed / Intelligent 五种控制模式均已落地。原图例结构按用户标注保持不变。Advanced 子页 Back、滚动模糊标题、Time Settings、说明型 Control Mode、220px 地点选择器、Extra Charge Modal 和 Intelligent 标准卡采用批注后的最终样式；不再保留中间轮次的列宽或图表方案。
+- 共享按钮与信息浮窗最终状态：`primary` 与 `danger-solid` 共用同级白色 rim / inner / optical 默认高光及白字；Economic 与 ToU 的 info tooltip 均使用 `bindHoverPanel()` 居中定位。Economic kW 辅助值使用 `Labels/Secondary`，与 ToU 计划表一致。
 - 当前发布策略改为 local-only：后续修改可本地编辑、提交、测试和构建，但不得自动 `git push` 或部署 Cloudflare。只有用户明确要求发布时才更新远端；在此之前独立预览和主站继续使用上一次线上版本。
 - 1120 源包是 1119 的增量：只新增 `Limit basis` 与更新说明；其余页面、字段、18 个档案和校验说明继续沿用 1119。
 - `Import & Export Limits → Export limit` 增加 `Limit basis`：`Total` 默认、`Per phase` 可选；仅三相机型、Export limit 开启时显示，单相隐藏。
 - 当前 `p25` 本地预览设为三相机型且固件支持按相，两个选项可实际切换。固件不支持时 `Per phase` 仍可见但禁用；该分支有模型级回归，测试覆盖单相隐藏和 unsupported 规范化。
-- `limits.basis` 纳入现有 limits 页面保存域；Save/Cancel、dirty、Operation Log 复用现有机制，日志显示 `Total / Per phase`。当前 preview 不伪造三相实时限值，Effective chain 继续使用总和模型。
+- `limits.basis` 纳入现有 limits 页面保存域；Save/Cancel、dirty、Operation Log 复用现有机制，日志显示 `Total / Per phase`。当前 preview 不伪造三相实时限值；顶部状态和 Effective chain 使用设备上报 RO telemetry，不在本地推导。
+- Battery 页面已补齐 2026-11-23 新设置，固定顺序为 `Battery configuration → State of charge → Battery heating`。单路和并联使用 `battery.common`；双路关闭并联后，品牌、最大充/放电电流和加热拆分到 `battery.bank1 / battery.bank2`。SOC 明确不跟随输入拆分，三种状态都只使用一套 `battery.soc`。
+- 并联运行时由 `batteryMasterBattery` 表示主通讯电池；正常值为 `bank1 / bank2`，后续点位实际读写路由到该电池，但界面仍是一套配置。值为空或无效且并联开启时，原并联卡内显示硬件通讯检查警告，并隐藏 Battery Brand、最大充/放电电流；SOC 与加热仍保留。关闭并联或识别成功时不显示警告并恢复配置字段。当前 p25 预览默认将主通讯电池识别为 `bank1`，首开显示完整的一套 Battery 配置；未知主通讯电池只保留独立模型回归，不再作为默认演示状态。异常警告使用 `13 / 400 / 18px` 与 `12px / 4px` 上下内距，只在开关下方保留顶部线，无底部分隔线，卡片尾部约 `5px`；图标改用不透明主题橙 mask，不再继承原素材 `30%` 填充透明度。从该异常状态关闭并联时，必须立即恢复两张完整且可编辑的 `Battery #1 / Battery #2` 配置卡，不能继续隐藏或禁用分路设置。
+- SOC 改为 `Grid-tied SOC` 与 `Off-grid SOC` 双端范围，默认 `10–80% / 20–90%`；数值和玻璃手柄都可编辑。未填充轨道使用中性灰，已填充区间使用主题蓝；默认线宽为 `4px`，只有 24px 透明线区或端点 hover / focus 才增至 `8px`，整卡 hover 不触发。轨道 hover 时两个端点一起 spring 放大，释放通过共享 `420ms` spring 回落；hover 端点显示跟随的 Glass `SOC <value>%` 浮窗，离开即消失，点击本身不控制显隐，拖拽期间持续显示。该浮窗绝对覆盖在内容层上方，不占卡片高度，与手柄净距 `2–4px`，直接复用 `wd-glass--surface wd-glass-popup` 材质；进入时材质与 backdrop blur 立即达到终态、正文延后 `70ms`，不得对 backdrop-filter 做过渡；退出时正文先退、材质与模糊延后 `70ms`。浮窗宿主必须使用 `isolation:auto`，否则模糊虽有计算值却无法采样背后内容。端点无内部小点，默认 `16px`，并增强小圆盘的模糊、边缘和内外高光；拖动时手柄/填充/浮窗始终连续移动、数据只回传最近整数，不保留整十磁性吸附，键盘方向键保持逐点。
+- SOC 轨道支持点击定位最近端点；两端允许相互越过，结束后按数值排序，较小值自动成为 Start。Start 与 End 相等时显示 `Start and end SOC limits must be different.` 并阻止 Save；数值输入反向也会自动排序。刻度使用 `12px` Labels/Secondary，按真实 `0 / 20 / 40 / 60 / 80 / 100%` 坐标定位，卡片底部留白收紧。
+- 设置页新增统一分组节奏：同一分组标题下连续相邻的卡片间距从 `30px` 减半为 `15px`，当前同时覆盖 Battery 的 SOC 双卡与 Parameter Export 的 Contents 双卡。
+- Device Features 的 `Operating envelope` 增加 `Backup Output`，固定位于 `Allow grid / off-grid switching` 与 `Unbalanced output` 之间，默认开启并参与当前页 Save / Cancel、dirty 与 Operation Log。逆变器运行时，开关点击在进入共享 toggle 前被拦截，分别显示 `Cannot Enable Backup Output` / `Cannot Disable Backup Output` 单按钮 `OK` 通知；开关值、DOM、dirty 和日志均不变化。`OK` 使用共享蓝色 primary 整行按钮，点击只确认提示，不解除门禁；未关机时再次尝试仍会继续弹窗，通过 Operation Control 关机后才允许正常切换。
+- 共享 `createConfirmDialog()` 新增 `showCancel:false` 与 `confirmVariant`，用于单操作确认 / 安全通知：保留 `480px`、Depth Reveal、Glass Surface、焦点归还和 modal stack，只显示一个整行宽的 `OK`，可按调用方选择共享按钮变体。通知铃铛复用 `asset-32.svg`，并由 `npm run sync:masks` 生成不透明运行遮罩。
+- Backup Output 专项覆盖行顺序、默认状态、运行中关闭拦截、通知标题/正文/单按钮/铃铛/焦点归还、拦截后不 dirty、关机后双向切换和返回基线；深色 1545×1252 与浅色 1545×1252 截图均检查通过。
+- MPPT & Strings 新增完全分离的两组点位：5 个 `inventoryPoints` 只表示 MPPT 存在状态（`5` 为无接口），4 个 `groupPoints` 只保存并联关系；实际 MPPT 数量由非 `5` 的 inventory 点位计算。
+- Parallel MPPT Operation 的说明放在标题下；超过 2 路开启后先显示 `MPPT Group 1` 占位，并从共享 Select 触发器下方打开紧凑双选浮层。组值可再次点击编辑；其他组已占用 MPPT 始终置灰不可选，只显示灰色 `MPPT #N`，不再附加 `Already assigned`，必须先删除占用它的组。
+- MPPT 选择列表使用 36px 横向菜单行，左侧文字、右侧 Running Mode 18px 选择标记；组 Select 复用 Scan interval 的 Adaptive Select 内容宽度和 14px 下箭头，与 option 按钮间距 8px；占位组显示 disabled option。双选浮窗宽 220px，右缘按共享 Select 规则在触发器布局右缘外扩 30px。选择超过两项时自动取消最早选择，始终保留最后两个。
+- 加号与 option 右缘对齐；`Delete group` 使用共享危险菜单泛红状态；空组错误上下留白相等并保留 Group 1 占位。
+- MPPT 专项覆盖 2/3/4 路 inventory 推导、两组点位隔离、组占位与 disabled option、浮窗锚定、Adaptive Select 几何、横向选择行、最后两项自动淘汰、跨组禁用置灰、第二组自动补全、加号右对齐、危险删除、空组错误间距、Save 阻止与 Cancel 回基线；页面截图进入 `tests/output/`。
+- MPPT 空组错误插入 / 移除统一走共享 `280ms` content-grow；取消首次选择、错误出现、创建首组后错误消失均从旧卡片高度续接，不得即时 `hidden` 或硬换 DOM。
+- Shadow scan 新增 `All MPPTs Control / Individual Control` 共享分段。全部模式保留一个总开关与 Adaptive Select； Individual 模式根据 inventory 非 `5` 点位数量动态生成每一路独立开关和间隔。
+- 单路关闭只收起该路 interval；`mppt.scanMode`、`mppt.scan`、`mppt.interval` 和 `mppt.individual.<index>.*` 全部进入当前页 Save/Cancel、dirty 与 Operation Log。专项覆盖 4 路夹具、独立更新和 Cancel 回基线。
+- Shadow scan 的 All / Individual 扫描区在同一 MPPT 页面预渲染；模式切换只原位显隐目标区域，不再整页重绘，页面、Tracker 卡和分段控件节点保持不变。位于底部切回 All 时使用共享 bottom-scroll guard 平滑回落到新底边。
+- 共享 bottom-scroll guard 的滚动跟随改用独立 `--wd-ease-content-settle`，并在 Shadow scan 专项中覆盖同步点击不夹底、spacer 存在、单调回落、无停顿重绘、最终到达新底部和节点不重建。
+- MPPT 本轮验证：`npm run check`、`npm run test:file -- tests/verify-inverter-settings.cjs`、`npm run audit:assets`、`npm run build:site:public`（291 文件 / 2.91 MB）和 `git diff --check` 通过；深浅主题选择器、单组、双组和空组错误均已实拍检查。
+- CT Detection 新增 `CT Self-check → Current Mode`，使用共享分段提供 `Meter Current / CT Current`，映射 `Grid_Current_Mode_Set` 的 `0 / 1`；`Run check` 继续独立对应 `CT_SCAN_ENABLE`，不改变电流来源。页面明确不把 `100 A CT / 50 A CT` 作为枚举。
+- `ctCurrentMode` 独立于瞬态 `ct` 运行结果，已进入当前页 Save / Cancel、dirty 与 Operation Log；回归覆盖默认 Meter Current、仅两个选项、运行检查不改变 Current Mode、评级文案不存在和保存后的可读前后值。
+- Operation Control 的 Factory reset 已替换为 `Reset & Recovery` 嵌套弹窗入口。弹窗提供按分类恢复和 Full reset 两条路径；分类下分别映射 `Reset_operation`、`Reset_gridparameters`、`Reset_network`，Full reset 单独映射 `Reset_allcustomersettings` 并覆盖前三类效果。
+- Reset & Recovery 使用共享 modal stack、标准按钮、Glass Surface 和最终确认；本地命令只显示 preview 模拟结果。主弹窗、分类、四类详情、取消返回、危险确认、提交锁和断线提示均纳入专项回归。
+- Reset & Recovery 样式收口：详情和确认按钮保持共享默认 `36px` 尺寸，只调整操作组居中并压缩底部留白；Cancel 使用共享 neutral 玻璃，Continue / Reset 使用新增的共享 `danger-solid` 实心红玻璃和白色文字，不再增加页面私有按钮材质；分类行 hover、18px 箭头、Warning 对齐和 `16px` 内容节奏均已覆盖。
+- Reset & Recovery 留白与箭头最终值：Landing 左右和底部统一 `22px`，带操作栏页面底部保持 `14px`；分类行箭头默认通过 `.24` 透明度保留原始浅色层级，hover / focus 提升到完全不透明的实心当前语义色。
+- Full reset 恢复交互稿文案和五项重置清单，最终确认使用 “Are you sure to reset all data?”；分类页补回恢复风险提示，危险行 hover 不再把红色文字切成黑色。
+- Networking 新增 Wi-Fi 热点卡片，提供 `Inverter Wi-Fi Hotspot / SSID / Password`，接入共享 switch、标准设置编辑字段和密码眼睛显隐；说明使用标题下标准 hint，SSID / Password 宽度收紧为 `220px`，密码眼睛为 `16px` 且闭合态下移 `0.5px`，三个点位进入 Save / Cancel、dirty 与脱敏 Operation Log。
+- Wi-Fi 编辑字段与其他直接输入、复合输入、Select 触发器一样只依赖 `.wd-edit-field` 语义类，自动继承 `380ms` disclosure；最终实现已在 `motion.css` 移除页面类名白名单。
+- Battery 专项已覆盖单路、双路并联、双路分置共享 SOC、主通讯电池未知警告、能力 normalization、手柄/填充对齐、小圆盘玻璃材质、轨道 hover 双端放大、spring 释放、SOC hover 浮窗的显示/离开/拖拽保持、材质与正文 `70ms` 顺序、浮窗绝对覆盖与 `2–4px` 净距、仅线区 hover、连续拖拽位置与整数回传、无磁性吸附、键盘逐点移动、轨道点击最近端点、交叉后排序、相等错误、默认/悬停线宽、端点尺寸、连续卡片半间距、依赖卡顺序与 dirty 回基线；`npm run check` 和 `npm run test:file -- tests/verify-inverter-settings.cjs` 通过。
+- 归档依据：本次可访问的对话记录、当前工作树 `git status` / `git diff`、运行代码、页面专项测试和现有规则文档。未访问或不在当前记录中的并行对话不做推断。
+- **2026-11-23 归档新增**：1120 `Limit basis`、单/双电池拓扑与并联能力、设备级共享 SOC、Battery Brand / 电流 / 加热、SOC 双端点击与交叉排序、跟随浮窗、真实百分比刻度和设置页连续卡片半间距。
+- **2026-11-23 归档修改**：把 SOC 的绿色改为主题蓝；裸线从 `8px` 改为默认 `4px` / hover `8px`；把“先文字后模糊”的浮窗改为材质与 blur 立即、正文延后 `70ms`；把提示从点击持久改为端点 hover 打开 / 离开关闭；把切换流程统一为共享 spring 与 `isolation:auto` 的真实 blur。
+- **2026-11-23 归档废弃**：不得恢复 SOC 按电池分拆、绿色填充、整十或整数磁性吸附、`lower ≤ upper` 禁止交叉的校验、整卡 hover 加粗、六等分网格刻度、13px 浅灰刻度、占布局高度的 tooltip、点击控制 tooltip、过渡 `backdrop-filter`、未覆盖 `isolation:isolate` 的毛玻璃 tooltip，以及 Device Features 里的全局 Battery heating。
+- 本次“完整规则归档”只更新规则文档，不追加运行代码、UI、样式、资源或测试改动；工作树中的功能代码属于此前已完成的实现，保持原样。
 - 实施前存档：`Backups/WattDesk-before-1120-limit-basis-20261123-110928.zip`，445 项、4,670,860 bytes，SHA-256 `044FFF7AA5A2EF1AF781103FC3FBF74C37227F91C40B232452EF514A09C432CA`。
 - 生产仍需确认按相闭环排期、计量方式点位和固件能力位；在收到 11 月 26 日前的硬件/固件回复前，不把 preview 数据视为生产元数据。
+
+### 2026-11-24 归档增量（相对上一轮完整归档）
+
+**规则层级**
+
+- 全局规范：`.wd-edit-field` 动效状态、toast 几何与材质生命周期、共享 motion token、`prefers-reduced-motion`、用户实际预览标签验收和本地预览 / 发布边界。
+- 组件级规范：`createConfirmDialog()` 单操作与 `danger-solid`、`createTimeRangeControl()`、共享 Select（含 `description` 双行说明）/ segmented / toggle / bottom-scroll guard、`npm run audit:motion`。
+- Inverter settings 功能规则：Active Power 点位与 RO telemetry、Output Capability 固件边界、DI Port `DRM_SET`、ToU、Battery、MPPT、Shadow scan、CT、Reset、Networking。
+- 开发约定：同类问题先收敛共享语义，再做全消费方审计；页面不得复制共享样式或局部 timing；视觉状态必须同时检查计算样式、真实中间帧和双主题。
+
+**新增**
+
+- 共享 `.wd-edit-field` 的完整状态矩阵与 `npm run audit:motion` 中间帧审计。
+- ToU Manual / Dynamic 双入口、共享 `createTimeRangeControl()`、Manual 六模式计划、Dynamic 96 点电价与五种控制模式；15/30 分钟稀疏轮、1 小时静态分钟轮、稳定错误身份、24 段校验和按开始时间排序。
+- Dynamic ToU 图表最终视觉层：Buy 2px 主曲线与 `14% → 0` 轻面积、Sell 1.5px / `84%` 次级曲线、8% 六色模式底色、最低 / 最高价格摘要、15 分钟吸附与当前模式列高亮；`24h Overview` 为 `13px / 18px`、右 `2px` / 下 `3px` 光学校正，摘要与标题文字左缘对齐且净距约 `16–18px`。图例保持用户标注的原结构。
+- `Output_Capability_Mode`、`DRM_SET` 和三个 Active Power 生效 RO 点契约。
+- Backup Output 运行时关机门禁、Reset & Recovery 分类恢复 / Full reset、CT Current Mode、Wi-Fi 热点配置。
+- Battery 单/双路、并联、共享 SOC、品牌/电流/加热；MPPT inventory/group 双点位体系与 Shadow scan All / Individual。
+
+**修改**
+
+- 编辑字段动效从页面类名白名单改为语义类自动继承；hover / leave / focus 以及字段内箭头都验证真实中间帧。
+- toast 垂直位置由固定 `top` 改为当前可见面包屑真实几何；入场预挂载玻璃，退场宿主与文字整体同步消失。
+- 顶部承载值改为 `Effective active-power limit`；生效值只取设备上报，缺失显示 unavailable，不再本地推导。
+- Effective chain 从五行计算链改为三个 RO 回显值并删除重复的 Dispatch setpoint；顺序为结果 → 原因 → 弃光，Limit source 改为无轨道的单行状态行。
+- `DRM_SET` 明确为 `0=Off / 1=DRM / 2=RCR`；四个调度点与 Output Capability 候选值集中到单一契约对象。
+- `primary` 与 `danger-solid` 统一为更明显的默认实底玻璃高光；Economic kW 降为 `Labels/Secondary`，Economic / ToU 信息 tooltip 均改为共享居中锚定。
+- ToU 计划表最终收敛为 `136 / 160 / 154 / 90 / minmax(...)`、列距 `4px`、左右内距 `24px`，以实际文本和输入 `scrollWidth` 验证无截断。
+- 共享 Select 的 `Option.description` 正式纳入组件契约；bottom-scroll guard 的回落缓动统一为 `--wd-ease-content-settle`，不再使用快速起步的 content-grow 缓动。
+- 视觉完成标准补充“用户当前实际预览标签已加载新实现”；测试标签通过和源码存在不再单独视为已落地。
+- ToU 模式色降为 `8%` 绘图区底色，价格线成为主视觉；图例按用户标注保持不变。
+
+**废弃**
+
+- 废弃在 `motion.css` 手工追加 `.isw-number / .isw-wifi-field` 等页面类名来启用共享动效。
+- 废弃用固定 `top:70px` 假定所有数据页标题高度一致；该值只保留为无标题页面的 CSS fallback。
+- 废弃从 Setpoint、Export limit、电池能力或 PV 可用量在云端推导 `Effective limit / Limit source / PV curtailed`。
+- 废弃旧 `Grid-tied point now`、`Battery power capability` 等把设备限值或限制来源描述成实时功率、或重新引入本地推算链的实现。
+- Output Capability 候选值未获固件确认前，不得把 `Rated / Overload / Underload` 的数值枚举或发布条件写成既定生产契约。
+- 废弃 ToU 图表中经过二次混色、发灰的模式 wash，`7px` 模糊、价格 / 网格 / 基线两端渐隐、`228px` 高度和分组图例方案；它们会被误认成最终改版，均不得恢复。模式必须直接使用主题 Accent，并在中间保持清晰分段。
+- 废弃独立模式轨道方案；用户明确选择绘图区背景表达模式，模式色固定在 `8%`。
+- 废弃用固定 `--wd-ease-content-grow` 承接页面底部内容收缩后的滚动跟随。
+- 废弃 15/30 分钟轮复制多组后隐藏回中、1 小时分钟轮继续滚动、按输入值累积错误、Page-local danger 色、旧 ToU 中间表格列宽以及向右偏移的信息 tooltip。
+- 废弃“主按钮关闭全部高光/内阴影”的旧描述；实底按钮只关闭背景模糊和整面反射场，仍保留可辨认的白色 rim、inner 与 optical 高光。
+
+**未决**
+
+- 动态电价 API、地区能力位、真实价格数据和刷新失败状态仍待后端契约。
+- Intelligent Mode 的生产算法、下发失败回退和设备点位仍未确认。
+- ToU 时间段、费用和高级参数的正式设备写入、权限与生产元数据仍未接入。
+
+**证据边界**
+
+- 本次只使用当前可访问的对话、当前工作树 `git status` / `git diff`、运行代码、专项测试与项目文档；无法访问的并行对话不补写。
+- 当前页面仍为本地 preview，不能把样例 telemetry、点位地址、权限、保存或硬件控制描述为已接入生产能力。
+- 这次“完整归档”只更新规则与交接文档，不新增或修改页面功能、UI、样式、资源或测试代码；工作树中的运行代码属于此前已完成的实现。
 
 ## 2026-11-20 规则基线
 
@@ -59,8 +172,8 @@
 ### 尚未明确或未接入
 
 - 生产点位 `label / unit / min / max / step / enumList` 仍待后端提供；当前 `settings-validation.js` 只是 preview fallback。
+- `Output_Capability_Mode` 是否正式新增、`Rated / Overload / Underload` 的数值枚举和发布条件仍待固件确认；`ActivePower_Limit_Source` 的枚举标签与 tone 由后端点位元数据提供。
 - 认证操作者、服务端 Save/Cancel/权限、真实设备写入、历史聚合和跨会话持久化尚未接入。
-- 本地 `verify-routing.cjs` 仍有既有失败项：Plants 收藏后的 `#toast` 中心与页面标题中心断言不通过。该失败在本轮 standalone 路由验证之外已独立复现，根因尚未确认；不得为了通过测试直接放宽该视觉断言，应先核对实际 toast 与页头几何。
 - Inverter settings 的产品命名、页面结构与档案和演示数据边界仍以 [COPY-AUDIT.md](../design-preview/src/pages/inverter-settings/COPY-AUDIT.md) 的 `Still open` 为准，未获确认前不据本地原型推断生产规则。
 - Site details 超长标题最大高度/折叠方式、SettingsCard 是否抽共享、菜单字体未定项等历史待确认项继续有效，不能用本次归档擅自定稿。
 
@@ -91,7 +204,7 @@
 - `2026-11-20` **数字编辑框阴影去白光**：数字控件的接触阴影与主题 Ink 解耦，深浅主题统一使用黑色；默认 `rgba(0,0,0,.2)`、hover `.3`、focus `.36`。修复深色 hover / focus 因使用白色主文字混合而出现白色光晕的问题，填充与描边状态层级保持不变。
 - `2026-11-20` **浅色数字编辑框 hover / focus 与阴影减重**：浅色 hover 最终为 `6%` 填充 / `16%` 描边；focus 为 `12%` 填充 / `32%` 描边 / `12%` 外环；阴影在浅色主题单独降为默认 `.08`、hover `.14`、focus `.16`，解决表面与下沿同时过黑的问题。深色状态保持不变。
 - `2026-11-20` **共享分段控件深色选中底增强**：分段控件新增独立 `--wd-segmented-control-indicator-fill`。浅色继续使用共享 `20%` 主填充，深色从原 `36%` 灰填充提升到 `rgba(120,120,128,.56)`，保证选中胶囊与玻璃轨道清楚分离；几何、`600ms` soft-spring 位移动画和快速连点续接不变。
-- `2026-11-20` **通用底部滚动守卫**：新增 `components/bottom-scroll-guard.js`，由 `createScrollFeedback({preserveBottomOnShrink:true})` 统一托管。Inverter settings、Plants 列表 / 详情、Plants Devices 设置区和 Service Ticket 列表 / 详情均已接入。视口在底部且最终内容变短时，以 `.wd-scroll-shrink-spacer` 保留旧滚动范围并按 `280ms` content-grow 曲线回落；内容增长只更新基线，不触发缓冲或上移。共享组件专项与 5 个消费页面专项通过。
+- `2026-11-20` **通用底部滚动守卫**：新增 `components/bottom-scroll-guard.js`，由 `createScrollFeedback({preserveBottomOnShrink:true})` 统一托管。Inverter settings、Plants 列表 / 详情、Plants Devices 设置区和 Service Ticket 列表 / 详情均已接入。视口在底部且最终内容变短时，以 `.wd-scroll-shrink-spacer` 保留旧滚动范围并按 `280ms` `--wd-ease-content-settle` 回落；内容增长只更新基线，不触发缓冲或上移。共享组件专项与 5 个消费页面专项通过。
 - `2026-11-20` **底部收缩误判修正**：共享守卫只响应最终内容变短；Grid Connection 从 Ramp 切到 Step 会新增说明，因此保持原滚动位置，不创建缓冲，也不再向上跳。Inverter settings 与共享组件夹具均加入逐帧回归。
 - `2026-11-20` **Frequency-Watt 首内容留白统一**：页面正文首个元素为 `.isw-note` 时清除通用负上边距（`margin-top:0`），实际标题到首个说明恢复为 `18px`，与其他 Grid 子页首内容一致；后续说明到卡片仍保持共享 `10px`。
 - `2026-11-20` **Frequency-Watt 输入框与内容对齐统一**：两组保护的数字输入均固定为标准 `128 × 36px` 并与卡片内容右缘对齐，字段内部数值与单位通过 `flex-end` 整体贴右；输入不再按内容自动收窄，分段选择与开关几何不变。
@@ -105,7 +218,7 @@
 - `2026-11-20` **共享 Select 视觉与字段选择迁移**：Reactive Power 与 LVRT/HVRT 的行为选择统一使用共享 `createSelectControl({variant:"adaptive"})`，并与 Economic Schedule Mode、MPPT Scan interval 共用同一 Adaptive 变体，不再出现固定宽度、分段控件或页面自拼选择器。旧的 `.isw-eco-field.isw-eco-select` 双类组合不再作为有效变体。共享菜单单选标记为 `18px`，选择后关闭、回调并归还焦点；页面只传业务选项、菜单宽度与业务更新。Reactive 条件区独立数字字段保持 `128 × 36px`。专项回归覆盖 Reactive 七项、LVRT/HVRT 三项、共享 Glass listbox、最长文案、焦点与三张截图。
 - `2026-11-20` **Reactive Power 曲线点表统一**：Q(U)、cos φ(P)、Q(P)、cos φ(U) 四类点表新增 `.isw-point-table` 规范。表头复用 `.isw-quiet-table-head` 的 `12px / 400`；行高至少 `48px`、上下 `6px`；Point 标签最终统一为 `13px / 18px` 主文字色；数值字段统一 `112 × 36px` 并在列内居中；Voltage、Active power、Reactive power、cos φ 表头与字段中心对齐。专项覆盖表格宽度、表头字体、行节奏、标签字体、字段尺寸与表头中心线，并输出 `inverter-reactive-point-table.png`。
 - `2026-11-20` **Grid & Protection 导航记忆、输入框与开关状态收口**：首次进入 Grid & Protection 使用 `Grid Code`，之后在设置窗口会话内恢复上次二级页；主页面按页、Grid 按二级页分别记忆内容滚动位置，左侧导航轨也保持原滚动位置。二级导航桌面宽 `208px`，顶部和左右内距统一为 `18px`，行内水平内距 `12px`，最长标签保持单行；hover / selected 为半圆胶囊。所有 Grid 子页卡片保持居中 `560px`，标题层与卡片外框同宽同左缘，标题文字内收 `24px`。Grid Code 档案行 hover 铺到卡片边缘且内容线不变；选择标记复用 Running Mode 的 `18px` 对号 / 空心圆。Protection Limits 表头复用 Economic Schedule 样式，Setting / Trip time 与字段中心对齐；行高至少 `48px`、上下各 `6px`，输入框最宽 `112px` 并在列内居中；前两列固定 `140px / 54px`，阶段符号居中并左移 `6px`。开关驱动的偏差状态不再显示左侧橙色竖条。专项回归覆盖导航/滚动记忆、开关状态、输入宽度、表头中心线和符号位移。
-- `2026-11-20` **Inverter settings Effective chain 字体与间距统一**：`Command timeout` 的实际字体为 SF Pro 字体栈、`14px / 510 / 18px`、`-0.14px` 字距、主文字色；Effective chain 原先仍是 `13px / 400`。现将五行标签与值统一到同一 computed type style，行高从 `34px` 调为 `36px`，列间距从 `12px` 调为 `14px`，标签列从 `160px` 调为 `170px`，上下卡片内距从 `10px` 调为 `12px`，确保 `Battery power capability` 完整显示。最后一行继续保留 `16px` 额外间隔和居中 `1px` 分隔线；专项断言直接比较两处字体参数并检查长标签无截断。
+- `2026-11-20` **Inverter settings Effective chain 字体与间距统一（历史记录；行结构已由 2026-11-24 四行 RO telemetry 覆盖）**：`Command timeout` 的实际字体为 SF Pro 字体栈、`14px / 510 / 18px`、`-0.14px` 字距、主文字色；当时 Effective chain 仍是 `13px / 400`。现将文字统一到同一 computed type style，行高从 `34px` 调为 `36px`，列间距从 `12px` 调为 `14px`，标签列从 `160px` 调为 `170px`。当前行结构、Limit source 处理和数值列宽以顶部 2026-11-24 规则为准。
 - `2026-11-20` **Grid & Protection Continue 使用共享主按钮**：门禁 Continue 从共享中性按钮改为 `createStandardButton({variant:"primary"})`，直接复用全站蓝色玻璃主按钮、白色文字和交互状态；同时保留门禁现有整行宽度与 `38px` 高度。
 - `2026-11-20` **Grid & Protection Check code 焦点态**：首次按 Running Mode 的浅色 60% 选中混合实现后，小输入格中与空闲态的 alpha 仅差约 `1.6%`，肉眼难辨。现在焦点格使用完整 `--wd-control-selected` 填充和 `1px` 中性描边，去掉蓝色 outline；与空闲格的填充 alpha 差约 `8%`，尺寸和间距不变，错误态红色描边仍由 `.isw-code.is-error` 覆盖。
 - `2026-11-20` **修复 Inverter settings 切页尾段闪回**：此前旧正文和标题只使用 `80ms` 淡出，而新页接力约 `180ms` 才结束；旧动画没有保持终态，80ms 后透明度回到基础值 `1`，旧页在随后约 100ms 内重新以全亮状态覆盖新页，形成“卡顿跳一下”。现在新旧接力动画都保持终态，旧层在结束到移除之间保持透明。
@@ -131,10 +244,10 @@
 - **Service Ticket hover 点阵**：PixelCard 支持独立 `colors / lightColors / glowColor / lightGlowColor`。Service Ticket 深色继续使用白色点阵，浅色改用共享 `Labels/Secondary` 深色 ink，保证整卡及底部清晰；glare 与编号扫光仍为白色。默认态仍完全透明，点间距、展开时长和清理逻辑不变。
 - **共享头像尺寸档位**：`createAvatar()` 根据直径设置 `compact / small / regular`。22–24px 头像缩写为 `9px / 10px`，25–32px 为 `11px / 13px`，33px+ 为 14px；Service Ticket 列表卡片使用 compact 档，Properties 不再单独覆盖字号，评论区和账户头像保持原尺寸档位。
 
-## Inverter settings 综合基线（2026-11-19 起；2026-11-20 更新）
+## Inverter settings 综合基线（2026-11-19 起；2026-11-24 更新）
 
-本节保留 Inverter settings 的完整功能与视觉基线，并吸收 2026-11-20 已确认的最终修正；
-与顶部 `2026-11-20 当前规则归档` 冲突时，以顶部最新条目、`AGENTS.md`、
+本节保留 Inverter settings 的完整功能与视觉基线，并吸收 2026-11-20、2026-11-23 与 2026-11-24 已确认的最终修正；
+与顶部 `2026-11-24 当前规则归档` 冲突时，以顶部最新条目、`AGENTS.md`、
 `DESIGN-SYSTEM.md`、`docs/COMPONENTS.md` 和页面 README 为准。下方“当前实现”
 只保留逐轮过程。
 
@@ -143,14 +256,14 @@
 - **材质**：上下窗共用同一 Glass Surface tint、blur、optics；浅色禁止上层本地 `98%` 或近实心白填充。层叠倒影沿用既有 `.isw-main-shell` 向上 `box-shadow`，不新增伪层：`0 -1px 0 rgba(0,0,0,.06)` + `0 -10px 28px -10px`，浅色 `22%` 黑、深色 `34%` 黑，两种主题都保持黑色。
 - **标题与回弹**：标题、标题 blur 和 1px 规则位于滚动与 elastic transform 之外的 `.isw-title-layer`；顶部/底部回弹只移动正文。禁止重新使用 sticky 标题或反向 transform 抵消。
 - **右侧内容**：右侧 `.isw-body` 使用共享主面板材质，右/下各内缩 `12px`；卡片使用 `--isw-card-inset:24px`，标题、正文、info、说明通道复用同一内容线。页面内容列固定 `640px`，卡片之间使用 `--isw-card-gap:30px`，info 到上方卡片使用 `--isw-note-gap:10px`。
-- **文字与卡片**：标题使用主文字色；说明使用次级色，重点词使用 `70% secondary + 30% primary` 且不放大字号。分组标题 `12/590/16`，行标题和值 `14/14 medium` 主色，说明 `12/400/16` 次级色。Effective chain 五行当前统一 `14/510/18`，行高 `36px`、列距 `14px`、标签列 `170px`，最后分隔线上下净距一致。
+- **文字与卡片**：标题使用主文字色；说明使用次级色，重点词使用 `70% secondary + 30% primary` 且不放大字号。分组标题 `12/590/16`，行标题和值 `14/14 medium` 主色，说明 `12/400/16` 次级色。Effective chain 三行统一 `14/510/18`，行高 `36px`、列距 `14px`，数值行网格为 `170px / 1fr / 108px`；首行 Effective power limit 使用蓝色条，并通过 `16px` 间隔和全宽分隔线与 Limit source / PV curtailed 分组；Limit source 行不绘制空进度轨。
 - **数字字段**：完整字段 `128×36`、18px 圆角，与上方 segmented 同宽同右缘。默认 `10%` 中性描边；深色 hover 为 `15% / 26%`、focus 为 `20% / 46% / 18%` 外环；浅色 hover 为 `6% / 16%`、focus 为 `12% / 32% / 12%` 外环。阴影在深浅主题均为黑色，禁止深色白色光晕；单层 1px 描边、1px 固定虚化轻阴影、禁止上下步进按钮。单位与数字同字体同字号，仅颜色更浅，固定 `6px` 间距和右侧安全距。
 - **控件动效**：共享 switch 使用 `600ms` soft-spring、`480ms` 轨道颜色；分段胶囊复用同一 `600ms` 节奏，标签偏移为 `0px`。页面重绘必须保留并重新挂回同一控件 DOM，依赖内容立即更新；条件行用 `280ms` 卡片高度生长/收起。
 - **页面切换**：左侧导航保留 DOM，选中层和正文、标题文字采用同步 `260ms` 交叉淡变，旧、新透明度互补，新页位于旧页上方，中间不出现内容密度塌陷的空白。新页首帧应用自己的目标位置：首次访问为 `scrollTop:0`，回访恢复该页记录且不继承来源页；退场旧页节点直接从内容列移出，作为独立 `inert` 快照按切换前 viewport rect 固定 left/top/width 后淡出，不深拷贝整页。Grid 二级栏进入时与正文同步渐入，离开时用固定位置快照同步渐出，父布局变化不能推动旧页。固定标题层本身保持不透明且不挂 opacity 动画，旧标题 ghost 按旧 X 补正，以保留滚动时的高斯模糊。旧页结束后立即移除；全程不出现新页中部闪现、标题跳动、旧页横向位移、缩放、模糊或两页同时清晰。局部设置更新不重播页面入场并保留原滚动位置。分段控件连续点击和页面重绘均从当前胶囊位置续接，不重置到端点；开关轨道颜色由 `480ms` WAAPI 从当前颜色续接。
 - **Economic Schedule**：时间输入为单一 8 位数字掩码，显示 `HH:MM – HH:MM`，分隔符固定、光标可替换中间数字、错误持续显示直到再次编辑；焦点离开字段才提交。右侧箭头独立开窗并在 hover / focus / 展开时转主文字色；滚轮循环 `00–23` 并居中吸附，浮层与内容共用退场。空草稿使用 `-- / -- % / -- kW`，仅 `--` 使用 Quaternary，单位保持正常色。百分比框适配完整 `100%`，表头 `32px / 12px / 400`，行尾更多操作 `36px` Glass，新增按钮右对齐，删除图标 `22px` 且危险态全程红色。
 - **保存、切页与关闭语义**：当前主页面和当前 Grid 二级页分别维护自己的保存基线；`Save` 只提交当前页，`Cancel` 只回滚当前页。当前页 dirty 时切换页面先用共享 `createConfirmDialog()` 显示 `Keep Editing / Discard Changes`；Discard 在点击瞬间回滚当前页并启动目标页转场，确认层退场与其并行。只有 X 关闭，遮罩和 Escape 不退出；X 检查全局 dirty，未保存时使用同一确认组件，确认丢弃后才播放共享 `420ms` Depth Reveal，并在 `onClose` 后回路由。
 - **Grid & Protection**：未解锁时二级列完全隐藏，门禁占满右侧内容区；输入同一设备的 4 位 `Check code` 后才显示 `208px + 1fr` 二级列及贯穿 1px 线。首次进入 `Grid Code`；后续切入恢复上次二级页，并恢复该页、其他主页面及导航轨的滚动位置。二级列表顶部与左右内距均为 `18px`，行内水平内距 `12px`，最长标签保持单行，hover / selected 背景为半圆胶囊。Grid 子页卡片统一居中 `560px`，桌面标题层与卡片外框同宽同左缘，标题文字内收 `24px`。档案行 hover 铺到卡片边缘且内容线不变；选择器复用 Running Mode 的 `18px` 对号 / 空心圆。Protection 表头复用 Economic 样式并让 Setting / Trip time 与字段中心对齐，行高至少 `48px`、上下 `6px`，输入框最宽 `112px` 并在列内居中，阶段符号列前两列 `140px / 54px`、居中并左移 `6px`。开关驱动的偏差状态不绘制橙色起始条。该行尾部箭头始终朝右。门禁说明用 Secondary、重点词 Primary，单行 `Prototype Check code: <device code>`，删除底部关闭/日志说明，锁为 19px；当前 Check code 输入格使用完整共享选中填充与 `1px` 中性描边，Continue 为共享蓝色主按钮并保持 `38px` 高度。
-- **Toast**：页面级短反馈默认视口水平中心、`top:70px`；只有局部内容提示传 `{centerWithin}` 按容器实时中心。设置页保存/恢复/校验 toast 属于页面级，禁止旧 `calc(50% + 140px)` 或固定内容区偏移。
+- **Toast**：页面级短反馈默认视口水平中心；数据页垂直中心读取当前可见面包屑标题的真实 rect，CSS `top:70px` 只作为无标题页面的回落。只有局部内容提示传 `{centerWithin}` 按容器实时中心。设置页保存/恢复/校验 toast 属于页面级，禁止旧 `calc(50% + 140px)` 或固定内容区偏移。
 - **数据边界**：所有变更仍是本地预览；没有后端持久化、权限、真实固件、文件导出或硬件控制。
 
 ## 当前实现

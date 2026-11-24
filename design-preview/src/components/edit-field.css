@@ -1,28 +1,40 @@
 /* Shared editable field surface. Layout and alignment stay with the page;
- * border, fill, hover and focus belong here so site settings and dialogs agree. */
+ * fill, outline and interaction states belong here so every consumer agrees.
+ * Timing remains in foundations/motion.css. */
 .wd-edit-field{
- box-sizing:border-box;border:0;outline:0;box-shadow:none;
+ --wd-edit-field-fill:color-mix(in srgb,var(--wd-label-primary) 8%,transparent);
+ --wd-edit-field-hover-fill:color-mix(in srgb,var(--wd-label-primary) 11%,transparent);
+ --wd-edit-field-focus-fill:color-mix(in srgb,var(--wd-label-primary) 13%,transparent);
+ --wd-edit-field-focus-outline:color-mix(in srgb,var(--wd-label-primary) 24%,transparent);
+ --wd-edit-field-invalid-outline:var(--wd-accent-red);
+ box-sizing:border-box;
+ border:0;
+ outline:1px solid transparent;
+ outline-offset:0;
+ box-shadow:none;
  border-radius:10px;
- background:color-mix(in srgb,var(--wd-label-primary) 8%,transparent);
+ background-color:var(--wd-edit-field-fill);
  color:var(--wd-label-primary);
  -webkit-backdrop-filter:blur(14px) saturate(1.14);
  backdrop-filter:blur(14px) saturate(1.14);
 }
-.wd-edit-field:hover{background:color-mix(in srgb,var(--wd-label-primary) 11%,transparent)}
+.wd-edit-field:hover{background-color:var(--wd-edit-field-hover-fill)}
 .wd-edit-field:is(:focus,:focus-within){
- background:color-mix(in srgb,var(--wd-label-primary) 13%,transparent);
- outline:1px solid color-mix(in srgb,var(--wd-label-primary) 24%,transparent);
- outline-offset:0;
+ background-color:var(--wd-edit-field-focus-fill);
+ outline-style:solid;
+ outline-width:1px;
+ outline-color:var(--wd-edit-field-focus-outline);
 }
 .wd-edit-field :is(input,textarea,select):focus-visible{outline:0;box-shadow:none}
 .wd-edit-field:is(:disabled,[aria-disabled="true"]){color:var(--wd-label-secondary);cursor:default;opacity:.72}
 .wd-edit-field[aria-invalid="true"],
-.wd-edit-field:has([aria-invalid="true"]){outline:1px solid var(--wd-accent-red);outline-offset:0}
-.wd-edit-field::placeholder{color:var(--wd-label-tertiary)}
-:root[data-theme="light"] .wd-edit-field{background:var(--wd-fill-quaternary)}
+.wd-edit-field:has([aria-invalid="true"]){outline-color:var(--wd-edit-field-invalid-outline)}
+.wd-edit-field::placeholder,
+.wd-edit-field :is(input,textarea)::placeholder{color:var(--wd-label-tertiary)}
 :root[data-theme="light"] .wd-edit-field{
+ --wd-edit-field-fill:var(--wd-fill-quaternary);
+ --wd-edit-field-hover-fill:var(--wd-fill-tertiary);
+ --wd-edit-field-focus-fill:var(--wd-fill-tertiary);
  -webkit-backdrop-filter:blur(16px) saturate(1.20);
  backdrop-filter:blur(16px) saturate(1.20);
 }
-:root[data-theme="light"] .wd-edit-field:hover{background:var(--wd-fill-tertiary)}
-:root[data-theme="light"] .wd-edit-field:is(:focus,:focus-within){background:var(--wd-fill-tertiary)}

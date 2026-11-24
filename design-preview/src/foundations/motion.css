@@ -54,17 +54,24 @@
   [aria-pressed],
   [aria-invalid="true"],
   .clickable,
-  .wd-control-state
+  .wd-control-state,
+  .wd-hover-fill
 ) {
   transition-property: color, background-color, border-color, box-shadow, opacity, text-decoration-color, filter;
   transition-duration: var(--wd-hover-duration);
   transition-timing-function: var(--wd-hover-ease);
 }
 
-/* Composite edit fields own shared surface state, so their fill, outline and
- * contact shadow move together on the same hover rhythm as their children. */
-:where(.isw-number.wd-edit-field, .isw-mini-number.wd-edit-field) {
-  transition-property: background-color, border-color, box-shadow;
+/* Every edit field owns its full surface state. Targeting the semantic class
+ * means new text, numeric, composite and select variants inherit the reviewed
+ * rhythm without registering page-specific class names in this shared file. */
+:where(.wd-edit-field) {
+  transition-property: color, background-color, border-color, box-shadow, outline-color, opacity;
+  transition-duration: var(--wd-motion-disclosure);
+  transition-timing-function: var(--wd-ease-disclosure);
+}
+:where(.wd-edit-field) :where(input, textarea, .wd-select-value, .wd-select-placeholder, .wd-select-chevron, .isw-number-unit) {
+  transition-property: color, opacity;
   transition-duration: var(--wd-motion-disclosure);
   transition-timing-function: var(--wd-ease-disclosure);
 }
@@ -156,6 +163,7 @@
   [aria-invalid="true"],
   .clickable,
   .wd-control-state,
+  .wd-hover-fill,
   .wd-glass,
   .workspace-tab
 ):is(:hover, :focus-visible, :has(:focus-visible)) {
@@ -408,6 +416,72 @@
     transition-duration: var(--wd-motion-glass-press);
     transition-timing-function: var(--wd-ease-glass-press);
   }
+}
+
+/* Inverter SOC ranges keep their layout height stable while the visible line
+ * thickens. The page owns the 4px/8px geometry; this file owns the shared
+ * hover rhythm and reduced-motion fallback. */
+:where(.isw-soc-range-track)::before,
+:where(.isw-soc-range-fill) {
+  transition-property: height, border-radius;
+  transition-duration: var(--wd-motion-hover-out);
+  transition-timing-function: var(--wd-ease-hover-out);
+}
+:where(.isw-soc-range-track):is(:hover,:has(.isw-soc-handle:focus-visible))::before,
+:where(.isw-soc-range-track):is(:hover,:has(.isw-soc-handle:focus-visible)) :where(.isw-soc-range-fill) {
+  transition-duration: var(--wd-motion-hover);
+  transition-timing-function: var(--wd-ease-hover);
+}
+
+/* The full track, rather than only the small thumb, is the social hover area
+ * for both SOC endpoints. Release uses the slower spring tail so the disks
+ * settle back instead of snapping. */
+.wd-glass.wd-glass.isw-soc-handle {
+  transition-property: transform;
+  transition-duration: var(--wd-motion-glass-release);
+  transition-timing-function: var(--wd-ease-spring);
+}
+@media (hover: hover) and (pointer: fine) {
+  .isw-soc-range-track:is(:hover,:has(.isw-soc-handle:focus-visible)) .isw-soc-handle:not(:active) {
+    transform: scale(var(--wd-glass-disc-scale-x),var(--wd-glass-disc-scale-y));
+    transition-duration: var(--wd-motion-panel);
+    transition-timing-function: var(--wd-ease-spring);
+  }
+  .isw-soc-range-track .isw-soc-handle:active {
+    transform: scale(var(--wd-glass-disc-press-scale-x),var(--wd-glass-disc-press-scale-y));
+    transition-duration: var(--wd-motion-glass-press);
+    transition-timing-function: var(--wd-ease-spring);
+  }
+}
+
+/* The selected endpoint's SOC chip follows the thumb and owns only its
+ * visibility/settling motion; horizontal position updates immediately. */
+:where(.isw-soc-value-tooltip) {
+  transition-property: transform;
+  transition-duration: var(--wd-motion-hover-out);
+  transition-timing-function: var(--wd-ease-hover-out);
+}
+:where(.isw-soc-value-tooltip.is-visible) {
+  transition-duration: var(--wd-motion-panel);
+  transition-timing-function: var(--wd-ease-spring);
+}
+:where(.isw-soc-value-tooltip) > :where(.wd-glass-material),
+:where(.isw-soc-value-tooltip) :where([data-isw-soc-tooltip-text]) {
+  transition-property: opacity;
+  transition-duration: var(--wd-motion-hover);
+  transition-timing-function: var(--wd-ease-hover);
+}
+:where(.isw-soc-value-tooltip) > :where(.wd-glass-material) {
+  transition-duration: var(--wd-motion-hover-out);
+  transition-delay: calc(var(--wd-motion-stagger) * 2);
+}
+:where(.isw-soc-value-tooltip.is-visible) > :where(.wd-glass-material) {
+  transition-property: none;
+  transition-duration: 0s;
+  transition-delay: 0s;
+}
+:where(.isw-soc-value-tooltip.is-visible) :where([data-isw-soc-tooltip-text]) {
+  transition-delay: calc(var(--wd-motion-stagger) * 2);
 }
 
 /* Loading placeholders belong to the same contract. The layer fades out once

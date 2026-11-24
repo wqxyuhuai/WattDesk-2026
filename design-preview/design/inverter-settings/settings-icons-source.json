@@ -128,6 +128,13 @@
       "bytes": 1271,
       "sha256": "cc1f4fd52fe3ad23299afa5115d9be627db3e9320b27c2ca3289b3ee7cba325f",
       "normalization": "Shape-only mask: circle retained, check converted to transparent negative space, runtime colour from currentColor."
+    },
+    {
+      "source": "C:\\Users\\Administrator\\Desktop\\reset.svg",
+      "asset": "icons/settings/reset-recovery.svg",
+      "bytes": 2527,
+      "sha256": "7b6c0b77fa9991fe05b59be49e0a05ae54ff7b113a99ce1d43cfcd9f5e7fbdc4",
+      "normalization": "Shape-only mask; runtime colour comes from WattDesk currentColor."
     }
   ]
 }

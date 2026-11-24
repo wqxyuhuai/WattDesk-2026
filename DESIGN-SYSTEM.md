@@ -1,6 +1,6 @@
 # WattDesk 全站设计与交互规范
 
-更新：2026-11-20。当前首页、Plants 列表、Plants Overview / Devices、Inverter settings、Site details 与 Service Ticket 沿用本规范；旧 `/site` 仅作为隐藏兼容路由存在。开发入口为根目录 `AGENTS.md`；本文件记录全站共享资源、状态、动效与验收。Inverter settings 的页面专属布局、字体角色、输入、Grid 门禁、保存作用域和防回归要求统一见 [页面契约](./docs/INVERTER-SETTINGS.md)，本文不再复制页面参数。
+更新：2026-11-24。当前首页、Plants 列表、Plants Overview / Devices、Inverter settings、Site details 与 Service Ticket 沿用本规范；旧 `/site` 仅作为隐藏兼容路由存在。开发入口为根目录 `AGENTS.md`；本文件记录全站共享资源、状态、动效与验收。Inverter settings 的页面专属布局、字体角色、输入、Grid 门禁、保存作用域和防回归要求统一见 [页面契约](./docs/INVERTER-SETTINGS.md)，本文不再复制页面参数。
 
 ## 1. 当前设计依据
 
@@ -27,11 +27,12 @@
 | 材质挂载和鼠标微光 | `design-preview/src/components/glass-material.js` | 通过 `createGlassMaterial({surfaces})` 注册表面 |
 | 浮层开合、图表首次可见载入 | `design-preview/src/foundations/motion.js` | 调用共享控制器，不复制动画 |
 | 控件文字与图标的共享 hover / focus 状态 | `design-preview/src/components/control-states.css` / `control-states.js` | 保留原始字形，复用不透明状态遮罩 |
+| 整卡 hover 填充 | `design-preview/src/foundations/motion.css` 的 `.wd-hover-fill` | 卡片宿主声明默认与 hover 背景，共享层统一提供 `240 / 360ms` 的非对称过渡；页面不写局部 transition |
 | 非玻璃控件按压深度 | `design-preview/src/foundations/motion.css` 的 `.wd-press-scale` | 不挂玻璃材质但需要统一抬升/按压反馈的按钮；复用玻璃的 hover `1.025 / press 1.065` 参数与释放节奏 |
 | Hover 像素纹理 | `design-preview/src/components/pixel-card.js` | React Bits PixelCard 的原生 JS / Canvas 适配层；只绘制在宿主内容下方，默认不可见，用于允许指针交互的普通卡片 |
 | 指针倾斜与反光 | `design-preview/src/components/flip-card.js` | React Bits FlipCard 的原生 JS 交互适配层；提供指针倾斜、hover 抬升、光标反光与拖动回弹，不附加描边或投影 |
 | 语义日期选择与周期范围 | `design-preview/src/components/date-picker.js` / `.css` | 预设、日历、起止日期与 Apply；面板 462px 宽、最低 433px 高，≤520px 视口切换纵向布局 |
-| 标准按钮 | `design-preview/src/components/button.css`、`controls.js` | `.wd-button--pill` 胶囊基础；`.wd-button--neutral` 中性玻璃、`.wd-button--primary` 实心蓝；`createStandardButton()` 统一 DOM，材质由共享层提供 |
+| 标准按钮 | `design-preview/src/components/button.css`、`controls.js` | `.wd-button--pill` 胶囊基础；`.wd-button--neutral` 中性玻璃、`.wd-button--primary` 实心蓝、`.wd-button--danger-solid` 实心红；`createStandardButton()` 统一 DOM，材质由共享层提供 |
 | 范围切换 | `design-preview/src/components/scope-control.css` | `.wd-scope-button` 供 Plants 详情页签与 Service Ticket 范围筛选共用；36px 胶囊、4px 组内间距，未选中无描边实体填充，选中使用更强实体层级与共享内描边；hover `1.045`、press `1.09` |
 | 分段切换 | `design-preview/src/components/segmented-control.js` / `.css` | `createSegmentedControl()` 统一生成玻璃轨道、`600ms` soft-spring 移动胶囊、键盘导航和尺寸观测；调用方只传选项、无障碍名称、现有 glass 与业务回调，不再传页面专属尺寸 class。消费页面重绘时必须保留并重新挂回同一控件 DOM |
 | 开关 | `design-preview/src/components/toggle-switch.js` / `.css` | `createToggleSwitch()` 生成 42×24 真实 switch、共享玻璃轨道与滑块，状态用 `aria-checked`；滑块 `600ms` soft-spring、轨道颜色使用 `480ms` 可中断 WAAPI 插值。消费页面重绘时保留同一 switch DOM；同值同步不得取消动画，依赖内容立即更新 |
@@ -72,6 +73,7 @@
 - 工作区标签支持按住拖拽改序：水平移动超过 `4px` 后进入拖动，跨过相邻标签中心即实时换位，邻居使用共享 `--wd-motion-tab-out`（`220ms`）与 `--wd-ease-tab-in` 做 FLIP；释放后源标签平滑吸附，不得误触发标签切换或关闭。拖动中活动标签、页面内容和 URL 保持不变；焦点始终随活动标签，不会落到未被激活的拖动标签。触屏仅接管水平手势；溢出时靠近标签条左右边缘自动横向滚动。键盘可用 `Ctrl/Cmd + Shift + ←/→` 等价换位，并通过 polite live region 报出新的位置。
 - 工作区标签采用会话级持久化：`wattdesk.workspace.v1` 在 `sessionStorage` 保存版本、有序标签、活动 ID、`{route, params}` 和页面快照；普通刷新与同标签同源导航恢复，关闭浏览器标签页后清空。启动时当前 URL 优先，命中已存标签则激活，未命中则新增；未知路由或不存在的资源剔除。前进/后退栈、来源标签关系和未提交草稿不持久化。
 - hover / focus 的中性图标必须实际显示为主文字色，深色下为纯白。原始 SVG 的标签透明度只用于默认状态；共享状态遮罩去除该透明度，不能只设置 CSS 颜色却仍显示半透明灰。保留原始路径与原始素材，彩色图标继续显示原色。
+- 命令型菜单中的危险操作统一使用 `.wd-menu-row.is-danger`：图标和文字默认及 hover / focus 都是 `Accents/Red`，hover / focus 背景为红色 `11%` 透明层；不得在单个页面复制红色菜单样式。
 
 ### 时间显示
 
@@ -118,11 +120,13 @@
 
 - 名称：**Glass Surface**（浮层玻璃材质）。来源分支 `.wd-glass--surface`；宿主同时加 `.wd-glass-popup` 表示“整面板不缩放”，与 `.wd-glass-chrome` 不是同一语义。
 - 默认范围：所有菜单、popover、tooltip、toast 和图表数据浮签等**浮层一律默认使用 Glass Surface**；已有浮层和将来新增浮层都按此执行。图表卡片、状态卡等常驻数据容器仍是普通表面，不因本条自动玻璃化。
-- toast 是全局顶部短反馈：固定在视口顶部，纵向中心与数据页共享面包屑中心对齐，共享页头为 `top:70px` 时两者中心同轴。页面级提示默认以视口中心 `left:50%` 并由 `translateX(-50%)` 校正；只有真正限定在局部内容区的提示才传 `{centerWithin}`，按目标容器的实时几何中心定位。Inverter settings 的保存、恢复和校验 toast 属于页面级反馈，必须使用视口中心。不得用固定像素偏移猜测容器中心，也不用底部 toast。
-- toast 的入场/退场使用共享 motion：从 `translateY(-4px)` 下落入位并淡入，使用 `--wd-motion-panel` / `--wd-ease-panel`；退场继续上浮到 `-4px` 并淡出，使用 `--wd-motion-panel-exit` / `--wd-ease-hover-out`。连续提示不重复闪入，减少动态效果时立即显示和移除。
+- toast 是全局顶部短反馈：固定在视口顶部，但数据页纵向位置必须读取当前可见 `.wd-page-breadcrumb-current` 的真实 rect，再按 toast 实际高度计算居中 `top`；隐藏的旧页面标题不参与测量。CSS `top:70px` 只作为没有页面面包屑时的回落，不能假定所有页头仍固定为该高度。页面级提示默认以视口中心 `left:50%` 并由 `translateX(-50%)` 校正；只有真正限定在局部内容区的提示才传 `{centerWithin}`，按目标容器的实时几何中心定位。Inverter settings 的保存、恢复和校验 toast 属于页面级反馈，必须使用视口中心，并和其他页面共享完全相同的材质、尺寸和动画。上下内距固定 `8px`、左右 `18px`；不得逐页覆盖。
+- toast 的 Glass Surface 必须在控制器创建时预挂载，隐藏态也不能等到首次调用后才生成材质。入场时 Glass 宿主保持 `opacity:1`，只让内部文字淡入并让整个 toast 从 `translateY(-4px)` 下落入位；退场必须保证文字和玻璃同时消失：宿主连同文字从 `opacity:1` 同步淡到 `0`，整体上浮到 `-4px`，不能先淡文字再由玻璃单独收尾。入场使用 `--wd-motion-panel` / `--wd-ease-panel`，退场使用 `--wd-motion-panel-exit` / `--wd-ease-hover-out`，结束后才隐藏。连续提示从当前位移和透明度续接，减少动态效果时立即显示和移除。禁止单独对 `.wd-glass-fill` 的 opacity / backdrop-filter 做过渡。
 - 复用方式：直接用共享 `createPopoverController({overlays,toastElement,motion,glass})`。`popover()` / `registerPanel()` 会自动加 `.wd-glass--surface wd-glass-popup` 并以 `radius:18,interactive:false` 挂载，调用方不要再手写材质。自定义面板需自行加类并调用 `glass.addSurface()`；内容放在同级容器，禁止自己写 `blur`、底色或 `box-shadow`。
 - 浮层圆角按尺度分三档，统一取 token：紧凑提示 / 数据浮签 / tooltip 用 `--wd-radius-compact`（12px），通用 popover / 图表菜单用 `--wd-radius-medium`（18px），标准浮层菜单与日期、搜索、历史等大面板用 `--wd-radius-large`（30px）。圆角只由宿主声明，玻璃各层继承；不按单个内容再发明半径，也不为“看起来更大”随意加值。图表数据浮签按此规则从原稿的 8px 提到 12px。
 - 已自带 `.wd-glass` 的弹窗（日期、历史、搜索）由控制器自动跳过，不能重复挂载第二层材质或第二个 `ResizeObserver`。tooltip、toast 与图表数据浮签属于只读表面，必须传 `interactive:false`，保留材质和指针光晕但不响应 hover / 按下缩放；它们的文案要放在独立 span 中，不能用 `textContent` 覆盖宿主，否则会删掉材质子层。
+- 需要实际背景模糊的 Glass Surface 如果也带 `.wd-glass`，必须以匹配或更高特异性覆盖 `isolation:auto`；共享 `.wd-glass` 的默认 `isolate` 仍会保留 `backdrop-filter` 计算值，却阻断真实背景采样。不得通过动画 `backdrop-filter` 制造入场感：可见时材质与模糊直接到终态，内容可使用共享 stagger 延后，退场时内容先退、材质后收。hover tooltip 由目标 hover / leave 控制显隐，绝对覆盖且不占布局高度；点击不应让它持久停留。
+- 信息型 hover / focus tooltip 默认由共享 `bindHoverPanel()` 挂载，并围绕触发图标居中对齐；面板中心与触发图标中心误差不超过 `1px`。不得由页面自行向右偏移或越过所属卡片内容边界。
 - 结构仍是 **Fill + Shadow 底层 + Glass Effect 高光层**：`.wd-glass-fill` 负责底色、背景模糊、暗外轮廓与投影；`.wd-glass-optics` 负责内亮边、hover 状态层和指针微光。内容不穿过 filter。
 - 深色：`blur 18px`、`saturate 1.20`、底色 `rgba(28,28,30,.30)`；浅色：`blur 9px`、`saturate 1.45`、底色 `rgba(234,234,234,.44)`。浮层必须能透出背后页面，不能读成实心卡片；浅色尤其不能靠加高不透明度换取“干净”。浅色模糊压到 `9px` 是为了保留背后卡片的边缘与色块，模糊越大越读成均匀白膜。
 - 浅色浮层整圈外轮廓从 `.27/.33` 收到 `.16/.20`（外圈 / 侧缘）；普通玻璃以上下 `.09`、左右 `.38` 的纵向渐变独立表达卡片厚度，浮层不套用这组侧缘值。全屏搜索结果面板是唯一搜索专用例外：使用 `--wd-search-outline .08 / --wd-search-outline-side .10`，避免在整页霜化背景上读成黑框。指针深色弧与水洗参数不变。深色浮层 `.72` 外轮廓保持不变。
@@ -136,7 +140,7 @@
 - 设置 / 确认类全屏弹窗使用 `.wd-modal-fullscreen`、`.wd-modal-backdrop`、`.wd-modal-panel` 与 `.wd-modal-panel-frame`，配合 `modalOverlayEnterDuration()` / `modalOverlayExitDuration()`；不能继续套用搜索的 `.wd-search-*` 入场。背景遮罩、窗口和内容统一在 `520ms` 内完成；遮罩复用搜索同等级 `--wd-search-veil`、`--wd-search-veil-blur-base` 和 blur/饱和度，但 blur 与 tint 必须从 `0` 到终值只用一条连续动画段，使用 `--wd-ease-modal-blur-in: cubic-bezier(.32,.08,.2,1)`。入场不得在 25% / 50% / 75% 等位置添加中间关键帧并在边界重复减速，否则会读成两段或三段式模糊。退场时弹窗、内容 frame 与背景共用同一 `420ms` 时间轴且都从 `0ms` 开始；背景无满模糊保持段，tint 与 blur 从第一帧同步下降。背景采用前快后慢的连续分段缓释，主要模糊在前半段消退、尾部继续平滑收尾，不能在最后突然归零。弹窗本体不纵向滑动，在 `perspective:1400px` 中从屏幕近端 `translateZ(64px)` 轻微放大的状态单调收拢到实际尺寸 `translateZ(0)`，不得穿过目标平面形成反向回弹；内容 frame 初始保持约 `22%` 可见，并在同一 `520ms` 内按 `16 / 10.5 / 6.5 / 3.8 / 2 / .8 / .15 / 0px` 连续清晰化。退场向 `translateZ(42px)` 轻微放大、淡出并在内容侧模糊至 `8px`。页面样式只声明业务尺寸、位置、Glass Surface 与 `30px` 圆角，不得另写遮罩 blur 或关键帧。设备弹窗宽度：Add / Rename / Replace 使用 `640px`，其中 Replace 在窄版内纵向组织旧设备信息与替换表单、表单字段保持 2×2；只有 Settings 使用 `1160px` 双栏，Unbind 确认 `480px` 例外。所有弹窗先垂直居中，再按档位上移：窄版 `80px`、宽版 `24px`；减少动态效果时直接显示/移除。
 - 弹窗完成入场后必须保留 `data-entering` 终态和 backdrop 的 `will-change: backdrop-filter, background-color`，只添加 `data-entered` 作为完成标记；不得在开放状态移除入场动画或合成提示。关闭时必须在同一任务中移除 `data-entering` 并设置 `data-closing`，避免 `backdrop-filter` 在末帧重新合成造成闪暗。
 - 上述共享效果正式命名为 **Depth Reveal（景深浮现）**：背景使用搜索同级模糊，窗口从近端轻微放大收拢到实际尺寸，内容 blur 以连续缓出变为清晰，退场反向收回。Add / Rename / Replace / Settings / Unbind 及后续同类设置、确认弹窗都必须复用这一效果，不能按页面另写动画。
-- 所有是 / 否确认使用 `createConfirmDialog()`，固定 `480px` 居中布局、Glass Surface 与 Depth Reveal。危险操作使用红色图标底托和红色确认按钮；普通状态变更可省略图标并使用中性确认按钮。设备 Unbind、Site details 删除 / 丢弃未保存资料、Service Ticket 删除工单 / 删除回复 / 关闭 / 重开必须统一使用；浏览器原生 `confirm / alert / prompt` 全站禁止。
+- 所有是 / 否确认使用 `createConfirmDialog()`，固定 `480px` 居中布局、Glass Surface 与 Depth Reveal。危险操作使用红色图标底托和红色确认按钮；普通状态变更可省略图标并使用中性确认按钮。单操作安全通知复用同一弹窗并传 `showCancel:false`，只保留一个整行宽的 `OK`，不得另造通知弹层。设备 Unbind、Site details 删除 / 丢弃未保存资料、Service Ticket 删除工单 / 删除回复 / 关闭 / 重开必须统一使用；浏览器原生 `confirm / alert / prompt` 全站禁止。
 - 多个 modal 必须通过共享活动栈叠放，不能由新 modal 强制关闭旧 modal。子确认层打开时父层暂时 `inert`；子层关闭后恢复父层焦点与可交互状态，整组关闭时按栈反向释放。
 - 标准表单弹窗标题栏左侧使用 `40px` 图标底托和 `18px` 图标，标题、图标与 `36px` 玻璃关闭圆钮垂直居中，关闭 glyph 为 `14px`；标题下不再显示副标题。动作按钮固定右对齐并使用共享 36px 标准按钮。
 - 确认型（是 / 否）弹窗使用居中的简化结构：无顶部关闭按钮；`64px` 图标底托与 `28px` 语义图标置顶，标题和说明居中，底部仅保留两个并排操作按钮。内容水平居中，并按普通窄弹窗的“视口居中后上移 `80px`”定位。
@@ -148,13 +152,13 @@
 - 适用：顶栏 `Language`、`Appearance`、`WattDesk`，历史浮窗及后续文本型菜单。统一使用 `components/menu-popover.js` 的 `menuHeading` / `menuList` / `menuRow` / `menuNote` / `mountMenu`，内容根节点为 `.wd-menu`；外壳仍由 `registerPanel()` 或历史面板自己挂载 Glass Surface。
 - 外壳：紧凑菜单固定 **200px** 宽、**30px** 圆角、0 内距，由 `.popover--menu` 提供；历史浮窗因完整层级路径，是唯一保留最多 **380px** 宽度（小视口下为视口减 16px）的例外。不能按文案临时加宽，也不能为单个菜单另写外壳。
 - 内胆：`.wd-menu` 有标题时顶部内距 `20px`，左右与底部各 `10px`，标题/列表纵向间距 `10px`；没有标题时由 `mountMenu()` 自动添加 `.wd-menu--no-heading`，顶部与底部均为 `10px`。标题使用 `Footnote/Emphasized`（13px / 590、`Labels/Secondary`），左右内缩 `14px`。列表行固定 `36px` 高、胶囊圆角，左右内距 `14px`、图标间距 `8px`，文字用 `14/14 medium`（14px / 510），默认 `Labels/Secondary`。
-- `menuRow()` 支持 `iconPosition:"start" | "end"` 与 `showCheck`。标准导航菜单和设备动作菜单默认图标在前；设备动作菜单通过 `showCheck:false` 隐藏勾选槽，危险动作的图标继承行语义色。设备动作菜单与 Appearance 等标准菜单共用 `30px` 浮层圆角，并应右对齐触发按钮。
+- `menuRow()` 支持 `iconPosition:"start" | "end"`、`showCheck` 与可选 `description`。说明型 Select 沿用共享内外距和 1px 行距，选项由 14px 标签与 11px/14px 说明组成，行高按内容自动增长并只在需要时增高；不得通过页面私有内距或固定 48px 行制造大块空白。
 - 状态：行 hover / 键盘 focus 使用 `--wd-fill-secondary` 背景并让文字、中性图标同步转为 `Labels/Primary`；选中行文字为主文字色。勾选固定占尾部 `20px` 槽位，用 `currentColor` 加 `/home-assets/tickle.svg` 不透明遮罩，未选中仅隐藏不占位变化，切换语言时标签不能左右跳。设备操作中的危险项是明确例外：默认、hover、focus-visible 的图标与文字都使用纯 `Accents/Red`，hover 背景使用 `Accents/Red 11%` 的淡红透明层，不能回落到普通中性 hover。
 
-- 共享 `.wd-edit-field` 统一承接普通可编辑表单字段的表面：默认无边框、无内阴影；深色默认为主文字色 `8%`、hover `11%`、focus `13%`；浅色默认使用 `Fills/Quaternary` 的中性灰 `8%`，hover 与 focus 使用 `Fills/Tertiary` 的中性灰 `12%`，不得在 focus 时切回纯白。focus 只增加低对比中性轮廓，原生 `input / textarea / select` 不显示浏览器蓝色 outline；错误态继续使用语义红。设备弹窗和 Site details 正文资料字段共同复用该实现；页面身份标题可使用标题专用编辑表面，但必须记录为明确例外。
+- 共享 `.wd-edit-field` 统一承接普通可编辑表单字段的表面和动效：默认无边框、无内阴影；深色默认为主文字色 `8%`、hover `11%`、focus `13%`；浅色默认使用 `Fills/Quaternary` 的中性灰 `8%`，hover 与 focus 使用 `Fills/Tertiary` 的中性灰 `12%`，不得在 focus 时切回纯白。所有字段统一以 `380ms` / `--wd-ease-disclosure` 过渡填充、描边、阴影、轮廓颜色、文字色和透明度，不能在 `motion.css` 维护页面专项类名清单。字段内 `input / textarea`、Select 当前值、占位文字、箭头和数字单位也使用同一节奏，不能出现外壳已缓动、箭头或文字仍瞬变。默认保留 `1px` 透明 outline，focus 只把同一 outline 的颜色提升到低对比中性色，避免 outline 从无到有时瞬时跳变；原生 `input / textarea / select` 不显示浏览器蓝色 outline。直接输入、复合输入和 Select 触发器都只靠 `.wd-edit-field` 继承动效，placeholder、错误态和禁用态也必须由同一状态矩阵覆盖。设备弹窗和 Site details 正文资料字段共同复用该实现；页面身份标题可使用标题专用编辑表面，但必须记录为明确例外。
 - 图标来源：菜单行不另建按文件名猜色的逻辑，直接复用侧栏路由图标。`Home` 为灰色 mono 遮罩；`Plants`、`Service ticket`、`Statistics` 保留原始彩色；`Cell balance`、`Module balance`、`Device track`、`WattDesk`、`Your teams`、`End users` 等中性素材走 `isNeutralIconFile()` 的共享灰色/主色状态。不得把全部行统一压成 mono，也不得在浅色下贴入白色 Home 原图。动态生成的菜单（历史浮窗等）必须在挂载前调用 `prepareIconMasks()`，得到与首屏侧栏相同的 `opaqueMaskURL` 不透明内联遮罩；否则原始导出的 `fill-opacity` 会让 hover 主色发灰。悬停反馈共用 `.wd-menu-row` 的图标与文字状态，不另写颜色或节奏。
 - 尾距：列表最后一行到面板底缘固定 `10px`。历史列表与紧凑菜单共用同一内胆，不为历史另写行高、标题或勾选样式。
-- 扩展：语言等预览菜单可以放占位语言并做本地勾选切换，但不得据此声称已接入本地化、持久化或真实后端。新增菜单先复用上述 API；只有确实需要图表自定义布局时才使用通用 18px popover。
+- 扩展：语言等预览菜单可以放占位语言并做本地勾选切换，但不得据此声称已接入本地化、持久化或真实后端。新增菜单先复用上述 API；说明型 Select 可使用 288px 共享默认浮窗宽度。只有确实需要图表自定义布局时才使用通用 18px popover。
 
 - 禁用控件不响应；未选中 tab 保留默认材质，不能看起来像 disabled。新页面直接挂载共享组件，不复制材质 CSS 或恢复旧提取光学层。
 
@@ -162,10 +166,13 @@
 
 - 所有面板、菜单、表单与后续新增界面的操作按钮统一使用共享 `components/button.css` 的胶囊按钮，**不按页面另写颜色、圆角、内距或材质**。日期选择器的 `Cancel` / `Apply` 是当前基准实例。
 - `.wd-button--primary` 的蓝色实心底上始终使用白色文字和图标；浅色主题 hover / 键盘 focus 时也不能套用普通控件的黑色主文字状态。该例外由共享 `control-states.css` 统一承接，调用方不写局部颜色覆盖。
+- `.wd-button--danger-solid` 复用 primary 的实底玻璃结构，只把强调色从 `Accents/Blue` 换成 `Accents/Red`；默认与 hover 都保持白色文字，用于需要明确实心红确认的破坏性操作。页面只能选择该共享变体，不得复制材质或改成本地颜色。
+- `createConfirmDialog()` 的危险确认在未指定其他变体时自动使用 `danger-solid`；删除菜单行同步使用共享 `.is-danger`。红色确认按钮在 hover / 键盘 focus 中仍保持白字，不能因通用 `.wd-control-state` 状态变成主文字色。
+- `.wd-button--primary` 与 `.wd-button--danger-solid` 的默认态必须保留独立于 hover 的白色顶部/底部 rim、内高光和光学高光，表面仍应读作玻璃按钮；不能为了强化蓝/红实底而压掉共享高光，也不能只在 hover 时才补亮边。两种实底按钮共用当前默认值 rim `0.60 / 0.34`、inner `0.46 / 0.24`、optical `0.36 / 0.18`，确保内高光可直接辨认。
 - 标准圆形图标按钮 hover / focus 不只放大玻璃轮廓：内部 `.wd-control-icon` / 直接 `.target-icon-art` 同时放大到 `1.06`，按下到 `1.12`。宿主维持共享圆钮 `1.07 / 1.18` 深度，图标 transform 不改变 18px 或 16px 的布局盒；释放、进入和减少动态效果复用共享玻璃 token。
-- 结构固定为 `wd-button wd-button--pill` 加一个变体：中性按钮 `.wd-button--neutral`，主按钮 `.wd-button--primary`。两者高度 `36px`、左右内距 `16px`、胶囊圆角 `999px`、文字 `13px / 510 / 18px`、字距 `-.08px`，不按文案长度改字号或高度。
+- 结构固定为 `wd-button wd-button--pill` 加一个变体：中性按钮 `.wd-button--neutral`，主按钮 `.wd-button--primary`，实心危险按钮 `.wd-button--danger-solid`。三者高度 `36px`、左右内距 `16px`、胶囊圆角 `999px`、文字 `13px / 510 / 18px`、字距 `-.08px`，不按文案长度改字号或高度。
 - 中性按钮：挂共享普通玻璃（默认 `18px` 半径），默认 `Labels/Secondary`，hover / 键盘 focus 变为 `Labels/Primary`；用于 `Cancel`、关闭、次要操作。
-- 主按钮：实心 `Accents/Blue`，关闭模糊、白色反射场和上下内阴影，只保留细深色外轮廓、极细亮边和指针高光；hover 只轻微提亮，不能洗成浅蓝。每个视图只保留一个主按钮，用于 `Apply`、保存、确认等唯一主动作。
+- 主按钮：实心 `Accents/Blue`，不使用背景模糊或整面白色反射场；保留细深色外轮廓、共享白色 rim、inner / optical 高光与指针高光，hover 只轻微提亮，不能洗成浅蓝。每个视图只保留一个主按钮，用于 `Apply`、保存、确认等唯一主动作。
 - 两个变体都属于可交互玻璃：hover / 按下缩放、指针边缘光弧、禁用 `opacity .55` 与 `cursor:default` 全部由共享材质和状态层提供，调用方不写局部 `transform`、`box-shadow` 或 transition。真实 `disabled` / `aria-disabled` 必须阻止点击和 Enter / Space。
 - 圆形图标动作复用同一胶囊按钮，加 `.wd-button--disc`：`36×36`、零左右内距、`50%` 圆角，保留共享中性玻璃、缩放、指针光弧、焦点和禁用契约。用于工具栏的筛选、列显示、刷新等动作；不得另建页面局部圆钮材质。宿主为正方形且半径饱和时，共享材质自动加 `.wd-glass--disc`。
 - 页头右侧的图标+文字动作使用 `createPageHeaderAction()` / `.wd-page-action`，不挂玻璃：高 `28px`、左右 `10px` 内距、`6px` 图文间距、14px 图标、13px / 510 文字。默认透明且使用 `Labels/Secondary`，hover / 键盘 focus 才出现 `Fills/Tertiary` 浅灰胶囊并转 `Labels/Primary`；不得继续套用 36px 玻璃标准按钮。
@@ -197,6 +204,14 @@
 
 日期选择器使用共享 `components/date-picker.js` / `.css`：预设固定为 `Today`、`Yesterday`、`Last 24 hours`、`Last 7 days`、`Last 30 days`、`This month`、`Custom range`；输入为 `Start date` / `End date`，动作为 `Cancel` / `Apply`。选择预设只更新草稿，点击 `Apply` 才提交主周期标签；切换预设不能提前改标签或发起查询。面板宽 462px、最低高 433px；视口不超过 520px 时改为纵向排列，宽高限制在视口减 24px 内并允许滚动。旧 `Custom date range…` 入口已废弃，不得恢复。
 
+时间范围编辑统一使用 `components/time-range-control.js`。Economic Schedule 与 ToU 共用八位时间掩码、四列时间滚轮、键盘光标定位和关闭提交，不允许页面再自建时间选择器。调用方传入 `stepMinutes`：15 分钟显示 `00 / 15 / 30 / 45`，30 分钟显示 `00 / 30`；稀疏分钟列每个值只渲染一次，不得复制多组周期或通过隐藏重复组回中。1 小时把分钟列渲染为单个居中静态 `00`，不得保留滚动容器、吸附动画或滚轮位移。业务重叠校验由调用方提供。
+
+时间字段的独立打开箭头必须复用共享 Select 的视觉状态：`14px`、右侧内距约 `12px`、垂直居中、使用 `currentColor`，默认透明度 `.72`，hover / focus / 展开为 `1`；不得改回 12px、三级文字色或仍有位置偏移的页面专属图标。
+
+Economic Schedule 的换算 kW 辅助值使用 `Labels/Secondary`，与 ToU 表格的 kW 辅助值保持同一颜色层级；百分比输入值仍使用主文字色，单位与辅助换算值不得重新使用更深的 status ink。
+
+Economic Schedule 与 ToU 的 info hover / focus 浮窗统一使用共享 `bindHoverPanel()` 的 `align:"center"` 规则，浮窗中心必须与被触发的 info 图标中心对齐。
+
 日期输入是固定格式控件：`/`、`/`、空格、`:` 由控件绘制，位置固定且不可输入，分段只接受各自位数的数字，满位后自动跳到下一段。校验失败时整个玻璃框进入错误态——1px `Accents/Red` 内描边加一层淡红外环，分段、分隔符和日历图标同时变红；不能只让文字变红。说明文字位于两个时间框下方、收尾分割线上方，不能放在分割线下的 footer。错误态在定位到分段或用 Apply 提交时都必须保持，只在用户重新输入出合法范围后清除，不能因为分段获得焦点就被抹掉。
 
 搜索使用共享 `components/search-surface.js` / `.css`。侧栏 Quick search、首页内联搜索框和结果面板的键盘提示必须由同一组 `Ctrl` + `K` 键帽生成，不能从 Figma 导出复制独立文本节点，也不能各写一套颜色或背景。键帽固定为两枚独立矩形，间距 `4px`，使用 `Footnote/Regular`、SF Pro 字体族和 `--wd-control-muted` 背景、`--wd-vibrant-label-secondary` 文字；深浅主题自动继承，不按主体文字色重新着色。底部操作提示使用同一键帽外观：方向导航是一枚合并的 `↑ ↓` 键帽，不能拆成两枚；其余为 `Enter Open`、`Esc Close`。动作名保持英文，不得退回浏览器等宽字体或中文动作名。底部提示是真实可操作控件，不是装饰文字：`Navigate` 推进当前结果选中并循环，`Open` 打开当前选中项，`Close` 关闭当前搜索面板；鼠标点击后焦点仍留在输入框，键盘方向键、输入和再次激活可立即继续。首页内联搜索的键帽组以搜索框右缘内缩 `20px` 为固定锚点向左生长；不能沿用导出稿的 `35px` 单字形列宽，也不能让共享键帽溢出或压到框边。两处搜索框的可见默认文字只能来自 `components/search.js` 的 `SEARCH_FIELD_PLACEHOLDER`，全屏不得另写 `Search WattDesk` 之类文案；`aria-label` 等无障碍名称不要求与占位文案相同。共享清除按钮固定在输入区尾部，保持 `18px × 18px`、零内距并与字段垂直同中心；嵌入浮层时不得被外层 `.popover > button` 的菜单按钮样式命中。
@@ -217,7 +232,7 @@
 
 弹窗退出时内容、玻璃 fill 与光学层必须同时淡出（约 `--wd-motion-panel-exit` 的 94%），宿主自身保持不透明以继续合成 `backdrop-filter`，最后整体移除。不能让内容先淡完而底板仍在，否则会出现“只有底、没有内容”的空壳中间态。
 
-`Cancel` 使用共享中性玻璃；`Apply` 是面板中唯一的实心强调色，按 Figma `14736:5234` 用 `Accents/Blue` 实心填充，只保留细深色外轮廓、极细亮边与指针高光，关闭模糊、白色反射场和上下内阴影，避免蓝色被洗成偏白的浅蓝。深浅主题分别微调外轮廓与投影，hover 只轻微提亮，不改变饱和度。
+`Cancel` 使用共享中性玻璃；`Apply` 是面板中唯一的实心强调色，按 Figma `14736:5234` 用 `Accents/Blue` 实心填充。它不增加背景模糊或整面白色反射场，但必须保留共享实底按钮的细深色外轮廓、白色 rim、inner / optical 高光与指针高光；不能以“避免洗白”为由移除这些默认光学层次。深浅主题分别微调外轮廓与投影，hover 只轻微提亮，不改变饱和度。
 
 ### 无内容页面占位
 
@@ -256,6 +271,7 @@
 ### 组件级共享动效契约
 
 - 所有页面通过 `src/shared.css` 自动加载 `foundations/motion.css`。新页面、新组件和后续动态挂载的 DOM 无需逐个补 transition；原生控件、常见 ARIA role（button / tab / menuitem / switch / checkbox / radio / option / treeitem 等）、`.wd-control-state` / `.wd-control-label`、共享玻璃层、Workspace tab、快捷入口和折叠箭头都继承统一节奏。
+- 整张可点击卡片的背景 hover 使用 `.wd-hover-fill`：页面只声明 idle / hover 颜色，共享层负责进入 `240ms`、离开 `360ms`。不得在页面里补 `transition`、给内部行另画局部灰底，或对整卡增加缩放来代替背景反馈。
 - 仅由父级 hover / focus 触发的显隐容器使用 `.wd-hover-reveal-host` + `.wd-hover-reveal`。宿主负责声明默认与激活透明度，共享动效负责透明度属性和非对称节奏：进入 `240ms`、离开 `360ms`。不能只在容器内的按钮上依赖共享 transition；透明度绘制在父层时必须在父层接入契约。
 - 共享默认只过渡 `color`、`background-color`、`border-color`、`box-shadow`、`opacity`、`text-decoration-color`、`filter`。hover 进入使用 `--wd-motion-hover:240ms` / `--wd-ease-hover:cubic-bezier(.16,1,.3,1)`，离开使用 `--wd-motion-hover-out:360ms` / `--wd-ease-hover-out:cubic-bezier(.3,0,.2,1)`；宿主在 hover / 键盘 focus 时切换共享变量，文字与图标叶节点继承同一节奏。这是 2026-10-21 用户确认的“弹性灵动”方向，进入快、离开柔。组件与页面 CSS 只声明视觉状态，不再写 `transition`、`transition-property`、`transition-duration` 或缓动；禁止 `transition: all`。
 - `2026-10-26` 表格行与表头并入同一契约：`tr` / `td` / `th` 与 `[role=row]` / `[role=cell]` / `[role=columnheader]` / `[role=rowheader]` 同时获得过渡属性与 hover 变量切换，密集列表的行底色、焦点环因此不需要页面局部 `transition`。电站列表（`src/pages/plants/`）是首个使用方。
@@ -277,8 +293,8 @@
 | 设置 / 确认弹窗入场 / 退场 | 背景、窗口与内容 520ms；统一退场 420ms | `--wd-motion-modal-backdrop-in` / `--wd-motion-modal-in` / `--wd-motion-modal-content-in` / `--wd-motion-modal-out` |
 | 浮层展开 | 320ms | `--wd-motion-panel` / `--wd-ease-panel` |
 | 浮层收起 | 200ms | `--wd-motion-panel-exit` / `--wd-ease-hover-out` |
-| toast 淡入 | 320ms | `--wd-motion-panel` / `--wd-ease-panel` |
-| toast 淡出 | 200ms | `--wd-motion-panel-exit` / `--wd-ease-hover-out` |
+| toast 文字淡入 / 位移动画 | 320ms | `--wd-motion-panel` / `--wd-ease-panel` |
+| toast 文字淡出 / 位移动画 | 200ms | `--wd-motion-panel-exit` / `--wd-ease-hover-out` |
 | Workspace 标签关闭 | 260ms | `--wd-motion-tab-close` / `--wd-ease-hover-out` |
 | Workspace 标签拖拽换位 | 220ms | `--wd-motion-tab-out` / `--wd-ease-tab-in` |
 | 图表首次进入可视区 | 900ms | `--wd-motion-chart` / `--wd-ease-chart` |
@@ -286,6 +302,7 @@
 | 点击刷新图标转一圈 | 640ms | `--wd-motion-refresh` |
 | 工单编号单次扫光 | 680ms | `--wd-motion-sheen` / `--wd-ease-sheen` |
 | 内容自适应增高 | 280ms | `--wd-motion-content-grow` / `--wd-ease-content-grow` |
+| 底部内容收缩后的滚动跟随 | 280ms | `--wd-motion-content-grow` / `--wd-ease-content-settle` |
 | switch 滑块 / 分段胶囊 | 600ms | `--wd-motion-switch-thumb` / `--wd-ease-switch-thumb` |
 | switch 轨道变色 | 480ms | `--wd-motion-switch-track` / `--wd-ease-switch-track` |
 | 设置导航选中层 / 页面交叉淡变 | 260ms | `--wd-motion-view-switch` / `--wd-ease-view-switch` |
@@ -293,7 +310,7 @@
 | 深浅主题整体淡变 | 620ms | `--wd-motion-theme` / `--wd-ease-theme` |
 | 顶部 overscroll 回弹 | 640ms | `--wd-motion-pull-rebound` / `--wd-ease-spring` |
 
-- 长列表和达到高度上限的多行输入由共享 `components/scroll-feedback.js` / `.css` 提供滚动视觉。原生滚动行为保留，视觉滑块是 DOM 层：默认 `6px`、hover `8px`；颜色与宽度按共享 `240 / 360ms` 进入/离开节奏，轨道宽度保持 `10px`，不引发布局槽位变化。轨道顶部从固定表头下方的数据起始线开始，底部与内容区底边保留 `10px` 安全留白，并由轨道自身裁切；滑块位置由滚动同步并支持拖动。滑块在每个 rAF 读取当前 `scrollTop`，普通滚动和回弹阶段都不得暂停同步。上下 overscroll 都先经过约 `4px` 粘滞区，再逐步显示最高 `16px` 的主题背景空白；越界过程中滑块同步收缩，松手回位使用上表共享 spring 缓动，滑块长度也沿同一时间轴恢复；减少动态效果时不显示位移与收缩动画。任何反方向滚动都必须立即结束 pull、允许当前滚轮继续驱动原生 viewport，不能为了回弹继续吞掉输入；轨道自身的滚轮按 `deltaMode` 换算成像素距离。固定高度的多行输入显式使用 `elastic:false`，隐藏原生滚动条并让滚轮优先滚动文本；Service Ticket 顶层与楼内回复输入都按此接入。
+- 长列表和达到高度上限的多行输入由共享 `components/scroll-feedback.js` / `.css` 提供滚动视觉。原生滚动行为保留，视觉滑块是 DOM 层：默认 `6px`、hover `8px`；颜色与宽度按共享 `240 / 360ms` 进入/离开节奏，轨道宽度保持 `10px`，不引发布局槽位变化。轨道顶部从固定表头下方的数据起始线开始，底部与内容区底边保留 `10px` 安全留白，并由轨道自身裁切；滑块位置由滚动同步并支持拖动。滑块在每个 rAF 读取当前 `scrollTop`，普通滚动和回弹阶段都不得暂停同步。上下 overscroll 都先经过约 `4px` 粘滞区，再逐步显示最高 `16px` 的主题背景空白；越界过程中滑块同步收缩，松手回位使用上表共享 spring 缓动，滑块长度也沿同一时间轴恢复；减少动态效果时不显示位移与收缩动画。任何反方向滚动都必须立即结束 pull、允许当前滚轮继续驱动原生 viewport，不能为了回弹继续吞掉输入；轨道自身的滚轮按 `deltaMode` 换算成像素距离。固定高度的多行输入显式使用 `elastic:false`，隐藏原生滚动条并让滚轮优先滚动文本；Service Ticket 顶层与楼内回复输入都按此接入。底部内容真实变短时由共享 bottom-scroll guard 使用 `--wd-ease-content-settle`（`cubic-bezier(.4,0,.2,1)`）跟随新底边，避免复用快速起步的 content-grow 曲线造成首帧大幅位移。
 
 ### 玻璃按压反馈
 
@@ -373,7 +390,7 @@
 - `2026-11-06` Savings 深色主题左端点固定为 `#a6a6a6`，要与 `#4d4d4d` 轨道清楚区分，同时仍弱于主文字与右端主体；浅色继续使用主题前景墨色派生。端点尺寸、轨道内定位与内联 SVG circle 方式不变。
 - `Energy trend` 的选项 hover 不得再叠第二层圆角背景，只通过文字提亮、整体选项放大和玻璃轨道指针光完成反馈。选中胶囊不绘制描边，上下各内缩 `4px`，左右使用实际选项边界；指示层宽度为实际选项边界，不再额外缩窄。每段宽度必须按文字内容自适应，左右内距 `18px`，不能等分撑满。切换使用共享分段组件的 `600ms` soft-spring，不得恢复旧 `320ms` panel motion。
 - 通用分段切换必须通过 `createSegmentedControl()` 使用：`items` 为 `{id,label,disabled?}`，`value` 为初选项，`label` 为 `tablist` 无障碍名称，`glass` 传入页面现有玻璃控制器；返回 `{element,value,setValue,destroy}`。组件负责箭头键 / Home / End、禁用项跳过、ResizeObserver 重算和快速连续点击时从当前视觉位置续接动画。连续点击必须先读取正在运动胶囊的实际边界，再取消旧动画；不能先 cancel 后读取，否则会回落到上一次端点并产生跳跃。ResizeObserver 在动画进行中必须保留当前中间位置并续接，不得使用无动画定位重置。指示胶囊使用独立 `--wd-segmented-control-indicator-fill`：浅色保持共享 `20%` 主填充，深色固定为 `rgba(120,120,128,.56)`，必须与轨道形成清楚对比；不得恢复原 `36%` 弱填充，也不得依靠描边提亮。指示胶囊使用与共享开关相同的 `600ms` soft-spring 位移，标签使用 flex 几何居中且不再做上移校正。页面若在切换后重绘，必须保留并重新挂回同一分段控件 DOM，让胶囊动画继续；不能延迟依赖内容或新建控件替换正在运动的胶囊。调用方不得复制 `.wd-segmented-control-*` DOM、局部 transition 或指示层定位逻辑。
-- 底部内容收缩保护由共享 `createBottomScrollGuard()` 统一实现，并通过 `createScrollFeedback({preserveBottomOnShrink:true})` 接入页面级滚动区。视口位于底部且最终内容变短时，组件临时添加 `.wd-scroll-shrink-spacer` 保留旧滚动范围，再以共享 content-grow duration/easing 平滑落到新底边；内容增长只更新基线，不得产生缓冲或让页面上移。判断基于最终布局，不读取渲染中的瞬时矮帧；连续收缩从当前位置续接，用户滚轮 / 触控优先，页面不得复制该逻辑。
+- 底部内容收缩保护由共享 `createBottomScrollGuard()` 统一实现，并通过 `createScrollFeedback({preserveBottomOnShrink:true})` 接入页面级滚动区。视口位于底部且最终内容变短时，组件临时添加 `.wd-scroll-shrink-spacer` 保留旧滚动范围，再以 `--wd-motion-content-grow` 的时长和独立的 `--wd-ease-content-settle` 标准 ease-in-out 平滑落到新底边；不得复用快速起步的 `--wd-ease-content-grow`。内容增长只更新基线，不得产生缓冲或让页面上移。判断基于最终布局，不读取渲染中的瞬时矮帧；连续收缩从当前位置续接，用户滚轮 / 触控优先，页面不得复制该逻辑。对整片内容同步替换且缩短的交互，必须在替换前调用 `holdBottomShrink()`、替换后调用 `settleBottomShrink(hold)`，不能等 MutationObserver 在浏览器夹取滚动值后再补救。
 - 页面标题后的首个内容统一距标题 `18px`。如果页面正文首个元素是 `.isw-note`，必须清除其相对卡片说明的负上边距，设置 `margin-top:0`，最终实际视觉间距仍为 `18px`；后续说明到卡片的 `--isw-note-gap` 不变。
 - Frequency-Watt (F-P) 的行内数字字段统一使用标准 `128 × 36px`，并与卡片内容右缘对齐；字段内部通过 `justify-content:flex-end` 让数值与单位整体贴右，不能居中或从左侧排布。该页不得继续让 `.isw-mini-number` 按内容自动收窄。分段选择与开关保持各自组件尺寸。
 - 使用 `overflow-x:auto` / `overflow-y:hidden` 实现横向滚动的按钮组，必须为 hover、press 和 focus 轮廓预留至少上下各 `8px` 的裁剪缓冲。Plants 详情页签使用 `height:calc(100% + 16px)`、`padding:8px`，再以 `top:-8px` 和左右 `margin:0 -8px` 抵消，保持按钮原坐标和滚动起点。

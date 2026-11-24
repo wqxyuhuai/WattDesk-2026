@@ -67,10 +67,19 @@ const assert=require('node:assert/strict');
     registerPanel:selectPopover.registerPanel,close:selectPopover.close,toggle:selectPopover.toggle
    });
    adaptiveSelect.element.id='reusable-adaptive-select';
+   const descriptionSelect=createSelectControl({
+    label:'Descriptive select',value:'standard',options:[
+     {value:'standard',label:'Standard',description:'Uses the regular schedule.'},
+     {value:'smart',label:'Smart',description:'Uses cloud-optimized periods.'}
+    ],variant:'compact',className:'reusable-description-select',menuClassName:'reusable-description-popover',chooseLabel:'Choose descriptive value',menuWidth:288,
+    registerPanel:selectPopover.registerPanel,close:selectPopover.close,toggle:selectPopover.toggle
+   });
+   descriptionSelect.element.id='reusable-description-select';
    const selectHost=document.createElement('div');selectHost.id='reusable-select-host';selectHost.style.cssText='position:fixed;left:760px;top:48px';
    const adaptiveSelectHost=document.createElement('div');adaptiveSelectHost.id='reusable-adaptive-select-host';adaptiveSelectHost.style.cssText='position:fixed;left:-9999px;top:0';
-   document.body.append(selectHost,adaptiveSelectHost);selectHost.append(reusableSelect.element);adaptiveSelectHost.append(adaptiveSelect.element);
-   window.__selectFixture={control:reusableSelect,adaptive:adaptiveSelect,controller:selectPopover,changes:selectChanges};
+   const descriptionSelectHost=document.createElement('div');descriptionSelectHost.id='reusable-description-select-host';descriptionSelectHost.style.cssText='position:fixed;left:-9999px;top:120px';
+   document.body.append(selectHost,adaptiveSelectHost,descriptionSelectHost);selectHost.append(reusableSelect.element);adaptiveSelectHost.append(adaptiveSelect.element);descriptionSelectHost.append(descriptionSelect.element);
+   window.__selectFixture={control:reusableSelect,adaptive:adaptiveSelect,description:descriptionSelect,controller:selectPopover,changes:selectChanges};
    window.scrollFeedback=createScrollFeedback({host:scrollHost,viewport:scrollViewport,content:scrollContent,bottomInset:10,preserveBottomOnShrink:true});
    await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
    let duplicateRejected=false;try{createGlassMaterial({surfaces:[{host:control,radius:18}]})}catch{duplicateRejected=true}
@@ -226,6 +235,37 @@ const assert=require('node:assert/strict');
   assert.equal(await reusableSelect.getAttribute('data-value'),'gamma','Enter selects the focused option');
   assert.equal(await reusableSelect.getAttribute('aria-expanded'),'false');
   assert.equal(await page.evaluate(()=>document.activeElement?.id),'reusable-select','selection returns focus to the trigger');
+  const descriptionSelect=page.locator('#reusable-description-select');
+  await descriptionSelect.focus();
+  await page.keyboard.press('ArrowDown');
+  const descriptionPopover=page.locator('.reusable-description-popover');
+  await descriptionPopover.waitFor({state:'visible'});
+  const descriptionMenu=await descriptionPopover.evaluate(node=>{
+    const menu=node.querySelector(".wd-menu");
+    const rows=[...node.querySelectorAll(".wd-select-option")];
+    return {
+      width:node.getBoundingClientRect().width,
+      padding:[getComputedStyle(menu).paddingLeft,getComputedStyle(menu).paddingRight],
+      gap:getComputedStyle(node.querySelector(".wd-menu-list")).rowGap,
+      rows:rows.map(row=>({
+        label:row.querySelector(".wd-menu-label")?.textContent,
+        description:row.querySelector(".wd-menu-description")?.textContent,
+        labelSize:getComputedStyle(row.querySelector(".wd-menu-label")).fontSize,
+        descriptionSize:getComputedStyle(row.querySelector(".wd-menu-description")).fontSize
+      }))
+    };
+  });
+  assert.deepEqual(descriptionMenu,{
+    width:288,
+    padding:["10px","10px"],
+    gap:"1px",
+    rows:[
+      {label:"Standard",description:"Uses the regular schedule.",labelSize:"14px",descriptionSize:"11px"},
+      {label:"Smart",description:"Uses cloud-optimized periods.",labelSize:"14px",descriptionSize:"11px"}
+    ]
+  },'shared Select descriptions use the compact menu anatomy');
+  await page.keyboard.press("Escape");
+  await page.waitForFunction(()=>document.activeElement?.id==="reusable-description-select");
   const dynamicSelect=await page.evaluate(()=>{
    const fixture=window.__selectFixture;
    fixture.control.setOptions([

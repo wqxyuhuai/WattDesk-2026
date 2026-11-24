@@ -14,6 +14,7 @@
     "check": "node scripts/check.cjs",
     "test:file": "node",
     "test": "node tests/run.cjs",
+    "audit:motion": "node tests/verify-edit-field-motion.cjs",
     "audit:assets": "node scripts/audit-assets.cjs",
     "test:visual": "node tests/verify-refactor.cjs",
     "sync:home": "node scripts/build-home-data.cjs",

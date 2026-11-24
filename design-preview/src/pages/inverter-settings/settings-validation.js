@@ -6,9 +6,6 @@ const exactRanges=Object.freeze({
  "features.wdt":Object.freeze({min:1,max:3600,unit:"s"}),
  "limits.feed":Object.freeze({min:0,max:1000,unit:"kW"}),
  "limits.imp":Object.freeze({min:0,max:1000,unit:"kW"}),
- "soc.chgStop":Object.freeze({min:0,max:100,unit:"%"}),
- "soc.gridFloor":Object.freeze({min:0,max:100,unit:"%"}),
- "soc.offFloor":Object.freeze({min:0,max:100,unit:"%"}),
  "net.port":Object.freeze({min:1,max:65535,unit:""}),
  "net.unit":Object.freeze({min:1,max:247,unit:""}),
  "reacQSet":Object.freeze({min:-100,max:100,unit:"%Sn"}),
@@ -59,6 +56,13 @@ const curveVoltage=/^g\.(?:quV|upfV)\d+$/;
 const curveReactive=/^g\.(?:quQ|P_Q_Discharge_Q)\d+$/;
 const curveActive=/^g\.(?:cpP|P_Q_Discharge_P)\d+$/;
 const curvePowerFactor=/^g\.(?:cpF|upfF)\d+$/;
+const batterySoc=/^battery\.soc\.(?:gridMin|gridMax|offMin|offMax)$/;
+const batteryCurrent=/^battery\.(?:common|bank1|bank2)\.(?:chargeMax|dischargeMax)$/;
+const touDuration=/^tou\.config\.duration(?:High|Low)Hours$/;
+const touPercentage=/^tou\.config\.percentage(?:High|Low)Range$/;
+const touFixedPrice=/^tou\.config\.fixed(?:High|Low)Price$/;
+const touFee=/^tou\.config\.(?:handlingFee|distributionFee)$/;
+const touTax=/^tou\.config\.taxRate$/;
 
 export function settingRange(path,unit=""){
  const exact=exactRanges[path];
@@ -69,6 +73,13 @@ export function settingRange(path,unit=""){
  if(curveReactive.test(path))return {min:-100,max:100,unit:"%Sn"};
  if(curveActive.test(path))return {min:0,max:100,unit:"%Pn"};
  if(curvePowerFactor.test(path))return {min:-1,max:1,unit:""};
+ if(batterySoc.test(path))return {min:0,max:100,unit:"%"};
+ if(batteryCurrent.test(path))return {min:0,max:1000,unit:"A"};
+ if(touDuration.test(path))return {min:0,max:24,unit:"h"};
+ if(touPercentage.test(path))return {min:0,max:100,unit:"%"};
+ if(touFixedPrice.test(path))return {min:-100,max:100,unit:unit||""};
+ if(touFee.test(path))return {min:0,max:100,unit:unit||""};
+ if(touTax.test(path))return {min:0,max:100,unit:"%"};
  if(path==="dispatch.sp")return unit==="kW"?{min:-1000,max:1000,unit:"kW"}:{min:-100,max:100,unit:"%Pn"};
  if(path==="g.rcVmax"||path==="g.rcVmin"||path==="g.suVmax"||path==="g.suVmin")return {min:0,max:1000,unit:"V"};
  if(path==="g.rcFmax"||path==="g.rcFmin"||path==="g.suFmax"||path==="g.suFmin")return {min:40,max:70,unit:"Hz"};

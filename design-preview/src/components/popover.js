@@ -12,6 +12,7 @@ export function createPopoverController({overlays,toastElement,motion,glass}){
  let toastHideTimer;
  let toastEnterAnimation;
  let toastExitAnimation;
+ let toastTextAnimation;
  let toastToken=0;
  let toastAnchor=null;
  let repositionFrame=0;
@@ -40,16 +41,26 @@ export function createPopoverController({overlays,toastElement,motion,glass}){
   el.classList.add("wd-glass--surface","wd-glass-popup");
   ensureSurface(el,{radius});
  }
+ // Mount the material before the first toast. Creating the backdrop layer in
+ // the same frame that it becomes visible can expose one frame without blur.
+ prepareStaticSurface(toastElement,24);
+ if(toastElement)toastElement.style.opacity="1";
  function hideToast(token){
   if(token!==toastToken)return;
   toastEnterAnimation?.cancel();
+  toastTextAnimation?.cancel();
   toastEnterAnimation=null;
+  toastTextAnimation=null;
   if(reducedMotion()){
    toastElement.hidden=true;
    return;
   }
+  const currentTranslate=getComputedStyle(toastElement).translate;
+  const translate=currentTranslate&&currentTranslate!=="none"?currentTranslate:"0 0";
+  // Entry keeps the pre-mounted glass fully opaque. On exit, fade the complete
+  // toast together so text and material leave on one timeline.
   const animation=toastElement.animate(
-   [{opacity:1,translate:"0 0"},{opacity:0,translate:"0 -4px"}],
+   [{opacity:1,translate},{opacity:0,translate:"0 -4px"}],
    {duration:motionDuration("--wd-motion-panel-exit"),easing:motionEasing("--wd-ease-hover-out"),fill:"forwards"}
   );
   toastExitAnimation=animation;
@@ -59,10 +70,20 @@ export function createPopoverController({overlays,toastElement,motion,glass}){
    animation.cancel();
    toastExitAnimation=null;
   }).catch(()=>{
-   if(token===toastToken)toastExitAnimation=null;
+   if(token===toastToken){
+    toastExitAnimation=null;
+   }
   });
  }
  function positionToast(){
+  const pageTitle=[...document.querySelectorAll(".wd-page-breadcrumb-current")]
+   .find(title=>title.getClientRects().length&&title.getBoundingClientRect().height>0);
+  if(pageTitle){
+   const rect=pageTitle.getBoundingClientRect();
+   toastElement.style.top=`${rect.top+rect.height/2-toastElement.getBoundingClientRect().height/2}px`;
+  }else{
+   toastElement.style.removeProperty("top");
+  }
   if(toastAnchor?.isConnected){
    const rect=toastAnchor.getBoundingClientRect();
    toastElement.style.left=`${rect.left+rect.width/2}px`;
@@ -85,25 +106,36 @@ export function createPopoverController({overlays,toastElement,motion,glass}){
   }
   const token=++toastToken;
   const wasHidden=el.hidden;
-  const currentOpacity=wasHidden?0:Number.parseFloat(getComputedStyle(el).opacity)||0;
-  const currentTranslate=wasHidden?"0 -4px":getComputedStyle(el).translate||"0 0";
+  const textStyle=getComputedStyle(text);
+  const currentTextOpacity=wasHidden?0:Number.parseFloat(textStyle.opacity)||0;
+  const computedTranslate=wasHidden?"0 -4px":getComputedStyle(el).translate;
+  const currentTranslate=computedTranslate&&computedTranslate!=="none"?computedTranslate:"0 0";
   clearTimeout(toastHideTimer);
   toastEnterAnimation?.cancel();
   toastExitAnimation?.cancel();
+  toastTextAnimation?.cancel();
   toastEnterAnimation=null;
   toastExitAnimation=null;
+  toastTextAnimation=null;
   text.textContent=message;
   toastAnchor=centerWithin instanceof Element?centerWithin:null;
-  positionToast();
   el.hidden=false;
-  if(!reducedMotion()&&currentOpacity<1){
+  el.style.opacity="1";
+  positionToast();
+  if(!reducedMotion()){
    const animation=el.animate(
-    [{opacity:currentOpacity,translate:currentTranslate},{opacity:1,translate:"0 0"}],
+    [{translate:currentTranslate},{translate:"0 0"}],
     {duration:motionDuration("--wd-motion-panel"),easing:motionEasing("--wd-ease-panel")}
    );
    toastEnterAnimation=animation;
-   animation.finished.catch(()=>{}).finally(()=>{
+   const textAnimation=text.animate(
+    [{opacity:currentTextOpacity},{opacity:1}],
+    {duration:motionDuration("--wd-motion-panel"),easing:motionEasing("--wd-ease-panel")}
+   );
+   toastTextAnimation=textAnimation;
+   Promise.all([animation.finished,textAnimation.finished]).catch(()=>{}).finally(()=>{
     if(toastEnterAnimation===animation)toastEnterAnimation=null;
+    if(toastTextAnimation===textAnimation)toastTextAnimation=null;
    });
   }
   toastHideTimer=setTimeout(()=>hideToast(token),2400);

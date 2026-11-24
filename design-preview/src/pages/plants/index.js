@@ -1006,14 +1006,27 @@ function renderDetail(plantId,requestedDevice,requestedSection,requestedTab,requ
      serial:requestedSerial
     });
     if(device){
+     const settingsSiteDetails=siteDetailsByPlant.get(plant.id)??defaultSiteDetails(plant);
      activeInverterSettings=openInverterSettings({
       plant,
       device,
+      siteDetails:settingsSiteDetails,
       glass,
       toast,
       registerPanel,
       togglePanel:toggle,
       closePanels:close,
+      onSave:state=>{
+       const tou=state?.tou?.config;
+       if(!tou)return;
+       siteDetailsByPlant.set(plant.id,{
+        ...settingsSiteDetails,
+        country:tou.country,
+        area:tou.area,
+        timezone:tou.timezone,
+        currency:tou.currency
+       });
+      },
       onClose:()=>onOpenPlantSection?.({
        plantId,
        device:"inverter",

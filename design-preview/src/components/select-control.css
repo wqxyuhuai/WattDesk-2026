@@ -100,6 +100,33 @@
  color:var(--wd-label-primary);
 }
 
+.wd-select-popover .wd-select-option.has-description{
+ height:auto;
+ min-height:46px;
+ align-items:flex-start;
+ padding:7px 14px;
+ border-radius:14px;
+}
+
+.wd-menu-copy{
+ display:flex;
+ flex:1 1 auto;
+ flex-direction:column;
+ min-width:0;
+ gap:1px;
+}
+
+.wd-select-option.has-description .wd-menu-description{
+ color:var(--wd-label-secondary);
+ font-size:11px;
+ line-height:14px;
+ white-space:normal;
+}
+
+.wd-select-option.has-description .wd-select-check{
+ align-self:center;
+}
+
 .wd-select-option[aria-disabled="true"]{
  cursor:default;
  opacity:.55;

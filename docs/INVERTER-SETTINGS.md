@@ -1,6 +1,6 @@
 # Inverter settings 唯一页面契约
 
-更新：2026-11-23
+更新：2026-11-24
 
 本文是 Inverter settings 的有效规则入口。页面视觉、交互、状态、组件选择和
 防回归要求只在这里维护；其他文档如出现更旧的实现细节，以本文、当前运行代码
@@ -47,7 +47,8 @@
   更新后代理会自动读取最新页面；只有代理允许路径、域名或 Worker 逻辑变化时才
   需要重新部署独立 Worker。
 - 页面以 route-backed 设置窗口呈现，刷新、复制链接、浏览器前进/后退有效。
-- 主页面共 15 个：Running Mode、Economic Schedule、Battery、
+- 主页面共 17 个：Running Mode、Economic Schedule、ToU Mode（Manual）、
+  ToU Mode（Dynamic）、Battery、
   Active Power Dispatch、Import & Export Limits、Output Capability、DI Port、
   Grid & Protection、Networking、Device Features、MPPT & Strings、
   CT Detection、Operation Control、Parameter Export、Operation Log。
@@ -124,6 +125,8 @@ Inverter 的业务枚举只属于该页面，放在 `settings-options.js`，不�
   普通 full-width `.isw-panel`，不得带窄版类。
 - 卡片圆角和左右内容线统一使用 `--isw-card-inset: 24px`；卡片间距使用
   `--isw-card-gap: 30px`；卡片到 `.isw-note` 使用 `--isw-note-gap: 10px`。
+  同一分组标题下如果直接连续出现多张卡片，卡片之间的间距减半为 `15px`；
+  这是全设置页统一规则，不得只为 SOC 写页面私有例外。
 - 固定标题层 `.isw-title-layer` 位于滚动和回弹节点之外。滚动与上下回弹只移动
   正文，标题、blur 和 `1px` 规则保持屏幕坐标。
 - 上下窗层叠阴影写在非玻璃 `.isw-main-shell`：接触线
@@ -167,7 +170,71 @@ Inverter 的业务枚举只属于该页面，放在 `settings-options.js`，不�
   ToU mode / Off-Grid Mode`。
 - 模式卡切换使用共享 `320ms` panel motion；高度可中断续接，说明只改变
   opacity，不叠加位移。
-- Battery 保留 charge cut-off、grid-tied floor、off-grid floor 和范围可视化。
+- Battery 页面顺序固定为 `Battery configuration → State of charge →
+  Battery heating`。并联能力决定后续所有电池设置的显示范围，因此拓扑和输入
+  配置必须先于 SOC 与加热；不得把并联开关放在下方，导致用户先编辑两套值再
+  切换成一体的数据。
+- 单路硬件始终使用 `battery.common` 一套设置。双路硬件支持并联且开启时也使用
+  `battery.common`；关闭并联后切换为独立的 `battery.bank1 / battery.bank2`，
+  电池品牌、最大充/放电电流和两路加热必须同时拆分。SOC 是例外：不论单路、
+  并联还是双路分置，都只使用一套共享 `battery.soc`，不得跟随电池输入拆分。
+- 双路硬件不支持并联时不显示并联开关，直接显示 Battery #1 / #2 两套设置；
+  不能仅按机型名称推断能力。当前 `p25` 本地预览使用双路且支持并联的夹具。
+- `Parallel Battery Operation` 使用共享 `createToggleSwitch()`。切换后保留同一
+  页面与所选值，立即重排依赖卡片；切回原拓扑且数值未变时不得残留 dirty。
+- 并联运行时必须读取“主通讯电池”点位：值为有效电池路时，后续点位实际读写
+  都路由到该主通讯电池，但页面仍显示当前的一套 Battery 配置。点位缺失、无效
+  或无法判定时，在并行卡内、开关下方显示警告：
+  `Battery Parallel Mode is enabled. The system cannot detect which battery string is active. Please verify the battery power and communication cable connections to ensure proper configuration.`
+  该警告只在“双路 + 支持并联 + 并联已开启 + 主通讯电池未知”时出现；关闭并联
+  或主通讯电池识别正常时不显示。异常时同时隐藏该卡内的 Battery Brand、
+  Max. Charge Current、Max. Discharge Current，只保留并联开关和警告；
+  State of charge 与 Battery heating 仍保留。当前 p25 本地夹具使用主通讯电池
+  已识别状态 `bank1`，默认展示完整的一套 Battery 配置；异常提示只由独立
+  未知主通讯电池模型验证，生产必须由后端能力/实时点位决定，不能把异常固化为
+  默认。警告只在开关下方保留一条顶部分隔线，不得再画底部分隔线；
+  文案使用 `13 / 400 / 18px`，上下内距为 `12px / 4px`，并紧接卡片仅约
+  `5px` 的底部余量，不能恢复成与常规说明相同的 `14 / 510` 大段留白。
+  警告图标使用主题橙色和归一为完全不透明的共享 mask；不得直接引用原稿中
+  `fill-opacity="0.3"` 的浅色素材，否则即使 CSS 颜色正确仍会显得发灰。
+  从该异常状态关闭并联时，警告必须立即消失，并在并联开关下方恢复
+  `Battery #1 / Battery #2` 两张完整配置卡；两路的 Battery Brand、最大充/
+  放电电流和后续加热设置都必须正常可编辑，不得因为主通讯电池点位异常继续
+  隐藏或禁用分路设置。
+- 每个电池输入提供 `Battery Brand / Max. Charge Current / Max. Discharge
+  Current`。品牌使用共享 `createSelectControl({variant:"adaptive"})`，电流使用
+  标准 `.isw-number`，两项范围当前为 preview fallback `0–1000 A`。品牌选择框
+  固定为标准字段宽 `128px`，与下方电流字段同宽。
+- SOC 固定为 `Grid-tied SOC` 与 `Off-grid SOC` 两张卡，每张显示上下限值、
+  0–100% 双端滑块和 `0 / 20 / 40 / 60 / 80 / 100%` 刻度；默认值分别为
+  `10–80%` 与 `20–90%`。点击或拖动轨道时移动到最近手柄；上下限可以相互
+  越过，松手或键盘提交后按数值重新排序，较小值自动成为 Start。Start 与 End
+  相等时在字段内显示错误并阻止 Save；数值输入反向时同样自动排序，不得报
+  `lower > upper`。未填充轨道使用中性灰色，已填充区间使用 `--wd-accent-blue`。
+  默认线高 `4px`，只有轨道自身的 `:hover` /
+  `:has(.isw-soc-handle:focus-visible)` 才增至 `8px`；整张卡片或刻度区域 hover 不得加粗，轨道使用
+  24px 透明命中区但不改变可见几何。两个无内部小点的玻璃手柄默认 `16px`，
+  只要轨道区域 hover / 键盘 focus，两个手柄同时使用共享 Glass Surface 的
+  spring 放大动效；释放使用共享 `420ms` spring 回落，不能硬切。通过局部材质
+  变量保证 16px 圆盘仍有清晰边缘、模糊与内外高光；手柄中心与区间起止点必须
+  像素对齐。hover / 键盘 focus 中的手柄上方显示跟随它的共享 Glass 浮窗 `SOC <value>%`，
+  拖动和键盘调整实时更新并保持水平对齐。浮窗必须绝对定位在内容层上方，
+  不参与卡片排版、不占用高度，与手柄净距保持约 `2–4px`，并直接复用共享
+  `wd-glass--surface wd-glass-popup` 材质和字体层级。拖动位置必须始终连续，
+  不得按整数或整十跳动，也不保留磁性吸附；手柄、填充和浮窗按指针的实际
+  百分比移动，数值、ARIA 值和模型只回传最接近的整数。键盘方向键保持逐点
+  调整，数值输入保留精确整数。刻度文字使用 `12px` Labels/Secondary，
+  按真实 `0 / 20 / 40 / 60 / 80 / 100%` 坐标定位；卡片底部仅保留紧凑留白。
+  浮窗由端点 hover 打开、离开端点关闭，点击不作为显隐开关；拖拽期间保持显示，
+  键盘 focus 也可打开并在 blur 时关闭。进入时 Glass Material 与 backdrop blur
+  必须立即达到终态，正文延后 `70ms`；不得对 `backdrop-filter` 做过渡。
+  退出时正文先退，材质延后 `70ms`，不得出现正文先亮而背景随后补上的分层感。
+  浮窗宿主必须覆盖共享 `.wd-glass` 的隔离设置，
+  使用 `.isw-soc-value-tooltip.wd-glass { isolation:auto }`，否则计算样式虽有
+  backdrop blur，实际无法采样背后内容。
+- `Battery heating` 固定放在 SOC 之后；单路或并联时显示 `Keep Battery Warm`，
+  双路分置时显示 `Keep Battery #1 Warm / Keep Battery #2 Warm`。原 Device
+  Features 中的全局 `Battery heating` 行已移除，避免形成第二套控制入口。
 
 ### Economic Schedule
 
@@ -179,20 +246,100 @@ Inverter 的业务枚举只属于该页面，放在 `settings-options.js`，不�
   标点不参与编辑；支持光标定位到任意数字。
 - 非法时间保留输入和红色错误状态，焦点离开字段才提交；重叠、格式和范围校验
   共用一条逻辑。
+- 时间字段独立打开箭头与共享 Select 箭头保持一致：14px、右缘约 12px、垂直
+  居中、默认 `currentColor` / `.72`，hover / focus / 展开为 `1`；不得回退为
+  12px 三级色箭头。
 - Mode 使用 `createSelectControl({variant:"adaptive"})`，其菜单宽 `280px`，
   使用 `Charge by PV Only`，并完整显示 `Charge by PV and Grid`。
+- 百分比输入值使用主文字色，换算后的 kW 辅助值使用 `Labels/Secondary`；两行
+  同行展示，kW 不再使用更深的 status ink。
 - 空草稿显示 `--`、`-- %`、`-- kW`；只有 `--` 用 Labels/Quaternary，单位
   保持正常文字色。未完成草稿阻止 Save。
+- Power limit info 使用共享 `bindHoverPanel()` 的 `align:"center"` 定位，
+  浮窗中心与 info 图标中心误差不超过 `1px`。
 - 行尾菜单使用共享 36px 玻璃圆钮、`menuEndAlign(button,30)`；删除确认使用
   共享确认弹窗，删除项保持红色语义和 `11%` 红色 hover 底。
 
+### ToU Mode（Manual / Dynamic）
+
+- 左侧 `Operating strategy` 在 `Economic Schedule` 与 `Battery` 之间显示两个
+  同名 `ToU Mode` 入口，右侧小字分别为 `Manual` / `Dynamic`，共用
+  `icons/settings/time-of-use-mode.svg`。
+- 原型阶段两个入口始终显示，默认使用 Manual，不增加侧栏资格隐藏或自动切换。
+- Manual 页使用 `24h Overview → Advanced Settings → Schedule periods`：提供
+  15/30/60 分钟粒度、最多 24 段、六种运行子模式、Battery Power Limit、
+  PV Forbidden、新增/删除和页面级 Save/Cancel。初始预览以六个连续时间段
+  分别对应六种模式。
+- Manual 的 24h Overview 直接复用 Economic Schedule 的
+  `.isw-gantt / .isw-eco-overview` DOM 与几何；时间范围复用
+  `components/time-range-control.js`，滚轮只产生当前间隔允许的时间。`1 h`
+  分钟列为单个静态 `00`；`15 / 30 mins` 的稀疏分钟列每个值只渲染一次，
+  不做隐藏循环回中。
+- Manual / Dynamic 计划表在 `640px` 内容列内使用五列
+  `136 / 160 / 154 / 90 / minmax(...)`、列间距 `4px`、左右内距 `24px`；
+  时间输入必须完整显示，Mode 必须完整显示 `Battery Discharge`，PV 表头单行，
+  电量与 PV 开关净距不少于约 `18px`。
+- ToU 时间校验统一覆盖同一时间、反序、步长、重叠和最多 24 段；有效计划按开始
+  时间升序，错误显示在对应行内，Save 再次拦截。同一字段只保留一条当前错误，
+  横向占用 Time range / Mode 两列并单行显示，不能按滚动值累积。
+- Dynamic 页提供 Today/Tomorrow、96 个 15 分钟价格点、
+  Percentage/Fixed 高低价阈值、Refresh、Advanced Settings 和生成后的计划。
+  `24h Overview` 使用两条各含 96 个点的阶梯价格线；Buy / Sell 只取主题
+  `Accents/Blue / Orange`。Buy 为 2px 主曲线并带 `14% → 0` 轻面积，Sell 为
+  1.5px、`84%` 不透明度的次级曲线。当前计划的运行模式作为绘图区底色展示；
+  六种模式固定映射 `Labels/Secondary` 与
+  `Accents/Purple / Yellow / Green / Red / Teal`，统一使用 `8%` 不透明度，
+  不增加独立模式轨道。模式内部边界必须清晰，禁止模糊或跨色渐变。只允许绘图区
+  最外侧左右边缘 `0–8% / 92–100%` 渐隐，价格线、水平网格与底部基线保持清晰
+  端点。不再使用模式染色的价格柱或图内当前时刻线。
+- Dynamic 绘图区高 `250px`，纵轴、横轴和图例统一 `11px / 14px`；图例保持
+  原有单行流式结构，不拆组或重排，并使用 6px 主题色模式圆点。横轴上方显示
+  当日最低 / 最高 Buy Price 及连续时间范围；摘要内容左缘与
+  `24h Overview` 的文字左缘对齐，标题到摘要净距约 `16–18px`。图表 hover / keyboard focus
+  只显示对应模式 `16%` 的 15 分钟列高亮和共享 Glass Surface 浮窗，不显示
+  竖向虚线。
+  `24h Overview` 使用 `13px / 18px`，相对计划表左侧内容线向右 `2px`、
+  向下 `3px` 做光学校正，只改变绘制位置，不移动标题布局盒、图表或计划表。
+- 完整线型、字段边界和生产说明见
+  [ToU Mode Settings 功能需求](./TOU-MODE-SETTINGS.md#73-24h-电价图)。
+- Dynamic Advanced Settings 提供 Manual / Duration / Percentage / Fixed /
+  Intelligent 五种控制模式、地区/Area/Timezone/Currency、Extra Charge 和
+  Automatic Export Limit。线上冲突项以线上为准。
+- Intelligent Mode 由云端判断每个时间段的模式和参数并将完整计划下发设备；
+  页面不显示本地 High/Normal/Low 策略字段。
+- 完整数据契约和待实现生产边界见 [ToU Mode Settings 功能需求](./TOU-MODE-SETTINGS.md)。
+
 ### Power、limits 与 dispatch
 
-- 保留 `%Pn` / kW 转换、setpoint、`Command timeout` 和 Currently effective
-  链。
+- Active Power Dispatch 固定绑定四个 RW 点：
+  `ActivePower_Dispatch_Enable → dispatch.on`、
+  `ActivePower_Dispatch_Mode → dispatch.unit`、
+  `ActivePower_Dispatch_Setpoint → dispatch.sp`、
+  `ActivePower_Dispatch_Timeout → dispatch.timeout`。`%Pn / kW` 只是 Mode
+  的显示枚举，切换单位时必须保持同一实际 kW 值。
 - `Command timeout = 0` 合法，表示不超时。
 - Effective chain 与同页 Command timeout 使用
-  `14/510/18`、`-0.14px`；五行 `36px`，列距 `14px`，标签列至少 `170px`。
+  `14/510/18`、`-0.14px`；四行 `36px`，列距 `14px`，标签列至少 `170px`。
+- `Output Capability` 的 AC power limit mode 绑定
+  `Output_Capability_Mode`，RW，候选 `Rated / Overload / Underload`。该点是否
+  正式新增、数值枚举和发布条件仍为 firmware-pending；页面可保留 preview
+  演示，但不得把候选值写成已确认生产契约。
+- `DI Port` 绑定 `DRM_SET`，RW；`0=Off`、`1=DRM`、`2=RCR`。当前 preview
+  默认 `2=RCR`。
+- Currently effective 不再由云端公式推导。三个 RO 点固定为
+  `ActivePower_Effective_Limit`、`ActivePower_Limit_Source`、
+  `ActivePower_PV_Curtailed`；顶部状态和 dispatch 页都只展示设备上报值。
+  Effective limit 与 PV curtailed 以 kW 展示，Limit source 的枚举标签和 tone
+  由后端点位元数据提供；
+  点位缺失时显示 unavailable，不能用 setpoint、export limit 或电池能力补算。
+- Effective chain 固定三行，依次为 Effective power limit、Limit source、
+  PV curtailed。Dispatch setpoint 已在上方 Dispatch 卡片显示，不在生效值卡重复。
+  首行最终限值使用主题蓝强调并与支持值之间用 `16px` 间隔和 `1px` 分隔线分组，
+  卡片底部标注 `Values are reported by the inverter.`。Limit source 是分类状态，
+  不绘制空进度轨；该行以状态点 + 单行源标签跨越轨道区并右对齐，任何源文案
+  不得换行破坏行高。顶部主标题使用
+  `Effective active-power limit`，不得再写成容易被理解为实时功率的
+  `Grid-tied point now`。
 - Export/Import 术语固定为 `Import & Export Limits`、`Export limit`、
   `Import limit`，不再使用 `Feed-in`。
 - `Limit basis` 只作用于 Export limit，不控制 Import limit。数据字段固定为
@@ -212,11 +359,9 @@ Inverter 的业务枚举只属于该页面，放在 `settings-options.js`，不�
 - 当前 `p25` 本地预览固定为三相机型且支持按相；`Limit basis` 可实际切换。
   生产环境仍需读取设备相数和固件能力位，不能根据机型名称或现有
   `Unbalanced output` 开关推断。
-- 当前 preview 没有三相功率数据，Effective chain 仍按总和模型计算和展示；
-  不得伪造某一相的实时限值。生产接入按相闭环、点位地址和实时数据后再扩展
-  约束计算。
-- Output Capability 保留 Rated / Overload / Underload；DI Port 保留
-  Off / DRM / RCR。
+- 当前 preview 没有三相功率数据，不得伪造某一相的实时限值。生产接入按相
+  闭环、点位地址和实时数据后，由设备直接上报最终 effective limit；云端不得
+  为按相模式另行推导。
 
 ### Grid & Protection
 
@@ -251,17 +396,137 @@ Inverter 的业务枚举只属于该页面，放在 `settings-options.js`，不�
 - Networking 四行统一 `46px`；标签和值使用 `14/510/18`，标签
   Labels/Secondary、值 Labels/Primary。网络值可复制，hover / focus 才显示
   下划线，通过页面级 toast 反馈。
+- Device Features 的 `Operating envelope` 固定顺序为
+  `Allow grid / off-grid switching → Backup Output → Unbalanced output`。
+  `Backup Output` 是设备级二值设置，默认开启，控制 backup 侧能量输出；其
+  值进入正常 Save / Cancel、dirty 和 Operation Log。逆变器处于运行状态时，
+  开启和关闭都必须在共享 switch 接收点击前拦截，开关视觉、语义值、dirty
+  和操作日志均不得变化；分别显示单按钮 `Cannot Enable Backup Output` /
+  `Cannot Disable Backup Output` 通知。通知的唯一 `OK` 使用共享蓝色 primary
+  整行按钮；点击只确认提示，不改变运行门禁，逆变器未关机时再次尝试切换仍会
+  继续弹出对应通知。关停逆变器后才允许正常切换。
+- MPPT 数量不读取单一 count 标量。设备提供 5 个独立 inventory 状态点位，
+  取值 `1–5`；`5` 表示该硬件接口不存在，云端只统计非 `5` 的点位得到实际
+  MPPT 数量。页面顶部 MPPT Input 行、并联可选列表和组数上限都来自该数量。
+- 并联分组使用另外 4 个独立点位，默认 `[1, 2, 3, 4]`，取值只能是 `1–4`；
+  成组的两路写入相同值，例如 `[1, 1, 3, 4]`。分组操作不得修改 5 个
+  inventory 状态点位，read 数据展示只使用每组主机，不重复展示从机。
+- Parallel MPPT Operation 关闭时只显示标题、标题下短说明和开关，不再使用 info
+  浮窗；说明为
+  `Shares input current across MPPT channels for more energy from parallel PV strings.`。
+  实际只有 2 路 MPPT
+  时开启并联直接形成隐式 `[1, 1, 3, 4]` 分组，不显示组编辑器。超过 2 路时，
+  开启后立即显示 `MPPT Group 1` 占位，再从该组 Select 触发器下方自动打开
+  双选浮层。每组只能两路；全新组中已进入其他组的接口禁用，编辑已有组时其他
+  组成员同样保持禁用并置灰，必须先删除占用该接口的组；禁用项只显示灰色
+  `MPPT #N`，不再附加 `Already assigned` 文案。占位组也显示右侧 disabled
+  option 按钮。
+- 组值使用与 Scan interval 相同的共享 Adaptive Select 触发器，宽度随内容、
+  右侧 `14px` 下箭头，与右侧 option 按钮间距 `8px`。双选浮层使用
+  `wd-select-popover`、36px 横向行、Running Mode 18px 右侧选择标记、紧凑内距
+  和标准 Cancel / Save 按钮。已选满两项后再点第三 / 第四项时，自动取消最早
+  选择，弹窗始终保留最后选择的两个。浮窗宽 `220px`，按共享 Select 规则右缘
+  对齐组触发器布局右缘后再外扩 `30px` 圆角距离。
+- 第一组保存后显示 `MPPT Group N` 和右对齐 `+`；剩余恰好两路时点击 `+`
+  直接补全，不再弹选择器。已有组提供危险语义 `Delete group` 菜单，图标、文字
+  和 hover 底均使用共享 danger 状态。所有组删除后显示
+  `At least one MPPT Group must be created`，并阻止 Save；取消选择器后保留
+  该错误，同时保留 `MPPT Group 1` 占位；红色错误上下留白相等，普通
+  Save/Cancel 与 dirty 继续按页工作。错误插入或移除导致卡片高度变化时，
+  必须使用共享 `280ms` content-grow 动画，不得直接设置 `hidden` 或替换 DOM
+  造成尺寸突变。
 - MPPT 标签固定为 `MPPT Input`、`MPPT #1–#4`、
-  `Parallel MPPT Operation`。Scan interval 是共享 Adaptive Select，选项为
-  `5 mins / 15 mins / 30 mins / 1 h`。
+  `Parallel MPPT Operation`。Shadow scan 使用共享分段
+  `All MPPTs Control / Individual Control`：
+  - `All MPPTs Control` 只有一个 `Shadow scan` 开关和一个 Scan interval；
+  - `Individual Control` 按 inventory 非 `5` 点位计算出的实际 MPPT 数量，为
+    每一路生成独立开关和 Scan interval；
+  - 每路关闭后只收起该路 interval，其他 MPPT 不受影响；
+  - 两种模式的扫描区必须在同一页面预渲染；切换只原位显示目标区域并同时把旧区域
+    `hidden` / `inert`，不得重建整页或重新挂载该页其他共享控件。共享 segmented
+    的胶囊动画从点击首帧连续运行，页面、Tracker 卡和分段控件节点保持不变。
+  - 位于底部时从 Individual 切回 All，必须先锁定旧底部滚动范围，再以共享
+    bottom-scroll guard 的 `--wd-ease-content-settle` 平滑回落；不得先被浏览器
+    夹到新最大高度，也不得因整页重绘形成停顿后跳回。
+- Scan interval 是共享 Adaptive Select，选项为
+  `5 mins / 15 mins / 30 mins / 1 h`。Individual 模式每个 interval 写独立的
+  `mppt.individual.<index>.interval`，开关写对应 `.scan`；模式本身写
+  `mppt.scanMode`，全部进入当前页 Save / Cancel、dirty 与 Operation Log。
 - Last scan 与 Last check 使用 `createTimeLabel()`，禁止硬编码相对时间。
+
+### CT Self-check
+
+- `Current Mode` 对应 `Grid_Current_Mode_Set`，固定使用共享分段控件：
+  `0 = Meter Current`、`1 = CT Current`。不存在 `100 A CT / 50 A CT` 选项；
+  这类评级文案如出现在硬件资料中只能作为独立只读信息。
+- `Run check` 对应 `CT_SCAN_ENABLE` 自检触发点，与 Current Mode 相互独立。
+  本地预览继续使用 `ctRun` 模拟检查，不伪造真实固件写入。
+- `ctCurrentMode` 是当前页的持久化配置字段，进入 Save / Cancel、dirty 与
+  Operation Log；`ct.running / l1 / l2 / l3 / lastMinutesAgo` 仍属于瞬态运行
+  状态，不因检查完成而进入未保存变更。
+- CT 页面顺序为 `CT Self-check`（Current Mode、Direction check）→
+  `Result`（L1 / L2 / L3 / Last check）。
+
+### Networking Wi-Fi
+
+- Networking 固定为 `Connection → Wi-Fi → Address → Modbus TCP`。Wi-Fi 卡
+  按 `Inverter Wi-Fi Hotspot → SSID → Password` 排列，分别映射
+  `WIFI_Mode_AP_Switch`、`Wifi_Mode_Open_AP_SSID`、
+  `Wifi_Mode_Open_AP_Password`。
+- Hotspot 使用共享开关；说明不使用 info 浮窗，直接作为标题下标准 hint：
+  `Disabling this switch stops the inverter hotspot without affecting cloud connection. Re-enabling must be done via cloud or Wi-Fi dongle for reconfiguration.`
+- SSID、Password 都使用与设置页数字字段相同的共享 `.wd-edit-field` 表面：
+  高 `36px`、最宽 `220px`，背景、描边、阴影、hover 与 focus 均不得另写一套。
+  所有 `.wd-edit-field` 无论直接输入、数字复合字段还是 Wi-Fi 复合字段，都必须
+  自动命中同一 `380ms` / `--wd-ease-disclosure` 状态过渡，不能在
+  `motion.css` 维护页面类名白名单。默认保留不可见 `1px` outline，focus 只动画
+  轮廓颜色并固定为 `1px`，不能触发浏览器默认 `2px` 蓝色 outline。字段内的
+  Select 当前值、箭头、占位文字和数字单位也必须与该外壳使用同一节奏。
+  Password
+  默认 `type=password`，眼睛按钮在显隐间切换，并同步
+  `aria-label=Show/Hide password` 与 `eye-closed/eye` 图标；显隐本身不进入 dirty。
+  眼睛图标使用 `16px`；闭合图标视觉中心略偏上，因此只对闭合态做 `0.5px`
+  向下光学校正，开启态不位移。
+- Hotspot 关闭时仍保留 SSID / Password 配置；三个字段均进入当前页 Save /
+  Cancel、dirty 与 Operation Log。密码日志只能显示 `••••••••` 或 `Not set`，
+  不能记录明文。
 
 ### Maintenance actions 与 Operation Log
 
+- Operation Control 的 Reset 分组不再直接暴露 Factory reset，而使用共享中性
+  `Open` 按钮进入嵌套 `Reset & Recovery` 弹窗。弹窗约 `640px`，使用共享
+  `createModalDialog()` 与 modal stack；设置窗在子层打开时保持挂载并暂时
+  `inert`。
+- Landing 只提供两条路径：`Reset by category` 与
+  `Clear all settings & reset setup`。分类路径再选择 Operation Settings、
+  Safety-Locked Parameters 或 Network Recovery；每次选择都进入详细影响说明，
+  再由共享 `createConfirmDialog()` 做最终 `Cancel / Reset` 确认。
+- 点位保持独立，不合并：`Reset_operation`、`Reset_gridparameters`、
+  `Reset_network`、`Reset_allcustomersettings`。Full reset 只调用
+  `Reset_allcustomersettings`，其业务效果覆盖前三类恢复并回到初始 Setup，
+  不要求前端依次调用三个分类命令。
+- Full reset 的说明、重置列表和最终确认严格采用交互稿；本地预览不额外推断
+  历史统计数据或日志是否由固件一并清理，实际范围由该点位定义。
+- 当前未确认产品必须关机后才能重置，因此不增加运行状态前置门禁；当前也按要求
+  暂不增加 Check code 或额外权限门禁。
+- Reset & Recovery 的底部操作按钮组水平居中并去除多余底部留白；按钮只使用
+  共享标准 `36px` 尺寸和材质，不增加页面私有宽度、高度或材质。Cancel 使用
+  共享 neutral 玻璃，Continue / Reset 使用新增的共享 `danger-solid` 实心红玻璃，
+  复用 primary 的结构并保持始终白色文字。
+  分类行右侧箭头为 `18px`，hover 使用明显高于常态的填充与描边；危险行 hover
+  继续保留红色文字，右侧箭头同时提升为完全不透明的实心当前语义色。箭头默认使用
+  不透明遮罩加 `.24` 透明度，以保留原始轻量层级；只有 hover / focus 才到 `1`。
+- 无底部操作栏的 Landing 页面保持左右、底部均为 `22px` 的一致留白；带
+  Cancel / Continue 操作栏的分类页和详情页使用更紧凑的 `14px` 底部留白。
+- 分类选择页必须保留首页的恢复风险提示。详情页 Warning 图标与标题垂直居中，
+  图文间距收紧；标题、重置列表和 Not affected 区块之间使用 `16px` 节奏。
+- 本地预览在最终确认后显示短暂 `Resetting...` 状态，再以 toast 标明命令仅在
+  preview 中模拟；不得伪造真实硬件成功、离线或云端重连结果。
 - 普通命令按钮全部使用 `createStandardButton()` 并挂共享 Glass Surface。
   `Run check`、`Export`、可执行的 `Power on` 为 primary；`Power off`、
-  `Restart` 为 warning；`Reset all settings` 为 danger；`Clear faults`、
-  `Reload …` 为 neutral。Operation Control 命令按钮统一 `144px` 宽。
+  `Restart` 为 warning；Reset 详情 Continue 与最终 Reset 为 danger；
+  `Clear faults`、`Reload …` 和 Reset & Recovery 入口为 neutral。
+  Operation Control 命令按钮统一 `144px` 宽。
 - warning / danger 默认保留橙红 / 红色文字，hover / focus 渐入同 hue 叠加层
   并转白；分别用于中断性与破坏性操作。
 - Operation Log 表头 `12/400`，行内统一 `12px`；列宽
@@ -286,7 +551,7 @@ Inverter 的业务枚举只属于该页面，放在 `settings-options.js`，不�
   点击当下恢复基线并启动页面转场，确认层与转场并行退场。
 - 只有 X 可关闭设置页。X 检查全局 dirty；有修改时复用共享确认层。关闭需等待
   共享 `420ms` Depth Reveal 完成后再切回 Devices。
-- Save 成功与失败均使用页面级 toast；不要偏移到右侧设置区。
+- Save 成功与失败均使用全站共享 `#toast`；不要偏移到右侧设置区，也不得覆盖其 Glass 预挂载、入场宿主 opacity、退场整体同步淡出、`8px / 18px` 内距、文字淡变或 `4px` 位移规则。
 
 ## 滚动、页面转场与动效
 
@@ -306,7 +571,8 @@ Inverter 的业务枚举只属于该页面，放在 `settings-options.js`，不�
   旧动画；ResizeObserver 也从中点续接。
 - 开关控制的同卡条件行立即进入布局，卡片使用 `280ms` content-grow 动画；
   结束后恢复 `height:auto`。
-- 位于底部时内容缩短使用共享 bottom-scroll guard；内容增长不触发上移。
+- 位于底部时内容缩短使用共享 bottom-scroll guard，滚动跟随使用
+  `--wd-ease-content-settle`；内容增长不触发上移。
 - `prefers-reduced-motion` 下由共享层直接切换到终态。
 
 ## 可访问性与响应式
@@ -358,13 +624,25 @@ git diff --check
 
 ## 防回归检查
 
-- 15 个主页面和所有可用 Grid 子页均能渲染；18 个 profile 的 key、顺序和值
+- 17 个主页面和所有可用 Grid 子页均能渲染；18 个 profile 的 key、顺序和值
   不变。
+- 两个 `ToU Mode` 入口位于 `Economic Schedule` 与 `Battery` 之间，使用 ToU
+  模式图标，并分别显示 `Manual / Dynamic`；两页的 Save/Cancel 作用域独立。
+- Dynamic `24h Overview` 保留两条 96 点价格线和独立的计划模式背景层；
+  价格不得按模式染柱，未覆盖时间必须以 General Mode 底色呈现。
 - 首开模式来自设备；非 Running Mode 保存不反向改写设备模式。
 - timeout `0`、功率因数 `-1–1`、Check code 四位和普通 Save 日志仍有效。
 - `Limit basis` 默认 Total；三相支持按相的预览可切换，单相隐藏，固件不支持时
   Per phase 可见但禁用；Save/Cancel 和 Operation Log 均显示
   `Total / Per phase`，不是原始 `0 / 1`。
+- Battery 单路、双路并联、双路分置三种状态均保留同一页面作用域 Save/Cancel；
+  `battery.soc` 在三种状态下都只有一套；日志标签能区分 Battery #1 / #2、
+  SOC 上下限及各输入字段，不得退化为重复的 `Grid-tied SOC` 或原始路径。
+- 并联主通讯电池异常警告只保留开关下方顶部线，无底部分隔线；字体为
+  `13 / 400 / 18px`，上下内距 `12px / 4px`，且不能重新长出大段卡片尾部留白；
+  图标必须使用不透明的主题橙色 mask，不能保留原 SVG 的 `30%` 填充透明度。
+- 并联主通讯电池异常时关闭并联，必须恢复两张完整可编辑的
+  `Battery #1 / Battery #2` 配置卡；异常能力不能阻塞正常的分路配置回退。
 - dirty、Cancel、Save 和切页确认严格按页面作用域工作。
 - Grid 门禁未解锁时不泄漏二级栏；解锁后位置、滚动记忆和 Check code 关联不变。
 - switch、segmented、select 和条件卡在局部重绘后保留动画宿主。

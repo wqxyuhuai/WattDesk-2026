@@ -1,6 +1,200 @@
 # 经验与防回归清单
 
-更新：2026-11-20。本文只记录已经发生、已纠正且容易再次踩到的问题。开工前先读本页，再读 [用户要求记录](./USER-REQUIREMENTS.md) 和与任务相关的组件文档；Inverter settings 的有效页面规则见 [页面契约](./INVERTER-SETTINGS.md)，本页只保留可复用的根因和验收方法。用户当前明确要求仍优先于历史经验。
+更新：2026-11-24。本文只记录已经发生、已纠正且容易再次踩到的问题。开工前先读本页，再读 [用户要求记录](./USER-REQUIREMENTS.md) 和与任务相关的组件文档；Inverter settings 的有效页面规则见 [页面契约](./INVERTER-SETTINGS.md)，本页只保留可复用的根因和验收方法。用户当前明确要求仍优先于历史经验。
+
+## 2026-11-24 ToU shared controls and destructive states
+
+### Price series and planned operating modes need different visual channels
+
+- **Symptom**: Dynamic ToU drew 96 pairs of bars and colored each pair by the
+  current operating mode. The chart therefore mixed price magnitude with ToU
+  state, and it no longer matched the live page's two stepped price lines.
+- **Source check**: The live `24h Overview` DOM uses blue Buy and orange Sell
+  step lines. Planned runs are separate full-height background rectangles:
+  uncovered time is General, plan-covered time uses that period's mode tint,
+  and both layers remain visible together.
+- **Final rule**: Keep the 96 fifteen-minute price points on two 2px stepped
+  lines. Render plan coverage as a separate background layer, with General Mode
+  filling uncovered gaps. Do not encode mode by recoloring individual price
+  bars or points.
+- **Prevention**: Before changing chart semantics, inspect the live DOM/SVG and
+  source bundle when available. Regression must assert both line series and the
+  independent mode-band layer.
+
+### ToU time picking must not grow a second wheel implementation
+
+- **Symptom**: ToU initially used a text-based popover while Economic Schedule
+  used the established four-wheel time control; interval restrictions were
+  validated only after entry.
+- **Fix**: `components/time-range-control.js` now owns the eight-digit mask,
+  wheel DOM, caret navigation, validation-on-close and cleanup for both pages.
+  Callers pass `stepMinutes`; `1 h` exposes only `00` minutes, `30 mins`
+  exposes `00 / 30`, and `15 mins` exposes four values.
+- **Prevention**: Time range changes must be verified through both Economic
+  Schedule and ToU, including editing a middle digit and Backspace at the caret.
+
+### A custom red class does not make a confirmation destructive
+
+- **Symptom**: ToU delete confirmation turned its red label into the theme
+  primary ink on hover because the shared control hover rule uses `!important`.
+- **Fix**: Dangerous confirmations without an explicit variant resolve to the
+  shared `danger-solid` button. Its red fill and white label remain unchanged
+  through hover and keyboard focus. Menu rows use shared `.is-danger`.
+- **Prevention**: Do not create page-local danger colours through class names.
+  Use the shared danger menu and solid button variants, then assert computed
+  hover/focus colours.
+
+### Inline error identity must not come from the current value
+
+- **Symptom**: Repeated ToU time edits stacked multiple copies of the same error
+  under one row and made the table tall enough to look broken.
+- **Root cause**: field identity fell back to `input.value`; each wheel position
+  produced a different error key, so the shared error component appended a new
+  message instead of replacing the current one.
+- **Final rule**: ToU inputs use their stable `data-isw-tou-time-input` identity.
+  One field owns at most one current error. ToU errors span the Time range / Mode
+  columns on one left-aligned line and use short copy.
+- **Prevention**: Any repeated inline-validation surface must derive identity from
+  a stable model key, never display text, timestamps or transient input values.
+
+### Sparse wheels must not fake continuity with hidden duplicate cycles
+
+- **Symptom**: At 15 / 30 minute intervals the wheel visibly jumped while
+  scrolling because four or two values were repeated into five hidden cycles and
+  recentered through a distant copy.
+- **Final rule**: `1 h` renders one static `00`; 15 / 30 minutes render their
+  allowed values once with proximity snapping. Click-driven smooth centering
+  temporarily suppresses scroll-to-draft synchronization so Playwright’s
+  pre-click scroll or a browser intermediate frame cannot overwrite the chosen
+  value.
+- **Prevention**: Verify wheel count, cycle count, stable scroll position, center
+  alignment and draft value together. Do not use “identical repeated content” as
+  proof that a loop jump is invisible.
+
+### “No truncation” is a measured layout contract
+
+- **Symptom**: Reducing the main ToU table to 640px fixed several earlier layout
+  issues but clipped `Battery Discharge` and made kW values crowd the PV switch.
+- **Final rule**: Resolve column widths against the actual content box, keep
+  `Mode` wide enough for the longest live label, keep time input scrollWidth within
+  clientWidth, keep the PV header nowrap, and preserve a measured gap before the
+  PV switch.
+- **Prevention**: Test the rendered text/input fit and target-to-neighbour distance;
+  do not infer fit from a container screenshot or only from grid-template values.
+
+### Informational tooltips share a centered anchor
+
+- **Symptom**: Battery power-limit and Economic power-limit help panels opened to
+  the right of their info icons and could escape the card’s visual reading line.
+- **Final rule**: Both use shared `bindHoverPanel(...,{align:"center"})`; panel
+  center and trigger-icon center differ by at most 1px.
+- **Prevention**: Position assertions belong beside tooltip text/material checks.
+
+### `color-mix()` cannot consume a gradient background token
+
+- **Symptom**: The scrolled ToU Advanced title lost its background tint.
+- **Root cause**: `--wd-main-panel-background` is a gradient in dark mode, so using
+  it inside `color-mix()` made the declaration invalid.
+- **Final rule**: Tint overlays must mix a solid semantic colour token such as
+  `--wd-bg-secondary`, then layer blur separately.
+- **Prevention**: Check the token’s value type before using it in colour math.
+
+### Schedule color must not compete with the price curve
+
+- **Symptom**: Full-height mode tints made the Dynamic ToU plot read as six large
+  pastel blocks. Muting and blurring those blocks made them dirty without fixing
+  the hierarchy; even after restoring theme colors, mode fill still competed with
+  Buy and Sell.
+- **Final rule**: Keep the six semantic modes in the plot background at 8 percent,
+  with crisp internal boundaries and a mask only at the outer edges. Do not add a
+  separate mode rail. Buy is the 2px primary line with a restrained area fill;
+  Sell is a 1.5px secondary line. Emphasize only the active 15-minute column
+  during hover. Keep the user-approved legend structure unchanged.
+- **Prevention**: Assert the background colors and 8-percent opacity, crisp
+  `filter:none`, plot edge mask, Buy area, line hierarchy, price summary and
+  hover-column mode. Also assert that the legend's text and DOM order have not
+  changed and that no mode rail is rendered.
+
+### A changed source file does not prove the user’s tab has changed
+
+- **Symptom**: The latest ToU title class existed in the working tree and rendered
+  correctly in an isolated verification tab, but the user’s actual preview tab
+  still showed the older DOM and reported that the change had not landed.
+- **Root cause**: The long-lived preview tab had stale CSS/JS/DOM. Testing a fresh
+  tab or running the page suite proves the implementation, not that the user is
+  looking at it.
+- **Final rule**: Visual completion requires checking the user’s actual preview
+  tab. Confirm that the new semantic class, token, computed layout or behavior is
+  present there; if absent, reload that tab and re-enter the target page before
+  reporting completion.
+- **Prevention**: Record evidence from the actual tab, including the new class or
+  computed style and a fresh screenshot. Do not use “source changed” or “test tab
+  passed” as a substitute.
+
+## 2026-11-24 编辑字段状态与动效契约
+
+### 共享字段动效不能依赖页面类名清单
+
+- **现象**：数字字段和 Wi-Fi 字段样式一致，但新增 Wi-Fi 字段的 hover 背景瞬时变化；在 `motion.css` 补上 `.isw-wifi-field` 后症状消失，下一次新增字段仍可能再次遗漏。
+- **根因**：字段表面状态由 `edit-field.css` 和页面 CSS 维护，过渡规则却由 `foundations/motion.css` 手工枚举 `.isw-number / .isw-mini-number / .isw-wifi-field` 等页面类名。新增变体需要跨文件人工登记，测试又只验证 hover 的最终颜色，不能发现“有样式、无中间帧”。
+- **最终规则**：所有 `.wd-edit-field` 直接继承同一 `380ms` disclosure 契约；`motion.css` 不得再维护页面字段白名单。字段颜色通过共享自定义属性提供，基础、hover、focus、invalid、disabled、深浅主题和 Select 触发器共用同一状态矩阵。字段内输入、Select 当前值、占位文字、箭头和单位也继承同一节奏。默认 outline 固定为 `1px solid transparent`，focus 只动画颜色，避免轮廓样式从无到有造成突变。
+- **验收**：用真实 Chromium 同时挂载直接输入、复合输入和 Select 字段；断言 computed transition 包含背景、边框、阴影和 outline，hover / leave / focus 在中间时刻的颜色既不同于起点也不同于终点，Select 箭头透明度也经过中间值；浅深主题、placeholder、invalid、disabled 与 reduced-motion 均走同一基线。专项命令为 `npm run audit:motion`。
+
+### 固定 toast top 不能跟随变化的页面标题高度
+
+- **现象**：toast 的水平位置正确，但数据页标题行高度调整后，toast 中心比当前面包屑中心低约 `3px`，路由回归失败。
+- **根因**：CSS 仍以固定 `top:70px` 和 toast 自身高度推算中心，页面标题却由实际 28px 行盒与 header 内距决定；两者一旦变化就不再同轴。
+- **最终规则**：toast 显示后先排除隐藏的旧页面标题，再读取当前可见 `.wd-page-breadcrumb-current` 的真实 rect，以 `titleCenter - toastHeight / 2` 写入 `top`；没有页面标题时移除内联 `top` 并回落到共享默认值。toast 重开、滚动和视口变化都重新定位。
+- **验收**：toast 与当前可见标题中心误差小于 `1.5px`，书签重排、键盘焦点和历史页面隐藏标题均不影响结果。
+
+### toast 入场不能淡 Glass 宿主，退场不能让文字先走
+
+- **现象**：toast 第一次出现时文字和圆角轮廓已经可见，但背景先透明，下一帧才有高斯模糊；Inverter settings 中因叠层背景已经模糊，看起来反而不明显。
+- **根因**：首版入场对整个 `.wd-glass` 宿主做 `0 → 1` opacity，且首次显示同帧才挂载材质，导致开头一帧没有有效 backdrop 采样。只修入场后，又把退场拆成“文字单独淡出、玻璃保持不透明到隐藏”，于是出现文字先消失、空玻璃随后消失。
+- **最终规则**：`createPopoverController()` 创建时预挂载静态 Glass Surface。入场时宿主始终 `opacity:1`，只淡 `.wd-toast-text` 并做 `4px` 下落；退场时宿主和文字必须作为完整 toast 同步 `opacity:1 → 0` 并上浮 `4px`，禁止文字单独先退或只改 fill。所有页面与 Inverter settings 共用同一个 `#toast`，上下内距固定 `8px`，不得页面覆盖。
+- **验收**：toast 仍隐藏时材质与 blur 已存在；入场宿主无 opacity 关键帧、文字独立 `0 → 1`；退场只有一个宿主动画，同时含 opacity `1 → 0` 和上浮 `4px`，且没有额外文字退场动画。
+
+### 可写设置不能推导设备生效值
+
+- **现象**：顶部状态和 Currently effective 能显示看似合理的限功率、限制来源和弃光量，但这些值来自 Setpoint、Export limit 和电池能力的本地计算，设备实际上报值可能不同。
+- **根因**：把“配置期望值”当成“设备最终生效值”，并用前端公式补全缺失 telemetry，导致云端展示无法证明来源。
+- **最终规则**：`ActivePower_Effective_Limit`、`ActivePower_Limit_Source`、`ActivePower_PV_Curtailed` 三个 RO 点只展示设备上报值；Setpoint、Export limit、电池能力或 PV 可用量变化不得触发本地重算。点位缺失显示 unavailable，不提供计算 fallback。
+- **验收**：模型级测试修改 Setpoint 后，三个 RO 值保持不变；telemetry 不可用时三个值均为 null / unavailable；DOM 的顶部状态和 Effective chain 都带对应 `data-isw-point`。
+
+### Firmware-pending 候选值不能升级成生产枚举
+
+- **现象**：`Output_Capability_Mode` 在 preview 已有 `Rated / Overload / Underload` 控件，容易被后续实现误认为数值枚举、点位地址和发布条件已经确认。
+- **最终规则**：这些只是候选文案；契约必须保留 `availability:"pending-firmware"`，在固件给出确认前不得固化数值映射或宣称已接入。
+- **验收**：点位契约测试显式断言候选值和 pending 状态；文档与 COPY audit 同时保留未决边界。
+
+### 分类值不能套用数值进度条，也不能换行成两条
+
+- **现象**：Effective chain 的 `Limit source` 被放在数值行第三列，右侧 `Battery charging` 被 `108px` 列宽挤成两行；若为了“填满”中间区域而加一条空横线，又会像值为零或数据缺失。
+- **根因**：分类状态与数值幅度共用了同一行几何，但二者语义不同。
+- **最终规则**：Currently effective 只显示三个 RO 值并按“结果 → 原因 → 弃光”排序；Limit source 使用独立的两列文本行，不绘制空进度轨，右侧使用状态点 + 单行源标签并与其他数值保持同一条右缘。
+- **验收**：Source 行无 `.isw-chain-track`，computed `white-space:nowrap`，单行高度不超过行高加 `1px`，右缘与数值列误差不超过 `1px`。
+
+## 2026-11-23 SOC 双端、刻度与玻璃浮窗
+
+### 双端范围不应被实现成不可交叉的 min/max
+
+- **现象**：拖动起点超过终点时手柄被挡回，无法自然交换 Start / End；用户还要求两端在同一位置时给出错误。
+- **最终规则**：轨道点击选择距离最近的端点；拖动允许两端重合和交叉。提交时按数值排序，较小值自动成为 Start、较大值成为 End。只有两者相等才是错误，不能继续返回旧 `lower ≤ upper` 校验错误。数值输入反向也按同一规则排序。
+- **验收**：点击轨道后最近端点到达点击值；拖到另一端时显示相等错误；继续越过另一端后错误清除、字段和手柄角色自动交换，Save 只在相等时被阻止。
+
+### 六等分网格不能给百分比刻度定位
+
+- **现象**：`20%` 刻度落在约 `25%` 的视觉位置，和值为 20 的手柄对不上。
+- **根因**：`repeat(6, 1fr)` 的每个文字盒中心分别落在约 `8.3% / 25% / 41.7%...`，不是 `0 / 20 / 40...`。
+- **最终规则**：刻度文字绝对定位到真实百分比坐标；首尾标签分别以左、右缘贴齐轨道，中间标签以中心对齐。文字使用 `12px` Labels/Secondary，卡片底部留白保持紧凑。
+- **验收**：逐项比较 label 锚点与 `track.left + track.width * index / 5`；中间项中心误差不超过 `1px`，首尾分别对齐轨道左右缘。
+
+### Glass tooltip 有 blur 计算值却没有真实模糊
+
+- **现象**：小浮窗入场时先看到文字和轮廓，背后文字仍未模糊；只调整 opacity 或延后正文仍会复现。
+- **根因**：浮窗继承了共享 `.wd-glass` 的 `isolation:isolate`，浏览器不会采样浮窗外部的 backdrop；同时过渡 `backdrop-filter` 会让模糊层在合成阶段滞后。
+- **最终规则**：需要真实透明模糊的 Glass Surface 显式用匹配特异性覆盖为 `isolation:auto`。模糊层直接到终态，不对 `backdrop-filter` 做 transition；正文可延后 `70ms` 进入，退出时正文先退、材质与模糊延后 `70ms` 退场。浮窗由端点 hover / leave 控制，拖拽期间保持，绝对覆盖且不占卡片高度。
+- **验收**：确认 computed isolation 为 `auto`；冻结动画第 50ms 时只能看到玻璃和真实背景模糊、正文透明，约 100ms 后正文出现；退出时正文先消失、材质随后退场。不能只断言 CSS 文本里存在 `blur()`。
 
 ## 2026-11-20 设置页与共享交互回归
 
@@ -149,6 +343,13 @@
 - **现象**：switch 滑块和 segmented 胶囊有时直接跳到终点；旧 DOM 在动画首帧前被移除。
 - **最终规则**：依赖内容立即更新，但消费页面必须在重绘前保留同一控件节点，并把它重新挂回新 DOM；不能延迟业务内容等待动画结束。switch 滑块用 `600ms` soft-spring、轨道 `480ms`；segmented 复用 `600ms`，标签垂直偏移固定 `0px`。同卡条件行随内容即时更新，卡片用 `280ms` content-grow 从旧高度过渡；页面切换使用同步 `260ms` 互补交叉淡变。
 - **禁止**：替换正在运动的控件 DOM、条件卡固定高度后硬跳、页面 `±3px` 方向位移、缩放/模糊、长距离滑动、两页同时清晰或旧页仍可交互。
+
+### 模式局部内容切换不能重建整页
+
+- **现象**：Shadow scan 从 Individual 切回 All 时，旧长内容先停顿，随后整页换成短内容并跳到底部；分段胶囊动画和底部回落无法连续观察。
+- **根因**：模式点击虽然只改变一个局部区域，却触发整页 `renderPage()`，销毁并重新 hydrate 所有开关、分段、选择器和时间标签；主线程被重绘占满，首帧被推后。
+- **最终规则**：允许的两种模式在同一页面预渲染，切换只原位显示目标区域、把旧区域设为 `hidden` / `inert`，再交给共享 bottom-scroll guard 从旧底边平滑跟随。页面、无关卡片和分段控件必须保持同一 DOM；滚动跟随使用 `--wd-ease-content-settle`，不与快速起步的 content-grow 共用。
+- **预防**：局部模式、筛选或显隐切换不得为了改变一段子内容而整页重建；专项同时断言内容切换、首帧不夹底、滚动单调和周围节点身份不变。
 
 ### Grid 门禁与二级导航泄漏
 

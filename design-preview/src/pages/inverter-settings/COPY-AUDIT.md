@@ -1,6 +1,6 @@
 # Inverter settings copy audit
 
-Updated: 2026-11-20
+Updated: 2026-11-24
 
 This file is the review and change record for user-facing copy in Inverter
 settings. It separates approved changes from items that still need a product
@@ -22,12 +22,16 @@ is intentionally limited to copy history and open wording decisions.
 | MPPT labels | `String input`, `PV1–PV4`, `MPPT parallel` | `MPPT Input`, `MPPT #1–#4`, `Parallel MPPT Operation` | Align parameter labels with live WattDesk |
 | MPPT audit copy | `PV1 input`, `PV2 input`, `PV3 input` | `MPPT #1 input`, `MPPT #2 input`, `MPPT #3 input` | Keep the operation log consistent with the renamed fields |
 | Export date | `17.11.2026` | `2026/11/17` | Use the site-wide absolute date format |
+| Effective headline | `Grid-tied point now` | `Effective active-power limit` | The value is a device-reported limit, not a measured instantaneous power |
+| Effective source | Locally inferred label such as `Battery power capability` | Device-reported `Limit source` value | Keep the copy aligned with `ActivePower_Limit_Source` |
+| Effective footer | Local calculation explanation | `Values are reported by the inverter.` | Make the telemetry boundary explicit |
 | Running mode persistence | Concatenated `" mode"` after labels | Leaves existing `Mode`/`mode` suffixes untouched | Prevent labels such as `General Mode mode` |
 | Initial running mode | Settings always opened on `General` while the device row said `ToU mode` | Settings starts from the device record's current mode; saving another page no longer rewrites the device mode | Keep the settings window and device summary in sync |
 | Command timeout | Minimum `1 s` | Minimum `0 s` | `0` means no timeout in the source integration contract |
 | Power-factor validation | Fixed PF and curve PF accepted only `0.1–1` | Fixed PF and curve PF accept `-1–1` | Source profiles contain valid negative, under-excited values |
 | Check code mask | Six dots for every code | Mask length follows the actual code length | The field is a four-digit production value |
 | Operation Log on Save | Normal setting changes were not logged | One Save creates one audit entry with every changed field and its before/after value; unchanged fields are omitted | Make the existing "every change" claim materially true in the local preview |
+| ToU navigation | No dedicated ToU pages | Two `ToU Mode` entries between `Economic Schedule` and `Battery`, with trailing `Manual / Dynamic` | The user requested two visible styling entries before sidebar eligibility logic |
 
 The shared time utility now exposes `formatAbsoluteDate()` for visible
 date-only values. Relative and absolute timestamps continue to use the existing
@@ -47,6 +51,107 @@ seven-day rule and `YYYY/MM/DD HH:mm` format.
 The existing project term `Import & Export Limits` is retained; the 1120
 prototype still uses the older `Feed-in & Import Limits` wording.
 
+## 2026-11-23 Battery configuration copy
+
+| Surface | Final copy | Reason |
+|---|---|---|
+| Topology | `Parallel Battery Operation` | Matches the supplied battery setting reference |
+| Topology hint | `Operate both connected batteries as one bank. Turn it off to configure each battery separately` | Explains both the combined state and how to reach independent settings |
+| Brand row | `Battery Brand` | Matches the supplied reference and remains shared by both bank cards |
+| Current rows | `Max. Charge Current`, `Max. Discharge Current` | Preserve the source labels and distinguish the two electrical limits |
+| SOC cards | `Grid-tied SOC`, `Off-grid SOC` | Replace the older charge-cut-off/discharge-floor model with explicit upper/lower ranges |
+| SOC hints | `Operating range while connected to the grid.`, `Operating range during an outage.` | Keep each range's operating context visible without switching to modal help |
+| Heating | `Keep Battery Warm`, `Keep Battery #1 Warm`, `Keep Battery #2 Warm` | Use one common label in single/parallel mode and explicit bank labels when split |
+| Split headings | `Battery #1`, `Battery #2` | Make the target of every bank-specific control unambiguous |
+| Parallel master warning | `Battery Parallel Mode is enabled. The system cannot detect which battery string is active. Please verify the battery power and communication cable connections to ensure proper configuration.` | Explain the unresolved master-communication battery and the required hardware check without changing the normal single-panel configuration |
+
+The SOC model is one global range pair for the device:
+`battery.soc.gridMin/gridMax/offMin/offMax`. It intentionally does **not**
+split with Battery #1 / #2, even when parallel operation is off. Only battery
+brand, maximum currents and heating follow the input topology. The old labels
+`Charge cut-off SOC`, `Grid-tied discharge floor` and `Off-grid discharge
+floor` are removed from both runtime controls and sample Operation Log data.
+
+The 2026-11-23 follow-up also standardizes `Battery Brand` to the `128px`
+numeric-field width and changes the two SOC endpoints to shared Glass Surface
+handles whose centres align with the blue range fill. The endpoint dots are
+removed, the line is `4px` at rest and `8px` on hover/focus, and the resting
+endpoints are `16px`. Drag renders continuously and reports the nearest whole
+percentage with no integer or ten-point magnetic snap. Keyboard movement
+remains one point. The empty track is neutral grey. Only the 16px endpoint and
+a 24px transparent band around
+the line activate hover thickening; the full card does not. The endpoints use a
+spring glass scale and stronger local glass edge/highlight variables so the
+small disks read as material rather than flat fills. Hovering anywhere on the
+track enlarges both disks, and release settles through the shared 420ms spring.
+Hovering or keyboard-focusing a disk shows a following `SOC <n>%` Glass Surface chip above it.
+The chip is an absolute content-layer overlay, does not add card height, stays
+2–4px from the handle, and uses the shared `wd-glass--surface wd-glass-popup`
+material rather than a page-local plate. It opens on endpoint hover and closes
+on leave; drag keeps it visible. Material and blur are ready immediately and
+text follows after 70ms, with the order reversed on exit. The glass
+host must stay `isolation:auto` so the backdrop blur is actually sampled.
+Track clicks move the nearest endpoint. Endpoints may cross; after commit the
+smaller value becomes Start. Equal endpoints show `Start and end SOC limits
+must be different.`. Tick copy uses `12px` secondary ink at true percentage
+positions, with a compact card tail.
+Consecutive cards in one settings group now use half the standard card gap.
+
+The parallel-master warning is conditional: it appears only while parallel mode
+is enabled and the master communication battery cannot be resolved. In that
+state, Battery Brand, Max. Charge Current and Max. Discharge Current are hidden;
+the switch, warning, SOC and heating remain. The normal known-master and
+parallel-off states keep the standard configuration without the warning.
+
+## 2026-11-23 Backup Output safety copy
+
+| Surface | Final copy | Reason |
+|---|---|---|
+| Device Features row | `Backup Output` | Matches the supplied setting name and capitalization |
+| Row hint | `Controls energy output from the backup port. Stop the inverter before changing this setting` | States the controlled output and the prerequisite directly in the page |
+| Disable notice title | `Cannot Disable Backup Output` | Matches the supplied safety state |
+| Disable notice body | `The inverter is currently running. To ensure system safety, the inverter must be stopped before turning off the Backup Output.` | Preserves the supplied shutdown requirement |
+| Enable notice title | `Cannot Enable Backup Output` | Matches the supplied safety state |
+| Enable notice body | `To safely activate Backup Output, the inverter must be stopped and the backup load must be confirmed to be within the nameplate's rated power range with secure connections.` | Preserves the shutdown, rated-load and secure-connection checks |
+| Notice action | `OK` | Acknowledgement-only safety notice; it does not offer a bypass action |
+
+## 2026-11-23 Parallel MPPT copy
+
+| Surface | Final copy | Reason |
+|---|---|---|
+| Row hint | `Shares input current across MPPT channels for more energy from parallel PV strings.` | Keeps the explanation under the title and shortens it to the standard row-hint format |
+| Group label | `MPPT Group N` | Uses the supplied group naming |
+| Group select | `Select MPPT` / `MPPT #1 & #2` | Uses the Scan interval Adaptive Select trigger with a compact placeholder and reopens for editing |
+| Add action | `Add MPPT group` | Accessible name for the supplied round plus action |
+| Group menu | `Delete group` | Describes the direct removal action with the shared danger menu state |
+| Empty-group error | `At least one MPPT Group must be created` | Preserves the supplied validation wording |
+
+## 2026-11-23 ToU copy
+
+- Dynamic ToU uses the live `24h Overview` title; its `Buy Price / Sell Price`
+  line keys are separate from the plan-mode dots.
+- Both sidebar entries are `ToU Mode`; the small right-side values are `Manual`
+  and `Dynamic`.
+- Manual and Dynamic share `24h Overview`, `Advanced Settings`,
+  `Schedule periods`, `Time range`, `Mode`, `Battery power limit`,
+  `PV forbidden`, `Cancel` and `Save`.
+- Manual submodes: `General Mode / Grid Injection / PV Charging /
+  Battery Charge / Battery Discharge / Peak Shifting`.
+- Dynamic controls follow the online labels: `Manual Mode / Duration Control /
+  Percentage Control / Fixed Price Control / Intelligent Mode`.
+- Control Mode menu descriptions use the short forms `Set modes and time ranges
+  manually`, `Schedule by high and low price duration`, `Trigger by daily
+  price-range percentages`, `Trigger at fixed price thresholds` and
+  `Cloud-optimized from usage habits`.
+- `Intelligent Mode` copy states that the cloud evaluates each period, chooses
+  its mode and power settings, and sends the complete schedule to the device.
+- Dynamic rows keep the online `Delete` action.
+- `High Price Hours / Low Price Hours` and the `%` unit are retained for
+  Percentage Control because the online UI is the confirmed conflict source.
+| Shadow scan modes | `All MPPTs Control` / `Individual Control` | Matches the supplied mode names |
+| Shadow scan mode hint | `All MPPTs Control applies the same scan setting to every MPPT. Individual Control configures each present MPPT separately.` | Keeps the control-mode purpose under the title |
+| Individual toggle | `Enable Shadow Scan` | Matches the supplied per-MPPT control |
+
 ## Still open
 
 These items were reviewed but were not approved for this change set.
@@ -54,12 +159,9 @@ These items were reviewed but were not approved for this change set.
 | Item | Current state | Decision still needed |
 |---|---|---|
 | Power-control feature name | `EMS dispatch` and `Active Power Dispatch` remain in use | Choose a single canonical product term and whether the page should match live `Professional Settings` |
-| Grid connection point term | `Grid-tied point now` remains in the local status window | Confirm, rename or remove the local-only status strip |
 | Operation log claim | Export copy still says every change includes an operator and timestamp | Decide whether demo identities must be labelled as sample data |
-| Illustrative telemetry | `Grid support (F-P) inactive`, `PV curtailed 4.8 kW` and battery values remain fixed demo states | Decide whether these need a Preview marker |
-| Navigation inventory | Runtime has 15 primary pages and 8 grid subpages | Reconcile documentation and product scope with live 10 primary pages and 7 grid subpages |
+| Navigation inventory | Runtime has 17 primary pages and 8 grid subpages, including Manual and Dynamic ToU | Reconcile documentation and product scope with live 10 primary pages and 7 grid subpages |
 | Demo-only pages | `Parameter Export`, `CT Detection` and `Operation Log` have no direct live menu entry | Confirm product scope and truthful preview boundaries |
-| Battery limit wording | `Battery power capability` and `Limited by battery charging` coexist | Decide whether charge/discharge-specific labels should replace the generic chain label |
 | Grid subpage names | `Grid Connection`, `Reactive Power`, `Frequency-Watt (F-P)` do not match live `Grid Connection Manager`, `Reactive Power Management`, `Frequency-Watt Control(F-P)` | Confirm whether live product naming should be adopted |
 | Grid profile inventory | Local and live both contain 18 entries but different regional variants and order | Confirm the authoritative profile catalog before renaming or replacing data |
 | Live page structure | Live separates `Economic Mode`, `Economic Time Settings`, `Battery Management`, `Professional Settings`, `Shadow Scan` and `Other Settings` | Confirm whether the current grouped prototype should retain its different information architecture |
