@@ -18,7 +18,7 @@
 - `Output_Capability_Mode` 的候选值为 `Rated / Overload / Underload`，但是否正式新增、数值枚举和发布条件仍待固件确认，不能把当前 preview 当成生产契约。
 - 顶部状态和 `Currently effective` 的最终功率限值、限制来源和 PV 弃光只显示设备上报的 RO 点，不由云端自行推导。
 - 生效值对应的三个点固定为 `ActivePower_Effective_Limit`、`ActivePower_Limit_Source`、`ActivePower_PV_Curtailed`；点位缺失时显示不可用，不使用本地公式回退。
-- Effective chain 只显示三个设备 RO 值，顺序固定为 `Effective power limit → Limit source → PV curtailed`；不再重复上方 Dispatch setpoint。`Limit source` 不加中间比例横线，右侧源标签必须单行显示，以状态点 + 文本跨过轨道区右对齐。
+- Effective chain 只显示三个设备 RO 值，顺序固定为 `Effective power limit → Limit source → PV curtailed`；不再重复上方 Dispatch setpoint。`Limit source` 不加中间比例横线，右侧源标签必须单行显示，以状态点 + 文本跨过轨道区右对齐。卡片到下方说明必须使用共享 note gap，不能显得过远。
 
 ## 2026-11-23 ToU Mode Manual / Dynamic
 

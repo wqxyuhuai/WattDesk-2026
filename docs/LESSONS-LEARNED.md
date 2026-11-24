@@ -169,10 +169,10 @@
 
 ### 分类值不能套用数值进度条，也不能换行成两条
 
-- **现象**：Effective chain 的 `Limit source` 被放在数值行第三列，右侧 `Battery charging` 被 `108px` 列宽挤成两行；若为了“填满”中间区域而加一条空横线，又会像值为零或数据缺失。
-- **根因**：分类状态与数值幅度共用了同一行几何，但二者语义不同。
-- **最终规则**：Currently effective 只显示三个 RO 值并按“结果 → 原因 → 弃光”排序；Limit source 使用独立的两列文本行，不绘制空进度轨，右侧使用状态点 + 单行源标签并与其他数值保持同一条右缘。
-- **验收**：Source 行无 `.isw-chain-track`，computed `white-space:nowrap`，单行高度不超过行高加 `1px`，右缘与数值列误差不超过 `1px`。
+- **现象**：Effective chain 的 `Limit source` 被放在数值行第三列，右侧 `Battery charging` 被 `108px` 列宽挤成两行；若为了“填满”中间区域而加一条空横线，又会像值为零或数据缺失。调整后卡片说明又因 `-12px` 私有 margin 与卡片相距约 `18px`。
+- **根因**：分类状态与数值幅度共用了同一行几何，但二者语义不同；卡后说明也使用了局部负 margin，而不是共享 note gap。
+- **最终规则**：Currently effective 只显示三个 RO 值并按“结果 → 原因 → 弃光”排序；Limit source 使用独立的两列文本行，不绘制空进度轨，右侧使用状态点 + 单行源标签并与其他数值保持同一条右缘。卡片到说明的距离由 `calc(var(--isw-note-gap) - var(--isw-card-gap))` 计算。
+- **验收**：Source 行无 `.isw-chain-track`，computed `white-space:nowrap`，单行高度不超过行高加 `1px`，右缘与数值列误差不超过 `1px`；卡片和说明的实际净距为共享 `10px`。
 
 ## 2026-11-23 SOC 双端、刻度与玻璃浮窗
 

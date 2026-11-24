@@ -2054,16 +2054,15 @@ body:has(.inverter-settings-dialog) #toast {
 
 .isw-chain-foot {
   max-width: 640px;
-  margin: -12px var(--isw-card-inset) var(--isw-card-gap);
+  margin:
+    calc(var(--isw-note-gap) - var(--isw-card-gap))
+    var(--isw-card-inset)
+    var(--isw-card-gap);
   color: var(--wd-label-secondary);
   font-size: var(--isw-type-caption-size);
   font-weight: var(--isw-type-caption-weight);
   line-height: var(--isw-type-reading-leading);
   letter-spacing: var(--isw-type-caption-tracking);
-}
-
-.isw-chain-foot--tight {
-  margin-top: -14px;
 }
 
 .isw-soc-panel {

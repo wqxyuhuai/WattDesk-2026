@@ -3888,6 +3888,7 @@ const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
       return {
         footLeft:foot.left-firstCard.left,
         footRight:firstCard.right-foot.right,
+        cardToFootGap:foot.top-firstCard.bottom,
         noteLeft:noteBox.left-lastCard.left,
         noteRight:lastCard.right-noteBox.right,
         noteColor:noteStyle.color,
@@ -3896,6 +3897,7 @@ const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
       };
     });
     assert.ok(Math.abs(supportingCopy.footLeft-24)<=1&&Math.abs(supportingCopy.footRight-24)<=1,"supporting copy aligns to the card content-safe width");
+    assert.ok(Math.abs(supportingCopy.cardToFootGap-10)<=1,"supporting copy uses the shared 10px card-to-note gap");
     assert.ok(Math.abs(supportingCopy.noteLeft-24)<=1&&Math.abs(supportingCopy.noteRight-24)<=1,"info notes stay inside the card content-safe width");
     assert.equal(supportingCopy.emphasis.length,2,"the limits note renders both emphasized terms");
     assert.ok(supportingCopy.emphasis.every(item=>item.fontSize===supportingCopy.noteFontSize),"emphasized terms keep the sentence font size");
@@ -4793,6 +4795,7 @@ const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
       const firstCard=page.querySelector(".isw-panel").getBoundingClientRect();
       const titleText=range.getBoundingClientRect();
       const chain=page.querySelector(".isw-effective-chain");
+      const foot=page.querySelector(".isw-chain-foot").getBoundingClientRect();
       const chainStyle=getComputedStyle(chain);
       const rows=[...chain.querySelectorAll(".isw-chain-row")];
       const first=rows[0].getBoundingClientRect();
@@ -4825,6 +4828,7 @@ const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
         chainPaddingTop:chainStyle.paddingTop,
         chainPaddingBottom:chainStyle.paddingBottom,
         chainPaddingLeft:chainStyle.paddingLeft,
+        cardToFootGap:foot.top-chain.getBoundingClientRect().bottom,
         rowPitch:second.top-first.top,
         rowHeight:first.height,
         rowPitches:rowBoxes.slice(1).map((box,index)=>box.top-rowBoxes[index].top),
@@ -4874,8 +4878,8 @@ const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
     assert.equal(dispatchLayout.rowDividerHeight,"0px");
     assert.equal(dispatchLayout.rowDividerBorderWidth,"1px");
     assert.equal(dispatchLayout.rowDividerRight,"-24px");
-    assert.ok(Math.abs(dispatchLayout.dividerGapAbove-dispatchLayout.normalTextGap)<=1,"divider keeps the same text gap above it");
-    assert.ok(Math.abs(dispatchLayout.dividerGapBelow-dispatchLayout.normalTextGap)<=1,"divider keeps the same text gap below it");
+    assert.ok(Math.abs(dispatchLayout.dividerGapAbove-dispatchLayout.dividerGapBelow)<=1,"the primary-row divider keeps equal text gaps above and below");
+    assert.ok(Math.abs(dispatchLayout.cardToFootGap-10)<=1,"the reported-values note uses the shared 10px card-to-note gap");
     assert.ok(dispatchLayout.typeStyles.every(style=>JSON.stringify(style)===JSON.stringify(dispatchLayout.typeStyles[0])),"all effective chain labels and values share one text style");
     assert.deepEqual(dispatchLayout.typeStyles[0],dispatchLayout.commandType,"effective chain typography matches the Command timeout row exactly");
     assert.deepEqual({size:dispatchLayout.typeStyles[0].size,weight:dispatchLayout.typeStyles[0].weight,lineHeight:dispatchLayout.typeStyles[0].lineHeight},{size:"14px",weight:510,lineHeight:"18px"},"effective chain text uses the shared 14/14 medium style");

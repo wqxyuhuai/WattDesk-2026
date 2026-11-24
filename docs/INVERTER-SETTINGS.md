@@ -340,6 +340,9 @@ Inverter 的业务枚举只属于该页面，放在 `settings-options.js`，不�
   不得换行破坏行高。顶部主标题使用
   `Effective active-power limit`，不得再写成容易被理解为实时功率的
   `Grid-tied point now`。
+- Effective chain 卡片到说明文字的净距使用共享 `--isw-note-gap`，当前为
+  `10px`；实现通过 `calc(var(--isw-note-gap) - var(--isw-card-gap))` 抵消卡片
+  默认底部间距，不得以 `-12px` 一类私有偏移猜测。
 - Export/Import 术语固定为 `Import & Export Limits`、`Export limit`、
   `Import limit`，不再使用 `Feed-in`。
 - `Limit basis` 只作用于 Export limit，不控制 Import limit。数据字段固定为

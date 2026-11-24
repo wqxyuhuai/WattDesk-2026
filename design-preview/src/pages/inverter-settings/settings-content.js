@@ -121,7 +121,7 @@ function pageLimits(model){
   ${limits.feedOn?row("Limit value","",num("limits.feed",limits.feed,"kW",.5),true):""}
   ${basis.show?row("Limit basis",basis.hint,seg("limits.basis",basis.options,limits.basis),true):""}
  </section>
- <div class="isw-chain-foot isw-chain-foot--tight">This limit is never exceeded, including while the Frequency-Watt (F-P) function is active. Set it to match the site's cable and breaker rating.</div>
+ <div class="isw-chain-foot">This limit is never exceeded, including while the Frequency-Watt (F-P) function is active. Set it to match the site's cable and breaker rating.</div>
  ${basis.showNote?note("Per-phase limiting requires firmware with per-phase closed-loop control. On models with balanced three-phase output, the lightest-loaded phase caps total output, which can increase PV curtailment. Use it only when required by the grid operator or meter."):""}
  <h3 class="isw-group-title">Grid-tied point · import</h3>
  <section class="isw-panel">
