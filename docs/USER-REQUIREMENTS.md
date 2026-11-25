@@ -1,6 +1,140 @@
 # 用户明确要求与修正记录
 
-更新：2026-11-24。保存当前有效要求，避免新对话恢复被否定的旧方案。全站共享参数见 [设计规范](../DESIGN-SYSTEM.md)，Inverter settings 的完整页面契约见 [逆变器设置页面契约](./INVERTER-SETTINGS.md)；后续明确反馈优先，并替换冲突条目。
+更新：2026-11-25。保存当前有效要求，避免新对话恢复被否定的旧方案。全站共享参数见 [设计规范](../DESIGN-SYSTEM.md)，Inverter settings 的完整页面契约见 [逆变器设置页面契约](./INVERTER-SETTINGS.md)；后续明确反馈优先，并替换冲突条目。
+
+## 2026-11-25 固定标题分隔线粗细
+
+- 初始化页面固定标题背景下方的横线必须与下方卡片行分隔线同粗细、同颜色；不得在非整数显示缩放下看起来更粗。
+
+## 2026-11-25 设置页滚动跟手
+
+- 设置页滚动必须以浏览器原生滚动为主，不能因为共享回弹或滚动条监听让滚轮输入等待主线程；普通滚动和页面边界都不得通过 `preventDefault()` 吞掉 wheel。
+- 到达顶部或底部后，第一格滚轮就应有约 `3–4px` 的可见回弹反馈，不能再连续滚很多格几乎不动。
+- 正文与左侧导航使用同一套滚动体验；滚动不得穿透到外层页面。
+- 后续共享页面同样保持 passive 滚轮与 `overscroll-behavior:contain`；只有覆盖在视口上的视觉轨道可以消费滚轮。
+
+## 2026-11-25 初始化完成对勾锐度
+
+- 左侧已完成步骤的圆形对勾在深色下不能发糊或出现锯齿；使用 16px 整数像素 SVG 盒适配当前显示缩放，不能靠加粗或过度放大掩盖。
+
+## 2026-11-25 初始化深色导航与接线插画
+
+- 未到达、不可点击的初始化步骤，左侧图标必须与文字一样清楚；不能沿用共享 disabled 的过淡 Quaternary 色。
+- Battery / MPPT 接线卡在深色模式下必须与同页其他设置卡使用相同底色、描边和阴影，不得保留单独白色卡面。
+- 接线插画不要用白色矩形垫底；白色背景应透明，使图片直接落在卡片材质上，同时保留设备产品本身的白色面。
+
+## 2026-11-25 初始化与设置共享逻辑优化
+
+- 完成页倒计时到 `0` 自动关闭，同时用户可以随时点击 `Close (3s)` 立即关闭；两者都是有效退出方式。
+- 同类设置必须优先复用现有共享规则，不继续维护初始化页专属业务分支。计划校验、排序、时间轴分段和 Economic Discharge 的电池上网确认统一进入 `schedule-editor.js`；电池字段契约进入 `battery-editor.js`；Grid profile 状态与过滤进入 `grid-profile-editor.js`。
+- MPPT 开启并联但没有至少一个有效分组时，初始化流程必须阻止 `Next`，错误由 MPPT 分组组件原位显示。
+- Economic / ToU 计划为空时，`Add at least one schedule period.` 必须显示在计划表内部，不使用页首错误条。
+- Power limits 同时包含 `Import Permissions` 与 `Export Permissions`；Export 从 `Solar and Battery` 切到禁止电池上网且 Economic Mode 存在 Discharge 时段时必须确认。取消、Escape、遮罩关闭都保持旧值，只有 Continue 才提交。
+- Battery 配置包含 `BMS Communication` 与 `Battery Protocol`，协议字段宽度与 Battery Brand 对齐为 `128px`；关闭 BMS Communication 时协议保持可见但不可编辑。
+- Running Mode 必须保留显式点位值映射 `General 0 / Peak Load Shifting 1 / Economic 2 / UPS 3 / ToU 4 / Off-Grid 6`；Forecast Mode 当前不展示，不能把 Off-Grid 错写成 `5`。
+- 设置和初始化必须共用同一份选项、日志标签、字段校验和确认分支，不允许后续只修其中一页。
+
+## 2026-11-25 Grid Connection 输入右对齐
+
+- `Reconnection delay` 与 `Start-up delay` 等 Grid Connection mini 数字字段不能只把字段盒放到右侧；字段内部的数值和单位也必须整体贴右。
+- 该页所有同类 mini 数字字段统一 `flex-end` 布局与右对齐文本，避免只修两个截图位置造成其它字段继续左起。
+
+## 2026-11-25 深色共享按钮高光
+
+- 深色模式下的蓝色 primary 与红色 `danger-solid` 默认高光不能消失，也不能回到过亮白团；当前最终参数为 rim `0.38 / 0.24`、inner `0.21 / 0.11`、optical `0.15 / 0.075`。
+- 深色按钮 hover / 键盘 focus 必须在默认高光基础上继续增强共享 hover 光场与内侧边缘，内发光要明显高于默认态，但不能洗白按钮主体。
+- 用户已确认当前深色默认与 hover 效果；浅色参数保持原样。Inverter settings 的 `Save` 与 `Discard Changes` 只能消费共享实现，页面不得局部覆盖。
+
+## 2026-11-25 初始化页面双机型预览
+
+- 需要两个可直接查看的初始化页面链接，分别覆盖 20 kW 和 50 kW 系列。
+- 20 kW：4 路 MPPT、1 路电池，同样提供 MPPT 并联与分组设置。
+- 50 kW：4 路 MPPT、2 路电池。
+- Battery 与 MPPT 接线插画按机型系列切换，不能由当前 MPPT 数量或电池并联
+  开关反推；使用用户提供的 20 kW LCD 与 50 kW 无屏系列素材。
+- 当前先交付本地独立预览，不伪造真实设备初始化或 `Device_Init_Flag` 写入。
+- 顶部只保留 `Parameter Setup Wizard` 标题，删除 `Initialization`、说明文案和
+  右侧机型摘要；header 不画底部分隔线。
+- 左侧步骤轨必须复用 Inverter settings 的导航行样式，行高与 36px 设置导航一致，
+  选中态使用两侧半圆的连续胶囊；右侧内容区复用设置页的主面板、固定标题层、
+  滚动模糊、正文留白、内层圆角和底部操作栏。
+- 删除底部 `Step N of M` 进度文案；`Back / Next / Apply` 使用设置页同一按钮
+  尺寸和居中布局。步骤切换不得让整个设置窗发生位移或抖动。
+- 保留右上角关闭按钮；未来步骤仍不可点击，但文字和图标必须保持清晰可读，
+  不通过整体降低 opacity 表达不可用。
+- Grid code 搜索必须使用站点共享搜索框，不再使用普通编辑字段；删除该页
+  搜索框上方的重复说明和 `Certified grid profile` 标题。
+- 右侧内容滚动后，固定标题下方显示与 Inverter settings 相同的 1px 分割线
+  和标题背景模糊。
+- Profile 与 Running mode 的选中标记必须使用共享 check-circle 对勾图标，
+  不能使用圆点。内容面板和底部操作栏的四个下角必须被面板圆角完整裁切，
+  不得露出直角。
+- 搜索框默认图标为次级灰色，hover / focus 才到主文字色；搜索框整体复用共享
+  Glass 的 hover 放大与 press 按压反馈。
+- 导航步骤右侧不再显示数字。Battery、MPPT、Limits、Running mode 与 Schedule
+  的页面头部说明删除，后续内容直接使用 Inverter settings 的页面、group title、
+  panel、row、form 和间距；不得再出现外层卡包内层卡。
+- MPPT 与 Economic / ToU schedule 的表单直接采用设置页共享结构。20 kW 与
+  50 kW 都提供 4 路 MPPT 和并行分组设置。
+- 初始化页不允许再维护缩水版 MPPT 分组、ToU 时间或行操作。MPPT 必须直接
+  复用设置页的双选分组弹层、占用禁用、加组和危险删除组；Economic / ToU 必须
+  复用 24h Overview、功率信息、时间范围、圆形加号、删除、自动排序和行内错误。
+- 计划时间输入在点击 `Next` 前必须先提交；非法或重叠的时间范围只能停留在
+  当前计划行内报错，不能因为旧模型仍有效而离开当前步骤或执行 Apply。
+- 顶部标题和底部按钮栏滚动时必须保留真实高斯模糊；设置窗四个下角由同一个
+  圆角容器裁切，不得用局部直角或 `clip-path` 破坏 blur。
+- 点击 Grid Code 档案只能替换现有列表，不得在下方再追加一组搜索框和档案。
+  MPPT 来源分段控件按内容宽度显示，不能被固定宽度撑出多余右侧留白。
+- 删除独立 `Review` 页面和侧栏入口；General 模式由 Running mode 直接 Apply，
+  Economic / ToU 由计划页直接 Apply。完成状态按用户截图重做，不显示左上
+  `Initialization Complete` 标题、机型说明、本地模拟长文案或白色底矩形；只显示
+  居中的黑色圆形对勾、`Initialization Complete`、
+  `Your inverter has been successfully configured and started.` 和默认共享玻璃
+  `Close (3s)` 倒计时按钮。对勾图标保留黑色圆底，不叠加白色圆环或倒影；文字
+  字号略增并整体上移，底部操作栏删除分隔线，按钮位置上移。最终再收紧为
+  `52px` 图标，并把顶部内容向下回调一点；深色模式不得出现内容区顶部内描边。
+- 计划表错误文字必须紧贴对应时间字段的左下方；不能横跨整行后再右对齐到
+  远离该字段的位置。
+- 初始化页标题到首个分组内容的空白缩小为原设置页基准的一半。
+- Battery / MPPT 插画卡与普通设置卡同宽、同左缘，并直接复用 `.isw-panel`
+  的当前主题表面、描边和阴影；不得因 `<figure>` 默认外边距产生偏移。
+- MPPT Tracker 必须是设置页同构的一张卡：标题、说明、开关、所有 MPPT Group
+  和加号都在同一 `isw-panel` 内，开关与标题首行居中对齐。
+- 切换步骤必须清除上一页滚动位置，新步骤从顶部开始；同页局部更新仍保留位置。
+- 初始化侧栏右侧空白略收窄，每行之间增加参考设置页的间距；尚未到达步骤
+  必须保持可读，不能使用过淡的次级色。
+- Battery / MPPT 插画本身不得保留白色矩形底；白底 JPG 必须转换为透明 PNG，
+  图片直接透出卡片材质，同时保留产品自身轮廓内部的白色面。
+- Battery parallel、Import / Export limits、MPPT parallel 等开关控制的区域
+  都必须复用共享内容生长动画，不能瞬时显隐。
+- 内容区和操作栏下角不得露出直角。
+- 初始化左侧步骤切换必须复用 Inverter settings 的共享页面 crossfade，不得
+  使用无转场的直接替换。
+- ToU 表的 `PV forbidden` 开关要和同列表头左对齐。
+
+## 2026-11-25 IPS Check
+
+- `Grid & Protection` 下新增意大利 `IT CEI 0-21` 的 `IPS Check` 自检页面；其他 Grid Code 不显示该入口。
+- 选择意大利但尚未保存时入口可见但不可点击，悬停提示先保存 Grid Code；保存后才允许进入。
+- `IPS_Selfcheck_Require=1` 时，未通过自检的入口使用红色强调；每次打开设置窗都要提示逆变器必须先通过 IPS Check 才能并网。
+- 自检页显示整体运行状态和八项保护结果；检查中禁止重复触发，失败时明确禁止并网，离线状态优先于所有结果。
+- 自检记录按完成时间展示，并可从 `IPS Check Record` 查看八项结果。
+- 删除 `Last self-check / Click to view the last self-check record.` 说明行；`IPS Check Record` 按钮放到页面标题行右侧。
+- 意大利预览下必须继续展示全部 Grid 二级页，不能只剩 Grid Code 与 IPS Check；IPS Check 固定在最后。
+- IPS 自检记录弹窗必须沿用设置页的结果卡、分组和八项卡片视觉，使用共享滚动反馈，不显示原生滚动条。
+- `IPS Check Record` 的滚动视口必须铺到弹窗底边，不能出现卡片下方的固定空带；轨道单独保留安全 inset，内容尾部单独保留最后一次底部留白。滚到最底时最后两张卡完整可见，轨道与滑块不得越过弹窗圆角，窄屏也不能因分组标题横向 margin 产生左右滚动。
+- 本轮目的是先完成可评审的本地 IPS 功能与组件样式，不伪造真实固件写入、认证参数或云端持久化。
+
+## 2026-11-25 Adaptive Select states
+
+- Economic Schedule 与 ToU 计划行的 Mode Select 在深色模式下 hover 必须有清晰且与共享组件一致的填充、描边和阴影变化；按下与展开态不能停留在 hover 外观。
+- 深色阴影使用中性黑色，不得继续呈现发白的灰色阴影。
+- 浅色模式原有交互配色正确，不应跟随本次深色修正改变。
+
+## 2026-11-25 Circular check rendering
+
+- Settings 内所有圆形选中对勾（Running Mode、Grid Profile、MPPT picker、Select option 和 Battery option）不得出现发毛或锯齿边缘。
+- 对勾图标必须只经过一次 SVG mask 抗锯齿；移除选中元素自身的圆形裁切、边框和内阴影。
 
 ## 2026-11-24 共享样式与动效优化
 
@@ -33,13 +167,13 @@
 - ToU 删除菜单和确认按钮使用共享危险操作红色主题，确认按钮 hover 后文字必须保持白色。
 - ToU 表格继续收紧中间列留白，`PV forbidden` 与行操作保持在右侧；`Add time range` 所在行上方必须有与表格行一致的分隔线，加号与行尾更多按钮右缘对齐。
 - 当 Time Interval 为 `1 h` 时，开始/结束分钟都固定为静态 `00`，不可滚动、不可产生滚轮动画；`30 mins / 15 mins` 才提供对应的分钟滚动选项。
-- `danger-solid` 红色按钮即使未 hover 也必须保留可见的白色顶部/底部 rim、inner highlight 和 optical highlight，不能被纯红实底压成无玻璃质感。
+- 浅色模式下，`danger-solid` 红色按钮即使未 hover 也必须保留可见的白色顶部/底部 rim、inner highlight 和 optical highlight，不能被纯红实底压成无玻璃质感；深色模式只减淡、不能清零，仍需保留克制的白色 inner / optical 发光。
 - ToU 删除确认后必须真实减少时间段，不能立即以 General Mode 空档自动补回；全部删空时也保持空计划，直到用户新增时间段或 Cancel 回滚。
 - `15 mins / 30 mins` 的分钟轮必须只包含各自允许的一次值列表，不能复制多组循环后通过回中跳转；滚动、吸附、选中值和输入预览需连续一致。
 - ToU 时间段必须校验同一时间、反序时间、步长、重叠与 24 段上限；有效时间段按开始时间升序排列，非法行在对应行下方显示错误并由 Save 再次拦截。
 - `PV forbidden` 表头必须保持单行，不能因列宽不足换成两行。
-- `danger-solid` 的内高光和光学高光需要比上一版更明显，默认态即可看出玻璃层次，不依赖 hover。
-- 蓝色 primary 实底按钮与红色 `danger-solid` 使用同级默认 rim、内高光和光学高光，不能只有红色按钮有玻璃层次。
+- 浅色 `danger-solid` 的内高光和光学高光需要比上一版更明显，默认态即可看出玻璃层次，不依赖 hover；深色不沿用这组高亮值。
+- 蓝色 primary 与红色 `danger-solid` 必须使用同一套按主题分流的 rim、内高光和光学高光；浅色高亮、深色默认可见且 hover / 键盘 focus 再增强内发光，不能只有红色按钮有玻璃层次。
 - ToU 行内错误不得按每次输入或滚动值累积；同一字段只显示一条当前错误，错误横跨时间与模式两列并保持单行，避免把表格撑得过高。
 - ToU 时间段卡片的左右内容内距必须一致并增大到 `24px`；时间字段可以在 `136px` 左右收窄，但完整时间值不能截断。
 - Battery power limit 与 PV forbidden 开关之间必须保留清晰净距，kW 文字不能与开关靠在一起。

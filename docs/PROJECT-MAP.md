@@ -1,6 +1,6 @@
 # WattDesk 项目地图与交接索引
 
-更新：2026-11-24。
+更新：2026-11-25。
 
 本文是新对话的项目总索引，只汇总稳定边界、共享标准和维护入口，不复制
 `DESIGN-SYSTEM.md` 的完整视觉参数。需要执行具体改动时，仍以根目录
@@ -22,15 +22,16 @@
 
 历史计划放在 `docs/history/`，只用于理解背景，不能覆盖当前规范。`CHANGELOG.md`
 保留逐日过程记录；当前有效规则以本索引指向的规范文件为准。
-`docs/PROJECT-STATUS.md` 顶部的 **2026-11-24 当前规则归档（最高优先级）**
-是最近一次实现收口；`docs/USER-REQUIREMENTS.md` 顶部的 2026-11-24 条目
-记录最新用户要求，2026-11-23 的 ToU、Battery、MPPT、Reset、Wi-Fi 等规则与
-2026-11-19 / 2026-11-20 基线继续作为功能与视觉基础。按日期保留的更早条目只用于
-追溯；冲突时以 2026-11-24 总表、当前设计规范、专项页面规格和已验证代码为准。
+`docs/PROJECT-STATUS.md` 顶部的 2026-11-25 当前状态是最近一次实现收口；
+`docs/USER-REQUIREMENTS.md` 顶部的 2026-11-25 条目记录最新用户要求。
+2026-11-24 总表仍是完整规则基线，2026-11-23 的 ToU、Battery、MPPT、Reset、
+Wi-Fi 等规则与 2026-11-19 / 2026-11-20 条目继续作为功能与视觉基础。按日期保留的
+更早条目只用于追溯；冲突时以 2026-11-25 增量、2026-11-24 总表、当前设计规范、
+专项页面规格和已验证代码为准。
 
-2026-11-24 的归档只基于当前可访问的对话记录、当前工作树 diff、运行代码、
-专项测试和现有文档。无法直接访问的并行对话不补写、不推断；文档中的“待确认”
-项必须继续视为未决，直到用户或后端给出明确结论。
+归档只基于当前可访问的对话记录、当前工作树 diff、运行代码、专项测试和现有文档。
+无法直接访问的并行对话不补写、不推断；文档中的“待确认”项必须继续视为未决，
+直到用户或后端给出明确结论。
 
 ## 当前产品边界
 
@@ -40,9 +41,10 @@
 | `/plants` | 已完成本地交互预览 | 46 条样例、筛选并集、列显隐、排序、收藏、滚动反馈 |
 | `/plants/:id` | 已完成 Overview 本地交互预览 | 默认进入第一台设备；多设备可切并同步 `?device=`；Statistics 支持 `Day / Month / Year / Total` 与月/年 `Separate / Combined`，数据为确定性本地样例 |
 | `/plants/:id/devices` | 已完成本地交互预览 | Linear 式扁平设备行、命名、新增、替换、解绑和设置预览；真实后端与硬件控制未接入 |
-| `/plants/:id/devices/inverter-settings` | 已完成本地交互预览 | route-backed 逆变器设置窗口；5 组导航、17 个主页面入口（含 Manual / Dynamic 两个 `ToU Mode`）、18 个国别档案、Check code 门禁、维护页、本地会话保存、1120 `Limit basis`，以及单/双电池拓扑、并联、共享 SOC、加热配置；完整有效契约见 [INVERTER-SETTINGS.md](./INVERTER-SETTINGS.md) |
+| `/plants/:id/devices/inverter-settings` | 已完成本地交互预览 | route-backed 逆变器设置窗口；5 组导航、17 个主页面入口（含 Manual / Dynamic 两个 `ToU Mode`）、18 个国别档案、Check code 门禁、意大利条件页 `IPS Check`、维护页、本地会话保存、1120 `Limit basis`、BMS / Protocol、Import / Export Permissions，以及单/双电池拓扑、并联、共享 SOC、加热配置；完整有效契约见 [INVERTER-SETTINGS.md](./INVERTER-SETTINGS.md) |
 | ToU Manual / Dynamic | 已完成本地交互预览 | [ToU 功能契约](./TOU-MODE-SETTINGS.md) 已确认并实现双入口、手动计划、动态电价、五种控制模式、Intelligent 云端决策、费用与生成计划；暂不实现侧栏资格隐藏及真实后端下发 |
 | `https://inverter.carlwang.cn/` → `/settings` | 已发布独立预览 | 仅显示 `p25` 第一台逆变器设置；独立 Worker 白名单代理，不允许访问其他 WattDesk 页面；默认浅色，底部 `32px` 主题按钮，复用同一页面代码 |
+| Initialization · 20 / 50 kW | 已完成本地独立预览 | `/setup/20kw` 使用 4 MPPT + 单电池，`/setup/50kw` 使用 4 MPPT + 双电池；两端都支持 MPPT 并联与分组，共用五步初始化、条件计划、最后设置页直接 Apply 和本地模拟完成页；无独立 Review，Battery / MPPT 插画按系列使用透明 PNG 并复用设置卡表面 |
 | `/plants/:id/site` | 隐藏兼容路由 | 旧资料页仅保留直达链接和回归兼容，不在详情页签中显示 |
 | `/plants/:id/site-v2` | 当前 Site details 页面 | 详情页签显示为 `Site details`；顶部 Hero、Mapbox、Energy / Installer / Owner / Picture / Visitor 卡，支持会话内编辑。规格见 [SITE-DETAILS.md](./SITE-DETAILS.md) |
 | `/plants/:id/faults|logs|tickets` | 子页占位 | Operations 三卡当前标签内进入；三层面包屑、刷新与历史可用，详细内容后续实现 |
@@ -176,13 +178,22 @@ git diff --check
 ```
 
 `npm test` 只在用户明确要求完整回归、或共享基础发生跨页面高风险变更时执行；
-日常页面改动使用对应专项，避免重复运行全部 25 套 Playwright。共享字段、动效
+日常页面改动使用对应专项，避免重复运行全部 Playwright 套件。共享字段、动效
 宿主或状态矩阵变化先运行 `npm run audit:motion`。
 
 `npm run check` 同时验证 JavaScript 语法、必读文档是否存在，以及页面是否重新
 引入本地 `text()` / 时间格式化、旧 `.wd-date-action` 兼容类或局部 transition。
 视觉共享改动还需真实 Chrome 截图和计算样式检查；有固定基线时运行
 `npm run test:visual`，不能为了消除失败直接覆盖基线。
+
+## 2026-11-25 Native scroll 优化前快照
+
+- 快照：
+  `E:\OneDrive\Design files sync\AI\Proj. WattDesk\Backups\WattDesk-before-native-scroll-20261125-153341.zip`
+- SHA-256：
+  `C5F6572A4C3170DCFF66128BBAD999A42F8608F57A4D7554B9526812C6C449F7`
+- 8,161,669 bytes；保存修改前全部工作树源码、文档、测试、设计源和运行资产，
+  排除 `.git`、`node_modules`、构建产物、测试输出和日志。
 
 ## 2026-11-23 1120 Limit basis 实施前快照
 

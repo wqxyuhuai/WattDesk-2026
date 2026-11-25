@@ -1,5 +1,82 @@
 # 更新记录
 
+## 2026-11-25
+
+- Matched the initialization and Inverter settings fixed-title divider to card-row separators by switching it from a `height:1px` background to the same `border-top:1px solid var(--wd-separator-nonopaque)` paint geometry; non-integer DPR no longer makes the title line look thicker.
+- Completed the final 2026-11-25 rules archive pass from the accessible conversation, current worktree diff, implementation and tests. Promoted the rounded-panel scroll contract — viewport to the inner edge, rail inset separate from content tail, no double bottom band — while preserving the final IPS, check-mark, Adaptive Select, button, initialization and shared-editor decisions. This archival pass changes documentation only.
+- Completed the 2026-11-25 rules archive using the accessible conversation, working-tree diff, runtime code, tests and existing project documents. Promoted native-first scrolling, the final dark button optics, Adaptive Select states, circular-check rendering, confirmation rollback, initialization routing/shared editors, BMS and permission fields, transparent wiring assets and completion-page behavior into the canonical rule files; corrected stale Review, white-card, 14px-mask and fully-transparent-inner-glow descriptions. The archive records the passing component, Plants, routing and Inverter settings suites; this archive pass changes documentation only.
+- Made shared wheel scrolling native-first: scroll viewports now use passive listeners plus `overscroll-behavior:contain`, while Inverter settings uses a lighter `1.5 / .08` boundary-feedback threshold so the first wheel step is visible without blocking native input. Shared component, Plants, routing and Inverter settings regressions pass.
+- Fixed the `IPS Check Record` scroll bounds: the scroll viewport now reaches the modal's bottom edge, while the rail and content separately use the same `22px` inset. This removes the fixed empty band in the initial state and still keeps the final protection-card row fully visible at the bottom. The narrow group title no longer creates horizontal overflow, and the IPS regression checks desktop and narrow rail/card geometry.
+- Replaced the initialization step-completion CSS mask with a 16px inline `currentColor` SVG using the same supplied check-circle path and `shape-rendering="geometricPrecision"`; the integer CSS box maps to whole device pixels at the current display scale and removes visible circle-edge softness in dark mode.
+- Fixed the fuzzy and jagged circular check marks used by Running Mode, Grid profiles, MPPT selection and shared Select options. Both check assets now use one even-odd negative-space path, and selected marks no longer stack an element border radius or inset ring over the SVG mask.
+- Corrected the initialization dark-theme review: unavailable future-step icons now use the same readable `72%` primary ink as their labels instead of the shared disabled quaternary colour.
+- Removed the white private surface from Battery / MPPT wiring cards so they reuse the same `.isw-panel` fill and shadow as adjacent setting cards; the four supplied wiring illustrations are converted to transparent PNGs using edge-connected background removal, preserving white areas enclosed by product outlines.
+- Added `scripts/make-initialization-illustrations-transparent.py` and updated the setup source manifest with both original-source and runtime PNG hashes/bytes. The obsolete JPG runtime copies were removed; the external supplied originals remain the source of record.
+- Fixed Adaptive Select hover, press and expanded feedback in dark mode for Economic Schedule and ToU rows: stronger neutral fill and border plus a neutral-black contact shadow. The previously approved light-mode interaction colours were restored unchanged.
+- Hardened the initialization and Inverter settings shared logic without changing the approved visual layout: completion now closes automatically after the visible three-second countdown and the shared glass button can close it immediately.
+- Extracted schedule validation, start-time sorting, timeline segments and the Economic Discharge battery-export confirmation into `schedule-editor.js`; setup and settings now consume the same rules instead of maintaining separate branches.
+- Extracted battery field/entry/validation definitions into `battery-editor.js` and Grid profile normalization/filtering into `grid-profile-editor.js`, so setup and settings consume the same field contracts and profile states.
+- Added BMS Communication, Battery Protocol, Import Permissions and Export Permissions to both setup and settings, including the BMS-to-protocol lock, Economic Discharge confirmation, conditional field visibility, readable Operation Log labels and 128px Battery Protocol geometry.
+- Added explicit Running Mode wire-value metadata `[0, 1, 2, 3, 4, 6]`; Off-Grid remains value `6` while Forecast Mode is not implemented.
+- Shared confirmation dialogs now route Escape, backdrop or other unresolved dismissal through `onCancel`, so export-permission rollback also works when the user dismisses instead of pressing Cancel.
+- Extended initialization and settings regressions for MPPT-empty blocking, empty-plan inline errors, permission confirmation cancel/Escape/Continue, Battery Protocol width, mode wire values and setup completion auto-close.
+- Scoped the shared primary / `danger-solid` white rim, inner and optical highlights to the light theme. Dark buttons use a brighter default `0.38 / 0.24` rim, `0.21 / 0.11` inner and `0.15 / 0.075` optical highlights, with an additional hover/focus glow field and inner edge response; the component regression asserts both blue and red buttons share the idle and hover optics. The final dark idle and hover states were accepted by the user on 2026-11-25.
+- Aligned every mini numeric field on Grid Connection to the right: the fields remain `128 × 36px` at the row edge, while `justify-content:flex-end` and right-aligned input text keep each value and unit together at the field's right edge.
+- Added two route-backed initialization previews: both use four MPPT inputs and parallel grouping; `/setup/20kw` has one battery path while `/setup/50kw` has two.
+- Added the parameter-setup wizard shell, five fixed commissioning steps, a conditional Economic / ToU schedule step, review and local success state. The flow reuses shared buttons, switches, selects, segmented controls, time-range control, scrolling and Glass Surface.
+- Added model-specific Battery and MPPT wiring illustrations from the supplied 20 kW LCD and 50 kW no-screen artwork, with an explicit variant mapping and source manifest.
+- Added `tests/verify-initialization.cjs` covering both routes, hardware-specific counts, conditional schedule insertion, review/apply, images, light theme and narrow layout.
+- Tightened the wizard against browser annotations: removed the redundant header kicker, description, model summary, divider and step counter; restored `Parameter Setup Wizard`; reused the settings sidebar, fixed title layer, main-panel surface and centered action bar; and added a regression assertion that step changes keep the dialog rectangle stable.
+- Completed the second initialization annotation pass: restored the top-right close action, kept unavailable steps readable while non-interactive, adopted the shared search field, removed the Grid duplicate headings, enabled the scrolled title blur/divider, switched selected markers to check-circle and clipped the lower content corners.
+- Unified the remaining initialization pages on the Inverter settings page,
+  group, panel, row, segmented and schedule-form contracts; removed page intros,
+  nested Battery cards and step-number trailing values; enabled the shared search
+  hover/press motion; and corrected both 20 kW and 50 kW to four MPPT inputs with
+  parallel grouping.
+- Extracted the parallel MPPT picker and group lifecycle into the shared
+  `components/mppt-group-editor.js`; Inverter settings and both setup previews
+  now use the same two-channel picker, disabled-claim state, add action and
+  danger group deletion behavior.
+- Restored the setup Economic / ToU schedule to the settings interaction model:
+  `24h Overview`, power information, circular add action, danger row deletion,
+  start-time ordering, mode-dependent power/PV visibility and row-level
+  validation. A pending edited range is committed before `Next` so an invalid
+  draft cannot silently advance.
+- Verified the setup title/action Gaussian blur and rounded dialog frame in a
+  real scrolled browser state, removed the duplicate Grid profile-list bug and
+  kept the MPPT source segmented control content-sized.
+- Expanded `tests/verify-initialization.cjs` for single-list Grid selection,
+  shared MPPT grouping, Running Mode growth, schedule add/delete/sort/error
+  behavior, backdrop blur and the unchanged settings-page MPPT consumer.
+- Completed the next annotation pass: removed the standalone Review step so the
+  last settings page owns Apply; rebuilt completion as the supplied centered
+  success screen with a `Close (3s)` countdown; moved schedule errors directly
+  under their time fields; consolidated MPPT switch, hint and groups into one
+  settings card; aligned the switch with its title; halved setup title spacing;
+  and made both wiring illustrations full-width shared card surfaces.
+- Finalized the initialization review: reset step scrolling to the top, trimmed
+  the rail gutter, added row spacing and stronger future-step ink, made wiring
+  cards use the white shared surface, added shared content-growth motion to all
+  conditional switch regions, rounded the action-bar bottom corners, and
+  simplified completion to a check-only icon, raised content and the default
+  shared close button without a white inner panel.
+- Completed the final completion-page and navigation pass: restored the black
+  circular check icon without reflection, enlarged and raised the copy, removed
+  the action divider and blur band, moved the default shared glass countdown
+  action upward, aligned the ToU PV switch with its header, and extracted the
+  settings crossfade into `components/settings-page-transition.js` for reuse by
+  both the full settings page and the setup wizard.
+- Removed the dark completion page's inner top outline, reduced the circular
+  check to `52px`, and nudged the finished content slightly downward while
+  retaining the raised glass action button.
+- Added the Italy CEI 0-21 `IPS Check` secondary page under `Grid & Protection`. The entry is hidden for other grid codes, disabled with save guidance while Italy is an unsaved draft, and enabled after saving.
+- Added required-check emphasis and the settings-open reminder driven by `IPS_Selfcheck_Require`, with device offline taking priority over all self-check states.
+- Added the IPS operation card, eight protection-result cards, shared progress/result states, and the `IPS Check Record` modal. The local run simulates `Italy_SelfTest_Enable` and keeps results transient rather than dirtying normal settings.
+- Exposed `IT CEI 0-21` as a clearly labelled local `Preview only` profile so the IPS UI can be reviewed without copying another country's certified protection values.
+- Removed the standalone last-check hint, moved `IPS Check Record` into the fixed title row, kept every Grid secondary page visible for the Italy preview with IPS Check last, and rebuilt the record modal around the same summary/card/group/scroll language as the settings page.
+- Standardized the `IPS` mark in both the operation card and record summary to neutral secondary grey instead of blue.
+- Added `tests/verify-ips-check.cjs` and updated the Inverter settings contract, functional audit, copy audit, and current-status handoff.
+
 ## 2026-11-24
 
 - Reworked the Dynamic ToU chart hierarchy: Buy uses a 2px primary step line with a restrained area fill, Sell uses a 1.5px secondary line, the six semantic modes return to the plot background at 8 percent without a separate rail, compact lowest/peak Buy summaries sit above the plot, and hover adds a 16 percent active-mode column tint with the Glass tooltip but no vertical dashed guide. The `24h Overview` heading is now 13px, and the summary aligns to its text edge with a tighter 16-18px gap. The user-annotated legend structure remains unchanged. Rollback archives were created at `Backups/WattDesk-before-tou-chart-redesign-20261124-171242.zip` and `Backups/WattDesk-before-tou-mode-background-20261124-172410.zip`.

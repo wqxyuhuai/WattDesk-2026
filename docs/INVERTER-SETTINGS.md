@@ -1,6 +1,6 @@
 # Inverter settings 唯一页面契约
 
-更新：2026-11-24
+更新：2026-11-25
 
 本文是 Inverter settings 的有效规则入口。页面视觉、交互、状态、组件选择和
 防回归要求只在这里维护；其他文档如出现更旧的实现细节，以本文、当前运行代码
@@ -47,14 +47,79 @@
   更新后代理会自动读取最新页面；只有代理允许路径、域名或 Worker 逻辑变化时才
   需要重新部署独立 Worker。
 - 页面以 route-backed 设置窗口呈现，刷新、复制链接、浏览器前进/后退有效。
+
+### 初始化预览入口
+
+- `/setup/20kw` 打开 20 kW 系列的本地初始化预览：`4 MPPT / 1 battery path`；
+  MPPT 并联与分组能力与 50 kW 一致。
+- `/setup/50kw` 打开 50 kW 系列的本地初始化预览：`4 MPPT / 2 battery paths`。
+- 两个入口复用 `initialization.js` / `.css` 的同一向导，仅通过明确的设备系列
+  夹具切换能力、默认值和插画；不得按额定功率字符串、当前 MPPT 开关或电池
+  并联状态猜系列。
+- 固定步骤为 Grid code、Battery、MPPT input、Power limits、Running mode；
+  Economic / ToU 模式会条件增加 schedule 步骤。没有独立 Review 页面，最后
+  一个设置页的底部主按钮直接变为 `Apply`。
+- Battery 与 MPPT 插画分别由系列映射：20 kW 使用 LCD 系列，50 kW 使用无屏
+  系列。素材来源与哈希见
+  `design/inverter-settings/setup-illustrations-source.json`。
+- 两个初始化入口与设置页共用 `components/mppt-group-editor.js`。并行 MPPT
+  开启后使用同一双选弹层、已占用输入禁用、剩余两路直接补全、`+` 加组和
+  危险 `Delete group` 菜单；不得在向导内维护另一套分组逻辑。
+- Tracker 区域必须是一张共享 `.isw-panel` 卡：`Parallel MPPT Operation`
+  的标题、说明、开关与所有 MPPT Group 行同处一张卡，组区只通过共享 1px
+  分隔线与开关行分开；开关中心与标题首行中心误差不超过 `2px`。
+- Economic / ToU setup 使用设置页的同一表头、5 分钟至 1 小时时间范围控件、
+  `24h Overview`、功率信息、圆形加号与危险行删除。模式不支持电池功率或 PV
+  禁止时显示对应空列；有效计划按开始时间排序，非法计划和重叠计划在对应行内
+  显示一条错误。点击 `Next` 前先提交未离开字段的时间草稿，错误状态不得跳步。
+- 初始化 ToU 表的 `PV forbidden` 开关左缘必须与同列表头文字左缘对齐，不能
+  再继承设置页为其它上下文预留的 `16px` 左缩进。
+- 初始化页的顶部标题和底部操作层保留设置页的实时 Gaussian blur；四角由
+  dialog frame / content pane 的圆角容器统一裁切，不使用会切断
+  `backdrop-filter` 的 `clip-path`。Grid 档案切换必须整体重绘，不能追加第二份
+  profile list。
+- 每次切换初始化步骤都从新页面 `scrollTop = 0` 开始；同一页内部的字段提交
+  或局部重绘保留当前位置。Grid code 滚到底后进入 Battery 等下一页时，不得
+  继承上一页滚动。
+- 初始化左侧步骤切换直接复用
+  `components/settings-page-transition.js` 的设置页 crossfade：旧页面保留固定
+  视觉快照淡出，新页面和固定标题同步淡入，再移除快照；不得只做硬切。
+- 初始化侧栏在设置的 `36px` 行高基础上使用 `276px` 栏宽、行间 `4px`；
+  尚未到达步骤使用主文字色 `72%` 的 ink，而不是弱化的次级 token；步骤图标
+  必须与标签使用同一 ink，不能继承共享 disabled 的 Quaternary 图标色。
+- 已完成步骤的 16px check-circle 对勾必须使用内联 SVG 与
+  `shape-rendering="geometricPrecision"` 直接绘制，填充 `currentColor`；
+  小尺寸下不得把完整圆形路径作为 CSS mask 栅格化，避免边缘锯齿。
+- 开关驱动的条件区域统一使用共享 `animateContentHeight()` 的内容生长节奏，
+  包括 Battery parallel、Import / Export limits 与 MPPT parallel groups；
+  不得用瞬时 `hidden` 切换让内容硬跳。
+- 初始化页标题到首个内容分组的垂直间距为设置页基准的一半，当前
+  `--isw-title-gap: 9px`。Battery / MPPT 插画必须与普通设置卡同宽、左缘对齐，
+  直接复用 `.isw-panel` 的表面、描边和阴影，不保留浏览器 `<figure>` 默认
+  外边距或第二套材质。插画运行资产使用边缘连通白底清除后的透明 PNG，使卡面
+  在深浅主题直接透出，同时保留设备产品轮廓内部的白色面。
+- 当前只是首装流程的本地交互预览；`Apply & start system` 不写入设备、
+  `Device_Init_Flag` 或生产后端。完成后不显示单独标题层、机型说明或 Review
+  列表，只保留截图式居中成功态和 `Close (3s)` 倒计时；本地模拟边界通过短暂
+  toast 说明。倒计时归零后自动关闭；共享玻璃按钮始终可点击并立即关闭。
+- 成功态隐藏导航和左上标题，移除内容区白色矩形与阴影，内容铺满外层窗口并在
+  水平/垂直方向居中后整体上移，再按最终批注回调 `20px`。图标使用设置页共享
+  `icons/settings/check-circle.svg`，保留黑色圆形底与负形对勾，但不叠加白色
+  圆环、倒影或外阴影，尺寸为 `52px`。深色完成态必须隐藏
+  `.wd-main-panel::after` 的内描边，不得在顶部出现一条线。标题使用
+  `Title3/Emphasized`（20px），正文使用
+  `Subheadline/Regular`（15px）。底部操作栏删除分割线与独立 blur，按钮使用
+  默认共享中性 Glass 按钮 `Close (3s)` 并向上微调；倒计时结束自动关闭，
+  不等同于强制等待。
 - 主页面共 17 个：Running Mode、Economic Schedule、ToU Mode（Manual）、
   ToU Mode（Dynamic）、Battery、
   Active Power Dispatch、Import & Export Limits、Output Capability、DI Port、
   Grid & Protection、Networking、Device Features、MPPT & Strings、
   CT Detection、Operation Control、Parameter Export、Operation Log。
-- Grid & Protection 共 8 个二级页：Grid Code、Protection Limits、
-  Grid Connection、Reactive Power、P(U) Characteristics、
-  Frequency-Watt (F-P)、LVRT、HVRT。
+- Grid & Protection 提供 8 个认证档案通用二级页：Grid Code、Protection
+  Limits、Grid Connection、Reactive Power、P(U) Characteristics、
+  Frequency-Watt (F-P)、LVRT、HVRT；选择 `IT CEI 0-21` 时
+  额外显示条件页 `IPS Check`。
 - Grid 参数缺失表示该 profile 不提供该功能，不得渲染成 0 或禁用字段。
 - 18 个国别档案的 key、顺序和值以原型内嵌数据为准；有参数档案可选择，路线图
   档案只显示 Grid Code 且不可选择。
@@ -74,6 +139,7 @@
 | 分段选择 | `createSegmentedControl()` | 少量互斥选项；键盘、移动胶囊、ResizeObserver 和中断续接由组件负责 |
 | 下拉选择 | `createSelectControl()` | 优先 `variant:"adaptive"`；页面只传选项、菜单宽度和回调 |
 | 浮层菜单 | `popover.js`、`menu-popover.js`、`menuEndAlign()` | 统一锚定、开合、玻璃、右侧偏移和关闭逻辑 |
+| MPPT 并联分组 | `components/mppt-group-editor.js` | 设置页与初始化向导共用的双选、占用校验、加组和危险删除交互 |
 | 编辑字段 | `.wd-edit-field`、`.isw-number`、`.isw-mini-number` | 字段尺寸和业务范围由页面声明，表面与状态层级由共享规则控制 |
 | 滚动 | `createScrollFeedback()`、`createBottomScrollGuard()` | 使用真实 content 节点；不添加原生滚动条或页面私有滑块 |
 | 时间 | `foundations/time.js`、`createTimeLabel()` | 相对时间、绝对时间、`<time datetime>` 和 `title` 共用 |
@@ -102,6 +168,16 @@
 Inverter 的业务枚举只属于该页面，放在 `settings-options.js`，不升级为全站枚举。
 只有同一枚举被第二个真实页面消费时，才评估迁入共享业务字典。
 
+跨设置页与初始化页复用的业务契约集中在页面级模块，不再各自复制：
+
+- `schedule-editor.js`：计划排序、范围/重叠/时长校验、24h timeline segment，
+  以及 Economic Discharge 对电池上网权限变更的确认条件；
+- `battery-editor.js`：电池拓扑条目、字段定义和 Battery Protocol / 电流校验；
+- `grid-profile-editor.js`：Grid profile 可选状态、状态文案和搜索过滤。
+
+表格和卡片 DOM 可以由页面装配，但上述判断、顺序、字段名称、日志值和确认条件
+只能来自这些共享模块。共享 `components/time-range-control.js` 继续负责时间交互。
+
 ## 页面布局
 
 - 桌面堆叠宽至 `1220px`，高至 `860px`；使用共享 Depth Reveal 背景。
@@ -129,6 +205,10 @@ Inverter 的业务枚举只属于该页面，放在 `settings-options.js`，不�
   这是全设置页统一规则，不得只为 SOC 写页面私有例外。
 - 固定标题层 `.isw-title-layer` 位于滚动和回弹节点之外。滚动与上下回弹只移动
   正文，标题、blur 和 `1px` 规则保持屏幕坐标。
+- 固定标题线使用与卡片行分隔线相同的
+  `border-top:1px solid var(--wd-separator-nonopaque)` 几何，不得用
+  `height:1px + background` 另行绘制；后者在 125% 等非整数 DPR 下会出现
+  标题线比行分隔线更粗的栅格化差异。
 - 上下窗层叠阴影写在非玻璃 `.isw-main-shell`：接触线
   `0 -1px 0 rgba(0,0,0,.06)`，衰减 `0 -10px 28px -10px`；浅色 `22%` 黑、
   深色 `34%` 黑。
@@ -168,6 +248,9 @@ Inverter 的业务枚举只属于该页面，放在 `settings-options.js`，不�
   `device.mode`，其他页面 Save 不得改写。
 - 选项：`General Mode / Peak Load Shifting Mode / Economic Mode / UPS Mode /
   ToU mode / Off-Grid Mode`。
+- 每个模式必须带显式 wire value：
+  `General 0 / Peak Load Shifting 1 / Economic 2 / UPS 3 / ToU 4 / Off-Grid 6`。
+  Forecast Mode 当前不展示，但不得因此把 Off-Grid 重排成 `5`。
 - 模式卡切换使用共享 `320ms` panel motion；高度可中断续接，说明只改变
   opacity，不叠加位移。
 - Battery 页面顺序固定为 `Battery configuration → State of charge →
@@ -178,6 +261,10 @@ Inverter 的业务枚举只属于该页面，放在 `settings-options.js`，不�
   `battery.common`；关闭并联后切换为独立的 `battery.bank1 / battery.bank2`，
   电池品牌、最大充/放电电流和两路加热必须同时拆分。SOC 是例外：不论单路、
   并联还是双路分置，都只使用一套共享 `battery.soc`，不得跟随电池输入拆分。
+- 每个可用电池输入提供 `BMS Communication` 与 `Battery Protocol`。关闭 BMS
+  Communication 时协议字段保持可见但禁用；Battery Protocol 使用与 Battery
+  Brand 相同的 `128px` 字段宽度。
+  协议选项当前仅为预览枚举，生产候选由后端元数据提供。
 - 双路硬件不支持并联时不显示并联开关，直接显示 Battery #1 / #2 两套设置；
   不能仅按机型名称推断能力。当前 `p25` 本地预览使用双路且支持并联的夹具。
 - `Parallel Battery Operation` 使用共享 `createToggleSwitch()`。切换后保留同一
@@ -251,6 +338,10 @@ Inverter 的业务枚举只属于该页面，放在 `settings-options.js`，不�
   12px 三级色箭头。
 - Mode 使用 `createSelectControl({variant:"adaptive"})`，其菜单宽 `280px`，
   使用 `Charge by PV Only`，并完整显示 `Charge by PV and Grid`。
+- Economic Schedule 与 ToU 的 Mode Select 共用 Adaptive Select 状态：深色
+  hover 必须有明确的 `15%` 填充、`26%` 描边与黑色接触阴影，按下 / 展开
+  使用 `20% / 46% / 36%`；浅色保持原有透明默认和 `Fills/Quaternary`
+  交互底色，不能沿用深色增强值。
 - 百分比输入值使用主文字色，换算后的 kW 辅助值使用 `Labels/Secondary`；两行
   同行展示，kW 不再使用更深的 status ink。
 - 空草稿显示 `--`、`-- %`、`-- kW`；只有 `--` 用 Labels/Quaternary，单位
@@ -345,10 +436,14 @@ Inverter 的业务枚举只属于该页面，放在 `settings-options.js`，不�
   默认底部间距，不得以 `-12px` 一类私有偏移猜测。
 - Export/Import 术语固定为 `Import & Export Limits`、`Export limit`、
   `Import limit`，不再使用 `Feed-in`。
+- Import / Export Permissions 固定为条件字段：只有对应 limit 开启时才显示。
+  Export 从 `Solar and Battery` 切换到 `Solar Only / Permanent Non Export`，
+  且 Running Mode 为 Economic、计划中存在 Discharge 时段时，必须先确认电池
+  能量不再上网；Cancel、Escape 和遮罩关闭都回滚旧值，Continue 才提交。
 - `Limit basis` 只作用于 Export limit，不控制 Import limit。数据字段固定为
   `limits.basis`：`0=Total`，`1=Per phase`。
 - 三相机型且 Export limit 开启时，在 Export limit 卡片内依次显示
-  `Export limit → Limit value → Limit basis`。单相机型隐藏整行；Export limit
+  `Export limit → Limit value → Export Permissions → Limit basis`。单相机型隐藏整行；Export limit
   关闭时隐藏但保留已选值，重新开启后恢复。
 - `Limit basis` 使用共享 `createSegmentedControl()`，选项为
   `Total / Per phase`，默认 `Total`。控件沿用共享 36px 高度、胶囊移动、
@@ -378,8 +473,15 @@ Inverter 的业务枚举只属于该页面，放在 `settings-options.js`，不�
   内收 `24px`。
 - 选择标记复用 Running Mode 的 `18px` check-circle / 空心圆。偏差状态只显示
   计数与说明，任何控件都不画橙色行首竖条。
+- 所有选中态圆形对勾使用单一 even-odd 负形路径，只经过一层 CSS mask；
+  选中后的 `border-radius`、边框与内阴影必须为 0 / none。不得把 CSS 圆形裁切
+  叠在 SVG mask 上，否则 18px 边缘会出现双重抗锯齿和发毛。
 - Protection Limits 使用安静 `12/400` 表头；行高至少 `48px`、上下 `6px`，
   mini 数值框最大 `112px` 并居中；前两列 `140px / 54px`。
+- Grid Connection 两个 Window 卡及 Start-up 卡内的 mini 数字字段统一
+  `128px × 36px`，字段盒贴所在行右缘；字段内部必须
+  `justify-content:flex-end`，数值 `text-align:right`，数值与单位作为整体
+  贴右，不能从字段左侧排列。
 - Reactive Power 控制模式七项固定为
   `Off / Fixed Q / Fixed cos φ / Q(U) / cos φ(P) / Q(P) / cos φ(U)`，
   使用 Adaptive Select，菜单 `220px`。
@@ -393,6 +495,59 @@ Inverter 的业务枚举只属于该页面，放在 `settings-options.js`，不�
   `18px`。Continue 使用共享 primary 按钮，保持整行宽和 `38px` 高。
 - 解锁时二级栏展开会改变内容宽度；门禁卡在退场期间补偿到解锁前屏幕中心，
   动画结束立即清理临时 transform。
+- `IT CEI 0-21` 的本地预览夹具可进入 `IPS Check`，但当前仍没有认证保护参数集：
+  Grid 页面不得从德国档案复制电压、频率或 ride-through 数值。预览入口明确显示
+  `Preview only`；生产接入时应先提供真实意大利档案，再开放标准选择。该预览状态
+  仍显示全部 Grid 二级页，不能只保留 Grid Code 与 IPS Check；IPS Check 固定为
+  最后一项，其他页进入各自的无档案空状态。
+
+### IPS Check（Italy CEI 0-21）
+
+- 入口只在当前 Grid Code 为 `IT CEI 0-21` 时出现，其他档案必须完全隐藏。
+  当前选择意大利但尚未 Save 时，入口可见、不可点击，hover / focus 显示
+  `Save the grid code to enable the IPS Check.`；保存后入口才可进入。
+- `IPS_Selfcheck_Require = 1` 时，未通过或未执行的自检入口使用危险红，
+  已通过时使用成功绿；为 `0` 时入口颜色跟随整体自检状态。设备离线优先覆盖
+  所有状态并显示 `Device connection lost`。
+- 已保存意大利档案且 `IPS_Selfcheck_Require = 1` 时，每次打开设置窗都显示
+  `The inverter must pass IPS Check before connecting to the grid.`。这是提示，
+  不是伪造设备结果或权限。
+- 页面顶部使用一张操作/状态卡：`Ready for IPS Check`、
+  `IPS Check in progress`、`IPS Check passed`、`IPS Check failed`、
+  `IPS Check interrupted`、`Device connection lost`。开始按钮、加载锁和离线
+  禁用状态由整体状态派生，不能让用户重复触发正在运行的自检。
+- 操作卡和记录摘要左侧的 `IPS` 标记统一使用 `Labels/Secondary` 中性灰与
+  `Fills/Quaternary` 灰色承托层，不使用主题蓝；两处共用同一标记样式。
+- 未并网时自检说明约需 10 分钟、期间不得断电，且必须通过后才能并网；
+  已并网时补充自检可能影响正常并网运行。失败状态必须明确禁止并网并要求修正后
+  重试。
+- 八张自检卡固定为 `81>.S1 / 81<.S1 / 59.S1 / 27.S1 / 81>.S2 /
+  81<.S2 / 59.S2 / 27.S2`，桌面两列、窄屏单列。每卡显示 Trip Limit Set、
+  Trip Limit Time Set、Fac / Vac 和对应 protection time；缺失值显示 `--`，
+  不得用 0 代替。
+- 单卡状态来自 `OverF1Status / UnderF1Status / OverV1Status /
+  UnderV1Status / OverF2Status / UnderF2Status / OverV2Status /
+  UnderV2Status`。整体状态按优先级聚合：离线 → 任一检查中 → 任一失败 →
+  全部通过 → 全部未检查 → 中断。
+- 开始自检在预览中模拟 `Italy_SelfTest_Enable = 1`，完成后只生成本地结果。
+  来源文档出现过的 `ltaly_SelfTest_Enable` 仅作为疑似拼写别名保留，不能同时
+  写入两个点，生产以前端/后端最终元数据为准。
+- `IPS Check Record` 入口位于 `IPS Check` 固定页面标题行右侧，不使用独立的
+  `Last self-check` 说明行。记录弹窗使用共享 `createModalDialog()`，顶部结果卡、
+  `Protection checks` 分组和八项卡片复用设置页的面板层级；内容使用共享
+  `createScrollFeedback()`，不能出现浏览器原生滚动条。弹窗内必须继承设置页的
+  `24px` 卡片圆角、`10px` 网格间距、深色内描边/外投影和相同字体 token，
+  不能因为挂到 modal 根而丢失变量。记录时间取自检**结束时间**，
+  不得使用命令开始时间冒充记录时间。
+- 记录弹窗的滚动视口必须铺到弹窗底边，不能给宿主再加固定底部 `padding`；
+  共享滚动的 `bottomInset` 单独读取 `22px` 轨道安全区，内容区用同一变量保留
+  `22px` 尾部余量。初始态不能出现卡片下方的固定空带，滚到最底时最后两张卡
+  必须完整露出并与弹窗底部保持约 `22px` 间距，轨道和滑块止于真实滚动视口内，
+  不能越过弹窗下缘。窄屏下 `Protection checks`
+  标题通过 `box-sizing:border-box + padding-inline` 保持左右内容内距，不能
+  用横向 `margin` 制造横向滚动。
+- `ips` 运行状态和记录属于设备只读遥测/瞬态结果，不进入普通 Save、dirty 或
+  Operation Log；只有 Grid Code 本身按 Grid Code 页作用域保存。
 
 ### System 与 maintenance
 
@@ -529,7 +684,11 @@ Inverter 的业务枚举只属于该页面，放在 `settings-options.js`，不�
   `Run check`、`Export`、可执行的 `Power on` 为 primary；`Power off`、
   `Restart` 为 warning；Reset 详情 Continue 与最终 Reset 为 danger；
   `Clear faults`、`Reload …` 和 Reset & Recovery 入口为 neutral。
-  Operation Control 命令按钮统一 `144px` 宽。
+  Operation Control 命令按钮统一 `144px` 宽。primary 与 `danger-solid` 的
+  玻璃光学层必须由共享 `button.css` 按主题输出：浅色保留高亮白 rim / inner /
+  optical；深色使用减淡但仍可见的同级高光层次，不能减到没有发光，页面不得覆盖。
+  切换页面和关闭设置窗产生的 `Discard Changes` 都必须是共享 `danger-solid`，
+  不能只借页面类把 neutral 按钮染红。
 - warning / danger 默认保留橙红 / 红色文字，hover / focus 渐入同 hue 叠加层
   并转白；分别用于中断性与破坏性操作。
 - Operation Log 表头 `12/400`，行内统一 `12px`；列宽
@@ -561,6 +720,11 @@ Inverter 的业务枚举只属于该页面，放在 `settings-options.js`，不�
 - 左右滚动都使用 `createScrollFeedback({visibility:"hover",elastic:true})`，
   传入真实内容节点。轨道上下各留 `12px`；导航轨道右距 `2px`，内容轨道右距
   `4px` 且止于操作层上方。
+- 主内容与导航必须 native-first：viewport 的 wheel 为 passive，任何滚动位置都
+  不得 `preventDefault()`；`.wd-scroll-feedback-viewport` 使用
+  `overscroll-behavior:contain`。边界反馈使用 `wheelDeadZone:1.5`、
+  `wheelPullRatio:.08`，第一格滚轮即产生约 `3–4px` 可见反馈；不得恢复
+  全局 `*.035` 强阻尼或通过主线程拦截换取回弹。
 - 导航滚动后启用 `24px` 纯 alpha 顶部渐隐；回到顶部立即移除，窄屏横向导航
   关闭该遮罩。
 - 本地设置刷新保留导航 DOM、页面滚动位置和等效控件焦点；不得重播页面入场。
@@ -596,6 +760,10 @@ Inverter 的业务枚举只属于该页面，放在 `settings-options.js`，不�
 - Economic Schedule 默认功率：原型为 10 kW Charge / 15 kW Discharge，当前
   预览为百分比默认值；需确认最终默认。
 - 后端点位元数据尚未接入；`settings-validation.js` 范围只是 fallback。
+- Battery Protocol 当前只有预览候选 `Wattsonic`；生产协议列表、BMS 能力位和
+  `BMS1_Enable_Set / Bat1_Type` 等最终点位仍待后端 / BMS 元数据确认。
+- Running Mode 当前保留显式 Off-Grid 点位 `6`；Forecast Mode 尚未实现，不能在
+  未确认产品行为和点位值前插入伪造枚举。
 - 认证账户、服务端保存、持久化审计、权限和跨会话状态未接入。
 - Parameter Export 尚未生成真实文件；Power、Restart、Reset、CT check 等仍是
   本地演示命令。
@@ -634,6 +802,8 @@ git diff --check
 - Dynamic `24h Overview` 保留两条 96 点价格线和独立的计划模式背景层；
   价格不得按模式染柱，未覆盖时间必须以 General Mode 底色呈现。
 - 首开模式来自设备；非 Running Mode 保存不反向改写设备模式。
+- Running Mode 卡必须暴露
+  `[0, 1, 2, 3, 4, 6]` wire value，Off-Grid 不得因 Forecast 当前未实现而错写为 `5`。
 - timeout `0`、功率因数 `-1–1`、Check code 四位和普通 Save 日志仍有效。
 - `Limit basis` 默认 Total；三相支持按相的预览可切换，单相隐藏，固件不支持时
   Per phase 可见但禁用；Save/Cancel 和 Operation Log 均显示
@@ -641,6 +811,9 @@ git diff --check
 - Battery 单路、双路并联、双路分置三种状态均保留同一页面作用域 Save/Cancel；
   `battery.soc` 在三种状态下都只有一套；日志标签能区分 Battery #1 / #2、
   SOC 上下限及各输入字段，不得退化为重复的 `Grid-tied SOC` 或原始路径。
+- Battery Protocol 与 Battery Brand 使用同一 `128px` 宽度；协议、Import
+  Permissions 和 Export Permissions 的日志必须显示可读 label，不显示原始
+  path / enum。
 - 并联主通讯电池异常警告只保留开关下方顶部线，无底部分隔线；字体为
   `13 / 400 / 18px`，上下内距 `12px / 4px`，且不能重新长出大段卡片尾部留白；
   图标必须使用不透明的主题橙色 mask，不能保留原 SVG 的 `30%` 填充透明度。
@@ -648,6 +821,9 @@ git diff --check
   `Battery #1 / Battery #2` 配置卡；异常能力不能阻塞正常的分路配置回退。
 - dirty、Cancel、Save 和切页确认严格按页面作用域工作。
 - Grid 门禁未解锁时不泄漏二级栏；解锁后位置、滚动记忆和 Check code 关联不变。
+- IPS Check 只在意大利 CEI 0-21 显示；草稿状态入口禁用并提示保存，保存后启用；
+  设置窗打开提示、离线优先、检查中锁、通过 / 失败 / 中断、八项结果、结束时间
+  和窄屏单列均由 IPS 专项覆盖。
 - switch、segmented、select 和条件卡在局部重绘后保留动画宿主。
 - 页面切换无回弹、无横移、无中间空洞、无旧页重新可见、无标题 blur 丢失。
 - 滚动、hover、focus、错误态和禁用态在深浅主题一致；没有原生滚动条。

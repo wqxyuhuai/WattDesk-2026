@@ -1,6 +1,42 @@
 # 经验与防回归清单
 
-更新：2026-11-24。本文只记录已经发生、已纠正且容易再次踩到的问题。开工前先读本页，再读 [用户要求记录](./USER-REQUIREMENTS.md) 和与任务相关的组件文档；Inverter settings 的有效页面规则见 [页面契约](./INVERTER-SETTINGS.md)，本页只保留可复用的根因和验收方法。用户当前明确要求仍优先于历史经验。
+更新：2026-11-25。本文只记录已经发生、已纠正且容易再次踩到的问题。开工前先读本页，再读 [用户要求记录](./USER-REQUIREMENTS.md) 和与任务相关的组件文档；Inverter settings 的有效页面规则见 [页面契约](./INVERTER-SETTINGS.md)，本页只保留可复用的根因和验收方法。用户当前明确要求仍优先于历史经验。
+
+## 2026-11-25 初始化页不能复制设置页业务分支
+
+- **现象**：初始化页复用了设置页的视觉 class，却仍保留自己的计划排序、重叠校验、MPPT 空组判断和电池字段定义；局部功能因此出现“设置页正确、初始化页丢失”的分叉。
+- **根因**：只抽取了 CSS 或单个控件，没有把决定行为和字段语义的纯业务函数一起抽到共享模块。视觉复用不等于业务复用。
+- **最终规则**：`schedule-editor.js` 统一计划排序、范围/重叠/时长校验、24h segment 和 Economic Discharge 的电池上网确认条件；`battery-editor.js` 统一拓扑条目、字段与协议校验；`grid-profile-editor.js` 统一 profile 可选状态和搜索过滤。时间输入继续使用共享 `createTimeRangeControl()`，MPPT 分组继续使用共享组件。
+- **确认弹窗**：未按 Cancel / Confirm 的 Escape、遮罩和程序关闭都必须走取消路径，调用 `onCancel` 让受控 Select 回滚；不能只在 Cancel 按钮上恢复旧值。
+- **验收**：初始化专项必须覆盖 MPPT 无组阻断、空计划表内错误、权限确认 Cancel / Escape / Continue、完成页自动与手动关闭；设置专项必须覆盖同一字段、模式 wire value 和 Operation Log 可读值。
+
+## 2026-11-25 小尺寸矢量对勾仍可能被中间渲染层发糊
+
+- **现象**：圆形对勾虽然来自 SVG，但 14px 完整圆形路径经过 CSS mask 和当前 125% 显示缩放后落在半像素边界，视觉上仍像模糊位图；为进一步提亮而直接覆盖遮罩宿主的背景色还可能破坏原有字形观感。
+- **根因**：矢量源不等于最终栅格清晰。小尺寸 CSS mask、元素自身圆角 / 边框 / 内阴影和半像素布局会叠加抗锯齿。
+- **最终规则**：Settings / Select / Battery 的 18px 标记继续使用单一 negative-space 路径作为唯一 mask，并确保选中元素自身圆角、边框和内阴影归零。Initialization 完成步骤使用同一路径的 16px 内联 SVG、`fill="currentColor"` 与 `shape-rendering="geometricPrecision"`；只改 `color`，不在 mask 宿主上另写背景绘制。
+- **验收**：测试必须断言 DOM 为 SVG、路径使用 `currentColor`、尺寸为 16×16、`geometricPrecision` 有效且不存在旧 `--icon-mask` 导航节点，并以真实预览标签复核。
+
+## 2026-11-25 同为 1px 的横线可能因绘制模型不同而一粗一细
+
+- **现象**：固定标题线肉眼比卡片行分隔线粗，但两者都声明为 1px。
+- **根因**：标题线使用 `height:1px + background`，行分隔线使用 `border-top:1px`；在 125% DPR 下浏览器对背景盒和边框采用不同的设备像素吸附，实际可见重量不同。
+- **最终规则**：需要与相邻分隔线严格同粗细的标题线也使用 `border-top:1px solid var(--wd-separator-nonopaque)`，不要复制颜色后再用背景盒实现。
+- **验收**：比较标题线与 `::after` 行分隔线的 computed border width、color，并在真实深色标签中复核。
+
+## 2026-11-25 白底插画不能靠深色卡面覆盖遮成“透明”
+
+- **现象**：Battery / MPPT 插画卡在深色模式下仍出现白色矩形，与其它 `.isw-panel` 不一致；仅修改卡片背景会被 JPG 自带白底覆盖。
+- **根因**：源图是白底 JPG，图片像素本身不透明；`mix-blend-mode` 在深色背景上会牺牲产品线条对比，无法等价替代真实 alpha。
+- **最终规则**：用 `scripts/make-initialization-illustrations-transparent.py` 只删除与画布边缘连通的近白区域，保留产品轮廓内部的白色面，运行资产改为透明 PNG。卡片本身不再声明私有底色，直接复用 `.isw-panel` 的当前主题表面、描边与阴影。
+- **验收**：同时检查 PNG 引用、源图与运行图哈希、浏览器卡片/相邻卡片的 background 与 shadow 一致、图片角点 alpha 为 `0`，并分别在深浅主题真实预览中检查。
+
+## 2026-11-25 弹窗滚动内距不能重复叠加
+
+- **现象**：IPS 记录弹窗第一次修复轨道越界后，卡片下方仍有一条固定空白；把内容尾距继续加在 host 底部后，滚到底又出现约双倍空带。
+- **根因**：把三个不同几何混成一个 `padding`：滚动视口到面板底边的布局、轨道滑块需要避开的圆角安全区、最后一行需要保留的内容尾距。host padding 会永久压缩视口；content padding 又会在滚动终点叠加。
+- **最终规则**：视口铺到圆角面板内边界，host 不再添加同一份底部占位；`bottomInset` 只由共享滚动轨道读取，content 使用自己的尾部 padding。两者可共用一个局部变量，但分别作用于轨道和内容，不得重复消费。`IPS Check Record` 当前使用 `22px`，这是一条页面契约，不是全站固定值。
+- **验收**：初始态不能出现卡片下方固定空带；滚到底最后一行完整可见且与面板底边保持一次 inset；轨道和滑块不越过圆角边界；窄屏没有横向滚动。专项需同时断言 modal、viewport、track、last card 的 rect。
 
 ## 2026-11-24 ToU shared controls and destructive states
 
@@ -1123,6 +1159,20 @@
 - **修复**：门禁增加独立但同参数的 opacity 动画；进入从透明渐入，离开/解锁渐出，退场立即 `inert`，动画结束后才隐藏。快速切回会从当前 opacity 续接。
 - **预防**：页面中所有覆盖正文的门禁、空态或二级层都必须检查是否绕过了 `renderPage()` 的共享转场；测试必须比较它与 incoming/outgoing page 的实际 duration/easing，而不是只断言元素最终可见。
 
+### 92. 浅色按钮的高亮光学层覆盖了深色实底按钮
+
+- **现象**：Inverter settings 深色模式的蓝色 `Save` 与红色 `Discard Changes` 出现明显白色内发光，浅色模式则保持正常。
+- **根因**：`button.css` 为 primary / `danger-solid` 设置的高亮白 rim、inner 和 optical 变量没有主题作用域，浅色专用数值在深色主题同样生效。
+- **修复**：高亮变量收进 `:root[data-theme="light"]`；深色不沿用浅色重值，也不把光学层清零，默认使用 rim `.38 / .24`、inner `.21 / .11`、optical `.15 / .075`，hover / 键盘 focus 再增强共享 hover 光场和内侧边缘。共享组件测试同时对比 blue / red 按钮光学层并锁定默认与 hover 两套值。
+- **预防**：任何“发白”“发光过强”的玻璃按钮参数先检查是否缺少主题作用域，不能通过页面级按钮覆盖或只改某页 Save 来掩盖；“太重”按减淡处理，不能从有直接改成无。共享按钮视觉变化必须同时验证 primary、`danger-solid`、默认 / hover / focus、深色与浅色。
+
+### 93. 非 passive 滚轮和强阻尼把设置页滚动变得不跟手
+
+- **现象**：设置页需要滚很多格才移动一点，连续滚动一顿一顿；所有页面都受共享滚动组件影响。
+- **根因**：实际 viewport 注册了 `passive:false` 的 wheel 监听，浏览器无法完全走合成线程滚动；到边界后又把滚轮输入按 `3.5%` 压缩为回弹，短页面很快进入该状态。
+- **修复**：viewport wheel 改为 passive，普通滚动及边界均不 `preventDefault()`；`.wd-scroll-feedback-viewport` 用 `overscroll-behavior:contain` 防止滚动链。Inverter settings 的自定义边界反馈改为 `wheelDeadZone:1.5` / `wheelPullRatio:.08`，第一格即有明显反馈。视觉轨道保留自己的 wheel 消费以覆盖自身区域。
+- **预防**：不要为了回弹、轨道或装饰效果给主滚动视口加非 passive wheel；先保留原生滚动，再用 passive 可视反馈与 CSS overscroll containment。回归必须同时验证事件不阻止、正常 delta 原样驱动、边界第一格有反馈、反向滚动立即交还。
+
 ## 五、开工前检查清单
 
 - 先读 `AGENTS.md` → `DESIGN-SYSTEM.md` → `docs/PROJECT-STATUS.md`。
@@ -1132,6 +1182,9 @@
 - 检查初始状态、默认、hover、focus、选中、禁用/加载（适用时）、深色、浅色、减少动态效果。
 - 检查阴影/浮层是否被裁切；检查关闭按钮是否有异常描边。
 - 检查 SVG 原始透明度与遮罩源，不只检查 `color`。
+- 遮罩图标先检查是否叠了多层裁切：SVG 自身 `<mask>`、CSS `mask`、元素
+  `border-radius` 或内阴影只要叠加两层，小尺寸曲线边缘就会发毛。圆形对勾使用
+  单一 even-odd 负形路径，并在选中态清零元素圆角、边框和内阴影。
 - 涉及历史浮窗、最近访问或搜索结果图标时，直接复用侧栏同路由节点，并逐路由比对 tone / `src` / mask，不新增色调映射表。
 - 涉及圆角时记录所有原半径，只改曲率，不改数值、尺寸或布局。
 - 检查周期按钮的实测宽度、是否裁切文字，以及刷新右缘是否仍与图表卡片对齐。

@@ -1,8 +1,184 @@
 # 当前状态与新对话交接
 
-更新：2026-11-24。
+更新：2026-11-25。
+
+## 2026-11-25 Fixed-title separator parity
+
+- 初始化与 Inverter settings 的固定标题线改用 `border-top:1px solid var(--wd-separator-nonopaque)`，与卡片行之间 `.isw-row + .isw-row::after` 的绘制方式一致。
+- 不再使用 `height:1px + background` 画这条线；两者在 125% 等非整数 DPR 下会落到不同的设备像素栅格，标题线看起来会更粗。
+- 初始化专项同时断言标题线与行分隔线的 computed width、color 完全一致。
+
+## 2026-11-25 日终规则归档
+
+- **归档依据**：当前可访问的对话、工作树 `git status` / `git diff`、运行代码、专项测试和现有规则文档。未访问到的并行对话不补写、不推断；工作树中已有的并行实现按代码、diff、测试和已落盘文档作为证据。
+- **全局新增 / 修改**：共享滚动改为 native-first 的 passive viewport wheel + `overscroll-behavior:contain`；圆角面板内的视口、轨道安全区和内容尾距分别管理，避免双倍底部空带；Adaptive Select 深色 hover / active 状态统一；圆形对勾使用单一 negative-space 路径；确认弹窗未明确结束时通过 `onCancel` 回滚；蓝 / 红实底按钮高光按深浅主题分流。
+- **IPS 滚动最终规则**：记录弹窗视口铺到 Dialog 底边，轨道与内容各自消费一次 `22px` inset；初始态无卡片下空带，滚到底最后两张卡完整可见，轨道不越出圆角，窄屏标题不制造横向滚动。
+- **共享滚动最终规则**：主滚动视口的 wheel 永远 passive，普通滚动和边界都不得 `preventDefault()`；视觉轨道自身可消费 wheel。全局默认仍为 `wheelDeadZone:4 / wheelPullRatio:.035`，但 Inverter settings 正文和导航固定为 `1.5 / .08`，第一格滚轮即有约 `3–4px` 反馈。
+- **共享按钮最终规则**：深色 primary / `danger-solid` 默认使用 rim `0.38 / 0.24`、inner `0.21 / 0.11`、optical `0.15 / 0.075`，hover / focus 再增强光场和内侧边缘；浅色参数保持原值，不允许页面级覆盖。
+- **组件级新增**：`settings-page-transition.js`、`settings-mode-motion.js`、`mppt-group-editor.js`、`hover-panel.js`、`schedule-editor.js`、`battery-editor.js`、`grid-profile-editor.js` 成为设置与初始化共用的唯一业务 / 交互入口；`ips-check.js` 承载意大利 CEI 0-21 条件页与八项结果记录。
+- **Initialization 最终规则**：两个机型的 MPPT 都是 4 路，仅电池路径不同；无 Review 页；最后设置页直接 Apply；完成页自动或手动关闭；BMS Communication / Protocol、Permissions、模式 wire value、计划与 MPPT 阻断规则由设置页同一契约约束；接线图使用透明 PNG 并复用 `.isw-panel`。
+- **明确废弃**：不再把 initialization 写成有 Review；不再使用白色私有插画卡面；不再把初始化计划排序、校验、电池字段或 Grid profile 解释留在页面私有分支；不再把 14px 完整圆形 check 当 CSS mask；不再为非 passive 主滚动做兼容；不再使用深色按钮 rim `.20 / .15` + 透明 inner / optical 的“完全无发光”中间态，也不再使用未限主题的高亮白团；不得把全局 `*.035` 回弹阻尼重新应用到 Inverter settings。
+- **一次性范围**：具体截图中的局部像素位移、单次刷新验证记录和中间色值不回填为全站规则；只保留最终确认的稳定尺寸、状态、组件入口与禁止项。
+- **仍待确认**：Battery Protocol 生产候选值仍只有预览 `Wattsonic`；Forecast Mode 未实现；真实后端保存、认证、权限、设备写入、`Device_Init_Flag`、IPS 固件命令和 `Output_Capability_Mode` 枚举仍待生产契约。
+- **归档检查**：最终归档后重新运行 `npm run check` 与 `git diff --check`；本轮仅整理规则文件，不修改运行代码、页面 UI、资源或测试。未运行全量 `npm test`，因为项目规则要求只在用户明确要求完整回归时执行。
+
+## 2026-11-25 原生优先滚动
+
+- 共享 `createScrollFeedback()` 已改为 native-first：实际 viewport 的 wheel 监听为 passive，普通滚动和边界回弹均不调用 `preventDefault()`；视口由 `.wd-scroll-feedback-viewport { overscroll-behavior:contain }` 阻止滚动链。
+- Inverter settings 正文与左侧导航显式使用 `wheelDeadZone:1.5`、`wheelPullRatio:.08`，第一格滚轮产生约 `3–4px` 可见回弹反馈；其他消费方保留默认 `4 / .035` 粘滞手感。轨道自身仍可按 `deltaMode` 驱动对应 viewport。
+- 真实 Chrome 实测设置页普通 `deltaY=100` 滚轮使 `scrollTop` 前进 `100px`，事件 `defaultPrevented=false`；顶部第一格边界滚轮同样不阻止事件并产生可见位移。
+
+## 2026-11-25 IPS Check Record scroll bounds
+
+- `IPS Check Record` 的滚动视口铺到弹窗底边，不再在宿主上保留固定底部 padding；共享滚动轨道单独使用 `22px` 安全区，因此初始态没有卡片下方空带，轨道也不会越过弹窗下缘。
+- 记录内容保留 `22px` 尾部余量，滚到最底时最后两张保护卡完整露出，卡片到弹窗底边保持约 `22px`。窄屏 `Protection checks` 标题改为 `border-box + padding-inline`，移除额外的横向滚动。
+- `tests/verify-ips-check.cjs` 现覆盖桌面与窄屏的轨道边界、最后卡片可见性、底部尾距、滑块位置和原生滚动条隐藏。
+
+## 2026-11-25 Initialization completion mark rendering
+
+- 初始化步骤导航的完成标记不再把 16px `check-circle.svg` 作为 CSS mask 栅格化。页面现在使用同一路径的内联 SVG、`fill="currentColor"` 和 `shape-rendering="geometricPrecision"`；16px CSS 盒在当前 125% 显示缩放下对应整数设备像素，避免 14px 落在半像素边界。
+- 初始化专项锁定完成标记为内联 SVG、`currentColor` 填充、16×16 尺寸，并断言不存在旧的 `--icon-mask` 导航节点。
+
+## 2026-11-25 Initialization dark navigation and transparent wiring assets
+
+- 初始化流程中尚未到达的步骤继续保持不可点击，但图标不再继承共享 disabled 的 Quaternary 色；图标与同项文字统一使用 `72%` 主文字 ink，深色下可直接辨认。
+- Battery / MPPT 接线卡不再使用页面私有白色底或 `--wd-bg-primary` 覆盖，直接继承 `.isw-panel` 的表面、描边和阴影，与同页设置卡完全一致。
+- 四张接线源图为白底 JPG；现新增 `scripts/make-initialization-illustrations-transparent.py`，仅删除与画布边缘连通的近白背景，保留产品轮廓内部的白色面。运行资产改为透明 PNG，图片下直接显示共享卡片底色。
+- `setup-illustrations-source.json` 同时记录外部源 JPG 与运行 PNG 的字节和 SHA-256；`SOURCE-MANIFEST.md` 同步说明生成方式。初始化专项锁定未到达步骤图标颜色、卡片 surface/shadow 一致性、PNG 引用和像素角点 alpha=0。
+
+## 2026-11-25 Initialization / settings shared-editor hardening
+
+- 初始化完成页继续在 `3s` 后自动关闭；共享中性玻璃 `Close (3s)` 按钮可随时提前关闭，不再把倒计时当作唯一退出路径。
+- `schedule-editor.js` 现统一计划校验、重叠判断、按开始时间排序、24h 时间轴分段和 Economic Discharge 对电池上网权限变更的确认条件；设置页 Economic / ToU 与初始化计划消费同一规则。
+- `battery-editor.js` 统一电池拓扑条目、Battery Brand / BMS Communication / Protocol / 最大充放电字段契约和协议校验；`grid-profile-editor.js` 统一 Grid profile 可选状态、状态文案和搜索过滤。初始化与设置不再各自维护这些定义。
+- 初始化与设置均补齐 `BMS Communication`、`Battery Protocol`、`Import Permissions`、`Export Permissions`。关闭 BMS 时协议保持可见但锁定；Export 从 `Solar and Battery` 切到禁止电池上网且 Economic Mode 含 Discharge 时，Cancel、Escape、遮罩关闭都恢复旧值，Continue 才提交；Operation Log 使用人类可读选项标签，不外泄原始路径或枚举值。
+- Running Mode 使用显式 wire value `[0, 1, 2, 3, 4, 6]`；当前未实现 Forecast Mode，因此 Off-Grid 保持点位值 `6`，不会因缺少枚举槽位被错写成 `5`。
+- MPPT 并联开启但没有任何分组时，初始化 `Next` 由共享分组校验阻止；空 Economic / ToU 计划错误显示在计划表内部。共享 `createConfirmDialog()` 在未明确确认时由 Escape / 遮罩关闭也会触发 `onCancel`，供调用方回滚控件。
+- `tests/verify-initialization.cjs` 与 `tests/verify-inverter-settings.cjs` 新增/更新对应回归，覆盖完成页自动关闭、权限确认三条退出路径、Battery Protocol 宽度、模式 wire value、MPPT 与空计划阻断。当前仅本地预览，不写入设备或后端。
+
+## 2026-11-25 共享实底按钮深色光学收口
+
+- 共享 `primary` 与 `danger-solid` 继续使用同一套实底玻璃结构，但高亮白 rim / inner / optical 按主题分流；深色默认统一为 rim `0.38 / 0.24`、inner `0.21 / 0.11`、optical `0.15 / 0.075`，hover / 键盘 focus 通过共享 hover 光场和内侧边缘进一步增强内发光。
+- 两类 `Discard Changes` 都使用共享 `danger-solid`，不能只把 neutral 按钮染红；`tests/verify-components.cjs` 锁定 blue / red 光学层一致、深色克制和浅色原值，Inverter settings 专项同时锁定关闭设置窗的变体。
 
 先读 `AGENTS.md` → `PROJECT-MAP.md` → `DESIGN-SYSTEM.md` → 本文件。新增页面再读 `ARCHITECTURE.md`、`COMPONENTS.md`；核对既往反馈见 `USER-REQUIREMENTS.md`。用户最新明确要求优先。
+
+## 2026-11-25 Grid Connection 数字字段右对齐
+
+- `Reconnection delay`、`Start-up delay` 及同页三个 Power gradient 的 mini 数字字段统一 `128px × 36px`，字段盒贴所在行右缘。
+- 字段内部使用 `justify-content:flex-end`，输入值 `text-align:right`，数值与单位作为整体贴右；不能只移动字段盒而让内部内容从左侧排列。
+- 用户当前实际打开标签已刷新核验，两个 `60 s` 字段均为 `flow-end / right`，单位距字段右内距约 `12.7px`；Inverter settings 全量专项通过。
+
+## 2026-11-25 Initialization previews
+
+- Added standalone initialization routes `/setup/20kw` and `/setup/50kw`.
+- `20kw` is a `4 MPPT / 1 battery path` fixture; `50kw` is a
+  `4 MPPT / 2 battery paths` fixture.
+- Both routes share one wizard: Grid code, Battery, MPPT input, Power limits,
+  Running mode, conditional Economic / ToU schedule and success. The final
+  settings step owns the Apply action; there is no separate Review page.
+- Battery / MPPT wiring artwork is selected strictly by series. The supplied
+  LCD 20 kW and no-screen 50 kW JPGs remain the source artwork; runtime assets
+  are edge-connected transparent PNGs generated by
+  `scripts/make-initialization-illustrations-transparent.py`, with source and
+  runtime hashes recorded in
+  `design/inverter-settings/setup-illustrations-source.json`.
+- Submission is explicitly a local preview. No device point,
+  `Device_Init_Flag`, backend state or hardware action is changed.
+- The final annotation pass removed the redundant header copy and progress count,
+  restored the exact `Parameter Setup Wizard` title, and moved both the step rail
+  and right pane onto the existing Inverter settings shell classes. Step changes
+  now keep the dialog rectangle stable and the specialized test asserts that
+  behavior.
+- Follow-up review restored the top-right close control, retained readable
+  non-interactive future steps, switched Grid search to the shared search field,
+  removed the duplicated Grid explanation block, enabled the settings-style
+  scrolled-title divider, changed selected markers to check-circle and clipped
+  the lower content/action corners.
+- The corrected hardware rule keeps four MPPT inputs and parallel MPPT grouping
+  on both 20 kW and 50 kW. Battery path count remains the series difference.
+- Search uses the shared field with hover/focus icon contrast and shared
+  hover/press scaling. Setup pages now use the settings `.isw-page`,
+  `.isw-group-title`, `.isw-panel`, `.isw-row`, segmented, Economic table and
+  ToU row contracts; duplicate intros, nested cards and per-step numeric
+  trailing values were removed.
+- Parallel MPPT groups now use the shared `components/mppt-group-editor.js`.
+  Both setup variants and Inverter settings therefore share the same
+  two-channel picker, claimed-input disabling, add action and danger
+  `Delete group` menu instead of maintaining separate group editors.
+- Economic / ToU setup restored the settings schedule contract: `24h Overview`,
+  power information, circular add action, danger row deletion, automatic
+  start-time ordering, mode-dependent power/PV visibility and row-level errors.
+  `Next` commits a pending edited range first, so an overlapping or malformed
+  draft cannot leave the current step or trigger the final Apply action.
+- Row errors now begin directly under the corresponding time field, left-aligned
+  with its content, instead of spanning the row and floating at the far right.
+- Scrolled setup screens now retain real Gaussian blur above and below the
+  content without clipping the dialog radius. Selecting a Grid profile replaces
+  the one profile list instead of appending a second list, and the MPPT source
+  segmented control remains content-sized.
+- Step changes now force the new page to `scrollTop = 0`; same-page field and
+  local rerenders keep the current position. The setup rail is `276px` wide with
+  a `4px` row gap, and future steps use a `72%` primary ink instead of the
+  lighter secondary token.
+- MPPT Tracker now uses one shared settings card containing the parallel switch,
+  its full hint and all group rows. The switch aligns to the title line. Setup
+  title-to-content spacing is halved to `9px`.
+- Battery / MPPT illustrations are full-width shared `.isw-panel` cards and
+  inherit the same theme surface, inset border and shadow as adjacent setting
+  cards. Transparent PNG artwork replaces the former white rectangle; browser
+  `<figure>` margin no longer shifts the cards, and the action bar carries
+  matching rounded bottom corners.
+- Battery parallel, Import / Export limits and MPPT parallel switches now use the
+  shared `animateContentHeight()` content-growth rhythm instead of instantaneous
+  `hidden` toggles.
+- The completion state now follows the supplied reference: no left title, rail,
+  model-specific copy, review list, white inner rectangle or custom circular
+  success mark. It uses the shared black check-circle icon without ring/reflection,
+  a compact `52px` glyph, slightly larger raised copy, no action divider/blur
+  band, no dark-mode inner top outline, and the default glass `Close (3s)` button
+  moved upward. The finished content is then nudged slightly downward for the
+  final reference position.
+- Step changes use the shared `settings-page-transition.js` crossfade for the
+  outgoing snapshot, incoming page and fixed title. The ToU PV switch is also
+  left-aligned with its column heading.
+- `tests/verify-initialization.cjs` covers both direct routes, MPPT/battery
+  counts, the shared MPPT group picker, Running Mode motion, series images,
+  Grid-list replacement, schedule info/add/delete/sort/error behavior, title and
+  action blur, step scroll reset, nav ink/spacing, switch growth, conditional
+  schedule, final-step Apply, completion/countdown, light theme and narrow
+  layout. The Inverter settings full suite continues to cover the shared MPPT
+  consumer.
+- Final verification for this annotation pass passed `npm run check`, the
+  initialization suite, the full Inverter settings suite, `audit:assets`,
+  `audit:motion`, public build and `git diff --check`. Both user-open setup tabs
+  were refreshed; the latest 20 kW tab shows the five-step rail without Review,
+  and the latest 50 kW tab was reset to Grid code.
+
+## 2026-11-25 Adaptive Select states
+
+- Economic Schedule 与 ToU Mode 行内 Adaptive Select 的深色交互统一由 `select-control.css` 管理：默认 / hover / active 填充为 `8% / 15% / 20%`，描边为 `10% / 26% / 46%`，阴影为黑色 `20% / 30% / 36%`；按下和展开态不再停留在 hover 外观。
+- 深色阴影从发白的混合灰改为中性黑色。浅色模式保持原方案：默认透明，hover / focus / 展开为 `Fills/Quaternary`，描边和阴影不增强。
+- 新增 `tests/verify-select-states.cjs`，覆盖 Economic 与 ToU 两处 Select 的深色 hover、按下、展开外观及浅色原值回归。
+- 验证通过：`npm run check`、`tests/verify-select-states.cjs`、`tests/verify-components.cjs`、`npm run audit:motion`、Inverter settings 专项、`npm run build:site:public`（310 文件 / 5.91 MB）、`npm run audit:assets`（171 个资产，0 unused / 0 missing）和 `git diff --check`。真实预览标签已刷新并确认深色 ToU Mode Select 的展开态。
+
+## 2026-11-25 IPS Check
+
+- Inverter settings 的 `Grid & Protection` 新增意大利 `IT CEI 0-21` 条件页 `IPS Check`。其他 Grid Code 完全隐藏入口；选择意大利草稿但未 Save 时入口禁用，hover / focus 提示先保存。
+- 保存意大利档案后入口启用；`IPS_Selfcheck_Require=1` 在未通过时使用危险红，打开设置窗提示必须先通过 IPS Check 才能并网。设备离线覆盖所有自检状态。
+- IPS 页面包含操作/状态卡和八张保护项卡，覆盖 Ready / Checking / Passed / Failed / Interrupted / Offline。开始检查在本地预览中模拟 `Italy_SelfTest_Enable=1`，不会伪造真实固件写入。
+- `IPS Check Record` 按钮位于页面标题行；独立 `Last self-check` 说明行已删除。意大利预览继续显示全部 Grid 二级页并将 IPS Check 放在最后。
+- 历史弹窗改为与设置页一致的结果卡、分组标题和八项卡片，并使用共享滚动反馈；弹窗卡片继承页面级 `24px` 圆角、`10px` 网格间距、深色描边/投影和字体变量。记录结束时间、整体结果和八项数值；检查结果与运行态作为瞬态 RO 数据，不进入普通 Save、dirty 或 Operation Log。
+- IPS 操作卡和记录摘要左侧的标记统一使用中性灰面，不再使用主题蓝。
+- `p25` 本地夹具把 `IT CEI 0-21` 标为 `Preview only` 以便评审 IPS 样式，但没有复制任何德国或其他国家的保护参数。生产接入仍需真实意大利认证档案和固件确认 `Italy_SelfTest_Enable` 拼写。
+- 新增 `tests/verify-ips-check.cjs`，覆盖入口显隐与保存门禁、必检提示、八项卡片、历史弹窗、开始/检查中/通过、离线/失败/中断聚合、窄屏单列、深浅主题和打开设置提示。
+- 本轮验证通过：`npm run check`、Inverter settings 专项、IPS 专项、`npm run build:site:public`（303 文件 / 5.88 MB）、`npm run audit:assets`（171 个运行资产，0 unused / 0 missing）和 `git diff --check`。真实本地预览标签已刷新，确认全部 Grid 子页可见、IPS 位于最后、记录按钮在标题行；并检查了改版后的记录弹窗。
+
+## 2026-11-25 Circular check rendering
+
+- 圆形对勾边缘发毛的根因是三层抗锯齿叠加：SVG 自身的 `<mask>`、元素 `border-radius:50%` 裁切，以及基础 radio 的内阴影。
+- `check-circle.svg`（settings 与 selection 两份）改为单一 `fill-rule="evenodd"` 路径，使用 `shape-rendering="geometricPrecision"`；选中态同步移除圆角、边框和内阴影，只保留一层 CSS mask。
+- 覆盖 Running Mode、Grid Profile、MPPT picker、Economic / ToU / Battery Select option；新增专项断言检查 SVG 单路径结构、18px 经计算尺寸、零圆角、零边框和无内阴影。
 
 ## 2026-11-24 当前规则归档（最高优先级）
 
@@ -28,7 +204,7 @@
 - Manual 最终状态：24h Overview 复用 Economic Schedule；计划表五列为 `136 / 160 / 154 / 90 / minmax(...)`、列间距 `4px`、左右内距 `24px`。时间输入完整、Mode 名称完整、PV 表头单行，电量到开关净距约 `20px`。时间范围共用 `createTimeRangeControl()`：`1 h` 分钟列静态 `00`，`15 / 30 mins` 每值只渲染一次；打开箭头与共享 Select 同为 14px、约 12px 右距、`.72 → 1` 状态。
 - ToU 校验与编辑最终状态：同一时间、反序、非步长、重叠和超过 24 段均阻止保存；有效计划按开始时间升序。同一字段只保留一条当前错误，错误横跨时间与模式两列并单行显示。删除后计划真实减少且不自动补 General Mode；全空计划只有新增或 Cancel 才改变。
 - Dynamic 最终状态：Today/Tomorrow、96 点 Buy/Sell 价格线、8% 模式底色、最低 / 最高价格摘要、15 分钟吸附与模式列高亮浮窗，以及 Manual / Duration / Percentage / Fixed / Intelligent 五种控制模式均已落地。原图例结构按用户标注保持不变。Advanced 子页 Back、滚动模糊标题、Time Settings、说明型 Control Mode、220px 地点选择器、Extra Charge Modal 和 Intelligent 标准卡采用批注后的最终样式；不再保留中间轮次的列宽或图表方案。
-- 共享按钮与信息浮窗最终状态：`primary` 与 `danger-solid` 共用同级白色 rim / inner / optical 默认高光及白字；Economic 与 ToU 的 info tooltip 均使用 `bindHoverPanel()` 居中定位。Economic kW 辅助值使用 `Labels/Secondary`，与 ToU 计划表一致。
+- 共享按钮与信息浮窗最终状态：`primary` 与 `danger-solid` 共用按主题分流的 rim / inner / optical 结构并始终保持白字；浅色使用已确认的高亮白层，深色使用减淡但仍可见的同级高光。Economic 与 ToU 的 info tooltip 均使用 `bindHoverPanel()` 居中定位。Economic kW 辅助值使用 `Labels/Secondary`，与 ToU 计划表一致。
 - 当前发布策略改为 local-only：后续修改可本地编辑、提交、测试和构建，但不得自动 `git push` 或部署 Cloudflare。只有用户明确要求发布时才更新远端；在此之前独立预览和主站继续使用上一次线上版本。
 - 1120 源包是 1119 的增量：只新增 `Limit basis` 与更新说明；其余页面、字段、18 个档案和校验说明继续沿用 1119。
 - `Import & Export Limits → Export limit` 增加 `Limit basis`：`Total` 默认、`Per phase` 可选；仅三相机型、Export limit 开启时显示，单相隐藏。
@@ -587,7 +763,13 @@
 - 本文所有带日期的检查结果均为当时快照，不代表当前状态；最新一次真实运行单独记录，不能用旧通过或旧失败互相覆盖。
 - 未实际运行时明确标注“未运行”，不得把静态代码或文档核对写成测试、截图验证通过。
 
-## 最近一次实际运行（2026-10-30）
+## 最近一次实际运行（2026-11-25）
+
+- **设置页 native-first 滚动优化**：`verify-components`、`verify-plants-filters`、`verify-routing` 与 `verify-inverter-settings` 全部通过；共享组件确认 wheel 事件不被阻止、视口 `overscroll-behavior:contain`，设置页普通滚轮 `100px → 100px`，顶部第一格边界反馈约 `4px`。`npm run check` 与 `git diff --check` 通过。
+- **共享实底按钮深色高光最终验收（已用真实 Chrome 验证并由用户确认）**：深色默认使用 rim `0.38 / 0.24`、inner `0.21 / 0.11`、optical `0.15 / 0.075`；hover / 键盘 focus 额外增强共享 hover 光场与内侧边缘。`Save` 和 `Discard Changes` 均通过共享 `primary / danger-solid` 实现，浅色参数未改。`node tests/verify-components.cjs`、`npm run check` 与 `git diff --check` 通过。
+- **初始化 / 设置专项边界已解决**：早先 `verify-inverter-settings.cjs` 曾被尚未同步的 Battery Protocol 断言拦截；后续已更新断言并完成整页专项。初始化专项同时覆盖双机型路由、共享 MPPT、BMS / Protocol、Permissions、计划错误、完成页自动 / 手动关闭、透明插画和图标锐度。
+
+## 历史实际运行（截至 2026-10-30）
 
 - **Plants 深色筛选条 / 表头修复（已用真实 Chrome 验证）**：筛选条计算色为 `rgb(58,58,60)`；表头位于数据滚动区外、背景透明且 `backdrop-filter` 为 `none`，表体滚动内容不会再进入表头区域。浅色筛选条仍为纯白、表头仍与主面板同色。`node tests/verify-plants-filters.cjs` 通过。
 - **共享头像 24px 字号修复（已用真实 Chrome 验证）**：卡片作者头像实测保持 `24×24px`，缩写文字由 11px 收紧为 `9px / 10px`，`.wd-avatar-label` 仍为 `0.5px` 光学下移；Properties 22px 头像同样走共享 compact 档。组件测试同时锁定 28px 为 `11px / 13px`、36px 为 14px。`node tests/verify-components.cjs` 与 `node tests/verify-service-ticket.cjs` 通过。
