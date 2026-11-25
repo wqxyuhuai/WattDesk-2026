@@ -2,6 +2,23 @@
 
 更新：2026-11-25。
 
+## 2026-11-25 初始化页面独立域名发布
+
+- 独立域名新增两个初始化入口：`https://inverter.carlwang.cn/setup/20kw` 与
+  `https://inverter.carlwang.cn/setup/50kw`；Inverter settings 继续使用
+  `https://inverter.carlwang.cn/settings`，根 `/` 仍 `302` 到设置页。
+- `wattdesk-inverter-preview` Worker 使用精确白名单：只放行 `/settings`、
+  `/setup/20kw`、`/setup/50kw`、`/src/*`、`/home-assets/*` 与独立
+  `robots.txt`。`/setup`、`/setup/30kw`、`/home`、`/plants` 和旧
+  `/inverter` 备用入口继续返回 404。
+- 本次通过 Cloudflare API 部署，Worker tag 为
+  `b29e6d67633143ac9b231f0180d20758`。真实浏览器验证两个初始化页均为五步流程；
+  20 kW 显示 1 个电池输入与 `battery-20kw-lcd.png`，50 kW 显示 2 个电池输入与
+  `battery-50kw-no-screen.png`；两页首次打开均为浅色，主题按钮可用，关闭后进入
+  `/settings`。
+- 静态检查 `npm run check`、构建配置断言、Worker dry-run、初始化专项和
+  `git diff --check` 均通过；线上入口与 404 隔离已实际验证。
+
 ## 2026-11-25 Fixed-title separator parity
 
 - 初始化与 Inverter settings 的固定标题线改用 `border-top:1px solid var(--wd-separator-nonopaque)`，与卡片行之间 `.isw-row + .isw-row::after` 的绘制方式一致。

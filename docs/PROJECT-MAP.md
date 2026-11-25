@@ -43,8 +43,8 @@ Wi-Fi 等规则与 2026-11-19 / 2026-11-20 条目继续作为功能与视觉基�
 | `/plants/:id/devices` | 已完成本地交互预览 | Linear 式扁平设备行、命名、新增、替换、解绑和设置预览；真实后端与硬件控制未接入 |
 | `/plants/:id/devices/inverter-settings` | 已完成本地交互预览 | route-backed 逆变器设置窗口；5 组导航、17 个主页面入口（含 Manual / Dynamic 两个 `ToU Mode`）、18 个国别档案、Check code 门禁、意大利条件页 `IPS Check`、维护页、本地会话保存、1120 `Limit basis`、BMS / Protocol、Import / Export Permissions，以及单/双电池拓扑、并联、共享 SOC、加热配置；完整有效契约见 [INVERTER-SETTINGS.md](./INVERTER-SETTINGS.md) |
 | ToU Manual / Dynamic | 已完成本地交互预览 | [ToU 功能契约](./TOU-MODE-SETTINGS.md) 已确认并实现双入口、手动计划、动态电价、五种控制模式、Intelligent 云端决策、费用与生成计划；暂不实现侧栏资格隐藏及真实后端下发 |
-| `https://inverter.carlwang.cn/` → `/settings` | 已发布独立预览 | 仅显示 `p25` 第一台逆变器设置；独立 Worker 白名单代理，不允许访问其他 WattDesk 页面；默认浅色，底部 `32px` 主题按钮，复用同一页面代码 |
-| Initialization · 20 / 50 kW | 已完成本地独立预览 | `/setup/20kw` 使用 4 MPPT + 单电池，`/setup/50kw` 使用 4 MPPT + 双电池；两端都支持 MPPT 并联与分组，共用五步初始化、条件计划、最后设置页直接 Apply 和本地模拟完成页；无独立 Review，Battery / MPPT 插画按系列使用透明 PNG 并复用设置卡表面 |
+| `https://inverter.carlwang.cn/settings` | 已发布独立预览 | 根 `/` 302 到该路径；仅显示 `p25` 第一台逆变器设置；独立 Worker 精确白名单代理，不允许访问其他 WattDesk 页面；默认浅色，底部 `32px` 主题按钮，复用同一页面代码 |
+| Initialization · 20 / 50 kW | 已发布独立预览 | `https://inverter.carlwang.cn/setup/20kw` 使用 4 MPPT + 单电池，`/setup/50kw` 使用 4 MPPT + 双电池；两端都支持 MPPT 并联与分组，共用五步初始化、条件计划、最后设置页直接 Apply 和本地模拟完成页；无独立 Review，Battery / MPPT 插画按系列使用透明 PNG 并复用设置卡表面 |
 | `/plants/:id/site` | 隐藏兼容路由 | 旧资料页仅保留直达链接和回归兼容，不在详情页签中显示 |
 | `/plants/:id/site-v2` | 当前 Site details 页面 | 详情页签显示为 `Site details`；顶部 Hero、Mapbox、Energy / Installer / Owner / Picture / Visitor 卡，支持会话内编辑。规格见 [SITE-DETAILS.md](./SITE-DETAILS.md) |
 | `/plants/:id/faults|logs|tickets` | 子页占位 | Operations 三卡当前标签内进入；三层面包屑、刷新与历史可用，详细内容后续实现 |
@@ -67,7 +67,7 @@ pages  →  layouts / components  →  foundations
 - `src/layouts/`：侧栏、顶栏与共享工作区外壳。
 - `src/pages/`：页面装配、业务状态和局部布局，不复制共享材质。
 - `src/pages/inverter-settings/`：独立逆变器设置页面、国别档案、门禁和页面级交互。
-- `deploy/inverter-preview-worker.js` 与 `wrangler.inverter-preview.jsonc`：独立设置域名的白名单代理，不复制页面代码。
+- `deploy/inverter-preview-worker.js` 与 `wrangler.inverter-preview.jsonc`：独立设置与初始化域名的精确白名单代理，不复制页面代码。
 - `design/figma/`：不可手改的上游来源；`home-assets/`：运行时本地资产，其中 `home-assets/icons/settings/` 为共享设置图标。
 - `src/foundations/colors.css`、`type.css` 与 `src/pages/home/data/`：生成文件，不手改。
 

@@ -30,9 +30,11 @@
 - 入口：Devices 逆变器行中的 `Open <device> settings`。
 - 路由：
   `/plants/:plantId/devices/inverter-settings?device=inverter&serial=<SN>`。
-- 对外简洁入口为 `https://inverter.carlwang.cn/`，内部规范路径为 `/settings`。
-  该域名使用单独 Worker 代理，只允许 `/settings`、`/src/*` 和
-  `/home-assets/*`；其他 WattDesk 路径返回 404。
+- 设置对外简洁入口为 `https://inverter.carlwang.cn/settings`；初始化入口为
+  `https://inverter.carlwang.cn/setup/20kw` 与
+  `https://inverter.carlwang.cn/setup/50kw`。该域名使用单独 Worker 代理，只允许
+  这三个精确页面路径、`/src/*` 和 `/home-assets/*`；其他 WattDesk 路径返回
+  404。
 - `/settings` 固定打开本地样例电站 `p25` 的第一台逆变器；它不读取登录账户、
   真实电站列表或生产设备数据，不是生产权限入口。
 - `/` 只能 302 到 `/settings`。不得重新增加 `wattdesk-preview` 长链接分享入口、
@@ -51,8 +53,10 @@
 ### 初始化预览入口
 
 - `/setup/20kw` 打开 20 kW 系列的本地初始化预览：`4 MPPT / 1 battery path`；
-  MPPT 并联与分组能力与 50 kW 一致。
+  MPPT 并联与分组能力与 50 kW 一致。对外地址为
+  `https://inverter.carlwang.cn/setup/20kw`。
 - `/setup/50kw` 打开 50 kW 系列的本地初始化预览：`4 MPPT / 2 battery paths`。
+- 50 kW 对外地址为 `https://inverter.carlwang.cn/setup/50kw`。
 - 两个入口复用 `initialization.js` / `.css` 的同一向导，仅通过明确的设备系列
   夹具切换能力、默认值和插画；不得按额定功率字符串、当前 MPPT 开关或电池
   并联状态猜系列。
@@ -495,11 +499,13 @@ Inverter 的业务枚举只属于该页面，放在 `settings-options.js`，不�
   `18px`。Continue 使用共享 primary 按钮，保持整行宽和 `38px` 高。
 - 解锁时二级栏展开会改变内容宽度；门禁卡在退场期间补偿到解锁前屏幕中心，
   动画结束立即清理临时 transform。
-- `IT CEI 0-21` 的本地预览夹具可进入 `IPS Check`，但当前仍没有认证保护参数集：
-  Grid 页面不得从德国档案复制电压、频率或 ride-through 数值。预览入口明确显示
-  `Preview only`；生产接入时应先提供真实意大利档案，再开放标准选择。该预览状态
-  仍显示全部 Grid 二级页，不能只保留 Grid Code 与 IPS Check；IPS Check 固定为
-  最后一项，其他页进入各自的无档案空状态。
+- `IT CEI 0-21` 的本地预览夹具可进入 `IPS Check`。预览入口明确显示
+  `Preview only`，并使用一份完整、非认证的本地预览工作基线，让 Grid Code、
+  Protection Limits、Grid Connection、Reactive Power、P(U)、F(P)、LVRT、
+  HVRT 与 IPS Check 全部显示可查看内容。该基线不代表意大利认证参数，生产
+  接入仍必须替换为真实 CEI 0-21 档案。IPS 是否通过只影响并网资格、状态强调
+  和提示，不得隐藏、清空或替换任何其他 Grid 页面内容。IPS Check 固定为最后
+  一项二级页。
 
 ### IPS Check（Italy CEI 0-21）
 
@@ -509,6 +515,10 @@ Inverter 的业务枚举只属于该页面，放在 `settings-options.js`，不�
 - `IPS_Selfcheck_Require = 1` 时，未通过或未执行的自检入口使用危险红，
   已通过时使用成功绿；为 `0` 时入口颜色跟随整体自检状态。设备离线优先覆盖
   所有状态并显示 `Device connection lost`。
+- IPS 未通过不是页面访问门禁：除进入 IPS Check 所需的 Grid Code 保存条件外，
+  其他 Grid 二级页必须正常显示其控件和值。不得根据 IPS 状态或参数集元数据
+  把页面替换成 `No certified parameter set…` 空态；只有确实没有任何 Grid
+  工作值时，才允许显示无参数值说明。
 - 已保存意大利档案且 `IPS_Selfcheck_Require = 1` 时，每次打开设置窗都显示
   `The inverter must pass IPS Check before connecting to the grid.`。这是提示，
   不是伪造设备结果或权限。
@@ -830,6 +840,7 @@ git diff --check
 - `settings-options.js` 与日志标签共用同一枚举源；新枚举不得重新散落页面。
 - 不新增浏览器原生 confirm/alert/prompt，不伪造后端保存、设备动作或导出结果。
 - 独立域名根路径 302 到 `/settings`，`/settings` 为 200，`/home` 与 `/plants`
+  为 404；`/setup/20kw` 与 `/setup/50kw` 为 200，`/setup` 与 `/setup/30kw`
   为 404；已删除的 `/inverter` 和 `www.carlwang.cn/inverter` 必须继续返回 404。
 - standalone 首次打开为浅色，`Dark mode` / `Light mode` 可双向切换，按钮距底边
   `32px` 且与设置窗口不重叠；主站默认主题不受影响。

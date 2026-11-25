@@ -6,10 +6,19 @@ const path = require('node:path');
 const root = path.resolve(__dirname, '..');
 const out = path.join(root, '.test-build');
 const wrangler = JSON.parse(fs.readFileSync(path.join(root, 'wrangler.jsonc'), 'utf8'));
+const inverterWorker = fs.readFileSync(path.join(root, 'deploy/inverter-preview-worker.js'), 'utf8');
+const inverterWrangler = JSON.parse(fs.readFileSync(path.join(root, 'wrangler.inverter-preview.jsonc'), 'utf8'));
 
 assert.equal(wrangler.name, 'wattdesk-2026');
 assert.equal(wrangler.assets?.directory, './dist');
 assert.equal(wrangler.assets?.not_found_handling, 'single-page-application');
+assert.equal(inverterWrangler.name, 'wattdesk-inverter-preview');
+assert.equal(inverterWrangler.main, './deploy/inverter-preview-worker.js');
+assert.match(inverterWorker, /"\/settings"/, 'the standalone settings route stays available');
+assert.match(inverterWorker, /"\/setup\/20kw"/, 'the 20 kW initialization route is allowlisted');
+assert.match(inverterWorker, /"\/setup\/50kw"/, 'the 50 kW initialization route is allowlisted');
+assert.match(inverterWorker, /INITIALIZATION_PATHS\.has\(url\.pathname\)/, 'initialization access must use the exact allowlist');
+assert.doesNotMatch(inverterWorker, /startsWith\(["']\/setup\//, 'the standalone domain must not expose every setup path');
 
 fs.rmSync(out, {recursive: true, force: true});
 const build = spawnSync(process.execPath, ['scripts/build-site.cjs', '--public', `--out=${out}`], {
@@ -42,4 +51,4 @@ assert.equal(configuredBuild.status, 0, configuredBuild.stderr || configuredBuil
 const configuredHtml = fs.readFileSync(path.join(configuredOut, 'index.html'), 'utf8');
 assert.match(configuredHtml, /<meta name="mapbox-access-token" content="pk\.test-build-token">/, 'the public Mapbox token is injected at build time');
 fs.rmSync(configuredOut, {recursive: true, force: true});
-console.log(JSON.stringify({ok: true, spaFallback: true, mapboxTokenInjection: true, redirectRules: redirects.trim().split('\n').length}));
+console.log(JSON.stringify({ok: true, spaFallback: true, mapboxTokenInjection: true, standaloneRoutes: ['/settings', '/setup/20kw', '/setup/50kw'], redirectRules: redirects.trim().split('\n').length}));

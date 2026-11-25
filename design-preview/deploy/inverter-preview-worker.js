@@ -1,6 +1,10 @@
 const MAIN_ORIGIN = "https://wattdesk-preview.carlwang.cn";
 const SETTINGS_ORIGIN_PATH =
   "/plants/p25/devices/inverter-settings?device=inverter&standalone=1";
+const INITIALIZATION_PATHS = new Set([
+  "/setup/20kw",
+  "/setup/50kw"
+]);
 
 function redirectToSettings(request) {
   const target = new URL("/settings", request.url);
@@ -24,8 +28,8 @@ function upstreamRequest(request, pathname = null) {
   return new Request(target, request);
 }
 
-function standalonePage(request) {
-  return fetch(upstreamRequest(request, SETTINGS_ORIGIN_PATH));
+function proxyPage(request, pathname = null) {
+  return fetch(upstreamRequest(request, pathname));
 }
 
 export default {
@@ -33,13 +37,16 @@ export default {
     const url = new URL(request.url);
 
     if (url.pathname === "/") return redirectToSettings(request);
-    if (url.pathname === "/settings") return standalonePage(request);
+    if (url.pathname === "/settings") {
+      return proxyPage(request, SETTINGS_ORIGIN_PATH);
+    }
+    if (INITIALIZATION_PATHS.has(url.pathname)) return proxyPage(request);
 
     if (
       url.pathname.startsWith("/src/") ||
       url.pathname.startsWith("/home-assets/")
     ) {
-      return fetch(upstreamRequest(request));
+      return proxyPage(request);
     }
 
     if (url.pathname === "/robots.txt") {

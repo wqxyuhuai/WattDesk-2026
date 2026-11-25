@@ -36,12 +36,19 @@
 - 电站详情使用本地数据中的稳定 `id`（如 `p02`），不按名称或数组下标生成 URL。可选 `device` 只接受 `inverter`、`bms`、`heater`；缺省时页面读取该电站设备顺序并选中第一项。刷新、复制链接和标签恢复保留当前设备。详情页接入真实接口后沿用同一 URL 契约，接口 ID 或稳定设备 ID 变化必须视为 URL 变更。
 - Devices 使用稳定 slug `devices`；与 Overview 之间切换写入当前工作区标签历史，并保留 `device` 查询参数。刷新、复制链接、标签恢复和浏览器前进/后退仍停留在对应状态。
 - Inverter settings 使用稳定 slug `inverter-settings`，位于 `devices` 下；`serial` 用于在多台同类型设备中定位具体逆变器。只有右上 X 会返回 `/plants/:id/devices?device=inverter`；`Cancel` 只回滚当前主页面或当前 Grid 二级页并留在设置页。当前页 dirty 时切换主页面或 Grid 二级页会先显示共享确认；Discard 在点击当下启动目标页转场。空白遮罩和 Escape 都不退出。设置页的临时子页面和草稿不进入 URL；刷新后恢复样例设置，因为后端持久化尚未接入。
-- `/settings` 是独立预览的简洁别名，固定映射到 `p25` 的第一台逆变器并启用 standalone。专属域名 `inverter.carlwang.cn` 只代理 `/settings` 与静态资源；`/` 重定向到 `/settings`，其余 WattDesk 页面返回 404，避免通过独立域名访问整体设计。
-- `/setup/20kw` 与 `/setup/50kw` 是初始化流程的独立本地预览入口。前者使用
+- `/settings`、`/setup/20kw` 与 `/setup/50kw` 是独立域名的公开简洁路径。
+  `/settings` 固定映射到 `p25` 的第一台逆变器并启用 standalone。专属域名
+  `inverter.carlwang.cn` 只代理这三个精确路径与静态资源；`/` 重定向到
+  `/settings`，`/setup`、`/setup/30kw` 及其余 WattDesk 页面返回 404，避免通过
+  独立域名访问整体设计。Worker 禁止使用 `/setup/*` 通配。
+- `/setup/20kw` 与 `/setup/50kw` 是初始化流程的独立预览入口；线上地址分别为
+  `https://inverter.carlwang.cn/setup/20kw` 和
+  `https://inverter.carlwang.cn/setup/50kw`。前者使用
   `4 MPPT / 1 battery path` 夹具，后者使用 `4 MPPT / 2 battery paths`
   夹具；两者共用同一向导，刷新、主题切换和直接打开有效。当前只模拟最终提交，
   不写设备或 `Device_Init_Flag`。
-- `/settings` 是唯一公开分享路径，必须保持简洁。不得新增或恢复
+- `/settings`、`/setup/20kw` 与 `/setup/50kw` 是仅有的公开分享路径，必须保持
+  简洁。不得新增或恢复
   `wattdesk-preview` 长分享链接、`/inverter` 应用别名或
   `www.carlwang.cn/inverter` 备用路由；旧入口删除后，其 HTTP 响应应为 404。
 - 独立预览仅在专用域名暴露给外部；standalone 模式隐藏 `#home`、侧栏、其他
@@ -97,5 +104,6 @@ npm run build:site:public
 ```
 
 必须实际验证：从 `/` 进入 `/home`；在 `/plants` 刷新仍在 Plants；打开 `/plants/p02` 后刷新仍是同一电站；打开 `/service/st-25638663` 后刷新仍是同一工单；两种详情返回来源列表；未知路径不回到 Home；构建产物 `_headers` 为 `/plants/*` 与 `/service/*` 保持 HTML 重验证。
-独立预览另需验证：`inverter.carlwang.cn/` 302 到 `/settings`，`/settings` 为
-200，该域名 `/home` 与 `/plants` 为 404，旧 `/inverter` 兼容入口为 404。
+独立预览另需验证：`inverter.carlwang.cn/` 302 到 `/settings`，`/settings`、
+`/setup/20kw` 与 `/setup/50kw` 为 200；该域名 `/setup`、`/setup/30kw`、
+`/home` 与 `/plants` 为 404，旧 `/inverter` 兼容入口为 404。
