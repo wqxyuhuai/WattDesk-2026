@@ -1,6 +1,6 @@
 # Inverter settings functional audit
 
-Updated: 2026-11-24
+Updated: 2026-11-25
 
 Baseline:
 
@@ -13,6 +13,41 @@ Check code, live-aligned labels, relative-time rendering and page-scoped save.
 The effective page contract lives in
 [`docs/INVERTER-SETTINGS.md`](../../../../docs/INVERTER-SETTINGS.md); this file
 records functional evidence, fixed issues and remaining integration boundaries.
+
+## 2026-11-25 Initialization / settings parity hardening
+
+The setup wizard and normal Inverter settings now consume the same page-level
+business contracts where they previously risked drifting:
+
+| Contract | Shared module | Result |
+|---|---|---|
+| Schedule sorting, validation and timeline segments | `schedule-editor.js` | Economic / ToU setup and settings share start-time ordering, range checks, overlap handling, 24h segments and the Economic Discharge confirmation predicate |
+| Battery topology and field definitions | `battery-editor.js` | Single, parallel and split banks share Brand / BMS / Protocol / current fields and validation; protocol is disabled when BMS is disabled |
+| Grid profile state and filtering | `grid-profile-editor.js` | Setup and settings share selectable / roadmap / preview status and search filtering |
+| Time entry interaction | `components/time-range-control.js` | Both surfaces keep the same masked time wheel and validation-on-close interaction |
+
+Functional gaps closed:
+
+- MPPT parallel enabled with no valid group blocks `Next` in setup and displays
+  `At least one MPPT Group must be created` from the shared group editor.
+- An empty Economic / ToU schedule keeps `Add at least one schedule period.` in
+  the schedule table instead of promoting it to a page-header banner.
+- Import / Export Permissions appear only for their enabled limits. Switching
+  export from `Solar and Battery` to a battery-blocking option while Economic
+  Discharge exists opens the shared confirmation; Cancel, Escape and backdrop
+  dismissal roll back, while Continue commits.
+- BMS Communication and Battery Protocol are present in setup and settings. Both
+  the protocol and Battery Brand use `128px`; disabling BMS keeps the protocol
+  value visible but non-interactive.
+- Running Mode carries explicit wire values `[0, 1, 2, 3, 4, 6]`. Forecast Mode
+  is not implemented, so Off-Grid remains `6` rather than inheriting `5`.
+- The completed setup state keeps the `3s` automatic close and also allows the
+  shared `Close (3s)` button to close immediately.
+
+The page-specific string / imperative DOM assembly remains separate because the
+settings table is generated from an HTML renderer while setup hydrates a wizard
+step. Business rules, option catalogs, validation, ordering and confirmation
+conditions are shared; neither page owns a second copy of those decisions.
 
 ## 2026-11-24 Active-power point contracts and reported effective values
 
@@ -43,6 +78,28 @@ Limit source is a single-line status row without a numeric progress track.
 Changing Setpoint, export limit or battery capability leaves the displayed
 reported values unchanged until the telemetry source changes. If telemetry is
 unavailable, the UI reports unavailable state instead of deriving a fallback.
+
+## 2026-11-25 IPS Check
+
+`IPS Check` is a conditional Grid secondary page for `IT CEI 0-21`.
+
+| Area | Implemented result |
+|---|---|
+| Entry | Hidden for every other grid code; visible but disabled while Italy is still an unsaved draft. Italy preview keeps all common Grid pages and places IPS Check last |
+| Save gate | Hover / focus on the disabled entry explains `Save the grid code to enable the IPS Check.` |
+| Required check | `IPS_Selfcheck_Require=1` uses danger emphasis until the check passes and toasts the grid-connection requirement whenever Settings opens |
+| Overall state | Offline overrides all item state; otherwise checking → failed → passed → not checked → interrupted |
+| Item results | Eight cards expose the supplied voltage/frequency trip limits, measured values and protection times; unavailable telemetry stays `--` |
+| Run action | Local preview simulates `Italy_SelfTest_Enable=1`, locks the action while checking, and records completion time plus all item results |
+| History | The 640px `IPS Check Record` modal is launched from the fixed page-title row, reuses the shared modal stack, summary card, settings-card grid and shared scroll viewport, and lists all eight results |
+| Persistence | `ips` is transient RO/result state and never enters normal page dirty, Save or Operation Log |
+| Preview data | `p25` exposes `IT CEI 0-21` as `Preview only`; no certified Italian protection values are copied from another country |
+
+Point mapping is centralized in `settings-options.js`. The requirement uses
+`Certification_Standard=21`, `IPS_Selfcheck_Require`, the eight item status
+points and `Italy_SelfTest_Enable`. The source document also contains the
+leading-character variant `ltaly_SelfTest_Enable`; it is retained only as an
+alias note until firmware metadata confirms which spelling is authoritative.
 
 ## 2026-11-23 1120 incremental update
 
@@ -398,7 +455,9 @@ profile data, save behavior or local hardware-demo boundaries.
 | Medium | Hardware actions | Power, restart, reset, CT check and export remain local demonstrations rather than firmware commands. |
 | Medium | Hard-coded preview ranges | Some values are broad placeholders and are not evidence of firmware limits. They must not block legitimate production values. |
 | Medium | Grid code data conflicts | The source package itself lists unresolved firmware/certification issues for DE, SE, CZ, PL, BE and others. Current rendering faithfully preserves those supplied values. |
-| Low | Source-plan drift | Separate ToU Manual and Dynamic pages are now implemented. IPS Check and screen language still remain unexposed. |
+| Medium | Battery Protocol catalog | The preview currently exposes only `Wattsonic`; production protocol values and disabled-BMS behavior must come from backend / BMS metadata. |
+| Medium | Running Mode enum | Current wire values preserve the Off-Grid gap at `6`; Forecast Mode remains unimplemented until its product behavior and point value are confirmed. |
+| Low | Source-plan drift | Separate ToU Manual and Dynamic pages and IPS Check are now implemented. Screen language still remains unexposed. |
 
 ## Intentional deviations from the prototype
 
@@ -413,6 +472,9 @@ profile data, save behavior or local hardware-demo boundaries.
 ## Latest verification
 
 - `npm run check`
+- `node tests/verify-select-states.cjs`
+- `node tests/verify-ips-check.cjs`
+- `node tests/verify-inverter-settings.cjs`
 - ToU Manual / Dynamic：two shared-icon entries with `Manual / Dynamic` trailing
   values; 24-period Manual editor; 640px five-column desktop tables; segmented
   Today/Tomorrow; 96 price points; Tomorrow empty state; dynamic threshold

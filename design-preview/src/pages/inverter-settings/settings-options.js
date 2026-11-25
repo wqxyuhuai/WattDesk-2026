@@ -11,10 +11,151 @@ export const DI_PORT_OPTIONS=Object.freeze(Object.values(DRM_SET_VALUES));
 export const NETWORK_INTERFACE_OPTIONS=Object.freeze(["LAN","Wi-Fi","4G"]);
 export const EXPORT_FORMAT_OPTIONS=Object.freeze(["PDF","XLSX"]);
 export const BATTERY_BRAND_OPTIONS=Object.freeze(["Wattsonic"]);
+export const BATTERY_PROTOCOL_OPTIONS=Object.freeze(["Wattsonic"]);
 export const LIMIT_BASIS_OPTIONS=Object.freeze(["Total","Per phase"]);
+export const IMPORT_PERMISSION_OPTIONS=Object.freeze([
+ Object.freeze({value:1,label:"Charge From Grid Allowed"}),
+ Object.freeze({value:0,label:"Forbidden Grid Charge"})
+]);
+export const EXPORT_PERMISSION_OPTIONS=Object.freeze([
+ Object.freeze({value:"solar_battery",label:"Solar and Battery"}),
+ Object.freeze({value:"solar_only",label:"Solar Only"}),
+ Object.freeze({value:"non_export",label:"Permanent Non Export"})
+]);
 export const MPPT_SOURCE_OPTIONS=Object.freeze(["Solar","Wind","None"]);
 export const CT_CURRENT_MODE_OPTIONS=Object.freeze(["Meter Current","CT Current"]);
 export const POWER_CHANGE_OPTIONS=Object.freeze(["Step","Ramp"]);
+export const IPS_CHECK_ITEMS=Object.freeze([
+ Object.freeze({
+  id:"overF1",
+  code:"81>.S1",
+  description:"Level 1 Overfrequency",
+  statusPoint:"OverF1Status",
+  rangePoint:"OverF1_Range",
+  timePoint:"OverF1_Time",
+  measuredPoint:"Grid_Frequency",
+  quantity:"frequency",
+  level:1,
+  range:50.2,
+  time:0.1,
+  measured:null,
+  protectionMs:null
+ }),
+ Object.freeze({
+  id:"underF1",
+  code:"81<.S1",
+  description:"Level 1 Underfrequency",
+  statusPoint:"UnderF1Status",
+  rangePoint:"UnderF1_Range",
+  timePoint:"UnderF1_Time",
+  measuredPoint:"Grid_Frequency",
+  quantity:"frequency",
+  level:1,
+  range:49.8,
+  time:0.1,
+  measured:null,
+  protectionMs:null
+ }),
+ Object.freeze({
+  id:"overV1",
+  code:"59.S1",
+  description:"Level 1 Overvoltage",
+  statusPoint:"OverV1Status",
+  rangePoint:"OverV1_Range",
+  alternateRangePoint:"OverV_10min_Value",
+  timePoint:"OverV1_Time",
+  alternateTimePoint:"60000+OverV_10min_Time",
+  measuredPoint:"Grid_Voltage_A",
+  quantity:"voltage",
+  level:1,
+  range:253,
+  time:3,
+  measured:230.1,
+  protectionMs:603000
+ }),
+ Object.freeze({
+  id:"underV1",
+  code:"27.S1",
+  description:"Level 1 Undervoltage",
+  statusPoint:"UnderV1Status",
+  rangePoint:"UnderV1_Range",
+  timePoint:"UnderV1_Time",
+  measuredPoint:"Grid_Voltage_A",
+  quantity:"voltage",
+  level:1,
+  range:195.5,
+  time:1.5,
+  measured:230.3,
+  protectionMs:1500
+ }),
+ Object.freeze({
+  id:"overF2",
+  code:"81>.S2",
+  description:"Level 2 Overfrequency",
+  statusPoint:"OverF2Status",
+  rangePoint:"OverF2_Range",
+  timePoint:"OverF2_Time",
+  measuredPoint:"Grid_Frequency",
+  quantity:"frequency",
+  level:2,
+  range:51.5,
+  time:0.1,
+  measured:null,
+  protectionMs:null
+ }),
+ Object.freeze({
+  id:"underF2",
+  code:"81<.S2",
+  description:"Level 2 Underfrequency",
+  statusPoint:"UnderF2Status",
+  rangePoint:"UnderF2_Range",
+  timePoint:"UnderF2_Time",
+  measuredPoint:"Grid_Frequency",
+  quantity:"frequency",
+  level:2,
+  range:47.5,
+  time:0.1,
+  measured:null,
+  protectionMs:null
+ }),
+ Object.freeze({
+  id:"overV2",
+  code:"59.S2",
+  description:"Level 2 Overvoltage",
+  statusPoint:"OverV2Status",
+  rangePoint:"OverV2_Range",
+  timePoint:"OverV2_Time",
+  measuredPoint:"Grid_Voltage_A",
+  quantity:"voltage",
+  level:2,
+  range:264.5,
+  time:0.2,
+  measured:230.1,
+  protectionMs:200
+ }),
+ Object.freeze({
+  id:"underV2",
+  code:"27.S2",
+  description:"Level 2 Undervoltage",
+  statusPoint:"UnderV2Status",
+  rangePoint:"UnderV2_Range",
+  timePoint:"UnderV2_Time",
+  measuredPoint:"Grid_Voltage_A",
+  quantity:"voltage",
+  level:2,
+  range:34.5,
+  time:0.2,
+  measured:230.2,
+  protectionMs:200
+ })
+]);
+export const IPS_CHECK_POINTS=Object.freeze({
+ certificationStandard:"Certification_Standard",
+ selfCheckRequired:"IPS_Selfcheck_Require",
+ startCheck:"Italy_SelfTest_Enable",
+ startCheckLegacyAlias:"ltaly_SelfTest_Enable",
+ overall:"derived-from-item-status"
+});
 export const F_P_REFERENCE_OPTIONS=Object.freeze([
  "Rated power",
  "Power at the time of the event"

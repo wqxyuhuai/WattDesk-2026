@@ -13,15 +13,22 @@ import {bindDisclosure} from "../../components/disclosure.js";
 import {menuList,menuRow,mountMenu} from "../../components/menu-popover.js";
 import {makeNavRow} from "../../components/navigation.js";
 import {createTimeRangeControl} from "../../components/time-range-control.js";
+import {createSettingsModeMotion} from "../../components/settings-mode-motion.js";
+import {createHoverPanelBinder} from "../../components/hover-panel.js";
+import {createMpptGroupEditor} from "../../components/mppt-group-editor.js";
+import {animateSettingsPageTransition} from "../../components/settings-page-transition.js";
 import {animateContentHeight,motionDuration,motionEasing,reducedMotion} from "../../foundations/motion.js";
 import {createSettingsModel,ECONOMIC_MODES,isEconomicDraft,modeIndexFromLabel,MODES,minutesToTime,timeToMinutes} from "./settings-model.js";
 import {GRID_PAGES,MPPT_PARALLEL_HINT,NAV_GROUPS,PAGES,backupOutputSafetyNotice,formatSigned,mpptGroupLabel} from "./settings-content.js";
 import {
  BATTERY_BRAND_OPTIONS,
+ BATTERY_PROTOCOL_OPTIONS,
  CAPABILITY_OPTIONS,
  CT_CURRENT_MODE_OPTIONS,
  DI_PORT_OPTIONS,
+ EXPORT_PERMISSION_OPTIONS,
  EXPORT_FORMAT_OPTIONS,
+ IMPORT_PERMISSION_OPTIONS,
  LIMIT_BASIS_OPTIONS,
  MPPT_SCAN_INTERVAL_OPTIONS,
  MPPT_SOURCE_OPTIONS,
@@ -38,6 +45,8 @@ import {
 import {settingRange,settingRangeMessage} from "./settings-validation.js";
 import {hydrateTouSettingsPage,validateTouSchedule} from "./tou-settings.js";
 import {openResetRecovery} from "./reset-recovery.js";
+import {openIpsCheckRecord} from "./ips-check.js";
+import {requiresBatteryExportConfirmation,sortSchedulePeriods,validateScheduleRange} from "./schedule-editor.js";
 
 const settingIconURL=key=>assetURL(SETTINGS_ICON_FILES[key]);
 const ICONS=Object.freeze({
@@ -103,7 +112,7 @@ async function copyText(value){
  return copied;
 }
 
-const TRANSIENT_SETTINGS=new Set(["page","gridSub","gridOpen","unlocked","mpptPickerOpen","navExpanded","log","ct","ops","touDay","touView"]);
+const TRANSIENT_SETTINGS=new Set(["page","gridSub","gridOpen","unlocked","mpptPickerOpen","navExpanded","log","ct","ops","ips","touDay","touView"]);
 const MAIN_PAGE_SETTING_PATHS=Object.freeze({
  mode:[["runMode"]],
  eco:[["eco"]],
@@ -422,15 +431,31 @@ function renderNav(model){
  return fragment;
 }
 
-function renderSubnav(model){
+function renderSubnav(model,{ipsSaved=false,bindTooltip=null}={}){
  const fragment=document.createDocumentFragment();
  for(const [id,label] of model.gridSubs()){
   const button=text("button","isw-subnav-item wd-control-state");
   button.type="button";
   button.dataset.iswSub=id;
+  const isIps=id==="ips";
+  const ipsDisabled=isIps&&!ipsSaved;
   button.classList.toggle("is-selected",model.S.gridSub===id);
+  if(isIps)button.classList.add(`is-ips-${model.ipsEntryTone()}`);
+  if(ipsDisabled){
+   button.classList.add("is-disabled");
+   button.setAttribute("aria-disabled","true");
+  }
   if(model.S.gridSub===id)button.setAttribute("aria-current","page");
   button.append(text("span","isw-control-label",label,"Footnote/Medium"));
+  if(ipsDisabled&&bindTooltip){
+   bindTooltip(
+    button,
+    "Save the grid code to enable the IPS Check.",
+    "IPS Check unavailable",
+    248,
+    {align:"center"}
+   );
+  }
   fragment.append(button);
  }
  return fragment;
@@ -543,12 +568,16 @@ function createWindow({device,model,onCancel,onSave,glass,toast,registerPanel,to
  renderOverview(model,overview);
 
  const controlDisposers=[];
+ const bindHoverPanel=createHoverPanelBinder({
+  registerPanel,
+  closePanels,
+  addDisposer:dispose=>controlDisposers.push(dispose)
+ });
  const switchControls=new Map();
  const segmentedControls=new Map();
  const surfaceGrowthVersions=new WeakMap();
  const navDisposers=[];
  const shellEvents=new AbortController();
- let modeAnimations=[];
  const timerIds=new Set();
  let destroyed=false;
  let closeNavigationAfterExit=false;
@@ -559,7 +588,6 @@ function createWindow({device,model,onCancel,onSave,glass,toast,registerPanel,to
  let actionsTransition=0;
  let pageChangeConfirm=null;
  let backupOutputAlert=null;
- let pendingMpptPicker=false;
  let wifiPasswordVisible=false;
  let animateNextSurfaceGrowth=false;
  let viewSwitchGeneration=0;
@@ -624,16 +652,27 @@ function createWindow({device,model,onCancel,onSave,glass,toast,registerPanel,to
   content,
   elastic:true,
   preserveBottomOnShrink:true,
+  wheelDeadZone:1.5,
+  wheelPullRatio:.08,
   topInset:scrollTrackInset,
   bottomInset:()=>actions.hidden?scrollTrackInset:actions.offsetHeight+scrollTrackInset,
   visibility:"hover"
  });
  scrollFeedback.element.style.setProperty("--wd-scroll-feedback-right","4px");
+ const modeMotion=createSettingsModeMotion({
+  scope:content,
+  onSettled(){
+   scrollFeedback.sync();
+   requestAnimationFrame(()=>scrollFeedback.sync());
+  }
+ });
  const navFeedback=createScrollFeedback({
   host:nav,
   viewport:navScroll,
   content:navContent,
   elastic:true,
+  wheelDeadZone:1.5,
+  wheelPullRatio:.08,
   topInset:scrollTrackInset,
   bottomInset:scrollTrackInset,
   visibility:"hover"
@@ -812,44 +851,18 @@ function clearViewSwitch({preserveActive=false}={}){
 
 function crossfadeView(page,outgoingPage,outgoingTitle,layoutSnapshot,subTransition){
   const generation=++viewSwitchGeneration;
-  const outgoingOpacity=Number.parseFloat(getComputedStyle(outgoingPage).opacity);
- const outgoingTitleOpacity=Number.parseFloat(outgoingTitle?.style.opacity);
- const incomingTitle=titleLayer.querySelector(".isw-title-label");
-  const oldOptions={
-   duration:motionDuration("--wd-motion-view-switch-out"),
-  easing:motionEasing("--wd-ease-view-switch-out"),
-  fill:"both"
-  };
-  const newOptions={
-   duration:motionDuration("--wd-motion-view-switch-in"),
-   delay:motionDuration("--wd-motion-view-switch-delay"),
-  easing:motionEasing("--wd-ease-view-switch"),
-  fill:"both"
-  };
-  outgoingPage.style.willChange="opacity";
-  page.style.willChange="opacity";
-  const animations=[
-   outgoingPage.animate([{opacity:Number.isFinite(outgoingOpacity)?outgoingOpacity:1},{opacity:0}],oldOptions),
-   page.animate([{opacity:0},{opacity:1}],newOptions)
-  ];
-  if(outgoingTitle){
-  outgoingTitle.classList.remove("isw-title-label--entering");
-  outgoingTitle.classList.add("isw-title-label--ghost");
-   outgoingTitle.setAttribute("aria-hidden","true");
-  titleLayer.querySelector(".isw-page-title")?.append(outgoingTitle);
-  if(Number.isFinite(layoutSnapshot?.titleLeft)){
-   const incomingLeft=incomingTitle?.getBoundingClientRect().left;
-   if(Number.isFinite(incomingLeft))outgoingTitle.style.translate=`${layoutSnapshot.titleLeft-incomingLeft}px 0`;
-  }
-   outgoingTitle.style.opacity=String(Number.isFinite(outgoingTitleOpacity)?outgoingTitleOpacity:1);
-   outgoingTitle.style.willChange="opacity";
-  if(incomingTitle){
-   incomingTitle.style.opacity="0";
-   incomingTitle.style.willChange="opacity";
-  }
-  animations.push(outgoingTitle.animate([{opacity:outgoingTitleOpacity},{opacity:0}],oldOptions));
-  if(incomingTitle)animations.push(incomingTitle.animate([{opacity:0},{opacity:1}],newOptions));
-  }
+  const incomingTitle=titleLayer.querySelector(".isw-title-label");
+  const transition=animateSettingsPageTransition({
+   page,
+   outgoingPage,
+   titleLayer,
+   incomingTitle,
+   outgoingTitle,
+   titleLeft:layoutSnapshot?.titleLeft
+  });
+  if(!transition)return;
+  const {oldOptions,newOptions}=transition;
+  const animations=[...transition.animations];
  if(subTransition?.entering){
   sub.style.opacity="0";
   sub.style.willChange="opacity";
@@ -876,15 +889,9 @@ function crossfadeView(page,outgoingPage,outgoingTitle,layoutSnapshot,subTransit
   viewSwitchAnimations=animations;
   Promise.all(animations.map(animation=>animation.finished.catch(()=>{}))).then(()=>{
    if(generation!==viewSwitchGeneration||destroyed)return;
-   outgoingPage.remove();
-   outgoingTitle?.remove();
-   for(const animation of animations)animation.cancel();
+   transition.finish();
    viewSwitchAnimations=[];
-   page.style.removeProperty("opacity");
-   page.style.removeProperty("will-change");
   page.classList.remove("isw-page--incoming");
-  incomingTitle?.style.removeProperty("opacity");
-  incomingTitle?.style.removeProperty("will-change");
   sub.style.removeProperty("opacity");
   sub.style.removeProperty("will-change");
   subTransition?.element?.remove();
@@ -914,62 +921,6 @@ function crossfadeView(page,outgoingPage,outgoingTitle,layoutSnapshot,subTransit
    }
    animation.finished.then(finish).catch(finish);
   }
- }
-
- function bindHoverPanel(anchor,message,label,width=null,{align="start",onActivate=null}={}){
-  if(!registerPanel)return ()=>{};
-  let panel=null,closeTimer=0,disposed=false;
-  const close=()=>{
-   clearTimeout(closeTimer);
-   closeTimer=0;
-   const active=panel;
-   panel=null;
-   if(active?.isConnected){
-    active._onClose?.();
-    active.remove();
-   }
-  };
-  const scheduleClose=()=>{
-   clearTimeout(closeTimer);
-   closeTimer=setTimeout(close,120);
-  };
-  const cancelClose=()=>{
-   clearTimeout(closeTimer);
-   closeTimer=0;
-  };
-  const open=()=>{
-   if(disposed)return;
-   cancelClose();
-   closePanels?.(true);
-   panel=text("div","popover isw-hover-popover",onActivate?undefined:message,"Footnote/Medium");
-   if(onActivate){
-    const body=text("button","isw-hover-copy",message,"Footnote/Medium");
-    body.type="button";
-    body.setAttribute("aria-label",`Copy ${message}`);
-    body.addEventListener("click",()=>void onActivate());
-    panel.append(body);
-   }
-   panel.style.width=width?`${width}px`:"max-content";
-   panel.style.maxWidth="min(280px,calc(100vw - 24px))";
-   panel.addEventListener("pointerenter",cancelClose);
-   panel.addEventListener("pointerleave",scheduleClose);
-   panel.addEventListener("focusin",cancelClose);
-   panel.addEventListener("focusout",event=>{
-    if(!panel?.contains(event.relatedTarget))scheduleClose();
-   });
-   panel=registerPanel(panel,anchor,{label,width,align,radius:18});
-   anchor.setAttribute("aria-describedby",panel.id);
-  };
-  anchor.addEventListener("pointerenter",open);
-  anchor.addEventListener("pointerleave",scheduleClose);
-  anchor.addEventListener("focus",open);
-  anchor.addEventListener("blur",scheduleClose);
-  controlDisposers.push(()=>{
-   disposed=true;
-   close();
-   anchor.removeAttribute("aria-describedby");
-  });
-  return close;
  }
 
  function showBackupOutputSafetyAlert(enabling){
@@ -1041,6 +992,32 @@ function crossfadeView(page,outgoingPage,outgoingTitle,layoutSnapshot,subTransit
   }
  }
 
+ function hydrateActionControls(scope){
+  for(const slot of scope.querySelectorAll("[data-isw-standard-button]")){
+   const action=slot.dataset.iswAction;
+   const label=slot.dataset.iswButtonLabel||slot.textContent;
+   const requestedVariant=slot.dataset.iswButtonVariant;
+   const variant=["primary","danger","warning"].includes(requestedVariant)?requestedVariant:"neutral";
+   const button=createStandardButton({label,variant});
+   for(const className of slot.classList){
+    if(className!=="isw-button-slot")button.classList.add(className);
+   }
+   button.hidden=slot.hidden;
+   button.dataset.iswAction=action;
+   button.dataset.iswButtonLabel=label;
+   button.dataset.iswStandardButton="";
+   button.disabled=slot.disabled;
+   if(glass){
+    glass.addSurface({host:button,radius:18});
+    controlDisposers.push(()=>glass.removeSurface(button));
+   }
+   slot.replaceWith(button);
+  }
+  for(const button of scope.querySelectorAll("[data-isw-action]")){
+   button.addEventListener("click",()=>runAction(button.dataset.iswAction,button));
+  }
+ }
+
  function hydratePage(page){
   hydrateIcons(page);
   decorateNumberInputs(page);
@@ -1069,22 +1046,7 @@ function crossfadeView(page,outgoingPage,outgoingTitle,layoutSnapshot,subTransit
     input.focus({preventScroll:true});
    });
   }
- for(const slot of page.querySelectorAll("[data-isw-standard-button]")){
-  const action=slot.dataset.iswAction;
-  const label=slot.dataset.iswButtonLabel||slot.textContent;
-  const requestedVariant=slot.dataset.iswButtonVariant;
-  const variant=["primary","danger","warning"].includes(requestedVariant)?requestedVariant:"neutral";
-  const button=createStandardButton({label,variant});
-  button.dataset.iswAction=action;
-  button.dataset.iswButtonLabel=label;
-  button.dataset.iswStandardButton="";
-  button.disabled=slot.disabled;
-  if(glass){
-   glass.addSurface({host:button,radius:18});
-   controlDisposers.push(()=>glass.removeSurface(button));
-  }
-  slot.replaceWith(button);
- }
+ hydrateActionControls(page);
   const usedSwitchPaths=new Set();
   const usedSegmentedPaths=new Set();
   for(const slot of page.querySelectorAll("[data-isw-switch]")){
@@ -1122,8 +1084,7 @@ function crossfadeView(page,outgoingPage,outgoingTitle,layoutSnapshot,subTransit
       model.regenerateTouDynamic();
      }
      if(path==="mppt.parallel"){
-      pendingMpptPicker=Boolean(value&&model.capabilities.mpptCount>2&&!model.mpptGroups().length);
-      model.S.mpptPickerOpen=pendingMpptPicker;
+       model.S.mpptPickerOpen=Boolean(value&&model.capabilities.mpptCount>2&&!model.mpptGroups().length);
      }
      pendingFocus={type:"switch",value:path};
      animateNextSurfaceGrowth=true;
@@ -1217,6 +1178,63 @@ function crossfadeView(page,outgoingPage,outgoingTitle,layoutSnapshot,subTransit
    });
    control.element.dataset.iswBatteryBrand=path;
    control.element.dataset.iswLogLabel=slot.dataset.iswLogLabel||label;
+   slot.replaceWith(control.element);
+  }
+  for(const slot of page.querySelectorAll("[data-isw-settings-select]")){
+   const path=slot.dataset.iswSettingsSelect;
+   const label=slot.dataset.iswSettingsSelectLabel||path;
+   const options=JSON.parse(decodeURIComponent(slot.dataset.iswSettingsSelectOptions||"[]"));
+    const className=slot.dataset.iswSettingsSelectClass||"";
+   const decodedValue=decodeURIComponent(slot.dataset.iswSettingsSelectValue||"");
+   const currentOption=options.find(option=>String(option.value)===decodedValue)||options[0];
+   const value=currentOption?.value??decodedValue;
+   const control=createSelectControl({
+    label,
+    value,
+    options,
+    variant:"adaptive",
+    className,
+    registerPanel,
+    close:closePanels,
+    toggle:togglePanel,
+    onChange:next=>{
+     const nextOption=options.find(option=>String(option.value)===String(next));
+     const nextValue=nextOption?.value??next;
+     const previous=model.get(path);
+     const confirmBatteryExportChange=path==="limits.exportPermission"
+      &&requiresBatteryExportConfirmation({
+       previous,
+       next:nextValue,
+       runMode:model.S.runMode,
+       economicPeriods:model.S.eco
+      });
+     const apply=()=>{
+      model.set(path,nextValue);
+      pendingFocus={type:"settingsSelect",value:path};
+      refresh();
+     };
+     if(confirmBatteryExportChange){
+      createConfirmDialog({
+       glass,
+       title:"Disable battery export?",
+       description:"Economic Mode currently contains a Discharge period. Battery energy will no longer be exported to the grid after this change.",
+       confirmLabel:"Continue",
+       cancelLabel:"Cancel",
+       icon:createMaskedIcon(assetURL("light/imgBoldEssentionalUiDanger.svg"),"plants-device-action-icon"),
+       danger:false,
+       onConfirm:apply,
+       onCancel:()=>control.setValue(previous,{notify:false})
+      });
+      return;
+     }
+     apply();
+    }
+   });
+   if(options.length&&options.every(option=>option.disabled)){
+    control.element.disabled=true;
+    control.element.setAttribute("aria-disabled","true");
+   }
+   control.element.dataset.iswSettingsSelect=path;
    slot.replaceWith(control.element);
   }
   function batterySocFields(input){
@@ -1527,7 +1545,7 @@ function crossfadeView(page,outgoingPage,outgoingTitle,layoutSnapshot,subTransit
     if(index===model.S.runMode)return;
     model.S.runMode=index;
     syncNavigationValues();
-    animateModeSelection(index,page);
+    modeMotion.animate(index,page);
     renderOverview(model,overview);
     syncActions();
    });
@@ -1604,9 +1622,6 @@ function crossfadeView(page,outgoingPage,outgoingTitle,layoutSnapshot,subTransit
    control.element.dataset.iswRidePriorityTrigger=key;
    slot.replaceWith(control.element);
   }
-  for(const button of page.querySelectorAll("[data-isw-action]")){
-   button.addEventListener("click",()=>runAction(button.dataset.iswAction,button));
-  }
   for(const button of page.querySelectorAll("[data-isw-copy-value]")){
    button.addEventListener("click",async()=>{
     const label=button.dataset.iswCopyLabel||"Value";
@@ -1670,237 +1685,24 @@ function crossfadeView(page,outgoingPage,outgoingTitle,layoutSnapshot,subTransit
  }
 
 function hydrateMppt(page){
- const buildGroupPicker=(anchor,groupId=null)=>{
-  if(!anchor||!registerPanel)return null;
-  const groups=model.mpptGroups();
-  const editing=groupId!==null;
-  const currentGroup=editing?groups.find(group=>group.id===groupId):null;
-  const activeIndices=model.mpptIndices();
-  const claimed=new Set(groups
-   .filter(group=>group.id!==groupId)
-   .flatMap(group=>group.members));
-  const selected=new Set(currentGroup?.members||[]);
-  const panel=text("div","popover popover--menu wd-select-popover isw-mppt-picker-popover");
-  const picker=text("div","wd-menu wd-menu--no-heading isw-mppt-picker");
-  const options=text("div","wd-menu-list isw-mppt-picker-options");
-  options.setAttribute("role","listbox");
-  options.setAttribute("aria-label","Select two MPPTs for this group");
-  options.setAttribute("aria-multiselectable","true");
-  const rows=[];
-  for(const index of activeIndices){
-   const displayIndex=activeIndices.indexOf(index)+1;
-   const row=menuRow(`MPPT #${displayIndex}`,{showCheck:false});
-   row.classList.add("isw-mppt-picker-option");
-   row.dataset.iswMpptPickerIndex=String(index);
-   row.setAttribute("role","option");
-   row.setAttribute("aria-selected",String(selected.has(index)));
-   const unavailable=claimed.has(index);
-   row.setAttribute("aria-disabled",String(unavailable));
-   row.disabled=unavailable;
-   row.classList.toggle("is-disabled",unavailable);
-   row.classList.toggle("is-selected",selected.has(index));
-   const mark=text("span","isw-radio-mark");
-   mark.setAttribute("aria-hidden","true");
-   row.append(mark);
-   rows.push(row);
-   options.append(row);
-  }
-  const actions=text("div","isw-mppt-picker-actions");
-  const cancel=createStandardButton({label:"Cancel"});
-  const save=createStandardButton({label:"Save",variant:"primary"});
-  actions.append(cancel,save);
-  picker.append(options,actions);
-  panel.append(picker);
-  panel._wdFade=picker;
-  const syncSelection=()=>{
-   save.disabled=selected.size!==2;
-   for(const row of rows){
-    const index=Number(row.dataset.iswMpptPickerIndex);
-    const active=selected.has(index);
-    row.classList.toggle("is-selected",active);
-    row.setAttribute("aria-selected",String(active));
-   }
-  };
-  for(const row of rows){
-   if(row.disabled)continue;
-   row.addEventListener("click",()=>{
-    const index=Number(row.dataset.iswMpptPickerIndex);
-    if(selected.has(index)){
-     selected.delete(index);
-    }else{
-     if(selected.size>=2)selected.delete(selected.values().next().value);
-     selected.add(index);
-    }
-    syncSelection();
-   });
-  }
-  syncSelection();
-  if(glass){
-   glass.addSurface({host:cancel,radius:18});
-   glass.addSurface({host:save,radius:18});
-  }
-  const mounted=registerPanel(panel,anchor,{
-   label:"Select MPPT group",
-   radius:30,
-   width:220,
-   align:"end",
-   alignRight:menuEndAlign(anchor,30)
-  });
-  const disposeButtonSurfaces=()=>{
-   glass?.removeSurface(cancel);
-   glass?.removeSurface(save);
-  };
-  const previousClose=mounted._onClose;
-  mounted._onClose=()=>{
-   model.S.mpptPickerOpen=false;
-   previousClose?.();
-   schedule(disposeButtonSurfaces,motionDuration("--wd-motion-panel-exit"));
-   if(!model.mpptGroups().length){
-    animateNextSurfaceGrowth=true;
-    schedule(()=>{
-     if(model.S.page==="mppt")refresh();
-    },0);
-   }
-  };
-  cancel.addEventListener("click",()=>closePanels?.(true));
-  save.addEventListener("click",()=>{
-   if(selected.size!==2)return;
-   const members=[...selected].sort((left,right)=>left-right);
-   const changed=editing?model.replaceMpptGroup(groupId,members):model.addMpptGroup(members);
-   if(!changed)return;
-   closePanels?.(true);
-   pendingFocus={type:"mpptGroup",value:String(activeIndices.indexOf(members[0])+1)};
+ const host=page.querySelector("[data-isw-mppt-group-editor]");
+ if(!host)return;
+ const editor=createMpptGroupEditor({
+  model,
+  glass,
+  registerPanel,
+  closePanels,
+  togglePanel,
+  addDisposer:dispose=>controlDisposers.push(dispose),
+  autoOpen:Boolean(model.S.mpptPickerOpen),
+  onChange:({focus})=>{
+   if(focus)pendingFocus=focus;
    animateNextSurfaceGrowth=true;
    refresh();
-  });
-  requestAnimationFrame(()=>{
-   const first=rows.find(row=>row.classList.contains("is-selected"))||rows.find(row=>!row.disabled);
-   first?.focus({preventScroll:true});
-  });
-  return mounted;
- };
-
- const addSlot=page.querySelector("[data-isw-mppt-add]");
- let addButton=null;
- if(addSlot){
-  addButton=createStandardButton({
-   label:"Add MPPT group",
-   iconOnly:true,
-   className:"isw-mppt-add",
-   icon:createMaskedIcon(assetURL("plants/plus.svg"),"isw-mppt-add-icon")
-  });
-  addButton.dataset.iswMpptAdd="";
-  if(glass){
-   glass.addSurface({host:addButton,radius:18});
-   controlDisposers.push(()=>glass.removeSurface(addButton));
   }
-  addButton.addEventListener("click",()=>{
-   const claimed=new Set(model.mpptGroups().flatMap(group=>group.members));
-   const activeIndices=model.mpptIndices();
-   const remaining=activeIndices.filter(index=>!claimed.has(index));
-   if(remaining.length!==2)return;
-   if(!model.addMpptGroup(remaining))return;
-   pendingFocus={type:"mpptGroup",value:String(activeIndices.indexOf(remaining[0])+1)};
-   animateNextSurfaceGrowth=true;
-   refresh();
-  });
-  addSlot.replaceWith(addButton);
- }
-
- let draftSelect=null;
- const groups=model.mpptGroups();
- for(const slot of page.querySelectorAll("[data-isw-mppt-group-select]")){
-  const rawId=slot.dataset.iswMpptGroupSelect;
-  const groupId=rawId==="draft"?null:Number(rawId);
-  const group=groupId===null?null:groups.find(item=>item.id===groupId);
-  if(groupId!==null&&!group)continue;
-  const groupIndex=groupId===null?0:groups.findIndex(item=>item.id===groupId);
-  const value=group?mpptGroupLabel(group.members,model.mpptIndices()):"";
-  const control=createSelectControl({
-   label:`MPPT Group ${groupIndex+1}`,
-   value,
-   options:value?[{value,label:value}]:[],
-   variant:"adaptive",
-   className:"isw-mppt-group-select",
-   placeholder:"Select MPPT",
-   placeholderClassName:"wd-select-placeholder",
-   registerPanel,
-   close:closePanels,
-   toggle:togglePanel,
-   panelBuilder:({field})=>buildGroupPicker(field,groupId),
-   ariaLabel:currentLabel=>`MPPT Group ${groupIndex+1}: ${currentLabel||"Select MPPT"}`
-  });
-  control.element.dataset.iswMpptGroupSelect=rawId;
-  slot.replaceWith(control.element);
-  if(rawId==="draft")draftSelect=control.element;
- }
-
- for(const slot of page.querySelectorAll("[data-isw-mppt-more]")){
-  if(slot.dataset.iswMpptMore==="draft"){
-   const disabled=createStandardButton({
-    label:"Actions for MPPT Group 1",
-    iconOnly:true,
-    className:"isw-mppt-more",
-    icon:createMaskedIcon(opaqueMaskURL("asset-70.svg"),"isw-mppt-more-icon")
-   });
-   disabled.disabled=true;
-   disabled.dataset.iswMpptMore="draft";
-   if(glass){
-    glass.addSurface({host:disabled,radius:18});
-    controlDisposers.push(()=>glass.removeSurface(disabled));
-   }
-   slot.replaceWith(disabled);
-   continue;
-  }
-  const groupId=Number(slot.dataset.iswMpptMore);
-  const group=model.mpptGroups().find(item=>item.id===groupId);
-  if(!group)continue;
-  const button=createStandardButton({
-   label:`Actions for MPPT Group ${model.mpptGroups().findIndex(item=>item.id===groupId)+1}`,
-   iconOnly:true,
-   className:"isw-mppt-more",
-   icon:createMaskedIcon(opaqueMaskURL("asset-70.svg"),"isw-mppt-more-icon")
-  });
-  button.dataset.iswMpptMore=String(group.id);
-  if(glass){
-   glass.addSurface({host:button,radius:18});
-   controlDisposers.push(()=>glass.removeSurface(button));
-  }
-  slot.replaceWith(button);
-  button.addEventListener("click",()=>{
-   if(!registerPanel)return;
-   togglePanel?.(button,()=>{
-    const panel=text("div","popover popover--menu isw-mppt-group-popover");
-    const list=menuList();
-    const row=menuRow("Delete group",{
-     iconNode:createMaskedIcon(assetURL("plants/devices/actions/delete.svg"),"isw-mppt-delete-icon"),
-     showCheck:false,
-     onSelect:()=>{
-      closePanels?.(true);
-      model.removeMpptGroup(group.id);
-      pendingFocus=model.mpptGroups().length?{type:"mpptAdd"}:{type:"mpptGroupDraft"};
-      animateNextSurfaceGrowth=true;
-      refresh();
-     }
-    });
-    row.classList.add("is-danger");
-    list.append(row);
-    mountMenu(panel,{label:`Actions for MPPT Group ${model.mpptGroups().findIndex(item=>item.id===groupId)+1}`,children:[list]});
-    return registerPanel(panel,button,{
-     label:`Actions for MPPT Group ${model.mpptGroups().findIndex(item=>item.id===groupId)+1}`,
-     radius:30,
-     width:180,
-     align:"end",
-     alignRight:menuEndAlign(button,30)
-    });
-   });
-  });
- }
-
- if(pendingMpptPicker){
-  pendingMpptPicker=false;
-  requestAnimationFrame(()=>draftSelect?.click());
- }
+ });
+ host.replaceWith(editor.element);
+ controlDisposers.push(editor.destroy);
 }
 
 function hydrateEconomy(page){
@@ -1911,18 +1713,7 @@ function hydrateEconomy(page){
  const fieldError=(input,message)=>{
   showInlineFieldError(input,message);
  };
- const collides=(candidate,id)=>{
-  const from=timeToMinutes(candidate.from),to=timeToMinutes(candidate.to);
-  return model.S.eco.some(period=>{
-   if(period.id===id)return false;
-   const otherFrom=timeToMinutes(period.from),otherTo=timeToMinutes(period.to);
-   return from<otherTo&&otherFrom<to;
-  });
- };
- const sortPeriods=()=>model.S.eco.sort((a,b)=>{
-  const draftDifference=Number(isEconomicDraft(a))-Number(isEconomicDraft(b));
-  return draftDifference||timeToMinutes(a.from)-timeToMinutes(b.from);
- });
+ const sortPeriods=()=>sortSchedulePeriods(model.S.eco,{draftLast:isEconomicDraft});
  for(const segment of page.querySelectorAll("[data-isw-eco-segment]")){
   const period=periodFor(segment.dataset.iswEcoSegment);
   if(!period)continue;
@@ -1983,11 +1774,7 @@ function hydrateEconomy(page){
  }
 
  const validateRange=(period,from,to)=>{
-  const candidate={...period,from,to};
-  const fromMinutes=timeToMinutes(from),toMinutes=timeToMinutes(to);
-  if(toMinutes<=fromMinutes)return "End time must be later than start time.";
-  if(collides(candidate,period.id))return "Time ranges cannot overlap.";
-  return "";
+  return validateScheduleRange(period,from,to,model.S.eco,{minDuration:1}).message;
  };
  for(const field of page.querySelectorAll(".isw-eco-time-range-field:not([data-isw-shared-time])")){
   const input=field.querySelector("[data-isw-eco-time-input]");
@@ -2421,6 +2208,20 @@ function hydrateEconomy(page){
    },1400);
    return;
   }
+  if(action==="ipsStart"){
+   if(!model.startIpsCheck())return;
+   pendingFocus={type:"ipsStatus"};
+   refresh();
+   schedule(()=>{
+    model.completeIpsCheck();
+    if(model.S.page==="grid"&&model.S.gridSub==="ips")refresh();
+   },1800);
+   return;
+  }
+  if(action==="ipsHistory"){
+   openIpsCheckRecord({model,glass});
+   return;
+  }
   if(action==="power"){
    model.S.ops.running=model.S.ops.running?0:1;
    refresh();
@@ -2474,94 +2275,12 @@ function hydrateEconomy(page){
   if(focus.type==="reacMode")target=content.querySelector("[data-isw-reac-mode-trigger]");
   if(focus.type==="ridePriority")target=content.querySelector(`[data-isw-ride-priority-trigger="${CSS.escape(focus.value)}"]`);
   if(focus.type==="batteryBrand")target=content.querySelector(`[data-isw-battery-brand="${CSS.escape(focus.value)}"]`);
+  if(focus.type==="settingsSelect")target=content.querySelector(`[data-isw-settings-select="${CSS.escape(focus.value)}"]`);
+  if(focus.type==="ipsStatus")target=content.querySelector('[data-isw-action="ipsStart"]');
   if(focus.type==="mpptGroup")target=content.querySelector(`[data-isw-mppt-group="${CSS.escape(focus.value)}"] [data-isw-mppt-more]`);
   if(focus.type==="mpptAdd")target=content.querySelector("[data-isw-mppt-add]");
   if(focus.type==="mpptGroupDraft")target=content.querySelector('[data-isw-mppt-group-select="draft"]');
   target?.focus({preventScroll:true});
- }
-
- function clearModeAnimations(){
-  const animations=modeAnimations;
-  modeAnimations=[]; // detach before cancel so cleanup cannot be skipped
-  for(const card of content.querySelectorAll(".isw-mode-card.is-mode-animating")){
-   card.classList.remove("is-mode-animating");
-   const description=card.querySelector(".isw-mode-description");
-   if(description){
-    description.style.removeProperty("display");
-    description.style.removeProperty("opacity");
-    description.style.removeProperty("transform");
-   }
-  }
-  for(const animation of animations){
-   try{animation.cancel();}catch{}
-  }
-  for(const card of content.querySelectorAll(".isw-mode-card.is-mode-animating")){
-   card.classList.remove("isw-mode-animating");
-   const description=card.querySelector(".isw-mode-description");
-   if(description){
-    description.style.removeProperty("display");
-    description.style.removeProperty("opacity");
-    description.style.removeProperty("transform");
-   }
-  }
- }
-
- function animateModeSelection(index,page){
-  const cards=[...page.querySelectorAll(".isw-mode-card")];
-  const before=cards.map(card=>card.getBoundingClientRect().height);
-  const beforeDescriptions=cards.map(card=>{
-   const description=card.querySelector(".isw-mode-description");
-   if(!description)return 0;
-   const style=getComputedStyle(description);
-   const opacity=Number.parseFloat(style.opacity);
-   return style.display==="none"||!Number.isFinite(opacity)?0:Math.max(0,Math.min(1,opacity));
-  });
-  clearModeAnimations();
-  cards.forEach((card,cardIndex)=>{
-   const selected=cardIndex===index;
-   card.classList.toggle("is-selected",selected);
-   card.setAttribute("aria-pressed",String(selected));
-  });
-  const after=cards.map(card=>card.getBoundingClientRect().height);
-  if(reducedMotion()){
-   clearModeAnimations();
-   return;
-  }
-  const timing={
-   duration:motionDuration("--wd-motion-panel"),
-   easing:motionEasing("--wd-ease-panel")
-  };
-  const animations=[];
-  cards.forEach((card,cardIndex)=>{
-   const selected=cardIndex===index;
-   const heightChanged=Math.abs(after[cardIndex]-before[cardIndex])>=.5;
-   const description=card.querySelector(".isw-mode-description");
-   const targetDescriptionOpacity=selected?1:0;
-   const currentDescriptionOpacity=beforeDescriptions[cardIndex]??targetDescriptionOpacity;
-   const descriptionChanged=description&&Math.abs(targetDescriptionOpacity-currentDescriptionOpacity)>.01;
-   if(!heightChanged&&!descriptionChanged)return;
-   card.classList.add("is-mode-animating");
-   if(heightChanged){
-    animations.push(card.animate(
-     [{height:`${before[cardIndex]}px`},{height:`${after[cardIndex]}px`}],
-     {...timing,fill:"both"}
-    ));
-   }
-   if(descriptionChanged){
-    description.style.display="block";
-    animations.push(description.animate(
-     [{opacity:currentDescriptionOpacity},{opacity:targetDescriptionOpacity}],
-     {...timing,fill:"both"}
-    ));
-   }
-  });
-  modeAnimations=animations;
-  schedule(()=>{
-   if(modeAnimations!==animations)return;
-   clearModeAnimations();
-   scrollFeedback.sync();
-   requestAnimationFrame(()=>scrollFeedback.sync());
-  },timing.duration+40);
  }
 
 function renderPage({animate=true,preserveScroll=true,crossfade=false,layoutSnapshot=null,subTransition=null,targetScrollTop=null}={}){
@@ -2598,7 +2317,7 @@ function renderPage({animate=true,preserveScroll=true,crossfade=false,layoutSnap
   body.append(outgoingSnapshot);
  }
  const outgoingTitle=outgoingPage?titleLayer.querySelector(".isw-title-label")?.cloneNode(true):null;
-  clearModeAnimations();
+  modeMotion.clear();
   destroyHydratedControls();
   closePanels?.(true);
   const page=text("div","isw-page");
@@ -2625,6 +2344,7 @@ function renderPage({animate=true,preserveScroll=true,crossfade=false,layoutSnap
   titleLayer.dataset.page=model.S.page;
   titleLayer.hidden=false;
   hydrateIcons(titleLayer);
+  hydrateActionControls(titleLayer);
  }else{
   titleLayer.replaceChildren();
   delete titleLayer.dataset.page;
@@ -2670,7 +2390,10 @@ function renderPage({animate=true,preserveScroll=true,crossfade=false,layoutSnap
   sub.hidden=!visible;
   shell.classList.toggle("is-sub-open",visible);
   body.classList.toggle("is-sub-open",visible);
-  if(visible)subList.replaceChildren(renderSubnav(model));
+  if(visible)subList.replaceChildren(renderSubnav(model,{
+   ipsSaved:savedSettings.gridCode==="it_cei021",
+   bindTooltip:bindHoverPanel
+  }));
   scrollFeedback.sync();
  }
 
@@ -3013,6 +2736,8 @@ function syncGate({animate=false,preserveCardRect=null}={}){
   if(path==="g.reacMode")return page.querySelector("[data-isw-reac-mode-trigger]");
   if(path.endsWith(".brand"))return page.querySelector(`[data-isw-battery-brand="${CSS.escape(path)}"]`);
   if(path.endsWith(".reacQSet")||path==="reacQSet")return page.querySelector('[data-isw-number="reacQSet"]');
+  const settingsSelect=page.querySelector(`[data-isw-settings-select="${escaped}"]`);
+  if(settingsSelect)return settingsSelect;
   return page.querySelector(
    `[data-isw-number="${escaped}"],[data-isw-switch="${escaped}"],[data-isw-seg="${escaped}"]`
   );
@@ -3090,6 +2815,15 @@ function syncGate({animate=false,preserveCardRect=null}={}){
   }
   if(path==="dispatch.unit")return Number(value)?"kW":"%Pn";
   if(path==="limits.basis")return LIMIT_BASIS_OPTIONS[Number(value)]??String(value);
+  if(path==="limits.importPermission"){
+   return IMPORT_PERMISSION_OPTIONS.find(option=>Number(option.value)===Number(value))?.label??String(value);
+  }
+  if(path==="limits.exportPermission"){
+   return EXPORT_PERMISSION_OPTIONS.find(option=>option.value===value)?.label??String(value);
+  }
+  if(path.endsWith(".protocol")){
+   return BATTERY_PROTOCOL_OPTIONS.includes(value)?value:String(value);
+  }
   if(path==="capability")return CAPABILITY_OPTIONS[Number(value)]??String(value);
   if(path==="di")return DI_PORT_OPTIONS[Number(value)]??String(value);
   if(path==="net.iface")return NETWORK_INTERFACE_OPTIONS[Number(value)]??String(value);
@@ -3213,7 +2947,7 @@ function syncGate({animate=false,preserveCardRect=null}={}){
     confirmLabel:"Discard Changes",
     cancelLabel:"Keep Editing",
     icon:createMaskedIcon(assetURL("asset-32.svg"),"plants-device-action-icon"),
-    danger:false,
+    danger:true,
     confirmClassName:"plants-device-danger-button",
     onConfirm:()=>closeWindow({force:true})
    });
@@ -3236,7 +2970,7 @@ function syncGate({animate=false,preserveCardRect=null}={}){
   renderOverview(model,overview);
   syncGate();
   if(pageId==="mode"&&currentPage){
-   animateModeSelection(model.S.runMode,currentPage);
+   modeMotion.animate(model.S.runMode,currentPage);
    scroll.scrollTop=previousScrollTop;
    syncActions();
    syncScrollState();
@@ -3250,6 +2984,7 @@ function syncGate({animate=false,preserveCardRect=null}={}){
  subList.addEventListener("click",event=>{
   const item=event.target.closest("[data-isw-sub]");
   if(!item||!model.S.unlocked)return;
+  if(item.getAttribute("aria-disabled")==="true")return;
   if(item.dataset.iswSub===model.S.gridSub)return;
   requestPageNavigation(()=>{
    pageScrollMemory.set(pageMemoryKey(),scroll.scrollTop);
@@ -3316,8 +3051,10 @@ function syncGate({animate=false,preserveCardRect=null}={}){
     device.mode=/ Mode$/i.test(mode)?mode:`${mode} mode`;
    }
    onSave?.(clone(committedState));
+   const previousSavedGridCode=savedSettings.gridCode;
    savedSettings=committed;
    savedFingerprint=JSON.stringify(savedSettings);
+   if(model.S.page==="grid"&&previousSavedGridCode!==savedSettings.gridCode)renderSub();
    syncActions();
    notify("Inverter settings saved in this local preview");
    const original=save.querySelector(".wd-control-label")?.textContent||"Save";
@@ -3344,6 +3081,9 @@ function syncGate({animate=false,preserveCardRect=null}={}){
  renderPage();
  renderOverview(model,overview);
  syncGate();
+ if(savedSettings.gridCode==="it_cei021"&&model.ipsRequired()){
+  schedule(()=>notify("The inverter must pass IPS Check before connecting to the grid."),160);
+ }
  if(!reducedMotion()){
   const startStatusEntrance=()=>{
    if(destroyed||!statusWindow.isConnected)return;
@@ -3388,6 +3128,7 @@ function syncGate({animate=false,preserveCardRect=null}={}){
    destroyHydratedControls();
    destroyHydratedSwitches();
    destroyHydratedSegmentedControls();
+   modeMotion.destroy();
    scrollFeedback.destroy();
    navFeedback.destroy();
    modal.close({immediate:true,restoreFocus:false});
@@ -3427,7 +3168,10 @@ export function openInverterSettings({
   mpptInventoryPoints:device.mpptInventoryPoints,
   mpptGroupPoints:device.mpptGroupPoints,
   siteDetails,
-  supportsDynamicPricing:device.supportsDynamicPricing??true
+  supportsDynamicPricing:device.supportsDynamicPricing??true,
+  ipsPreview:device.ipsPreview,
+  ipsSelfCheckRequired:device.ipsSelfCheckRequired,
+  deviceOnline:device.status!=="offline"
  });
  if(device.inverterSettings){
   Object.assign(model.S,clone(device.inverterSettings));

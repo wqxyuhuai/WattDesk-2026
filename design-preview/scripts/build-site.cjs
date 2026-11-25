@@ -56,7 +56,7 @@ fs.writeFileSync(path.join(out, 'home.html'), deployHtml);
 // Client-rendered deep links use Workers Assets SPA fallback configured in
 // wrangler.jsonc. A 200 rewrite to /index.html is rejected because the asset
 // layer may normalize that target again and create an infinite loop.
-const appRoutes = ['/plants','/service','/statistics','/cell-balance','/module-balance','/device-track','/organisation','/teams','/users','/settings'];
+const appRoutes = ['/plants','/service','/statistics','/cell-balance','/module-balance','/device-track','/organisation','/teams','/users','/settings','/setup'];
 const redirectRules = [
   '# Canonical home. Do not add a /home -> /home.html rule (redirect loop).',
   '/ /home 308',

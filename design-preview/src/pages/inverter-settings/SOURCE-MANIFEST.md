@@ -55,6 +55,11 @@ The separately supplied `check.svg` is normalized to
 `home-assets/icons/settings/check-circle.svg`: the filled circle remains mask
 alpha and the check is a transparent negative cutout, so light mode renders
 primary black and dark mode primary white without source-file colour leakage.
+On 2026-11-25 the runtime form was further reduced from an SVG `<mask>` to one
+`fill-rule="evenodd"` path with `shape-rendering="geometricPrecision"`; this
+removes the second anti-aliasing pass that caused fuzzy edges at 18px. The
+identical runtime copy at `home-assets/icons/selection/check-circle.svg` is used
+by shared Select options.
 
 ## 2026-11-24 Reset & Recovery icon
 
@@ -68,4 +73,24 @@ Runtime asset:
 
 The supplied 30px SVG is retained as a shape-only mask. Its bytes and SHA-256
 are recorded in `design/inverter-settings/settings-icons-source.json`.
+
+## 2026-11-25 Initialization wiring illustrations
+
+Source path:
+
+`E:\OneDrive\! Wattsonic 2022\网站 WattDesk\设计 模块\web 图片 260520 逆变器设置插画`
+
+Runtime assets:
+
+- `home-assets/inverter-settings/setup/battery-20kw-lcd.png`
+- `home-assets/inverter-settings/setup/pv-20kw-lcd.png`
+- `home-assets/inverter-settings/setup/battery-50kw-no-screen.png`
+- `home-assets/inverter-settings/setup/pv-50kw-no-screen.png`
+
+The PNG runtime copies remove only the white region connected to the outer
+canvas edge, preserving white areas enclosed by product outlines. The images
+are selected by the explicit 20 kW / 50 kW setup fixture, not by the live MPPT
+or battery counts. All four source files are retained with their original
+bytes and SHA-256 values in
+`design/inverter-settings/setup-illustrations-source.json`.
 

@@ -24,6 +24,8 @@ const DEVICE_LIBRARY=Object.freeze({
   mpptInventoryPoints:[1,2,3,4,5],
   mpptGroupPoints:[1,2,3,4],
   batteryMasterBattery:"bank1",
+  ipsPreview:true,
+  ipsSelfCheckRequired:1,
   prefix:"1M20K25B"
  },
  bms:{
@@ -174,6 +176,8 @@ function createDevice(plant,type,index=0,overrides={}){
   mpptInventoryPoints:Array.isArray(meta.mpptInventoryPoints)?[...meta.mpptInventoryPoints]:[1,5,5,5,5],
   mpptGroupPoints:Array.isArray(meta.mpptGroupPoints)?[...meta.mpptGroupPoints]:[1,2,3,4],
   batteryMasterBattery:meta.batteryMasterBattery||null,
+  ipsPreview:Boolean(meta.ipsPreview),
+  ipsSelfCheckRequired:Number(meta.ipsSelfCheckRequired)!==0,
   serial:serialFor(plant,type,index),
   hardware:"V1",
   boot:"V4.4.1001",

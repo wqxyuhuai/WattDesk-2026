@@ -1,5 +1,7 @@
 import {GRID_PROFILES} from "./grid-profiles.js";
-import {TOU_CONTROL_MODES,TOU_INTERVAL_OPTIONS,TOU_PERIOD_MODES} from "./settings-options.js";
+import {IPS_CHECK_ITEMS,TOU_CONTROL_MODES,TOU_INTERVAL_OPTIONS,TOU_PERIOD_MODES} from "./settings-options.js";
+
+export const MODE_WIRE_VALUES=Object.freeze([0,1,2,3,4,6]);
 
 export const MODES=Object.freeze([
  ["General Mode","mode","Self-consumption first. The right default for most sites.",["PV","Load","Battery","Grid"],
@@ -14,7 +16,15 @@ export const MODES=Object.freeze([
   "Each period of the day gets its own sub-mode, so the battery can charge, hold or discharge to follow the local price curve. Use this when a single off-peak and on-peak pair cannot describe the tariff."],
  ["Off-Grid Mode","offgrid","No grid connection. Backup loads only.",["PV","Backup load","Battery"],
   "PV serves the backup loads first and charges the battery with any surplus. When PV falls short, the battery supplies the backup loads alongside the PV."]
-].map(([label,icon,summary,flow,description])=>Object.freeze({label,compactLabel:label.replace(/ Mode$/i,""),icon,summary,flow,description})));
+].map(([label,icon,summary,flow,description],index)=>Object.freeze({
+ label,
+ compactLabel:label.replace(/ Mode$/i,""),
+ wireValue:MODE_WIRE_VALUES[index],
+ icon,
+ summary,
+ flow,
+ description
+})));
 
 export function modeIndexFromLabel(value){
  const normalized=String(value||"").trim().toLowerCase();
@@ -177,9 +187,46 @@ function batterySocRange(){
 function batteryConfig(){
  return {
   brand:"Wattsonic",
+  protocol:"Wattsonic",
+  enabled:1,
   chargeMax:100,
   dischargeMax:100,
   warm:1
+ };
+}
+
+function ipsItemState(item,overrides={}){
+ const finite=value=>value!==null&&value!==undefined&&value!==""&&Number.isFinite(Number(value));
+ return {
+  status:["not_checked","checking","passed","failed","interrupted"].includes(overrides.status)
+   ?overrides.status
+   :"not_checked",
+  range:finite(overrides.range)?Number(overrides.range):item.range,
+  time:finite(overrides.time)?Number(overrides.time):item.time,
+  measured:finite(overrides.measured)?Number(overrides.measured):item.measured,
+  protectionMs:finite(overrides.protectionMs)?Number(overrides.protectionMs):item.protectionMs
+ };
+}
+
+function initialIpsState(){
+ const items=Object.fromEntries(IPS_CHECK_ITEMS.map(item=>[item.id,ipsItemState(item)]));
+ const historyItems=Object.fromEntries(IPS_CHECK_ITEMS.map(item=>{
+  const status=["underV1","overF2"].includes(item.id)?"failed":"passed";
+  return [item.id,ipsItemState(item,{
+   status,
+   measured:item.quantity==="frequency"?50.01:item.measured,
+   protectionMs:100
+  })];
+ }));
+ return {
+  required:1,
+  testEnable:0,
+  gridConnected:1,
+  items,
+  lastRecord:{
+   completedAt:new Date(2026,8,28,15,36).getTime(),
+   items:clone(historyItems)
+  }
  };
 }
 
@@ -223,7 +270,11 @@ function initialState(){
   navExpanded:{},
   runMode:0,
   dispatch:{on:1,unit:1,sp:-10,timeout:300},
-  limits:{feedOn:1,feed:10,impOn:0,imp:15,basis:0},
+  limits:{
+   feedOn:1,feed:10,impOn:0,imp:15,basis:0,
+   importPermission:1,
+   exportPermission:"solar_battery"
+  },
   capability:0,di:2,
   telemetry:{
    effective:{available:1,limit:-6.0,source:"Battery charging",sourceTone:"signal",pvCurtailed:4.8}
@@ -237,6 +288,7 @@ function initialState(){
   },
   battChgMax:6.0,battDisMax:20.0,pvAvail:4.8,
   features:{watchdog:1,wdt:300,offgrid:1,backupOutput:1,unbalanced:0,light:1,buzzer:0},
+  ips:initialIpsState(),
   eco:[
    {id:"eco-1",from:"00:00",to:"06:00",mode:"charge_pv_grid",powerPct:100},
    {id:"eco-2",from:"17:00",to:"21:00",mode:"discharge",powerPct:90}
@@ -360,7 +412,10 @@ export function createSettingsModel({
  mpptInventoryPoints=[1,2,3,4,5],
  mpptGroupPoints=[1,2,3,4],
  siteDetails=null,
- supportsDynamicPricing=true
+  supportsDynamicPricing=true,
+  ipsPreview=false,
+  ipsSelfCheckRequired=1,
+  deviceOnline=true
 }={}){
  const S=initialState();
  const PN=Number.isFinite(Number(ratedPower))&&Number(ratedPower)>0?Number(ratedPower):50;
@@ -375,7 +430,10 @@ export function createSettingsModel({
   mpptCount,
   mpptInventoryPointCount:5,
   mpptGroupPointCount:4,
-  supportsDynamicPricing:Boolean(supportsDynamicPricing)
+  supportsDynamicPricing:Boolean(supportsDynamicPricing),
+  ipsPreview:Boolean(ipsPreview),
+  ipsSelfCheckRequired:Number(ipsSelfCheckRequired)!==0,
+  deviceOnline:Boolean(deviceOnline)
  });
  S.tou.config=touConfig(siteDetails||{});
  S.mppt.inventoryPoints=[...normalizedMpptInventoryPoints];
@@ -404,6 +462,10 @@ export function createSettingsModel({
  const normalizeLimitBasis=()=>{
   const basis=Number(S.limits.basis);
   S.limits.basis=capabilities.phaseCount===3&&capabilities.supportsPerPhaseLimit&&basis===1?1:0;
+  S.limits.importPermission=Number(S.limits.importPermission)===0?0:1;
+  S.limits.exportPermission=["solar_battery","solar_only","non_export"].includes(S.limits.exportPermission)
+   ?S.limits.exportPermission
+   :"solar_battery";
  };
  const normalizeBattery=()=>{
   const battery=S.battery&&typeof S.battery==="object"?S.battery:{};
@@ -425,6 +487,8 @@ export function createSettingsModel({
   for(const key of ["common","bank1","bank2"]){
    const source=battery[key]&&typeof battery[key]==="object"?battery[key]:{};
    const bank={...batteryConfig()};
+   bank.protocol=typeof source.protocol==="string"&&source.protocol?source.protocol:"Wattsonic";
+   bank.enabled=Number(source.enabled)===0?0:1;
    for(const field of ["chargeMax","dischargeMax"]){
     const value=Number(source[field]);
     if(Number.isFinite(value))bank[field]=Math.max(0,Math.min(1000,Math.round(value)));
@@ -538,6 +602,30 @@ export function createSettingsModel({
     )
    },
    config
+  };
+ };
+ const normalizeIps=()=>{
+  const source=S.ips&&typeof S.ips==="object"?S.ips:{};
+  const sourceItems=source.items&&typeof source.items==="object"?source.items:{};
+  const items=Object.fromEntries(IPS_CHECK_ITEMS.map(item=>[
+   item.id,
+   ipsItemState(item,sourceItems[item.id])
+  ]));
+  const sourceRecord=source.lastRecord&&typeof source.lastRecord==="object"?source.lastRecord:null;
+  const recordItems=sourceRecord?.items&&typeof sourceRecord.items==="object"
+   ?Object.fromEntries(IPS_CHECK_ITEMS.map(item=>[
+     item.id,
+     ipsItemState(item,sourceRecord.items[item.id])
+    ]))
+   :null;
+  S.ips={
+   required:capabilities.ipsSelfCheckRequired?1:0,
+   testEnable:Number(source.testEnable)===1?1:0,
+   gridConnected:Number(source.gridConnected)===0?0:1,
+   items,
+   lastRecord:sourceRecord&&Number.isFinite(Number(sourceRecord.completedAt))&&recordItems
+    ?{completedAt:Number(sourceRecord.completedAt),items:recordItems}
+    :initialIpsState().lastRecord
   };
  };
  const touDay=()=>S.touDay==="tomorrow"?"tomorrow":"today";
@@ -682,13 +770,28 @@ export function createSettingsModel({
  };
  const gridSubs=()=>{
   const list=[["code","Grid Code",""]];
-  if(!prof().p)return list;
+  if(!prof().p){
+   if(S.gridCode==="it_cei021"){
+    list.push(
+     ["prot","Protection Limits",""],
+     ["conn","Grid Connection",""],
+     ["reac","Reactive Power",""],
+     ["pu","P(U) Characteristics",""],
+     ["fp","Frequency-Watt (F-P)",""],
+     ["lvrt","LVRT",""],
+     ["hvrt","HVRT",""],
+     ["ips","IPS Check",""]
+    );
+   }
+   return list;
+  }
   list.push(["prot","Protection Limits",""],["conn","Grid Connection",""]);
   list.push(["reac","Reactive Power",""]);
   if(hasAll("puV1","puV2"))list.push(["pu","P(U) Characteristics",""]);
   if(has("ofpStart")||has("ufpStart"))list.push(["fp","Frequency-Watt (F-P)",""]);
   if(has("lv1")||has("lvrtOn")||has("lvZero")||has("lvrtPm"))list.push(["lvrt","LVRT",""]);
   if(has("hv1")||has("hvrtOn")||has("hvZero")||has("hvrtPm"))list.push(["hvrt","HVRT",""]);
+  if(S.gridCode==="it_cei021")list.push(["ips","IPS Check",""]);
   return list;
  };
  const KEY_PAGE=[
@@ -716,6 +819,75 @@ export function createSettingsModel({
    .sort((left,right)=>left.members[0]-right.members[0]);
  };
  const mpptIndices=()=>Array.from({length:capabilities.mpptCount},(_,index)=>index);
+ const ipsItemViews=()=>IPS_CHECK_ITEMS.map(item=>({
+  ...item,
+  ...S.ips.items[item.id],
+  status:S.ips.items[item.id]?.status||"not_checked"
+ }));
+ const ipsOverallStatus=()=>{
+  if(!capabilities.deviceOnline)return "offline";
+  const statuses=ipsItemViews().map(item=>item.status);
+  if(statuses.includes("checking"))return "checking";
+  if(statuses.includes("failed"))return "failed";
+  if(statuses.every(status=>status==="passed"))return "passed";
+  if(statuses.every(status=>status==="not_checked"))return "idle";
+  return "interrupted";
+ };
+ const ipsRequired=()=>S.gridCode==="it_cei021"&&Boolean(S.ips.required);
+ const ipsEntryTone=()=>{
+  const overall=ipsOverallStatus();
+  if(overall==="offline")return "idle";
+  if(overall==="failed")return "danger";
+  if(overall==="checking")return "warning";
+  if(overall==="passed")return "success";
+  if(ipsRequired())return "danger";
+  return "idle";
+ };
+ const startIpsCheck=()=>{
+  const overall=ipsOverallStatus();
+  if(overall==="offline"||overall==="checking"||S.gridCode!=="it_cei021")return false;
+  S.ips.testEnable=1;
+  for(const item of IPS_CHECK_ITEMS){
+   S.ips.items[item.id]={
+    ...S.ips.items[item.id],
+    status:"checking",
+    measured:null,
+    protectionMs:null
+   };
+  }
+  return true;
+ };
+ const completeIpsCheck=({failIds=[]}={})=>{
+  const failed=new Set(failIds);
+  for(const item of IPS_CHECK_ITEMS){
+   const current=S.ips.items[item.id];
+   const passed=!failed.has(item.id)&&!failed.has(Number(item.level));
+   S.ips.items[item.id]={
+    ...current,
+    status:passed?"passed":"failed",
+    measured:passed
+     ?(item.quantity==="frequency"?50.01:(current.measured??item.measured??null))
+     :(current.measured??item.measured??null),
+    protectionMs:passed?100:(current.protectionMs??item.protectionMs??null)
+   };
+  }
+  S.ips.testEnable=0;
+  S.ips.lastRecord={
+   completedAt:Date.now(),
+   items:clone(S.ips.items)
+  };
+  return ipsOverallStatus();
+ };
+ const interruptIpsCheck=()=>{
+  let changed=false;
+  for(const item of IPS_CHECK_ITEMS){
+   if(S.ips.items[item.id]?.status!=="checking")continue;
+   S.ips.items[item.id]={...S.ips.items[item.id],status:"interrupted"};
+   changed=true;
+  }
+  if(changed)S.ips.testEnable=0;
+  return changed;
+ };
  const applyMpptGroups=groups=>{
   const activeIndices=mpptIndices();
   const assignments=[...S.mppt.groupPoints];
@@ -769,11 +941,13 @@ export function createSettingsModel({
  normalizeBattery();
  normalizeMppt();
  normalizeTou();
+ normalizeIps();
  regenerateTouDynamic();
  return {
   PN,GRID_PROFILES,S,capabilities,has,hasAll,dev,prof,tfmt,loadProfile,get,set,devCount,devHere,
   unit,spKW,effective,gridSubs,devList,normalizeEco,normalizeLimitBasis,normalizeBattery,
   normalizeMppt,mpptGroups,mpptIndices,applyMpptGroups,addMpptGroup,removeMpptGroup,replaceMpptGroup,
+  normalizeIps,ipsItemViews,ipsOverallStatus,ipsRequired,ipsEntryTone,startIpsCheck,completeIpsCheck,interruptIpsCheck,
   normalizeTou,touDay,touPlan,touPrices,touThresholds,touModeAt,touSegmentsForPalette,
   regenerateTouDynamic
  };

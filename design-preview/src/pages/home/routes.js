@@ -27,6 +27,12 @@ const PLANT_FILTER_VALUES=Object.freeze({
  status:new Set(["attention"])
 });
 const PLANT_DEVICE_VALUES=new Set(["inverter","bms","heater"]);
+const INITIALIZATION_VARIANTS=new Set(["20kw","50kw"]);
+
+function initializationVariant(pathname){
+ const match=/^\/setup\/(20kw|50kw)$/.exec(pathname);
+ return match&&INITIALIZATION_VARIANTS.has(match[1])?match[1]:null;
+}
 
 function normalizePath(pathname){
  const value=String(pathname||"/");
@@ -49,6 +55,18 @@ function plantFiltersFromSearch(search){
 
 export function routeFromPath(pathname,search=""){
  const path=normalizePath(pathname);
+ const setupVariant=initializationVariant(path);
+ if(setupVariant){
+  return {route:"plants",params:{
+   plantId:"p25",
+   device:"inverter",
+   section:"devices",
+   settings:true,
+   standalone:true,
+   setupVariant,
+   standalonePath:path
+  }};
+ }
  if(path==="/settings"){
   return {route:"plants",params:{
    plantId:"p25",
@@ -107,6 +125,7 @@ export function routeFromPath(pathname,search=""){
 // The detail URL is part of the route contract, not page-local state.
 export function pathForRoute(route,params={}){
  if(route==="plants"&&params?.plantId){
+  if(params?.setupVariant&&params?.standalonePath)return params.standalonePath;
   if(params?.settings&&params?.standalonePath)return params.standalonePath;
   const child=params?.settings&&params?.section==="devices"
    ?"/devices/inverter-settings"
@@ -140,6 +159,9 @@ export function displayTitle(route){
 
 export function documentTitle(route,params={},resourceName=""){
  if(!route)return "WattDesk · Page not found";
+ if(route==="plants"&&INITIALIZATION_VARIANTS.has(params?.setupVariant)){
+  return `WattDesk · Initial setup · ${params.setupVariant==="50kw"?"50 kW":"20 kW"}`;
+ }
  if(route==="plants"&&params?.settings)return `WattDesk · Inverter settings${resourceName?` · ${resourceName}`:""}`;
  if(route==="plants"&&params?.plantId)return `WattDesk · ${resourceName||"Plant not found"}`;
  if(route==="service"&&params?.newTicket)return "WattDesk · New ticket";

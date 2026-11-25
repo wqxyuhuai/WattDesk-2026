@@ -1,13 +1,14 @@
 import {ECONOMIC_MODES,MODES,isEconomicDraft,timeToMinutes} from "./settings-model.js";
 import {formatAbsoluteDate} from "../../foundations/time.js";
 import {
- BATTERY_BRAND_OPTIONS,
  CAPABILITY_OPTIONS,
  CT_CURRENT_MODE_OPTIONS,
  DI_PORT_OPTIONS,
  DISPATCH_MODE_OPTIONS,
  EXPORT_FORMAT_OPTIONS,
  F_P_REFERENCE_OPTIONS,
+ EXPORT_PERMISSION_OPTIONS,
+ IMPORT_PERMISSION_OPTIONS,
  LIMIT_BASIS_OPTIONS,
  MPPT_SOURCE_OPTIONS,
  NETWORK_INTERFACE_OPTIONS,
@@ -18,8 +19,16 @@ import {
 } from "./settings-options.js";
 import {settingRange} from "./settings-validation.js";
 import {dynamicTouPage,manualTouPage} from "./tou-settings.js";
+import {ipsCheckPage} from "./ips-check.js";
+import {MPPT_PARALLEL_HINT,mpptGroupLabel} from "../../components/mppt-group-editor.js";
+import {scheduleSegments,sortSchedulePeriods} from "./schedule-editor.js";
+import {batteryConfigurationFields,batteryEntries} from "./battery-editor.js";
+import {gridProfileEntries} from "./grid-profile-editor.js";
+
+export {MPPT_PARALLEL_HINT,mpptGroupLabel};
 
 const iconMarkup=name=>`<i class="isw-icon" data-isw-icon="${name}" aria-hidden="true"></i>`;
+const settingsSelect=(path,value,label,options,className="")=>`<span class="isw-select-slot" data-isw-settings-select="${path}" data-isw-settings-select-value="${encodeURIComponent(String(value))}" data-isw-settings-select-label="${label}" data-isw-settings-select-options="${encodeURIComponent(JSON.stringify(options))}"${className?` data-isw-settings-select-class="${className}"`:""}></span>`;
 const POINTS=SETTINGS_POINT_CONTRACTS;
 const ecoPowerRange=settingRange("eco.power","%");
 const sw=path=>`<span class="isw-switch-slot" data-isw-switch="${path}"></span>`;
@@ -119,6 +128,7 @@ function pageLimits(model){
  <section class="isw-panel">
   ${row("Export limit","Maximum power fed to the public grid",sw("limits.feedOn"))}
   ${limits.feedOn?row("Limit value","",num("limits.feed",limits.feed,"kW",.5),true):""}
+  ${limits.feedOn?row("Export Permissions","Choose whether battery energy may be exported",settingsSelect("limits.exportPermission",limits.exportPermission||"solar_battery","Export Permissions",EXPORT_PERMISSION_OPTIONS),true):""}
   ${basis.show?row("Limit basis",basis.hint,seg("limits.basis",basis.options,limits.basis),true):""}
  </section>
  <div class="isw-chain-foot">This limit is never exceeded, including while the Frequency-Watt (F-P) function is active. Set it to match the site's cable and breaker rating.</div>
@@ -127,6 +137,7 @@ function pageLimits(model){
  <section class="isw-panel">
   ${row("Import limit","Maximum power drawn from the public grid",sw("limits.impOn"))}
   ${limits.impOn?row("Limit value","",num("limits.imp",limits.imp,"kW",.5),true):""}
+  ${limits.impOn?row("Import Permissions","Allow the battery to charge from the grid",settingsSelect("limits.importPermission",Number(limits.importPermission)===0?0:1,"Import Permissions",IMPORT_PERMISSION_OPTIONS),true):""}
  </section>
  ${note("Both limits are measured <b>at the grid-tied point</b> (meter side), not at the inverter AC terminals. The inverter's own ceiling is set under <b>Output Capability</b>.")}`;
 }
@@ -134,7 +145,7 @@ function pageLimits(model){
 function pageMode(model){
  return `<h2 class="isw-page-title">Running Mode</h2>
  <div class="isw-mode-list">${MODES.map((mode,index)=>`
-  <button type="button" class="isw-mode-card${model.S.runMode===index?" is-selected":""}" data-isw-mode="${index}" aria-pressed="${model.S.runMode===index}">
+   <button type="button" class="isw-mode-card${model.S.runMode===index?" is-selected":""}" data-isw-mode="${index}" data-isw-mode-value="${mode.wireValue}" aria-pressed="${model.S.runMode===index}">
    ${iconMarkup(mode.icon)}
    <span class="isw-mode-copy">
     <span class="isw-mode-name">${mode.label}</span>
@@ -144,18 +155,6 @@ function pageMode(model){
    </span>
    <span class="isw-radio-mark" aria-hidden="true"></span>
   </button>`).join("")}</div>`;
-}
-
-function batteryEntries(model){
- const battery=model.S.battery;
- const parallel=model.capabilities.batteryPathCount===2&&model.capabilities.supportsBatteryParallel&&battery.parallel;
- if(parallel||model.capabilities.batteryPathCount===1){
-  return [{key:"common",label:"Battery",data:battery.common}];
- }
- return [
-  {key:"bank1",label:"Battery #1",data:battery.bank1},
-  {key:"bank2",label:"Battery #2",data:battery.bank2}
- ];
 }
 
 function batteryParallelWarning(){
@@ -207,15 +206,17 @@ function socRangeCard(entry,kind){
 }
 
 function batteryConfigCard(entry,{parallelRow=false,parallelMasterUnknown=false}={}){
- const path=`battery.${entry.key}`;
  const hideParallelConfig=parallelRow&&parallelMasterUnknown;
+ const fields=Object.fromEntries(batteryConfigurationFields(entry).map(field=>[field.id,field]));
  return `<section class="isw-panel" data-isw-battery-config="${entry.key}">
   ${parallelRow?row("Parallel Battery Operation","Operate both connected batteries as one bank. Turn it off to configure each battery separately",sw("battery.parallel"),true):""}
   ${parallelRow&&parallelMasterUnknown?batteryParallelWarning():""}
   ${hideParallelConfig?"":`
-   ${row("Battery Brand","Battery model paired with this input",`<span class="isw-select-slot" data-isw-battery-brand="${path}.brand" data-isw-battery-brand-value="${encodeURIComponent(entry.data.brand||BATTERY_BRAND_OPTIONS[0])}" data-isw-battery-brand-label="${entry.label} Battery Brand" data-isw-log-label="${entry.label} Battery Brand"></span>`,true)}
-   ${row("Max. Charge Current","Upper charging current accepted by this battery input",batteryCurrent(`${path}.chargeMax`,entry.data.chargeMax,`${entry.label} Max. Charge Current`),true)}
-   ${row("Max. Discharge Current","Upper discharge current supplied by this battery input",batteryCurrent(`${path}.dischargeMax`,entry.data.dischargeMax,`${entry.label} Max. Discharge Current`),true)}`}
+   ${row(fields.brand.label,fields.brand.hint,`<span class="isw-select-slot" data-isw-battery-brand="${fields.brand.path}" data-isw-battery-brand-value="${encodeURIComponent(fields.brand.value)}" data-isw-battery-brand-label="${entry.label} Battery Brand" data-isw-log-label="${entry.label} Battery Brand"></span>`,true)}
+    ${row(fields.enabled.label,fields.enabled.hint,sw(fields.enabled.path),true)}
+    ${row(fields.protocol.label,fields.protocol.hint,settingsSelect(fields.protocol.path,fields.protocol.value,`${entry.label} Battery Protocol`,fields.protocol.options,"isw-battery-protocol-trigger"),true)}
+   ${row(fields.chargeMax.label,fields.chargeMax.hint,batteryCurrent(fields.chargeMax.path,fields.chargeMax.value,`${entry.label} Max. Charge Current`),true)}
+   ${row(fields.dischargeMax.label,fields.dischargeMax.hint,batteryCurrent(fields.dischargeMax.path,fields.dischargeMax.value,`${entry.label} Max. Discharge Current`),true)}`}
  </section>`;
 }
 
@@ -298,17 +299,14 @@ function pageGrid(model){
 }
 
 function pageEconomic(model){
- const periods=[...model.S.eco].sort((a,b)=>{
-  const draftDifference=Number(isEconomicDraft(a))-Number(isEconomicDraft(b));
-  return draftDifference||timeToMinutes(a.from)-timeToMinutes(b.from);
- });
+ const periods=sortSchedulePeriods([...model.S.eco],{draftLast:isEconomicDraft});
  const timelinePeriods=periods.filter(period=>!isEconomicDraft(period));
  const modeLabel=id=>ECONOMIC_MODES.find(item=>item.id===id)?.label||ECONOMIC_MODES[0].label;
  const modeKind=id=>id==="discharge"?"discharge":"charge";
- const segment=period=>{
-  const start=timeToMinutes(period.from),end=timeToMinutes(period.to);
+ const segment=data=>{
+  const {period,left,width}=data;
   const label=modeLabel(period.mode);
-  return `<button class="isw-eco-segment isw-eco-segment--${modeKind(period.mode)}" type="button" style="left:${start/1440*100}%;width:${(end-start)/1440*100}%" data-isw-eco-segment="${period.id}" aria-label="${period.from} to ${period.to}, ${label}"></button>`;
+  return `<button class="isw-eco-segment isw-eco-segment--${modeKind(period.mode)}" type="button" style="left:${left}%;width:${width}%" data-isw-eco-segment="${period.id}" aria-label="${period.from} to ${period.to}, ${label}"></button>`;
  };
  const periodRow=(period,index)=>`<div class="isw-eco-row" data-isw-eco-row="${period.id}">
   <div class="isw-eco-time-range">
@@ -330,7 +328,7 @@ function pageEconomic(model){
  return `<h2 class="isw-page-title">Economic Schedule</h2>
  <h3 class="isw-group-title">24h Overview</h3>
  <section class="isw-gantt isw-eco-overview">
-  <div class="isw-gantt-track isw-eco-track">${timelinePeriods.map(segment).join("")}</div>
+  <div class="isw-gantt-track isw-eco-track">${scheduleSegments(timelinePeriods).map(segment).join("")}</div>
   <div class="isw-eco-axis"><span>00:00</span><i></i><span>12:00</span><i></i><span>24:00</span></div>
   <div class="isw-eco-legend">
    <span><i class="isw-eco-legend-dot isw-eco-legend-dot--charge"></i>Charge</span>
@@ -382,17 +380,6 @@ function pageNetworking(model){
  </section>`;
 }
 
-export const MPPT_PARALLEL_HINT="Shares input current across MPPT channels for more energy from parallel PV strings.";
-
-export function mpptGroupLabel(members,activeIndices=null){
- const ordinals=(members||[]).map(index=>{
-  const ordinal=activeIndices?activeIndices.indexOf(Number(index)):Number(index);
-  return ordinal+1;
- });
- if(!ordinals.length)return "";
- return `MPPT #${ordinals[0]}${ordinals.slice(1).map(value=>` & #${value}`).join("")}`;
-}
-
 export function renderMpptScanContent(model,individualMode){
  const mppt=model.S.mppt;
  const activeIndices=model.mpptIndices();
@@ -417,25 +404,7 @@ function pageMppt(model){
  const mppt=model.S.mppt;
  const options=MPPT_SOURCE_OPTIONS;
  const count=model.capabilities.mpptCount;
- const activeIndices=model.mpptIndices();
- const groups=model.mpptGroups();
- const groupedMembers=groups.reduce((total,group)=>total+group.members.length,0);
- const canAddGroup=mppt.parallel&&count>2&&groups.length>0&&count-groupedMembers>=2;
  const showGroupEditor=mppt.parallel&&count>2;
- const groupRows=groups.map((group,index)=>`<div class="isw-row isw-mppt-group-row" data-isw-mppt-group="${group.id}">
-  <div class="isw-row-copy"><div class="isw-row-label">MPPT Group ${index+1}</div></div>
-  <div class="isw-mppt-group-control">
-   <span class="isw-mppt-group-select-slot" data-isw-mppt-group-select="${group.id}"></span>
-   <span class="isw-mppt-more-slot" data-isw-mppt-more="${group.id}"></span>
-  </div>
- </div>`).join("");
- const placeholderRow=`<div class="isw-row isw-mppt-group-row is-placeholder" data-isw-mppt-group="draft">
-  <div class="isw-row-copy"><div class="isw-row-label">MPPT Group 1</div></div>
-  <div class="isw-mppt-group-control">
-   <span class="isw-mppt-group-select-slot" data-isw-mppt-group-select="draft"></span>
-   <span class="isw-mppt-more-slot" data-isw-mppt-more="draft"></span>
-  </div>
- </div>`;
  const individualMode=Number(mppt.scanMode)===1;
  return `<h2 class="isw-page-title">MPPT &amp; Strings</h2>
  <h3 class="isw-group-title">MPPT Input</h3>
@@ -445,11 +414,7 @@ function pageMppt(model){
  <h3 class="isw-group-title">Tracker</h3>
  <section class="isw-panel isw-mppt-panel">
   ${row("Parallel MPPT Operation",MPPT_PARALLEL_HINT,sw("mppt.parallel"))}
-  ${showGroupEditor?`<div class="isw-mppt-groups" data-isw-mppt-groups>
-   ${groups.length||model.S.mpptPickerOpen?"":`<div class="isw-mppt-group-error" role="alert">At least one MPPT Group must be created</div>`}
-   ${groups.length?groupRows:placeholderRow}
-   ${canAddGroup?`<div class="isw-mppt-add-row"><span data-isw-mppt-add></span></div>`:""}
-  </div>`:""}
+   ${showGroupEditor?`<div class="isw-mppt-groups" data-isw-mppt-group-editor></div>`:""}
  </section>
  <h3 class="isw-group-title">Shadow scan</h3>
  <section class="isw-panel" data-isw-mppt-scan-mode>
@@ -525,18 +490,16 @@ function pageLog(model){
 
 function pageGridCode(model){
  const profile=model.prof();
- const statusMeta={done:["Certified","success"],cert:["In certification","warning"],plan:["Planned","idle"],generic:["Generic","idle"]};
- const profileRow=([key,item])=>{
-  const [status,tone]=statusMeta[item.status];
-  return `<button class="isw-profile-row${model.S.gridCode===key?" is-selected":""}${item.p?"":" is-disabled"}" type="button" ${item.p?`data-isw-profile="${key}"`:"disabled"}>
+  const profileRow=entry=>{
+   return `<button class="isw-profile-row${model.S.gridCode===entry.key?" is-selected":""}${entry.selectable?"":" is-disabled"}" type="button" ${entry.selectable?`data-isw-profile="${entry.key}"`:"disabled"}>
    <i class="isw-radio-mark" aria-hidden="true"></i>
-   <span class="isw-profile-copy"><span class="isw-profile-name">${item.label}</span><span class="isw-profile-full">${item.full}</span></span>
-   <span class="isw-status isw-status--${tone}"><i></i>${item.p?status:"No parameter set"}</span>
+    <span class="isw-profile-copy"><span class="isw-profile-name">${entry.label}</span><span class="isw-profile-full">${entry.description}</span></span>
+    <span class="isw-status isw-status--${entry.tone}"><i></i>${entry.status}</span>
   </button>`;
  };
- const entries=Object.entries(model.GRID_PROFILES);
- const selectable=entries.filter(([,item])=>item.p).map(profileRow).join("");
- const planned=entries.filter(([,item])=>!item.p);
+  const entries=gridProfileEntries(model);
+  const selectable=entries.filter(entry=>entry.selectable).map(profileRow).join("");
+  const planned=entries.filter(entry=>!entry.selectable);
  const deviations=model.devCount();
  return `<h2 class="isw-page-title">Grid Code</h2>
  <section class="isw-panel isw-panel--narrow">
@@ -554,6 +517,7 @@ function pageGridCode(model){
  ${planned.length?`<h3 class="isw-group-title">On the roadmap — not in this firmware</h3>
  <section class="isw-profile-list isw-profile-list--flat">${planned.map(profileRow).join("")}</section>
  ${note("These markets are identified and the standard is named, but no parameter set ships for them in this firmware, so they cannot be selected. Selecting one would leave the unit with no certified configuration.",true)}`:""}
+ ${model.capabilities.ipsPreview&&model.S.gridCode==="it_cei021"?note("IT CEI 0-21 is exposed as a local IPS preview only. No protection parameter set is available in this firmware, so selecting it does not configure certified voltage, frequency or ride-through values.",true):""}
  ${profile.p?note("Changing the profile reloads every protection limit, the reconnection window and all curves from the new country profile, and discards hand-edited values.",true):note("This country is on the certification roadmap. No parameter set ships in this firmware, so the grid pages stay empty until a certified profile exists. Selecting it does not configure the unit.",true)}`;
 }
 
@@ -923,7 +887,8 @@ export const PAGES=Object.freeze({
 
 export const GRID_PAGES=Object.freeze({
  code:pageGridCode,prot:pageProtection,conn:pageConnection,reac:pageReactive,pu:pagePu,
- fp:pageFrequency,lvrt:model=>pageRideThrough(model,"lvrt"),hvrt:model=>pageRideThrough(model,"hvrt")
+ fp:pageFrequency,lvrt:model=>pageRideThrough(model,"lvrt"),hvrt:model=>pageRideThrough(model,"hvrt"),
+ ips:ipsCheckPage
 });
 
 export function formatSigned(value){

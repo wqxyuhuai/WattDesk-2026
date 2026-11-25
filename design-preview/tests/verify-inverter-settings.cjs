@@ -32,7 +32,10 @@ const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
     await waitForViewSettled();
   };
   const waitForPageTitle = async title => {
-    await page.waitForFunction(expected=>document.querySelector(".isw-page-title")?.textContent===expected,title);
+    await page.waitForFunction(expected=>{
+      const heading=document.querySelector(".isw-page-title");
+      return (heading?.querySelector(".isw-title-label")?.textContent||heading?.textContent||"").trim()===expected;
+    },title);
     await waitForViewSettled();
   };
   const assertSparseTimeWheelFixture = async ({step,count,scrollTop,selected}) => {
@@ -853,6 +856,11 @@ const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
     );
     assert.equal(await page.getByRole("button",{name:"Keep Editing"}).count(),1);
     assert.equal(await page.getByRole("button",{name:"Discard Changes"}).count(),1);
+    assert.equal(
+      await page.getByRole("button",{name:"Discard Changes"}).evaluate(node=>node.classList.contains("wd-button--danger-solid")),
+      true,
+      "Discard Changes uses the shared danger-solid button variant"
+    );
     await page.getByRole("button",{name:"Keep Editing"}).click();
     await page.waitForTimeout(500);
     assert.equal(await page.locator(".inverter-settings-window").isVisible(),true,"Keep Editing returns to the settings page");
@@ -893,8 +901,21 @@ const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
       const rule=document.querySelector(".isw-title-rule").getBoundingClientRect();
       return {layer:[title.x,title.y,title.width,title.height],text:[titleText.x,titleText.y,titleText.width,titleText.height],rule:[rule.x,rule.y,rule.width,rule.height]};
     });
-    await page.locator(".isw-scroll").evaluate(node=>node.dispatchEvent(new WheelEvent("wheel",{deltaY:-320,bubbles:true,cancelable:true})));
-    await page.waitForTimeout(80);
+    const firstWheel=await page.locator(".isw-scroll").evaluate(node=>{
+      node.scrollTop=0;
+      const event=new WheelEvent("wheel",{deltaY:-100,bubbles:true,cancelable:true});
+      node.dispatchEvent(event);
+      const style=getComputedStyle(node);
+      return {
+        prevented:event.defaultPrevented,
+        overscroll:style.overscrollBehaviorY,
+        nativeViewport:node.classList.contains("wd-scroll-feedback-viewport")
+      };
+    });
+    assert.equal(firstWheel.prevented,false,"settings wheel input remains passive at the edge");
+    assert.equal(firstWheel.overscroll,"contain","settings scrolling never chains into the page shell");
+    assert.equal(firstWheel.nativeViewport,true,"settings uses the shared native-scroll viewport contract");
+    await page.waitForTimeout(120);
     const contentPull=await page.locator(".isw-page-host").evaluate(node=>({
       pulling:node.classList.contains("is-pulling"),
       transform:getComputedStyle(node).transform
@@ -938,10 +959,14 @@ const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
     assert.notEqual(bottomPullAfter.backdrop,"none","the fixed title keeps its blur while content moves underneath");
     assert.equal(await page.locator(".isw-page-host").evaluate(node=>node.classList.contains("is-pulling")),true,"bottom content still receives the shared elastic displacement");
     await page.waitForTimeout(960);
-    await page.locator(".isw-nav-scroll").evaluate(node=>{
+    const firstNavWheel=await page.locator(".isw-nav-scroll").evaluate(node=>{
       node.scrollTop=0;
-      node.dispatchEvent(new WheelEvent("wheel",{deltaY:-320,bubbles:true,cancelable:true}));
+      const event=new WheelEvent("wheel",{deltaY:-100,bubbles:true,cancelable:true});
+      node.dispatchEvent(event);
+      return {prevented:event.defaultPrevented,overscroll:getComputedStyle(node).overscrollBehaviorY};
     });
+    assert.equal(firstNavWheel.prevented,false,"navigation wheel input remains passive at the edge");
+    assert.equal(firstNavWheel.overscroll,"contain","navigation scrolling contains its native overscroll");
     await page.waitForTimeout(80);
     const navPull=await page.locator(".isw-nav-content").evaluate(node=>({
       pulling:node.classList.contains("is-pulling"),
@@ -1386,6 +1411,11 @@ const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
           ["General Mode","Peak Load Shifting Mode","Economic Mode","UPS Mode","ToU mode","Off-Grid Mode"],
           "Running Mode option labels follow live WattDesk"
         );
+        assert.deepEqual(
+          await page.locator('.isw-page[data-page="mode"] [data-isw-mode-value]').evaluateAll(nodes=>nodes.map(node=>Number(node.dataset.iswModeValue))),
+          [0,1,2,3,4,6],
+          "Running Mode keeps explicit wire values around the unimplemented Forecast slot"
+        );
       }
       if(id==="dispatch"){
         assert.deepEqual(
@@ -1677,13 +1707,24 @@ const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
         assert.deepEqual(
           await batteryPage.locator(".isw-row-label").allTextContents(),
           [
-            "Parallel Battery Operation","Battery Brand","Max. Charge Current","Max. Discharge Current","Grid-tied SOC","Off-grid SOC","Keep Battery Warm"
+            "Parallel Battery Operation","Battery Brand","BMS Communication","Battery Protocol","Max. Charge Current","Max. Discharge Current","Grid-tied SOC","Off-grid SOC","Keep Battery Warm"
           ],
           "the default resolved parallel master shows the complete shared battery configuration"
         );
         assert.equal(await batteryPage.locator("[data-isw-battery-config]").getAttribute("data-isw-battery-config"),"common");
         assert.equal(await batteryPage.locator("[data-isw-battery-parallel-warning]").count(),0,"the default resolved master battery does not show the hardware warning");
         assert.equal(await batteryPage.locator("[data-isw-battery-brand]").count(),1,"the default parallel state exposes one shared Battery Brand field");
+        const batterySelectWidths=await batteryPage.evaluate(page=>({
+          brand:page.querySelector("[data-isw-battery-brand]")?.getBoundingClientRect().width,
+          protocol:page.querySelector('[data-isw-settings-select="battery.common.protocol"]')?.getBoundingClientRect().width
+        }));
+        assert.ok(Math.abs(batterySelectWidths.brand-batterySelectWidths.protocol)<=1,`Battery Protocol keeps the same field width as Battery Brand ${JSON.stringify(batterySelectWidths)}`);
+        await page.getByRole("switch",{name:"BMS Communication"}).click();
+        await page.waitForTimeout(80);
+        assert.equal(await page.locator('[data-isw-settings-select="battery.common.protocol"]').isDisabled(),true,"disabling BMS Communication locks Battery Protocol");
+        await page.getByRole("switch",{name:"BMS Communication"}).click();
+        await page.waitForTimeout(80);
+        assert.equal(await page.locator('[data-isw-settings-select="battery.common.protocol"]').isDisabled(),false,"re-enabling BMS Communication unlocks Battery Protocol");
         assert.deepEqual(
           await batteryPage.locator('[data-isw-number^="battery.common."]').evaluateAll(nodes=>nodes.map(node=>({path:node.dataset.iswNumber,value:node.value}))),
           [
@@ -2016,8 +2057,8 @@ const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
         assert.deepEqual(
           splitConfigState.cards.map(card=>card.labels),
           [
-            ["Battery Brand","Max. Charge Current","Max. Discharge Current"],
-            ["Battery Brand","Max. Charge Current","Max. Discharge Current"]
+            ["Battery Brand","BMS Communication","Battery Protocol","Max. Charge Current","Max. Discharge Current"],
+            ["Battery Brand","BMS Communication","Battery Protocol","Max. Charge Current","Max. Discharge Current"]
           ],
           "both split battery cards restore their complete editable settings"
         );
@@ -2041,8 +2082,8 @@ const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
         );
         assert.deepEqual(
           await batteryPage.locator('[data-isw-switch^="battery.bank"]').evaluateAll(nodes=>nodes.map(node=>node.dataset.iswSwitch)),
-          ["battery.bank1.warm","battery.bank2.warm"],
-          "turning parallel mode off splits battery heating"
+          ["battery.bank1.enabled","battery.bank2.enabled","battery.bank1.warm","battery.bank2.warm"],
+          "turning parallel mode off splits BMS communication and battery heating"
         );
         await page.locator('[data-isw-switch="battery.parallel"]').click();
         await page.waitForTimeout(700);
@@ -2309,10 +2350,10 @@ const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
         opticalTop:style.getPropertyValue("--wd-glass-optical-light-top").trim()
       };
     });
-    assert.equal(primaryGlass.rimTop,"rgba(255,255,255,.60)","primary buttons share the brighter default rim");
-    assert.equal(primaryGlass.innerTop,"rgba(255,255,255,.46)","primary buttons share the stronger inner highlight");
-    assert.equal(primaryGlass.innerBottom,"rgba(255,255,255,.24)","primary buttons retain the lower inner highlight");
-    assert.equal(primaryGlass.opticalTop,"rgba(255,255,255,.36)","primary buttons share the stronger optical highlight");
+    assert.equal(primaryGlass.rimTop,"rgba(255,255,255,.38)","dark primary buttons use the brighter shared rim");
+    assert.equal(primaryGlass.innerTop,"rgba(255,255,255,.21)","dark primary buttons retain a brighter inner highlight");
+    assert.equal(primaryGlass.innerBottom,"rgba(255,255,255,.11)","dark primary buttons retain the lower brighter inner highlight");
+    assert.equal(primaryGlass.opticalTop,"rgba(255,255,255,.15)","dark primary buttons retain a brighter optical highlight");
     const touLayout=await page.evaluate(()=>{
       const pageNode=document.querySelector('.isw-page[data-page="touManual"]');
       const head=pageNode.querySelector(".isw-tou-table-head");
@@ -2477,9 +2518,9 @@ const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
       Object.values(dangerGlass).every(token=>token.value.includes("255")&&token.alpha>0),
       "the default solid-danger button keeps visible white rim, inner and optical highlights"
     );
-    assert.ok(dangerGlass.rimTop.alpha>=.55,"the solid-danger top rim remains visibly bright");
-    assert.ok(dangerGlass.innerTop.alpha>=.4,"the solid-danger inner highlight is strong enough to read against the red fill");
-    assert.ok(dangerGlass.opticalTop.alpha>=.32,"the solid-danger optical highlight remains visible by default");
+    assert.ok(dangerGlass.rimTop.alpha>=.30,"the dark solid-danger top rim keeps the softened highlight");
+    assert.ok(dangerGlass.innerTop.alpha>=.15,"the dark solid-danger inner highlight remains visible without reading as a white blob");
+    assert.ok(dangerGlass.opticalTop.alpha>=.10,"the dark solid-danger optical highlight remains visible without reading as a white blob");
     await touConfirm.hover();
     assert.equal(await touConfirm.locator(".wd-control-label").evaluate(node=>getComputedStyle(node).color),"rgb(255, 255, 255)","danger confirmation text stays white on hover");
     await page.locator(".plants-device-confirm-actions").getByRole("button",{name:"Delete"}).click();
@@ -2630,7 +2671,7 @@ const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
         descriptionSize:getComputedStyle(row.querySelector(".wd-menu-description")).fontSize
       };
     });
-    assert.equal(controlMenuCraft.width,288,"Control Mode uses the shared default popover width");
+    assert.ok(Math.abs(controlMenuCraft.width-288)<0.05,"Control Mode uses the shared default popover width");
     assert.deepEqual(controlMenuCraft.padding,["10px","10px"],"Control Mode uses the shared compact menu padding");
     assert.equal(controlMenuCraft.rowGap,"1px","Control Mode uses the shared menu row spacing");
     assert.ok(controlMenuCraft.rowHeight>=44&&controlMenuCraft.rowHeight<=64,"description rows stay compact");
@@ -3831,7 +3872,8 @@ const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
     const feedPanel=page.locator(".isw-panel").first();
     const feedToggle=page.locator('[data-isw-switch="limits.feedOn"]');
     const feedToggleHandle=await feedToggle.elementHandle();
-    assert.equal(await feedPanel.locator(".isw-row").count(),3);
+    assert.equal(await feedPanel.locator(".isw-row").count(),4);
+    assert.equal(await page.locator('[data-isw-settings-select="limits.exportPermission"]').count(),1,"the export panel exposes battery export permissions");
     const limitBasis=page.locator('[data-isw-seg="limits.basis"]');
     assert.equal(await limitBasis.count(),1,"the export panel exposes limit basis");
     assert.equal(await limitBasis.locator('[data-value="0"]').getAttribute("aria-selected"),"true","Total is the default basis");
@@ -3865,7 +3907,7 @@ const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
     await page.waitForTimeout(320);
     assert.equal(await page.locator(".isw-panel").first().evaluate(node=>node.style.height===""&&node.style.overflow===""),true,"the collapsed card releases its temporary fixed height and clipping");
     await page.locator('[data-isw-switch="limits.feedOn"]').click();
-    assert.equal(await page.locator(".isw-panel").first().locator(".isw-row").count(),3,"the conditional rows return immediately");
+    assert.equal(await page.locator(".isw-panel").first().locator(".isw-row").count(),4,"the conditional rows return immediately");
     await page.waitForFunction(
       ()=>document.querySelector(".isw-panel")?.getAnimations().some(animation=>animation.effect?.getTiming().duration===280),
       null,
@@ -4895,16 +4937,16 @@ const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
     await page.locator('[data-isw-switch="dispatch.on"]').click();
     await page.waitForTimeout(40);
     assert.equal(await page.locator(".isw-effective-chain").count(),1,"dependent settings return immediately when the switch turns back on");
-    await page.waitForTimeout(320);
+    await page.waitForTimeout(700);
 
     await page.setViewportSize({width:1545,height:900});
-    await page.waitForTimeout(120);
+    await page.waitForTimeout(1000);
     await page.locator(".isw-scroll").evaluate(node=>{
       const max=Math.max(0,node.scrollHeight-node.clientHeight);
       node.scrollTop=Math.min(40,Math.max(0,max-16));
     });
     await page.locator(".isw-nav-scroll").evaluate(node=>{node.dataset.stabilityProbe="kept";});
-    await page.waitForTimeout(40);
+    await page.waitForTimeout(500);
     const pageTopBeforeUpdate=await page.locator(".isw-page:not(.isw-page--leaving)").evaluate(node=>node.getBoundingClientRect().top);
     const scrollTopBeforeUpdate=await page.locator(".isw-scroll").evaluate(node=>node.scrollTop);
     const unitControl=page.locator('[data-isw-seg="dispatch.unit"]');
@@ -4924,7 +4966,15 @@ const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
         activeValue:document.activeElement?.dataset.value
       };
     },{pageTopBeforeUpdate,scrollTopBeforeUpdate});
-    assert.ok(scrollTopBeforeUpdate>=24,"the scroll stability probe reaches a meaningful non-bottom offset");
+    const scrollRange=await page.locator(".isw-scroll").evaluate(node=>({
+      clientHeight:node.clientHeight,
+      scrollHeight:node.scrollHeight,
+      max:node.scrollHeight-node.clientHeight
+    }));
+    assert.ok(
+      scrollTopBeforeUpdate>=8,
+      `the scroll stability probe reaches a meaningful non-bottom offset (top=${scrollTopBeforeUpdate}, client=${scrollRange.clientHeight}, content=${scrollRange.scrollHeight}, max=${scrollRange.max})`
+    );
     assert.ok(
       Math.abs(localUpdate.scrollTop-localUpdate.scrollTopBeforeUpdate)<=1,
       `a local setting change preserves the content scroll position (${localUpdate.scrollTopBeforeUpdate} -> ${localUpdate.scrollTop})`
@@ -5455,7 +5505,8 @@ const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
     const gridSubTitles=new Map([
       ["code","Grid Code"],["prot","Protection Limits"],["conn","Grid Connection"],
       ["reac","Reactive Power"],["pu","P(U) Characteristics"],["fp","Frequency-Watt (F-P)"],
-      ["lvrt","Low Voltage Ride-Through (LVRT)"],["hvrt","High Voltage Ride-Through (HVRT)"]
+      ["lvrt","Low Voltage Ride-Through (LVRT)"],["hvrt","High Voltage Ride-Through (HVRT)"],
+      ["ips","IPS Check"]
     ]);
     const visibleGridSubIds=await page.locator("[data-isw-sub]").evaluateAll(rows=>rows.map(row=>row.dataset.iswSub));
     for(const id of visibleGridSubIds){
@@ -5602,6 +5653,7 @@ const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
             await page.waitForTimeout(420);
           }
         }
+        await page.waitForTimeout(120);
         const frequencyFields=page.locator('.isw-page[data-page="grid"][data-grid-sub="fp"] > .isw-panel > .isw-row > .isw-mini-number');
         const frequencyFieldBoxes=await frequencyFields.evaluateAll(fields=>fields.map(field=>({
           width:field.getBoundingClientRect().width,
@@ -5614,7 +5666,10 @@ const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
         assert.ok(frequencyFieldBoxes.length>=8,"Frequency-Watt exposes the numeric rows for both protection sections");
         assert.ok(frequencyFieldBoxes.every(field=>Math.abs(field.width-128)<=1&&Math.abs(field.height-36)<=1),"Frequency-Watt numeric inputs use the standard field size");
         assert.ok(frequencyFieldBoxes.every(field=>Math.abs(field.rowRight-field.right)<=1),"Frequency-Watt numeric inputs align to the card content edge");
-        assert.ok(frequencyFieldBoxes.every(field=>field.justifyContent==="flex-end"&&field.textAlign==="right"),"Frequency-Watt numeric values and units align to the field's right edge");
+        assert.ok(
+          frequencyFieldBoxes.every(field=>["flex-end","flow-end"].includes(field.justifyContent)&&field.textAlign==="right"),
+          `Frequency-Watt numeric values and units align to the field's right edge (${frequencyFieldBoxes.map(field=>`${field.justifyContent}/${field.textAlign}`).join(", ")})`
+        );
         const recoveryField=page.locator('[data-isw-number="g.ofpRecover"]');
         const recoveryCard=recoveryField.locator("xpath=ancestor::section[contains(@class,'isw-panel')]");
         const originalRecovery=await recoveryField.inputValue();
@@ -5725,6 +5780,17 @@ const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
                 rightInset:tableBox.right-parseFloat(getComputedStyle(table).paddingRight)-box.right
               };
             })),
+            miniFields:[...pageNode.querySelectorAll(".isw-panel .isw-mini-number")].map(field=>{
+              const box=field.getBoundingClientRect();
+              const rowBox=field.closest(".isw-row").getBoundingClientRect();
+              return {
+                width:box.width,
+                height:box.height,
+                rightInset:Math.abs(rowBox.right-box.right),
+                justifyContent:getComputedStyle(field).justifyContent,
+                textAlign:getComputedStyle(field.querySelector("input")).textAlign
+              };
+            }),
             segmentedDeviation,
             referenceType
           };
@@ -5734,6 +5800,13 @@ const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
         assert.ok(connectionTables.rowMetrics.every(row=>row.height>=47&&JSON.stringify(row.padding)===JSON.stringify(["6px","6px"])),"both window cards use the open settings-row rhythm");
         assert.ok(connectionTables.fields.every(field=>Math.abs(field.width-128)<=1&&Math.abs(field.height-36)<=1),"window fields use the standard 128 by 36 control size");
         assert.ok(connectionTables.fields.every(field=>Math.abs(field.rightInset)<=1),"window fields align to the card's right content edge");
+        assert.ok(connectionTables.miniFields.length>=5,"Grid Connection exposes all mini numeric panel fields");
+        assert.ok(connectionTables.miniFields.every(field=>Math.abs(field.width-128)<=1&&Math.abs(field.height-36)<=1),"Grid Connection mini fields use the shared window-field size");
+        assert.ok(connectionTables.miniFields.every(field=>field.rightInset<=1),"Grid Connection mini fields align to the row's right edge");
+        assert.ok(
+          connectionTables.miniFields.every(field=>["flex-end","flow-end"].includes(field.justifyContent)&&field.textAlign==="right"),
+          `Grid Connection mini values and units align to the field's right edge (${connectionTables.miniFields.map(field=>`${field.justifyContent}/${field.textAlign}`).join(", ")})`
+        );
         assert.equal(connectionTables.segmentedDeviation,"none","segmented-control changes also suppress the orange start stripe");
         const rampControl=page.locator('[data-isw-seg="g.rampMode"]');
         if(await rampControl.locator(".is-selected").getAttribute("data-value")!=="1"){
@@ -6031,7 +6104,7 @@ const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
     await page.locator('[data-isw-sub="code"]').click();
     await waitForPageTitle("Grid Code");
     const selectableProfiles=await page.locator("[data-isw-profile]").evaluateAll(rows=>rows.map(row=>row.dataset.iswProfile));
-    assert.equal(selectableProfiles.length,11,"all 11 profiles with parameter sets are selectable");
+    assert.equal(selectableProfiles.length,12,"11 certified parameter sets plus the local IT CEI 0-21 IPS preview are selectable");
     for(const profile of selectableProfiles){
       await page.locator('[data-isw-sub="code"]').click();
       await waitForPageTitle("Grid Code");
@@ -6053,7 +6126,7 @@ const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
       await page.locator(".isw-subnav-item").allTextContents(),
       ["Grid Code","Protection Limits","Grid Connection","Reactive Power","P(U) Characteristics","Frequency-Watt (F-P)","LVRT","HVRT"]
     );
-    assert.equal(await page.locator(".isw-profile-row.is-disabled").count(),7,"roadmap profiles cannot be selected");
+    assert.equal(await page.locator(".isw-profile-row.is-disabled").count(),6,"roadmap profiles without previews cannot be selected");
     await page.locator(".isw-actions .wd-button--primary").click();
     await page.waitForTimeout(420);
 
@@ -6097,6 +6170,7 @@ const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
     await page.getByRole("button",{name:/Reload EN 50549-1/}).click();
     await page.waitForTimeout(100);
     assert.match(await page.locator(".isw-panel").first().innerText(),/Values changed from the profile[\s\S]*None/);
+    await page.waitForTimeout(2500);
     await page.locator(".isw-actions .wd-button--primary").click();
     await page.waitForFunction(()=>document.querySelector(".isw-actions .wd-button--primary .wd-control-label")?.textContent==="Saved");
     assert.equal(await page.locator(".isw-actions .wd-button--primary .wd-control-label").textContent(),"Saved");

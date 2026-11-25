@@ -1,6 +1,6 @@
 # Inverter settings copy audit
 
-Updated: 2026-11-24
+Updated: 2026-11-25
 
 This file is the review and change record for user-facing copy in Inverter
 settings. It separates approved changes from items that still need a product
@@ -13,6 +13,10 @@ is intentionally limited to copy history and open wording decisions.
 
 | Area | Before | After | Reason |
 |---|---|---|---|
+| Battery topology fields | No protocol row | `Battery Protocol`, with the hint `Communication protocol used by this battery input` when enabled and `BMS communication is disabled for this input` when disabled | Preserve the documented BMS protocol contract without inventing disabled values |
+| Import permission | No conditional permission row | `Import Permissions`, options `Charge From Grid Allowed / Forbidden Grid Charge` | Map `Grid_Charge_Enable_Set` as a direct binary permission while keeping readable copy |
+| Export permission | No conditional battery-export row | `Export Permissions`, options `Solar and Battery / Solar Only / Permanent Non Export` | Map `Eco_Batto_Grid_Set` / export-permission behavior without exposing enum keys |
+| Battery export confirmation | Permission changed silently | `Disable battery export?` / `Economic Mode currently contains a Discharge period. Battery energy will no longer be exported to the grid after this change.` / `Cancel` / `Continue` | Explain the consequence before removing battery export while Economic Discharge remains configured |
 | Limit terminology | `Feed-in cap`, `Feed-in & Import Limits`, `Feed-in limit` | `Export limit`, `Import & Export Limits`, `Export limit` | Align with live WattDesk and keep export/import naming consistent |
 | Limit explanations | Description text referred to a `feed-in limit` | Description text now refers to the `export limit` | Avoid mixing the old and new term |
 | Device unlock | Six-digit `safety code`; preview value `583411` | Four-digit `Check code` read from the same device record used by Devices | User confirmed both surfaces describe the same production field |
@@ -37,6 +41,28 @@ The shared time utility now exposes `formatAbsoluteDate()` for visible
 date-only values. Relative and absolute timestamps continue to use the existing
 seven-day rule and `YYYY/MM/DD HH:mm` format.
 
+## 2026-11-25 IPS Check copy
+
+| Surface | Final copy | Reason |
+|---|---|---|
+| Sidebar entry | `IPS Check` | Matches the requirement and the Grid secondary-page pattern |
+| Unsaved-card tooltip | `Save the grid code to enable the IPS Check.` | Makes the save gate explicit without allowing navigation |
+| Open-window reminder | `The inverter must pass IPS Check before connecting to the grid.` | Carries the required Italy grid-connection warning |
+| Ready card | `Ready for IPS Check` | Uses one status title for connected and disconnected idle states |
+| Connected help | `The self-test takes about 10 minutes and may affect normal grid operation. Do not power off the inverter during the check.` | Preserves both duration and grid-impact warnings |
+| Disconnected help | `The self-test takes about 10 minutes. Do not power off the inverter during the check. The inverter must pass this check before it can connect to the grid.` | Preserves the pre-connection constraint |
+| Running card | `IPS Check in progress` / `Keep the inverter powered on and do not change settings until all checks complete.` | Prevents interruption and duplicate starts |
+| Pass card | `IPS Check passed` / `The interface protection settings passed the self-test. Normal grid conditions still apply.` | Does not imply that passing removes normal grid conditions |
+| Fail card | `IPS Check failed` / `Grid connection is prohibited. Review the failed items, correct the issue, then run the check again.` | States the grid-connection prohibition and required next action |
+| Interrupted card | `IPS Check interrupted` / `The check ended before a final result was available. Run the check again when the inverter is ready.` | Distinguishes an incomplete run from a failure |
+| Offline card | `Device connection lost` / `Reconnect the inverter before starting or reviewing an IPS check.` | Device connectivity overrides every self-check state |
+| History entry | `IPS Check Record` | The action sits in the fixed page-title row; the standalone `Last self-check` helper copy is removed |
+| Missing values | `--` | Missing telemetry must not be rendered as zero |
+
+The eight item names remain technical protection identifiers and are not
+translated: `81>.S1`, `81<.S1`, `59.S1`, `27.S1`, `81>.S2`, `81<.S2`,
+`59.S2` and `27.S2`.
+
 ## 2026-11-23 Limit basis copy
 
 | Surface | Final copy | Reason |
@@ -58,6 +84,8 @@ prototype still uses the older `Feed-in & Import Limits` wording.
 | Topology | `Parallel Battery Operation` | Matches the supplied battery setting reference |
 | Topology hint | `Operate both connected batteries as one bank. Turn it off to configure each battery separately` | Explains both the combined state and how to reach independent settings |
 | Brand row | `Battery Brand` | Matches the supplied reference and remains shared by both bank cards |
+| Protocol row | `Battery Protocol` | Matches the initialization requirement; disabled BMS keeps the current protocol visible but non-editable |
+| BMS row | `BMS Communication` | Makes `BMS1_Enable_Set / BMS2_Enable_Set` explicit and controls the Protocol lock |
 | Current rows | `Max. Charge Current`, `Max. Discharge Current` | Preserve the source labels and distinguish the two electrical limits |
 | SOC cards | `Grid-tied SOC`, `Off-grid SOC` | Replace the older charge-cut-off/discharge-floor model with explicit upper/lower ranges |
 | SOC hints | `Operating range while connected to the grid.`, `Operating range during an outage.` | Keep each range's operating context visible without switching to modal help |
@@ -173,8 +201,9 @@ These items were reviewed but were not approved for this change set.
 
 - Live WattDesk profile inventory and order were not changed.
 - Live WattDesk page-grouping and menu architecture were not changed.
-- Live-only fields such as Battery Brand, maximum charge/discharge current,
-  WiFi hotspot settings, and dedicated Shadow Scan controls were not added.
+- Battery Brand, Battery Protocol, maximum charge/discharge current, Wi-Fi
+  hotspot settings and dedicated Shadow Scan controls remain local preview
+  settings; their production point metadata is still pending.
 - The local upper status window was not removed.
 - Authentication, server persistence and the production point-metadata endpoint were not fabricated; the current operator remains a preview identity and local ranges remain a preview fallback.
 - Explanatory copy was not replaced wholesale with live copy; several live

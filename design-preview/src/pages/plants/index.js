@@ -16,6 +16,7 @@ import {motionDuration,motionEasing,reducedMotion} from "../../foundations/motio
 import {createPlantDetailTabs,createPlantOverview,createPlantSectionPlaceholder} from "./detail.js";
 import {createPlantDevices,resolvePlantDevice} from "./devices.js";
 import {openInverterSettings} from "../inverter-settings/index.js";
+import {openInitializationWizard} from "../inverter-settings/initialization.js";
 import {createConnectionGlyph as connectionGlyph} from "./connection-icon.js";
 import {createPlantSiteDetails,defaultSiteDetails} from "./site-details.js";
 import {createPlantSiteDetailsV2} from "./site-details-v2.js";
@@ -358,6 +359,7 @@ export function createPlantsPage({
  let activeOverviewController=null;
  let activeDevicesController=null;
  let activeInverterSettings=null;
+ let activeInitializationWizard=null;
  let activeSiteDetailsController=null;
  let activeSiteV2Controller=null;
  let currentDetailDevice=null;
@@ -876,13 +878,15 @@ function visibleRows({ignoreCategory=null}={}){
   toast(`${plant.name||"This plant"} — the plant detail page is not part of this build`);
  }
 
-function renderDetail(plantId,requestedDevice,requestedSection,requestedTab,requestedSettings=false,requestedSerial=null){
+function renderDetail(plantId,requestedDevice,requestedSection,requestedTab,requestedSettings=false,requestedSerial=null,requestedSetupVariant=null){
   activeOverviewController?.destroy();
   activeOverviewController=null;
   activeDevicesController?.destroy();
   activeDevicesController=null;
   activeInverterSettings?.destroy();
   activeInverterSettings=null;
+  activeInitializationWizard?.destroy();
+  activeInitializationWizard=null;
   activeSiteDetailsController?.destroy();
   activeSiteDetailsController=null;
  activeSiteV2Controller?.destroy();
@@ -1006,6 +1010,22 @@ function renderDetail(plantId,requestedDevice,requestedSection,requestedTab,requ
      serial:requestedSerial
     });
     if(device){
+     if(requestedSetupVariant){
+      activeInitializationWizard=openInitializationWizard({
+       plant,
+       device,
+       variant:requestedSetupVariant,
+       glass,
+       toast,
+       registerPanel,
+       toggle,
+       close,
+       onClose:()=>{
+        activeInitializationWizard=null;
+       }
+      });
+      return;
+     }
      const settingsSiteDetails=siteDetailsByPlant.get(plant.id)??defaultSiteDetails(plant);
      activeInverterSettings=openInverterSettings({
       plant,
@@ -1591,7 +1611,7 @@ function renderDetail(plantId,requestedDevice,requestedSection,requestedTab,requ
   if(plantId){
    inner.hidden=true;
    detail.hidden=false;
-   renderDetail(plantId,params?.device,params?.section,params?.tab,params?.settings,params?.serial);
+   renderDetail(plantId,params?.device,params?.section,params?.tab,params?.settings,params?.serial,params?.setupVariant);
    detailScrollFeedback.sync();
    return;
   }
@@ -1645,6 +1665,8 @@ function renderDetail(plantId,requestedDevice,requestedSection,requestedTab,requ
    close(true);
    activeInverterSettings?.destroy();
    activeInverterSettings=null;
+   activeInitializationWizard?.destroy();
+   activeInitializationWizard=null;
    activeSiteV2Controller?.destroy();
    activeSiteV2Controller=null;
    element.hidden=true;

@@ -8,6 +8,7 @@ import {menuList,menuRow,mountMenu} from "../../components/menu-popover.js";
 import {menuEndAlign} from "../../components/popover.js";
 import {createTimeRangeControl} from "../../components/time-range-control.js";
 import {timeToMinutes} from "./settings-model.js";
+import {scheduleSegments,validateScheduleRange} from "./schedule-editor.js";
 import {
  TOU_AREA_OPTIONS,
  TOU_CONTROL_MODES,
@@ -52,14 +53,13 @@ export function validateTouRange({plan=[],interval=60,period,candidate}={}){
  if(from===to)return rangeError(period,"Start and end times must differ.");
  if(to<from)return rangeError(period,"End time must be later.");
  const safeInterval=[15,30,60].includes(Number(interval))?Number(interval):60;
- if((from%safeInterval!==0)||(to%safeInterval!==0)){
-  return rangeError(period,`Use ${intervalLabel(safeInterval)} steps.`);
- }
- for(const item of plan){
-  if(!item||item===period||(period?.id&&item.id===period.id))continue;
-  const itemFrom=timeToMinutes(item.from),itemTo=timeToMinutes(item.to);
-  if(itemFrom===null||itemTo===null||itemTo<=itemFrom)continue;
-  if(from<itemTo&&itemFrom<to)return rangeError(period,"Time ranges cannot overlap.");
+ const validation=validateScheduleRange(period,candidate.from,candidate.to,plan,{
+  minDuration:safeInterval,
+  stepMinutes:safeInterval
+ });
+ if(!validation.valid){
+  if(validation.message.includes("minute interval"))return rangeError(period,`Use ${intervalLabel(safeInterval)} steps.`);
+  return rangeError(period,validation.message);
  }
  return null;
 }
@@ -129,11 +129,9 @@ function bandLegend(plan){
 
 function overviewSegments(model,kind){
  const plan=validSegments(planFor(model,kind));
- return plan.map(period=>{
-  const from=timeToMinutes(period.from),to=timeToMinutes(period.to);
-  const mode=modeFor(period.mode);
-  const left=from/1440*100;
-  const width=Math.max(.35,(to-from)/1440*100);
+ return scheduleSegments(plan,{modeFor:period=>modeFor(period.mode)}).map(segment=>{
+  const {period,mode,left}=segment;
+  const width=Math.max(.35,segment.width);
   return `<button class="isw-eco-segment isw-tou-mode-${mode.className}" type="button" style="left:${left}%;width:${width}%" data-isw-tou-segment="${escapeHTML(period.id)}" data-isw-tou-kind="${kind}" aria-label="${escapeHTML(period.from)} to ${escapeHTML(period.to)}, ${mode.label}"></button>`;
  }).join("");
 }

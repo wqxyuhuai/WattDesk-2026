@@ -171,7 +171,7 @@ export const GRID_PROFILES=Object.freeze({
      quExitP:5.0,quLimit:1,cpTau:2.0,cpP1:20.0,cpP2:40.0,cpP3:50.0,cpP4:100.0,cpF1:0.9,cpF2:0.98,cpF3:1.0,
      cpF4:-0.9,lvrtOn:0,hvrtOn:0,lvrtPm:0,lvZero:184.0}
  },
- it_cei021:{label:"IT CEI0-21",country:"IT",full:"CEI 0-21 (LV)",enum:null,status:"cert",p:null},
+ it_cei021:{label:"IT CEI 0-21",country:"IT",full:"CEI 0-21 (LV)",enum:21,status:"cert",p:null},
  es_nts631:{label:"ES NTS631",country:"ES",full:"NTS 631 v2.1 + UNE 217001 + UNE 217002:2020",enum:null,status:"plan",p:null},
  ch_naeea:{label:"CH NA/EEA-NE7:2025",country:"CH",full:"VSE NA/EEA-NE7 – CH 2025 (SN EN 50549-1)",enum:null,status:"plan",p:null},
  fr_c11519:{label:"FR EN50549-1",country:"FR",full:"NF EN 50549-1 + FD C11-519-11 (Enedis)",enum:null,status:"plan",p:null},

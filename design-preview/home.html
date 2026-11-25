@@ -8,6 +8,7 @@
   <meta name="mapbox-access-token" content="">
   <script>
     const standaloneSettings = location.pathname === "/settings" ||
+      /^\/setup\/(?:20kw|50kw)\/?$/.test(location.pathname) ||
       (/\/devices\/inverter-settings\/?$/.test(location.pathname) &&
        new URLSearchParams(location.search).get("standalone") === "1");
     if (standaloneSettings) {
@@ -30,6 +31,7 @@
   <link rel="stylesheet" href="./src/pages/plants/detail.css">
   <link rel="stylesheet" href="./src/pages/plants/devices.css">
   <link rel="stylesheet" href="./src/pages/inverter-settings/inverter-settings.css">
+  <link rel="stylesheet" href="./src/pages/inverter-settings/initialization.css">
   <link rel="stylesheet" href="./src/pages/inverter-settings/tou-settings.css">
   <link rel="stylesheet" href="./src/pages/plants/site-details.css">
   <link rel="stylesheet" href="./src/pages/plants/site-details-v2.css">
