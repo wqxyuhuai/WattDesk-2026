@@ -19,6 +19,9 @@ const assert=require('node:assert/strict');
    const text=document.createElement('span');text.textContent='Reusable control';control.append(createIcon('search'),text);applyTypeStyle(control,'14/14 medium');
    const primary=button('Publish ticket','wd-button wd-button--pill wd-button--primary');primary.id='reusable-primary';
    const primaryLabel=document.createElement('span');primaryLabel.className='wd-control-label';primaryLabel.textContent='Publish ticket';primary.append(primaryLabel);applyTypeStyle(primaryLabel,'Footnote/Medium');
+   const dangerSolid=button('Discard Changes','wd-button wd-button--pill wd-button--danger-solid');dangerSolid.id='reusable-danger-solid';
+   const dangerLabel=document.createElement('span');dangerLabel.className='wd-control-label';dangerLabel.textContent='Discard Changes';dangerSolid.append(dangerLabel);applyTypeStyle(dangerLabel,'Footnote/Medium');
+   dangerSolid.style.cssText='position:absolute;left:-9999px;top:0';
    const primaryDisc=button('Send reply','wd-button wd-button--pill wd-button--primary wd-button--disc');primaryDisc.id='reusable-primary-disc';
    const primaryDiscIcon=createIcon('forward');primaryDiscIcon.classList.add('wd-control-icon');primaryDisc.append(primaryDiscIcon);
    const standard=createStandardButton({label:'Standard action',className:'reusable-standard'});standard.id='reusable-standard';
@@ -36,8 +39,8 @@ const assert=require('node:assert/strict');
    const scrollViewport=document.createElement('div');scrollViewport.id='scroll-feedback-viewport';scrollViewport.style.cssText='height:100px;overflow:auto;scrollbar-width:none';
    const scrollContent=document.createElement('div');scrollContent.id='scroll-feedback-content';scrollContent.style.cssText='height:400px';
    scrollViewport.append(scrollContent);scrollHost.append(scrollViewport);
-   root.append(control,primary,primaryDisc,standard,standardDisc,timeLabel,card,avatar,compactAvatar,smallAvatar,field,equivalent,scrollHost);
-   window.componentMaterial=createGlassMaterial({surfaces:[{host:control,radius:18},{host:primary,radius:18},{host:primaryDisc,radius:18},{host:standard,radius:18},{host:standardDisc,radius:18}]});
+   root.append(control,primary,dangerSolid,primaryDisc,standard,standardDisc,timeLabel,card,avatar,compactAvatar,smallAvatar,field,equivalent,scrollHost);
+   window.componentMaterial=createGlassMaterial({surfaces:[{host:control,radius:18},{host:primary,radius:18},{host:dangerSolid,radius:18},{host:primaryDisc,radius:18},{host:standard,radius:18},{host:standardDisc,radius:18}]});
    window.segmentedControl=createSegmentedControl({
     items:[{id:'first',label:'First'},{id:'second',label:'Second'},{id:'third',label:'Third'}],
     value:'first',label:'Reusable segmented view',glass:window.componentMaterial
@@ -128,7 +131,8 @@ const assert=require('node:assert/strict');
    const track=document.querySelector('#scroll-feedback-fixture .wd-scroll-feedback');
    const thumb=track.querySelector('.wd-scroll-feedback__thumb');
    viewport.scrollTop=0;
-   viewport.dispatchEvent(new WheelEvent('wheel',{deltaY:-120,bubbles:true,cancelable:true}));
+   const start=new WheelEvent('wheel',{deltaY:-120,bubbles:true,cancelable:true});
+   viewport.dispatchEvent(start);
    await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
    const reverse=new WheelEvent('wheel',{deltaY:80,bubbles:true,cancelable:true});
    viewport.dispatchEvent(reverse);
@@ -143,6 +147,8 @@ const assert=require('node:assert/strict');
    const lineEvent=new WheelEvent('wheel',{deltaY:3,deltaMode:1,bubbles:true,cancelable:true});
    track.dispatchEvent(lineEvent);
    return {
+    startPrevented:start.defaultPrevented,
+    overscroll:getComputedStyle(viewport).overscrollBehaviorY,
     reversePrevented:reverse.defaultPrevented,
     pulling:document.querySelector('.wd-scroll-feedback-content').classList.contains('is-pulling'),
     thumbDelta:Math.abs((thumbBox.top-trackBox.top)-expectedTop),
@@ -150,6 +156,8 @@ const assert=require('node:assert/strict');
     linePrevented:lineEvent.defaultPrevented
    };
   });
+  assert.equal(scrollInput.startPrevented,false,'ordinary viewport wheel input stays passive');
+  assert.equal(scrollInput.overscroll,'contain','shared scroll viewports contain native scroll chaining');
   assert.equal(scrollInput.reversePrevented,false,'reversing scroll direction releases the shared edge pull');
   assert.equal(scrollInput.pulling,false,'reversing scroll direction clears the elastic displacement');
   assert.ok(scrollInput.thumbDelta<=1,'the shared scrollbar tracks the new position immediately after reversal');
@@ -294,6 +302,7 @@ const assert=require('node:assert/strict');
   });
   const control=page.locator('#reusable-control'),before=await control.boundingBox();
   const primary=page.locator('#reusable-primary');
+  const dangerSolid=page.locator('#reusable-danger-solid');
   const primaryDisc=page.locator('#reusable-primary-disc');
   for(const theme of ['dark','light']){
    await page.mouse.move(0,0);
@@ -304,6 +313,25 @@ const assert=require('node:assert/strict');
    const hovered=await control.evaluate(el=>{const style=getComputedStyle(el),matrix=new DOMMatrix(style.transform==='none'?'':style.transform);return {scale:matrix.a,offset:[el.offsetWidth,el.offsetHeight]}});
    assert.ok(hovered.scale>1,'Interactive glass must grow on hover');
    assert.deepEqual(hovered.offset,[Math.round(before.width),Math.round(before.height)],'Hover must not change the layout box');
+   const opticalVars=["--wd-glass-rim-top","--wd-glass-rim-bottom","--wd-glass-inner-top","--wd-glass-inner-bottom","--wd-glass-optical-light-top","--wd-glass-optical-light-bottom","--wd-glass-hover-field","--wd-glass-state-edge"];
+   const readSolidOptics=locator=>locator.evaluate((e,names)=>{
+     const material=getComputedStyle(e.querySelector(':scope>.wd-glass-material'));
+     return names.reduce((result,name)=>(result[name]=material.getPropertyValue(name).trim(),result),{});
+   },opticalVars);
+   const idleOptics=await readSolidOptics(primary);
+   const dangerIdleOptics=await readSolidOptics(dangerSolid);
+   assert.deepEqual(dangerIdleOptics,idleOptics,`Danger and primary solid buttons share the same ${theme} idle optical layers`);
+   if(theme==="dark"){
+     assert.equal(idleOptics["--wd-glass-rim-top"],"rgba(255,255,255,.38)","dark primary buttons use the brighter default rim");
+     assert.equal(idleOptics["--wd-glass-rim-bottom"],"rgba(255,255,255,.24)","dark solid buttons use the brighter default lower rim");
+     assert.equal(idleOptics["--wd-glass-inner-top"],"rgba(255,255,255,.21)","dark solid buttons keep the brighter default inner glow");
+     assert.equal(idleOptics["--wd-glass-inner-bottom"],"rgba(255,255,255,.11)","dark solid buttons keep the brighter default lower inner glow");
+     assert.equal(idleOptics["--wd-glass-optical-light-top"],"rgba(255,255,255,.15)","dark solid buttons keep the brighter default optical top light");
+     assert.equal(idleOptics["--wd-glass-optical-light-bottom"],"rgba(255,255,255,.075)","dark solid buttons keep the brighter default optical bottom light");
+   }else{
+     assert.equal(idleOptics["--wd-glass-rim-top"],"rgba(255,255,255,.60)","light solid buttons keep the approved bright rim");
+     assert.equal(idleOptics["--wd-glass-inner-top"],"rgba(255,255,255,.46)","light solid buttons keep the approved inner highlight");
+   }
    await primary.hover();
    await page.waitForTimeout(320);
    const primaryState=await primary.evaluate(e=>({
@@ -312,6 +340,14 @@ const assert=require('node:assert/strict');
    }));
    assert.equal(primaryState.host,'rgb(255, 255, 255)',`Primary host ink stays white in ${theme}`);
    assert.equal(primaryState.label,'rgb(255, 255, 255)',`Primary label ink stays white in ${theme}`);
+   const hoverOptics=await readSolidOptics(primary);
+   if(theme==="dark"){
+     assert.equal(hoverOptics["--wd-glass-hover-field"],"linear-gradient(180deg,rgba(255,255,255,.14),rgba(255,255,255,.045) 52%,rgba(255,255,255,.09))","dark solid buttons strengthen the hover glow field");
+     assert.equal(hoverOptics["--wd-glass-state-edge"],"inset 0 1px 2px rgba(255,255,255,.28),inset 0 -2px 8px -3px rgba(255,255,255,.32)","dark solid buttons strengthen the hover inner edge");
+     assert.notEqual(hoverOptics["--wd-glass-hover-field"],idleOptics["--wd-glass-hover-field"],"dark solid hover differs from idle");
+   }else{
+     assert.equal(hoverOptics["--wd-glass-hover-field"],idleOptics["--wd-glass-hover-field"],"light solid button hover keeps its approved glow field");
+   }
    await primaryDisc.hover();
    await page.waitForTimeout(320);
    const primaryIcon=await primaryDisc.locator('.wd-control-icon').evaluate(e=>({

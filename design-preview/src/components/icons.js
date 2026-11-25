@@ -43,6 +43,12 @@ export function createIcon(name,tone){
  return iconAsset(source[0],tone||source[1]);
 }
 export const assetURL=file=>new URL("../../home-assets/"+file,import.meta.url).href;
+export const SETTINGS_REFERENCE_IMAGE_URLS=Object.freeze({
+ battery20kw:assetURL("inverter-settings/setup/battery-20kw-lcd.png"),
+ pv20kw:assetURL("inverter-settings/setup/pv-20kw-lcd.png"),
+ battery50kw:assetURL("inverter-settings/setup/battery-50kw-no-screen.png"),
+ pv50kw:assetURL("inverter-settings/setup/pv-50kw-no-screen.png")
+});
 // Export assets can carry label alpha; neutral state masks must be fully opaque so primary ink stays primary.
 export const opaqueMaskURL=file=>new URL(`../../home-assets/masks/${file}`,import.meta.url).href;
 // Page-level inline icons are still colour-masked by CSS. This factory owns the

@@ -35,6 +35,7 @@ export function createConfirmDialog({
  const cancel=showCancel?createStandardButton({label:cancelLabel}):null;
  const resolvedConfirmVariant=confirmVariant==="neutral"&&danger?"danger-solid":confirmVariant;
  const confirm=createStandardButton({label:confirmLabel,variant:resolvedConfirmVariant,className:confirmClassName});
+ let resolved=false;
  if(cancel)actions.append(cancel);
  actions.append(confirm);
  body.append(intro,actions);
@@ -47,15 +48,20 @@ export function createConfirmDialog({
   showClose:false,
   content,
   restoreFocus,
-  onClose
+  onClose:()=>{
+   if(!resolved)onCancel?.();
+   onClose?.();
+  }
  });
  if(cancel)modal.registerSurface(cancel,18);
  modal.registerSurface(confirm,18);
  cancel?.addEventListener("click",()=>{
+  resolved=true;
   modal.close();
   onCancel?.();
  });
  confirm.addEventListener("click",()=>{
+  resolved=true;
   modal.close();
   onConfirm?.();
  });

@@ -30,6 +30,8 @@ export function createScrollFeedback({
   preserveBottomOnShrink=false,
  maxPull=20,
  deadZone=4,
+  wheelDeadZone=deadZone,
+  wheelPullRatio=.035,
   releaseDelay=180,
   visibility="always"
 }={}){
@@ -52,9 +54,10 @@ export function createScrollFeedback({
  if(startSurface)startSurface.style.top=`${viewport.offsetTop}px`;
  if(pullEnabled)host.append(startSurface,endSurface);
  host.append(track);
+ if(pullEnabled)viewport.classList.add("wd-scroll-feedback-viewport");
 
  let frame=0,pullFrame=0,pullDistance=0,pullTarget=0,pullReleaseTimer=0;
- let pullSide=null,touchStartY=null,baseMetrics=null;
+ let pullSide=null,pullDeadZone=deadZone,touchStartY=null,baseMetrics=null;
  let pullAnimations=[];
  let scrollDrag=null;
  const bottomGuard=preserveBottomOnShrink?createBottomScrollGuard({viewport,content}):null;
@@ -81,9 +84,9 @@ export function createScrollFeedback({
   return {top,bottom,trackHeight,visible,thumbHeight,thumbTop};
  }
 
- function thumbPose(base=baseMetrics,side=pullSide,distance=pullDistance){
+ function thumbPose(base=baseMetrics,side=pullSide,distance=pullDistance,activeDeadZone=pullDeadZone){
   if(!base?.visible)return {height:0,top:0};
-  const activeDistance=side?Math.max(0,distance-deadZone):0;
+  const activeDistance=side?Math.max(0,distance-activeDeadZone):0;
   const shrink=Math.min(base.thumbHeight-MIN_THUMB_HEIGHT,Math.round(activeDistance*PULL_SHRINK_RATIO));
   const height=base.thumbHeight-shrink;
   const top=base.thumbTop+(side==="end"?base.thumbHeight-height:0);
@@ -119,7 +122,7 @@ export function createScrollFeedback({
 
  function renderPullVisual(){
   if(!pullEnabled)return;
-  const distance=Math.max(0,pullDistance-deadZone);
+  const distance=Math.max(0,pullDistance-pullDeadZone);
   const active=distance>0&&pullSide;
   content.classList.toggle("is-pulling",Boolean(active));
   content.style.transform=active?`translate3d(0,${pullSide==="end"?-distance:distance}px,0)`:"";
@@ -157,7 +160,7 @@ export function createScrollFeedback({
   pullFrame=0;
   pullTarget=0;
   const settledSide=pullSide;
-  const start=Math.max(0,pullDistance-deadZone);
+  const start=Math.max(0,pullDistance-pullDeadZone);
   cancelPullAnimations();
   pullDistance=0;
   if(start<=0||reducedMotion()||!animate){
@@ -168,6 +171,7 @@ export function createScrollFeedback({
   }
 
   pullSide=null;
+  pullDeadZone=deadZone;
   const nextMetrics=metrics();
   baseMetrics=nextMetrics;
   applyThumb(nextMetrics,null,0);
@@ -198,10 +202,11 @@ export function createScrollFeedback({
   });
  }
 
- function pullBy(delta){
+ function pullBy(delta,{sourceDeadZone=pullDeadZone}={}){
   if(reducedMotion())return;
   clearTimeout(pullReleaseTimer);
   cancelPullAnimations();
+  pullDeadZone=sourceDeadZone;
   const resistance=1-pullTarget/(maxPull*1.6);
   pullTarget=Math.max(0,Math.min(maxPull,pullTarget+delta*resistance));
   requestPullFrame();
@@ -227,21 +232,15 @@ export function createScrollFeedback({
     settlePull({animate:false});
     return;
    }
-   event.preventDefault();
-   pullBy(Math.abs(delta)*.035);
+   pullBy(Math.abs(delta)*wheelPullRatio,{sourceDeadZone:wheelDeadZone});
    return;
   }
   if(atStart&&delta<0){
    pullSide="start";
-   event.preventDefault();
-   pullBy(-delta*.035);
+   pullBy(-delta*wheelPullRatio,{sourceDeadZone:wheelDeadZone});
   }else if(atEnd&&delta>0){
    pullSide="end";
-   event.preventDefault();
-   pullBy(delta*.035);
-  }else if(pullTarget>0||pullDistance>0){
-   event.preventDefault();
-   pullBy(-Math.abs(delta)*.035);
+   pullBy(delta*wheelPullRatio,{sourceDeadZone:wheelDeadZone});
   }
  }
 
@@ -271,6 +270,7 @@ export function createScrollFeedback({
   clearTimeout(pullReleaseTimer);
   cancelPullAnimations();
   pullTarget=Math.min(maxPull,Math.max(0,Math.abs(distance)*.25));
+  pullDeadZone=deadZone;
   requestPullFrame();
  }
 
@@ -328,7 +328,7 @@ export function createScrollFeedback({
   event.preventDefault();
   viewport.scrollTop+=delta;
  },{passive:false});
- if(pullEnabled)viewport.addEventListener("wheel",handleWheel,{passive:false});
+ if(pullEnabled)viewport.addEventListener("wheel",handleWheel,{passive:true});
  viewport.addEventListener("scroll",handleScroll,{passive:true});
  if(pullEnabled){
   viewport.addEventListener("touchstart",handleTouchStart,{passive:true});
@@ -373,6 +373,7 @@ export function createScrollFeedback({
     content.classList.remove("wd-scroll-feedback-content","is-pulling");
    }
    host.classList.remove("wd-scroll-feedback-host");
+   viewport.classList.remove("wd-scroll-feedback-viewport");
    track.remove();
    startSurface?.remove();
    endSurface?.remove();

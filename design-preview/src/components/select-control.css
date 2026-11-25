@@ -29,8 +29,18 @@
 }
 
 .wd-select-trigger.wd-select--adaptive{
- --select-adaptive-border:color-mix(in srgb,var(--wd-label-primary) 8%,transparent);
- --select-adaptive-shadow:color-mix(in srgb,var(--select-adaptive-border) 96%,#000);
+ --select-adaptive-fill:color-mix(in srgb,var(--wd-label-primary) 8%,transparent);
+ --select-adaptive-hover-fill:color-mix(in srgb,var(--wd-label-primary) 15%,transparent);
+ --select-adaptive-active-fill:color-mix(in srgb,var(--wd-label-primary) 20%,transparent);
+ --select-adaptive-border:color-mix(in srgb,var(--wd-label-primary) 10%,transparent);
+ --select-adaptive-border-hover:color-mix(in srgb,var(--wd-label-primary) 26%,transparent);
+ --select-adaptive-border-active:color-mix(in srgb,var(--wd-label-primary) 46%,transparent);
+ --select-adaptive-shadow:rgba(0,0,0,.2);
+ --select-adaptive-shadow-hover:rgba(0,0,0,.3);
+ --select-adaptive-shadow-active:rgba(0,0,0,.36);
+ --wd-edit-field-fill:var(--select-adaptive-fill);
+ --wd-edit-field-hover-fill:var(--select-adaptive-hover-fill);
+ --wd-edit-field-focus-fill:var(--select-adaptive-active-fill);
  flex:none;
  width:max-content;
  max-width:100%;
@@ -52,16 +62,34 @@
  justify-self:start;
 }
 
-.wd-select-trigger.wd-select--adaptive:is(:hover,:focus-visible,[aria-expanded="true"]){
- box-shadow:0 2px 1px var(--select-adaptive-shadow);
+.wd-select-trigger.wd-select--adaptive:hover{
+ background-color:var(--select-adaptive-hover-fill);
+ border-color:var(--select-adaptive-border-hover);
+ box-shadow:0 2px 1px var(--select-adaptive-shadow-hover);
+}
+
+.wd-select-trigger.wd-select--adaptive:is(:focus-visible,:active,[aria-expanded="true"]){
+ background-color:var(--select-adaptive-active-fill);
+ border-color:var(--select-adaptive-border-active);
+ box-shadow:0 2px 1px var(--select-adaptive-shadow-active);
 }
 
 :root[data-theme="light"] .wd-select-trigger.wd-select--adaptive{
- background:transparent;
+ --select-adaptive-border:color-mix(in srgb,var(--wd-label-primary) 8%,transparent);
+ --select-adaptive-border-hover:var(--select-adaptive-border);
+ --select-adaptive-border-active:var(--select-adaptive-border);
+ --select-adaptive-shadow:color-mix(in srgb,var(--select-adaptive-border) 96%,#000);
+ --select-adaptive-shadow-hover:var(--select-adaptive-shadow);
+ --select-adaptive-shadow-active:var(--select-adaptive-shadow);
+ background-color:transparent;
 }
 
-:root[data-theme="light"] .wd-select-trigger.wd-select--adaptive:is(:hover,:focus-visible,[aria-expanded="true"]){
- background:var(--wd-fill-quaternary);
+:root[data-theme="light"] .wd-select-trigger.wd-select--adaptive:hover{
+ background-color:var(--wd-fill-quaternary);
+}
+
+:root[data-theme="light"] .wd-select-trigger.wd-select--adaptive:is(:focus-visible,:active,[aria-expanded="true"]){
+ background-color:var(--wd-fill-quaternary);
 }
 
 .wd-select-trigger.wd-select--adaptive .wd-select-placeholder{
@@ -144,6 +172,7 @@
 
 .wd-select-option[aria-selected="true"] .wd-select-check{
  border:0;
+ border-radius:0;
  background:var(--wd-label-primary);
  -webkit-mask:url("/home-assets/icons/selection/check-circle.svg") center/contain no-repeat;
  mask:url("/home-assets/icons/selection/check-circle.svg") center/contain no-repeat;

@@ -6,6 +6,10 @@
   position:relative;
 }
 
+:where(.wd-scroll-feedback-viewport){
+  overscroll-behavior:contain;
+}
+
 .wd-scroll-shrink-spacer {
   display:block;
   width:1px;

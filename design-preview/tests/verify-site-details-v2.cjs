@@ -775,7 +775,8 @@ const settle=page=>page.evaluate(()=>Promise.all(
  });
  assert.ok(installerSelectGeometry.companyEditLeft<1&&installerSelectGeometry.contactEditLeft<1,"Company and Contact selects start at the left edge of their text groups");
  assert.equal(installerSelectGeometry.companyAdaptive&&installerSelectGeometry.contactAdaptive,true,"Installer selects use content-adaptive widths instead of filling the card");
- assert.equal(installerSelectGeometry.companyJustify==="flex-start"&&installerSelectGeometry.contactJustify==="flex-start",true,"Installer select labels remain left-aligned in edit mode");
+  const isFlowStart=value=>value==="flex-start"||value==="flow-start";
+  assert.equal(isFlowStart(installerSelectGeometry.companyJustify)&&isFlowStart(installerSelectGeometry.contactJustify),true,"Installer select labels remain left-aligned in edit mode");
  assert.equal(await page.locator(".site-v2-panel--energy .site-v2-info-row").evaluateAll(rows=>rows.every(row=>row.getBoundingClientRect().height===44)),true,"Energy rows keep the shorter height in edit mode");
  const editEnergyTextLayout=await page.locator(".site-v2-panel--energy").evaluate(panel=>({
   height:panel.getBoundingClientRect().height,
