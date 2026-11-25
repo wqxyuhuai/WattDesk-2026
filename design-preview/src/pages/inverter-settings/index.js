@@ -3175,6 +3175,7 @@ export function openInverterSettings({
  });
  if(device.inverterSettings){
   Object.assign(model.S,clone(device.inverterSettings));
+  if(!model.S.g||!Object.keys(model.S.g).length)model.loadProfile(model.S.gridCode);
   model.normalizeEco();
   model.normalizeLimitBasis();
   model.normalizeBattery();

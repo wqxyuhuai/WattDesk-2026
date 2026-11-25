@@ -501,24 +501,26 @@ function pageGridCode(model){
   const selectable=entries.filter(entry=>entry.selectable).map(profileRow).join("");
   const planned=entries.filter(entry=>!entry.selectable);
  const deviations=model.devCount();
+ const hasValues=hasGridValues(model);
+ const isIpsPreview=model.capabilities.ipsPreview&&model.S.gridCode==="it_cei021";
  return `<h2 class="isw-page-title">Grid Code</h2>
  <section class="isw-panel isw-panel--narrow">
   ${readonlyDataRow("Active profile",profile.full,profile.label)}
   ${profile.enum!==null?readonlyDataRow("Certification standard register","15000 Certification_Standard",profile.enum):""}
-  ${profile.p?readonlyDataRow("Values changed from the profile","",deviations||"None"):""}
+  ${hasValues?readonlyDataRow("Values changed from the profile","",deviations||"None"):""}
  </section>
  ${deviations?`<section class="isw-table isw-table--narrow">
   ${tableHead("1fr 150px","<span>Changed value</span><span class=\"isw-align-right\">Page</span>")}
   ${model.devList().map(item=>tableRow("1fr 150px",`<span class="isw-table-symbol">${item.label}</span><span class="isw-table-symbol isw-align-right">${item.page}</span>`)).join("")}
  </section>`:""}
- ${deviations?`<section class="isw-panel isw-panel--narrow">${row("Reload the profile","Restores every protection, reconnection and curve value to the certified default",actionButton(`Reload ${profile.label}`,"reload"))}</section>`:""}
+ ${deviations?`<section class="isw-panel isw-panel--narrow">${row("Reload the profile",isIpsPreview?"Restores every protection, reconnection and curve value to the local preview baseline":"Restores every protection, reconnection and curve value to the certified default",actionButton(`Reload ${profile.label}`,"reload"))}</section>`:""}
  <h3 class="isw-group-title">Select a profile</h3>
  <section class="isw-profile-list">${selectable}</section>
  ${planned.length?`<h3 class="isw-group-title">On the roadmap — not in this firmware</h3>
  <section class="isw-profile-list isw-profile-list--flat">${planned.map(profileRow).join("")}</section>
  ${note("These markets are identified and the standard is named, but no parameter set ships for them in this firmware, so they cannot be selected. Selecting one would leave the unit with no certified configuration.",true)}`:""}
- ${model.capabilities.ipsPreview&&model.S.gridCode==="it_cei021"?note("IT CEI 0-21 is exposed as a local IPS preview only. No protection parameter set is available in this firmware, so selecting it does not configure certified voltage, frequency or ride-through values.",true):""}
- ${profile.p?note("Changing the profile reloads every protection limit, the reconnection window and all curves from the new country profile, and discards hand-edited values.",true):note("This country is on the certification roadmap. No parameter set ships in this firmware, so the grid pages stay empty until a certified profile exists. Selecting it does not configure the unit.",true)}`;
+ ${isIpsPreview?note("IT CEI 0-21 is exposed as a local IPS preview. All Grid pages remain available with a local working baseline for interface review; these values are not a certified Italian protection set.",true):""}
+ ${hasValues?note("Changing the profile reloads every protection limit, the reconnection window and all curves from the selected profile, and discards hand-edited values.",true):note("This country is on the certification roadmap. No grid parameter values are available, so selecting it does not configure the unit.",true)}`;
 }
 
 function stages(model,keys,descending){
@@ -529,7 +531,7 @@ function stages(model,keys,descending){
 }
 
 function pageProtection(model){
- if(!model.prof().p)return `<h2 class="isw-page-title">Protection Limits</h2>${noProfile(model)}`;
+ if(!hasGridValues(model))return `<h2 class="isw-page-title">Protection Limits</h2>${noProfile(model)}`;
  const G=model.S.g;
  const columns="140px 54px 1fr 1fr";
  const overTenLive=model.has("ov10")&&G.ov10on;
@@ -606,7 +608,7 @@ function pageProtection(model){
 }
 
 function pageConnection(model){
- if(!model.prof().p)return `<h2 class="isw-page-title">Grid Connection</h2>${noProfile(model)}`;
+ if(!hasGridValues(model))return `<h2 class="isw-page-title">Grid Connection</h2>${noProfile(model)}`;
  const G=model.S.g;
  const shown=[];
  const windowRow=(label,key,unitName,step=.5,decimals=1)=>{
@@ -673,7 +675,7 @@ function reactivePlot(model,indexes){
 }
 
 function pageReactive(model){
- if(!model.prof().p)return `<h2 class="isw-page-title">Reactive Power</h2>${noProfile(model)}`;
+ if(!hasGridValues(model))return `<h2 class="isw-page-title">Reactive Power</h2>${noProfile(model)}`;
  const G=model.S.g;
  const leads=["No reactive power regulation is applied","The inverter holds a fixed reactive power setpoint","The inverter holds a fixed power factor, so reactive power tracks active power","Reactive power follows the grid voltage along the Q(U) curve","Power factor follows active power along the cos φ(P) curve","Reactive power follows active power along the Q(P) curve","Power factor follows the grid voltage along the cos φ(U) curve"];
  const mode=G.reacMode===undefined?0:G.reacMode;
@@ -730,7 +732,7 @@ function pageReactive(model){
 }
 
 function pagePu(model){
- if(!model.prof().p)return `<h2 class="isw-page-title">P(U) Characteristics</h2>${noProfile(model)}`;
+ if(!hasGridValues(model))return `<h2 class="isw-page-title">P(U) Characteristics</h2>${noProfile(model)}`;
  const G=model.S.g;
  const enabled=G.puOn;
  const canHigh=model.hasAll("puV1","puV2");
@@ -775,7 +777,7 @@ function pagePu(model){
 }
 
 function pageFrequency(model){
- if(!model.prof().p)return `<h2 class="isw-page-title">Frequency-Watt (F-P)</h2>${noProfile(model)}`;
+ if(!hasGridValues(model))return `<h2 class="isw-page-title">Frequency-Watt (F-P)</h2>${noProfile(model)}`;
  const G=model.S.g;
   const references=F_P_REFERENCE_OPTIONS;
  const endPower=model.has("ofpStart")&&model.has("ofpEnd")&&model.has("ofpDroop")?Math.min(100,(G.ofpEnd-G.ofpStart)*G.ofpDroop):null;
@@ -810,7 +812,7 @@ function pageFrequency(model){
 
 function pageRideThrough(model,kind){
  const title=kind==="lvrt"?"Low Voltage Ride-Through (LVRT)":"High Voltage Ride-Through (HVRT)";
- if(!model.prof().p)return `<h2 class="isw-page-title">${title}</h2>${noProfile(model)}`;
+ if(!hasGridValues(model))return `<h2 class="isw-page-title">${title}</h2>${noProfile(model)}`;
  const G=model.S.g;
  const prefix=kind==="lvrt"?"lv":"hv";
  const enableKey=`${prefix}rtOn`;
@@ -850,6 +852,7 @@ function pageRideThrough(model,kind){
 }
 
 const noProfile=model=>note(`No certified parameter set ships for ${model.prof().label} in this firmware, so there is nothing to configure here. Pick a profile with a certified set, or wait for this one to be certified.`,true);
+const hasGridValues=model=>Boolean(model.S.g&&Object.keys(model.S.g).length);
 
 export const NAV_GROUPS=Object.freeze([
  {label:"Operating strategy",items:[

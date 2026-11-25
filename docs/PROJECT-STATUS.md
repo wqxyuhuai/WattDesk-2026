@@ -187,7 +187,8 @@
 - `IPS Check Record` 按钮位于页面标题行；独立 `Last self-check` 说明行已删除。意大利预览继续显示全部 Grid 二级页并将 IPS Check 放在最后。
 - 历史弹窗改为与设置页一致的结果卡、分组标题和八项卡片，并使用共享滚动反馈；弹窗卡片继承页面级 `24px` 圆角、`10px` 网格间距、深色描边/投影和字体变量。记录结束时间、整体结果和八项数值；检查结果与运行态作为瞬态 RO 数据，不进入普通 Save、dirty 或 Operation Log。
 - IPS 操作卡和记录摘要左侧的标记统一使用中性灰面，不再使用主题蓝。
-- `p25` 本地夹具把 `IT CEI 0-21` 标为 `Preview only` 以便评审 IPS 样式，但没有复制任何德国或其他国家的保护参数。生产接入仍需真实意大利认证档案和固件确认 `Italy_SelfTest_Enable` 拼写。
+- `p25` 本地夹具把 `IT CEI 0-21` 标为 `Preview only`。为使所有 Grid 页面在 IPS 未通过时仍可评审，预览模型加载一份明确非认证的本地工作基线，不再把页面替换成无参数空态；生产接入仍需真实意大利认证档案和固件确认 `Italy_SelfTest_Enable` 拼写。
+- IPS 状态只影响并网资格、状态强调和提示，不作为其他 Grid 二级页的显示门禁。专项覆盖 Protection Limits、Grid Connection、Reactive Power、P(U)、F(P)、LVRT 和 HVRT 均有可编辑内容。
 - 新增 `tests/verify-ips-check.cjs`，覆盖入口显隐与保存门禁、必检提示、八项卡片、历史弹窗、开始/检查中/通过、离线/失败/中断聚合、窄屏单列、深浅主题和打开设置提示。
 - 本轮验证通过：`npm run check`、Inverter settings 专项、IPS 专项、`npm run build:site:public`（303 文件 / 5.88 MB）、`npm run audit:assets`（171 个运行资产，0 unused / 0 missing）和 `git diff --check`。真实本地预览标签已刷新，确认全部 Grid 子页可见、IPS 位于最后、记录按钮在标题行；并检查了改版后的记录弹窗。
 

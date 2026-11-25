@@ -63,6 +63,22 @@ const devicesURL = `${origin}/plants/p25/devices?device=inverter&glass=figma`;
   assert.equal(await ipsEntry.getAttribute("aria-disabled"),null,"saving the Italian grid code enables IPS Check");
   assert.equal(await ipsEntry.evaluate(node=>node.classList.contains("is-ips-danger")),true,"required IPS is emphasized before the check passes");
 
+  const gridPageContracts=[
+   ["prot","Protection Limits",'[data-isw-number="g.ov1"]'],
+   ["conn","Grid Connection",'[data-isw-number="g.rcDelay"]'],
+   ["reac","Reactive Power","[data-isw-reac-mode-trigger]"],
+   ["pu","P(U) Characteristics",'[data-isw-seg="g.puOn"]'],
+   ["fp","Frequency-Watt (F-P)",'[data-isw-switch="g.ofpOn"]'],
+   ["lvrt","Low Voltage Ride-Through (LVRT)",'[data-isw-number="g.lv1"]'],
+   ["hvrt","High Voltage Ride-Through (HVRT)",'[data-isw-number="g.hv1"]']
+  ];
+  for(const [sub,title,control] of gridPageContracts){
+   await page.locator(`[data-isw-sub="${sub}"]`).click();
+   await waitForPageTitle(title);
+   assert.equal(await page.getByText(/No certified parameter set ships/).count(),0,`${title} does not fall back to the empty-profile message`);
+   assert.equal(await page.locator(control).count(),1,`${title} exposes its editable preview content`);
+  }
+
   await ipsEntry.click();
   await waitForPageTitle("IPS Check");
   assert.equal(await page.locator(".isw-ips-record-entry").count(),0,"the standalone Last self-check helper row is removed");

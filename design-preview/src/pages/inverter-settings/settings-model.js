@@ -451,9 +451,13 @@ export function createSettingsModel({
  const loadProfile=code=>{
   const profile=GRID_PROFILES[code];
   if(!profile)return false;
+  const previewValues=!profile.p&&code==="it_cei021"&&capabilities.ipsPreview
+   ?GRID_PROFILES.en50549_1.p
+   :null;
+  const parameterValues=profile.p||previewValues;
   S.gridCode=code;
-  S.g=profile.p?clone(profile.p):{};
-  S.gref=profile.p?clone(profile.p):{};
+  S.g=parameterValues?clone(parameterValues):{};
+  S.gref=parameterValues?clone(parameterValues):{};
   return true;
  };
  const normalizeEco=()=>{

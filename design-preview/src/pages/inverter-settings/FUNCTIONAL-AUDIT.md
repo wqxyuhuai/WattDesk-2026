@@ -93,7 +93,7 @@ unavailable, the UI reports unavailable state instead of deriving a fallback.
 | Run action | Local preview simulates `Italy_SelfTest_Enable=1`, locks the action while checking, and records completion time plus all item results |
 | History | The 640px `IPS Check Record` modal is launched from the fixed page-title row, reuses the shared modal stack, summary card, settings-card grid and shared scroll viewport, and lists all eight results |
 | Persistence | `ips` is transient RO/result state and never enters normal page dirty, Save or Operation Log |
-| Preview data | `p25` exposes `IT CEI 0-21` as `Preview only`; no certified Italian protection values are copied from another country |
+| Preview data | `p25` exposes `IT CEI 0-21` as `Preview only` and loads a complete non-certified local working baseline so every Grid subpage remains visible; production must replace it with a real Italian parameter set |
 
 Point mapping is centralized in `settings-options.js`. The requirement uses
 `Certification_Standard=21`, `IPS_Selfcheck_Require`, the eight item status
