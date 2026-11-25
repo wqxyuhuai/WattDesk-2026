@@ -1,0 +1,45 @@
+{
+  "sourceDirectory": "E:\\OneDrive\\! Wattsonic 2022\\网站 WattDesk\\设计 模块\\web 图片 260520 逆变器设置插画",
+  "assets": [
+    {
+      "variant": "20kw",
+      "step": "battery",
+      "source": "20KW逆变器-LCD-电池.jpg",
+      "runtime": "home-assets/inverter-settings/setup/battery-20kw-lcd.png",
+      "sourceBytes": 590396,
+      "sourceSha256": "08AD1FBE574BEDBB594044A5A71B87EB98CC4B437C6309359058590F3CEBC5D8",
+      "bytes": 259731,
+      "sha256": "CDB819516242835C61A97703D1350374ADC29EA962CE404C52B03527FE6C0E22"
+    },
+    {
+      "variant": "20kw",
+      "step": "mppt",
+      "source": "20KW逆变器-LCD-pv.jpg",
+      "runtime": "home-assets/inverter-settings/setup/pv-20kw-lcd.png",
+      "sourceBytes": 618072,
+      "sourceSha256": "8210F084E0E64C4976FB374A871E010DDF74DC558F238976CCFEF55706BB1A98",
+      "bytes": 282107,
+      "sha256": "87F68B9927B5B0FE88185D2ABC5E47DEBC09CBB41362C102D05C4141D89790A0"
+    },
+    {
+      "variant": "50kw",
+      "step": "battery",
+      "source": "50KW_无屏幕_250630-电池.jpg",
+      "runtime": "home-assets/inverter-settings/setup/battery-50kw-no-screen.png",
+      "sourceBytes": 815822,
+      "sourceSha256": "B0AB788B87B1F5C8683351B00D78C5A9958333A046E825DAE3BBA3ECDBB059FF",
+      "bytes": 406031,
+      "sha256": "1710F822C7888EC54FD16AA40E69C7B59B6A4B32C0849DFED83780A7B818880C"
+    },
+    {
+      "variant": "50kw",
+      "step": "mppt",
+      "source": "50KW_无屏幕_250630-pv.jpg",
+      "runtime": "home-assets/inverter-settings/setup/pv-50kw-no-screen.png",
+      "sourceBytes": 837517,
+      "sourceSha256": "A321EEF9429BCDAADD9EA7DC8FE4452879A895F5B11443BE13684B5C35AC6BD9",
+      "bytes": 427445,
+      "sha256": "7A9C4DEC5170AABF080302B9D2D1445FC1F9760E8C4561828863EEA921BC454A"
+    }
+  ]
+}
